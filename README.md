@@ -1,0 +1,1 @@
+An interactive web map to view the locations and viewshed coverages of wildfire spotting cameras in Oregon. 
