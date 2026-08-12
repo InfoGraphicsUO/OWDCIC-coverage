@@ -3,22 +3,18 @@
     <head>
         <meta charset="UTF-8">
         <title>OWDCIC Camera Coverage</title>
-        <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <link href="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.css" rel="stylesheet">
-        <script src="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.js"></script>
-        <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-        <link rel="preconnect" href="https://kit.fontawesome.com">
-        <script defer src="https://kit.fontawesome.com/be4ea184d4.js" crossorigin="anonymous"></script>
-
-
+        <script defer src="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.js"></script>
         <link rel="stylesheet" href="css/map.css">
 
         <script defer src="js/map.js"></script>
+        <script defer src="js/map-layers.js"></script>
 
     </head>
     <body>
         <main>
-            <div id="map"></div>
+            <div id="map" role="region" aria-label="Oregon wildfire camera map"></div>
         </main>
     </body>
 </html>
