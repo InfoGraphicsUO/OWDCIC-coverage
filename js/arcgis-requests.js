@@ -1,0 +1,152 @@
+// records requested from each ArcGIS page
+const DEFAULT_PAGE_SIZE = 2_000;
+
+// extra attempts allowed after the first request
+const DEFAULT_RETRIES = 3;
+
+// base backoff in milliseconds before exponential growth
+const DEFAULT_RETRY_DELAY_MS = 750;
+
+/**
+ * collects every ArcGIS page into one GeoJSON FeatureCollection
+ *
+ * `retries` counts additional attempts per page
+ * `extraParams` overrides defaults for layer-specific filters and fields
+ */
+export async function fetchArcGISGeoJSON(
+  featureLayerUrl,
+  extraParams = {},
+  { pageSize = DEFAULT_PAGE_SIZE, retries = DEFAULT_RETRIES } = {}
+) {
+  const features = [];
+  let offset = 0;
+
+  while (true) {
+    // WGS84 keeps returned coordinates compatible with GeoJSON and Mapbox
+    const params = {
+      f: 'geojson',
+      where: '1=1',
+      outFields: '*',
+      returnGeometry: 'true',
+      outSR: '4326',
+      // stable object ID order keeps offset pages aligned
+      orderByFields: 'OBJECTID',
+      resultOffset: String(offset),
+      resultRecordCount: String(pageSize),
+      // caller values intentionally win over the shared query defaults
+      ...extraParams,
+    };
+
+    const geojson = await fetchArcGISPage(featureLayerUrl, params, { retries });
+    const page = Array.isArray(geojson.features) ? geojson.features : [];
+
+    features.push(...page);
+
+    // response flag moves between root and GeoJSON properties across services
+    const exceededTransferLimit =
+      geojson.exceededTransferLimit ?? geojson.properties?.exceededTransferLimit;
+
+    if (exceededTransferLimit !== true && page.length < pageSize) {
+      break;
+    }
+
+    // empty flagged page cannot advance the offset and would loop forever
+    if (page.length === 0) {
+      throw new Error('ArcGIS pagination did not advance');
+    }
+
+    // actual page length handles services that cap below the requested size
+    offset += page.length;
+  }
+
+  return { type: 'FeatureCollection', features };
+}
+
+/**
+ * fetches one ArcGIS page with retry handling for transient failures
+ */
+async function fetchArcGISPage(featureLayerUrl, params, { retries }) {
+  const queryUrl = `${featureLayerUrl.replace(/\/$/, '')}/query`;
+  let lastError;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const response = await fetch(queryUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(params),
+      });
+
+      const payload = await readJson(response);
+      const serviceError = payload?.error;
+
+      // ArcGIS may return its error object with a successful HTTP status
+      if (response.ok && !serviceError) {
+        return payload;
+      }
+
+      const status = serviceError?.code ?? response.status;
+      const message = serviceError?.message || `ArcGIS query HTTP ${response.status}`;
+      const error = new Error(message);
+
+      // throttling and server failures are the retryable service responses
+      error.retryable = status === 429 || status >= 500;
+      error.retryAfterMs = parseRetryAfter(response.headers.get('retry-after'));
+
+      throw error;
+    } catch (error) {
+      lastError = error;
+
+      // network failures lack a marker so they retry by default
+      // known client failures stop while throttling and server errors wait
+      const canRetry = attempt < retries && error.retryable !== false;
+      if (!canRetry) {
+        break;
+      }
+
+      // Retry-After takes priority over local exponential backoff
+      const delay = error.retryAfterMs ?? DEFAULT_RETRY_DELAY_MS * 2 ** attempt;
+      await wait(delay);
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * reads JSON while preserving enough status context for retry decisions
+ */
+async function readJson(response) {
+  try {
+    return await response.json();
+  } catch (cause) {
+    const error = new Error(`ArcGIS returned invalid JSON (HTTP ${response.status})`, { cause });
+
+    error.retryable = response.status === 429 || response.status >= 500;
+
+    throw error;
+  }
+}
+
+/**
+ * converts Retry-After seconds or an HTTP date into milliseconds from now
+ */
+function parseRetryAfter(value) {
+  if (!value) {
+    return null;
+  }
+
+  const seconds = Number(value);
+  if (Number.isFinite(seconds)) {
+    return Math.max(0, seconds * 1_000);
+  }
+
+  const date = Date.parse(value);
+  return Number.isNaN(date) ? null : Math.max(0, date - Date.now());
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}

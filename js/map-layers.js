@@ -1,157 +1,387 @@
-const CAMERA_API = 'https://api.cdn.prod.alertwest.com/api/firecams/v0/cameras';
-const CAMERA_LAYER_ID = 'alertwest-cameras';
+import { fetchArcGISGeoJSON } from './arcgis-requests.js';
+import {
+  CAMERA_API,
+  DATA_URLS,
+  LAYER_IDS,
+  OREGON_DATA_BOUNDS,
+  emptyFeatureCollection,
+} from './config.js';
+import {
+  addNumericProperty,
+  camerasToGeoJSON,
+  filterGeoJSONByBounds,
+} from './geojson-transform.js';
+import { initLegend } from './legend.js';
+import { mapReady } from './map.js';
+import {
+  showCameraPopup,
+  showFirePopup,
+  showPrescribedPopup,
+} from './popups.js';
 
+const FIRE_ICON_ID = 'fa-fire-marker';
+const CAMERA_ICON_ID = 'fa-camera-marker';
+
+// Font Awesome private-use codepoints drawn into canvas marker images
+const FA_FIRE_GLYPH = '\uf06d';
+const FA_CAMERA_GLYPH = '\uf030';
+
+// startup waits for the base style before registering application layers
 mapReady
-  .then((map) => {
-    if (map.loaded()) {
-      loadAlertWestCameras(map);
-    } else {
-      map.once('load', () => loadAlertWestCameras(map));
-    }
-  })
+  .then(waitForMapLoad)
+  .then(loadMapLayers)
   .catch((error) => console.error('Failed to initialize map:', error));
 
-async function loadAlertWestCameras(map) {
+// resolves immediately for cached styles or waits for the first full load
+function waitForMapLoad(map) {
+  if (map.loaded()) return map;
+
+  return new Promise((resolve) => {
+    map.once('load', () => resolve(map));
+  });
+}
+
+// registers empty layers while providers run then hydrates all sources together
+async function loadMapLayers(map) {
+  // overlap network requests with source and marker setup
+  const dataPromise = loadLayerData();
+
+  addPerimeterLayers(map);
+  await Promise.all([addFireLayer(map), addCameraLayer(map)]);
+  addPrescribedLayer(map);
+
+  // legend defaults need every controlled layer to exist first
+  initLegend(map, legendItems());
+
+  const { cameras, fires, perimeters, prescribed } = await dataPromise;
+
+  setSourceData(map, LAYER_IDS.cameras, cameras);
+
+  // copy provider acreage into the local field used by marker sizing
+  setSourceData(
+    map,
+    LAYER_IDS.fires,
+    addNumericProperty(fires, 'acres', ['IncidentSize'])
+  );
+
+  setSourceData(map, LAYER_IDS.perimetersSource, perimeters);
+  setSourceData(map, LAYER_IDS.prescribedSource, prescribed);
+}
+
+// starts every provider together and keeps results aligned by layer
+async function loadLayerData() {
+  const [cameras, fires, perimeters, prescribed] = await Promise.all([
+    safelyLoad('ALERTWest cameras', loadAlertWestCameras),
+
+    safelyLoad('NIFC fires', () =>
+      fetchArcGISGeoJSON(DATA_URLS.nifcFires, {
+        where: "POOState='US-OR'",
+        outFields: [
+          'IncidentName',
+          'IncidentSize',
+          'PercentContained',
+          'POOCounty',
+          'POOState',
+          'IncidentTypeCategory',
+        ].join(','),
+      })
+    ),
+
+    safelyLoad('NIFC perimeters', () =>
+      fetchArcGISGeoJSON(
+        DATA_URLS.nifcPerimeters,
+        {
+          where: "attr_POOState='US-OR'",
+          outFields: [
+            'poly_IncidentName',
+            'attr_IncidentName',
+            'poly_GISAcres',
+            'attr_PercentContained',
+            'attr_POOCounty',
+            'attr_POOState',
+            'attr_IncidentTypeCategory',
+          ].join(','),
+          // WGS84 degree precision and simplification keep polygons compact
+          geometryPrecision: '3',
+          maxAllowableOffset: '0.01',
+        },
+        { pageSize: 25 }
+      )
+    ),
+
+    safelyLoad('Watch Duty prescribed fires', async () => {
+      const geojson = await fetchArcGISGeoJSON(DATA_URLS.prescribedFires, {
+        outFields: 'name,prescribed_date_start,watchduty_url,acreage',
+        // server-side envelope avoids downloading records far outside Oregon
+        geometry: OREGON_DATA_BOUNDS.flat().join(','),
+        geometryType: 'esriGeometryEnvelope',
+        spatialRel: 'esriSpatialRelIntersects',
+      });
+
+      // enforce the same inclusive bounds on whatever the service returns
+      return filterGeoJSONByBounds(geojson, OREGON_DATA_BOUNDS);
+    }),
+  ]);
+
+  return { cameras, fires, perimeters, prescribed };
+}
+
+// turns one provider failure into an empty layer without blocking the rest
+async function safelyLoad(label, loader) {
   try {
-    const response = await fetch(CAMERA_API);
-    if (!response.ok) {
-      throw new Error(`Camera API HTTP ${response.status}`);
-    }
-
-    const cameras = await response.json();
-    const geojson = camerasToGeoJSON(cameras);
-
-    map.addSource(CAMERA_LAYER_ID, {
-      type: 'geojson',
-      data: geojson,
-    });
-
-    map.addLayer({
-      id: CAMERA_LAYER_ID,
-      type: 'circle',
-      source: CAMERA_LAYER_ID,
-      paint: {
-        'circle-radius': 
-        ['interpolate', ['linear'], 
-        ['zoom'], 
-        5, 5, 
-        10, 7, 
-        14, 9
-    ],
-        'circle-color': '#7a7a7a',
-        'circle-stroke-color': '#ffffff',
-        'circle-stroke-width': 2,
-      },
-    });
-
-    map.on('mouseenter', CAMERA_LAYER_ID, () => {
-      map.getCanvas().style.cursor = 'pointer';
-    });
-    map.on('mouseleave', CAMERA_LAYER_ID, () => {
-      map.getCanvas().style.cursor = '';
-    });
-    map.on('click', CAMERA_LAYER_ID, (event) => showCameraPopup(map, event));
+    return await loader();
   } catch (error) {
-    console.error('Failed to load ALERTWest cameras:', error);
+    console.error(`Failed to load ${label}:`, error);
+    return emptyFeatureCollection();
   }
 }
 
-function showCameraPopup(map, event) {
-  const feature = event.features?.[0];
-  if (!feature) return;
+// adapts ALERTWest records to the GeoJSON contract used by map sources
+async function loadAlertWestCameras() {
+  const response = await fetch(CAMERA_API);
+  if (!response.ok) throw new Error(`Camera API HTTP ${response.status}`);
 
-  new mapboxgl.Popup({ maxWidth: '280px' })
-    .setLngLat(feature.geometry.coordinates)
-    .setDOMContent(createCameraPopup(feature.properties))
-    .addTo(map);
+  return camerasToGeoJSON(await response.json());
 }
 
-function createCameraPopup({ name, id, pan, image, state, county }) {
-  // dom nodes so api vals are treated as text
-  const popup = document.createElement('div');
-  popup.className = 'cam-popup';
+async function addCameraLayer(map) {
+  // symbol layers can only reference images already registered on the map
+  await addFaMarkerIcon(map, {
+    id: CAMERA_ICON_ID,
+    glyph: FA_CAMERA_GLYPH,
+    fill: '#7a7a7a',
+    shape: 'square',
+  });
 
-  const title = document.createElement('strong');
-  title.textContent = name || 'Camera';
-  popup.append(title);
+  addGeoJSONSource(map, LAYER_IDS.cameras);
+  map.addLayer({
+    id: LAYER_IDS.cameras,
+    type: 'symbol',
+    source: LAYER_IDS.cameras,
+    layout: {
+      'icon-image': CAMERA_ICON_ID,
+      'icon-size': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
 
-  const location = [county, state].filter(Boolean).join(', ');
-  if (location) popup.append(createMetaLine(location));
+        // each pair is zoom level then icon scale
+        5, 0.28,
+        10, 0.35,
+        14, 0.42,
+      ],
+      // keep every camera visible when Mapbox symbols overlap
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+    },
+  });
 
-  const numericPan = Number(pan);
-  popup.append(createMetaLine(`Pan: ${Number.isFinite(numericPan) ? `${numericPan}\u00b0` : '\u2014'}`)); // degree symbol
-
-  const imageUrl = getHttpsUrl(image);
-  if (imageUrl) { // if img url exists add it to the popup
-    const thumbnail = document.createElement('img');
-    thumbnail.className = 'cam-thumb';
-    thumbnail.src = imageUrl;
-    thumbnail.alt = name || 'Camera';
-    thumbnail.loading = 'lazy';
-    popup.append(thumbnail);
-  }
-
-  if (id) { // if id exists add link to alertwest camera console
-    const link = document.createElement('a');
-    link.href = `https://alertwest.live/cam-console/${encodeURIComponent(id)}`;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.textContent = 'Open camera feed';
-    popup.append(link);
-  }
-
-  return popup;
+  bindLayerInteractions(map, LAYER_IDS.cameras, showCameraPopup);
 }
 
-function createMetaLine(text) {
-  const line = document.createElement('div');
-  line.className = 'cam-meta';
-  line.textContent = text;
-  return line;
+async function addFireLayer(map) {
+  // symbol layers can only reference images already registered on the map
+  await addFaMarkerIcon(map, {
+    id: FIRE_ICON_ID,
+    glyph: FA_FIRE_GLYPH,
+    fill: '#d64545',
+    shape: 'circle',
+  });
+
+  addGeoJSONSource(map, LAYER_IDS.fires);
+  map.addLayer({
+    id: LAYER_IDS.fires,
+    type: 'symbol',
+    source: LAYER_IDS.fires,
+    layout: {
+      'icon-image': FIRE_ICON_ID,
+      'icon-size': [
+        'interpolate',
+        ['linear'],
+        // missing and nonpositive acreage use the smallest marker stop
+        ['max', ['coalesce', ['to-number', ['get', 'acres']], 0.1], 0.1],
+
+        // each pair is acres then icon scale
+        0.1, 0.25,
+        1, 0.3,
+        10, 0.35,
+        100, 0.45,
+        1_000, 0.55,
+        10_000, 0.75,
+      ],
+      // keep every incident visible when Mapbox symbols overlap
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+    },
+  });
+
+  bindLayerInteractions(map, LAYER_IDS.fires, showFirePopup);
 }
 
-function getHttpsUrl(value) {
-  if (!value) return null;
+// registers Font Awesome glyph as a Mapbox image
+async function addFaMarkerIcon(map, { id, glyph, fill, shape }) {
+  if (map.hasImage(id)) return;
 
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' ? url.href : null;
-  } catch {
-    return null;
+  await document.fonts.ready;
+  const fontFaces = await document.fonts.load(
+    '900 64px "Font Awesome 6 Free"',
+    glyph
+  );
+
+  // marker geometry uses backing pixels for clean edges
+  const size = 128;
+  const inset = 8;
+  const box = size - inset * 2;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Canvas 2D is unavailable');
+
+  // colored shape and border remain useful when the icon font is unavailable
+  context.beginPath();
+  if (shape === 'square') {
+    context.roundRect(inset, inset, box, box, 16);
+  } else {
+    context.arc(size / 2, size / 2, box / 2, 0, Math.PI * 2);
   }
+
+  context.fillStyle = fill;
+  context.fill();
+  context.lineWidth = 8;
+  context.strokeStyle = '#ffffff';
+  context.stroke();
+
+  // glyph is optional so stylesheet or font failures dont hide the marker
+  if (fontFaces.length > 0) {
+    context.fillStyle = '#ffffff';
+    context.font = '900 64px "Font Awesome 6 Free"';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+
+    // 2 backing pixels optically center the glyph in its background
+    context.fillText(glyph, size / 2, size / 2 + 2);
+  }
+
+  // pixelRatio 2 presents 128 backing pixels as a 64px map image
+  map.addImage(id, context.getImageData(0, 0, size, size), { pixelRatio: 2 });
 }
 
-function camerasToGeoJSON(cameras) {
-  if (!Array.isArray(cameras)) {
-    throw new TypeError('Camera API returned an unexpected payload');
+function addPerimeterLayers(map) {
+  addGeoJSONSource(map, LAYER_IDS.perimetersSource);
+
+  // fill goes first so the sharper outline renders above it
+  map.addLayer({
+    id: LAYER_IDS.perimetersFill,
+    type: 'fill',
+    source: LAYER_IDS.perimetersSource,
+    paint: {
+      'fill-color': '#d64545',
+      'fill-opacity': 0.28,
+    },
+  });
+
+  map.addLayer({
+    id: LAYER_IDS.perimetersLine,
+    type: 'line',
+    source: LAYER_IDS.perimetersSource,
+    paint: {
+      'line-color': '#b42318',
+      'line-width': 2,
+    },
+  });
+
+  bindLayerInteractions(map, LAYER_IDS.perimetersFill, showFirePopup);
+}
+
+function addPrescribedLayer(map) {
+  addGeoJSONSource(map, LAYER_IDS.prescribedSource);
+  map.addLayer({
+    id: LAYER_IDS.prescribed,
+    type: 'circle',
+    source: LAYER_IDS.prescribedSource,
+    paint: {
+      'circle-radius': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+
+        // each pair is zoom level then radius in screen pixels
+        5, 5,
+        10, 7,
+        14, 9,
+      ],
+      'circle-color': '#e6a817',
+      'circle-stroke-color': '#ffffff',
+      'circle-stroke-width': 2,
+    },
+  });
+
+  bindLayerInteractions(map, LAYER_IDS.prescribed, showPrescribedPopup);
+}
+
+// sources exist before requests finish so layer registration can proceed
+function addGeoJSONSource(map, sourceId) {
+  map.addSource(sourceId, {
+    type: 'geojson',
+    data: emptyFeatureCollection(),
+  });
+}
+
+// ignores a late response when its source was removed during loading
+function setSourceData(map, sourceId, data) {
+  const source = map.getSource(sourceId);
+  if (!source) {
+    console.warn(`Map source ${sourceId} is no longer available`);
+    return;
   }
 
-  const features = [];
+  source.setData(data);
+}
 
-    // filter out cameras not in oregon
-  for (const camera of cameras) {
-    if (String(camera.site?.state || '').toUpperCase() !== 'OR') continue;
+// shares pointer affordance and popup dispatch across interactive layers
+function bindLayerInteractions(map, layerId, showPopup) {
+  map.on('mouseenter', layerId, () => {
+    map.getCanvas().style.cursor = 'pointer';
+  });
 
-    const latitude = Number(camera.site?.latitude);
-    const longitude = Number(camera.site?.longitude);
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
+  map.on('mouseleave', layerId, () => {
+    map.getCanvas().style.cursor = '';
+  });
 
-    features.push({
-      type: 'Feature',
-      geometry: {
-        type: 'Point',
-        coordinates: [longitude, latitude],
-      },
-      properties: {
-        id: camera.site?.id ?? null,
-        name: camera.name || camera.source || 'Camera',
-        pan: camera.position?.pan ?? null,
-        image: camera.image?.url ?? null,
-        state: camera.site?.state ?? null,
-        county: camera.site?.county ?? null,
-      },
-    });
-  }
+  map.on('click', layerId, (event) => showPopup(map, event));
+}
 
-  return { type: 'FeatureCollection', features };
+// maps each legend row to every Mapbox layer controlled by its checkbox
+function legendItems() {
+  return [
+    {
+      label: 'ALERTWest cameras',
+      color: '#7a7a7a',
+      shape: 'camera',
+      icon: 'fa-solid fa-camera',
+      layerIds: [LAYER_IDS.cameras],
+    },
+    {
+      label: 'Fires (NIFC)',
+      color: '#d64545',
+      shape: 'fire',
+      icon: 'fa-solid fa-fire',
+      visible: false,
+      layerIds: [
+        LAYER_IDS.fires,
+        LAYER_IDS.perimetersFill,
+        LAYER_IDS.perimetersLine,
+      ],
+    },
+    {
+      label: 'Prescribed fires (Watch Duty)',
+      color: '#e6a817',
+      shape: 'circle',
+      visible: false,
+      layerIds: [LAYER_IDS.prescribed],
+    },
+  ];
 }
