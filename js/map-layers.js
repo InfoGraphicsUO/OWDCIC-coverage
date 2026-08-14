@@ -50,8 +50,8 @@ async function loadMapLayers(map) {
   // overlap network requests with source and marker setup
   const dataPromise = loadLayerData();
 
-  // focus first keeps base shields below gray and app markers above it
-  addOregonFocusLayers(map);
+  // temporary Oregon highlight off switch
+  // addOregonFocusLayers(map);
   addPerimeterLayers(map);
   await Promise.all([addFireLayer(map), addCameraLayer(map)]);
   addPrescribedLayer(map);
@@ -61,7 +61,8 @@ async function loadMapLayers(map) {
 
   const { cameras, fires, oregonFocus, perimeters, prescribed } = await dataPromise;
 
-  setSourceData(map, LAYER_IDS.oregonFocusSource, oregonFocus);
+  // matching source update for highlight switch above
+  // setSourceData(map, LAYER_IDS.oregonFocusSource, oregonFocus);
 
   setSourceData(map, LAYER_IDS.cameras, cameras);
 
