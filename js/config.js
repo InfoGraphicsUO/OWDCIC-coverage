@@ -1,8 +1,10 @@
 // live AlertWest camera metadata and image URLs
 export const CAMERA_API = 'https://api.cdn.prod.alertwest.com/api/firecams/v0/cameras';
 
-// ArcGIS FeatureServer layer roots 
+// ArcGIS layer roots used by shared GeoJSON requests
 export const DATA_URLS = Object.freeze({
+  censusOregonBoundary:
+    'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/10',
   nifcFires:
     'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Incident_Locations_Current/FeatureServer/0',
   nifcPerimeters:
@@ -12,6 +14,10 @@ export const DATA_URLS = Object.freeze({
 });
 
 export const LAYER_IDS = Object.freeze({
+  oregonFocusSource: 'oregon-focus',
+  outsideOregonClip: 'outside-oregon-clip',
+  outsideOregonFill: 'outside-oregon-fill',
+  oregonOutline: 'oregon-outline',
   cameras: 'alertwest-cameras',
   fires: 'nifc-fires',
   perimetersSource: 'nifc-perimeters',

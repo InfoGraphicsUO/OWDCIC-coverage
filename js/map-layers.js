@@ -14,6 +14,10 @@ import {
 import { initLegend } from './legend.js';
 import { mapReady } from './map.js';
 import {
+  addOregonFocusLayers,
+  loadOregonFocusData,
+} from './oregon-highlight.js';
+import {
   showCameraPopup,
   showFirePopup,
   showPrescribedPopup,
@@ -46,6 +50,8 @@ async function loadMapLayers(map) {
   // overlap network requests with source and marker setup
   const dataPromise = loadLayerData();
 
+  // focus first keeps base shields below gray and app markers above it
+  addOregonFocusLayers(map);
   addPerimeterLayers(map);
   await Promise.all([addFireLayer(map), addCameraLayer(map)]);
   addPrescribedLayer(map);
@@ -53,7 +59,9 @@ async function loadMapLayers(map) {
   // legend defaults need every controlled layer to exist first
   initLegend(map, legendItems());
 
-  const { cameras, fires, perimeters, prescribed } = await dataPromise;
+  const { cameras, fires, oregonFocus, perimeters, prescribed } = await dataPromise;
+
+  setSourceData(map, LAYER_IDS.oregonFocusSource, oregonFocus);
 
   setSourceData(map, LAYER_IDS.cameras, cameras);
 
@@ -70,7 +78,7 @@ async function loadMapLayers(map) {
 
 // starts every provider together and keeps results aligned by layer
 async function loadLayerData() {
-  const [cameras, fires, perimeters, prescribed] = await Promise.all([
+  const [cameras, fires, oregonFocus, perimeters, prescribed] = await Promise.all([
     safelyLoad('ALERTWest cameras', loadAlertWestCameras),
 
     safelyLoad('NIFC fires', () =>
@@ -86,6 +94,8 @@ async function loadLayerData() {
         ].join(','),
       })
     ),
+
+    safelyLoad('Oregon boundary', loadOregonFocusData),
 
     safelyLoad('NIFC perimeters', () =>
       fetchArcGISGeoJSON(
@@ -123,7 +133,7 @@ async function loadLayerData() {
     }),
   ]);
 
-  return { cameras, fires, perimeters, prescribed };
+  return { cameras, fires, oregonFocus, perimeters, prescribed };
 }
 
 // turns one provider failure into an empty layer without blocking the rest
