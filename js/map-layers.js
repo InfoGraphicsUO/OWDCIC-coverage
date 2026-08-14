@@ -3,6 +3,7 @@ import {
   CAMERA_API,
   DATA_URLS,
   LAYER_IDS,
+  MARKER_ICON_URLS,
   OREGON_DATA_BOUNDS,
   emptyFeatureCollection,
 } from './config.js';
@@ -14,21 +15,40 @@ import {
 import { initLegend } from './legend.js';
 import { mapReady } from './map.js';
 import {
+  registerMarkerIcon,
+  registerMarkerIconSizes,
+  sizedIconId,
+  watchMarkerIconDensity,
+} from './marker-icons.js';
+import {
   addOregonFocusLayers,
   loadOregonFocusData,
 } from './oregon-highlight.js';
 import {
+  hideCameraPreview,
   showCameraPopup,
+  showCameraPreview,
   showFirePopup,
   showPrescribedPopup,
 } from './popups.js';
 
-const FIRE_ICON_ID = 'fa-fire-marker';
-const CAMERA_ICON_ID = 'fa-camera-marker';
+const FIRE_ICON_ID = 'fire-marker';
+const CAMERA_ICON_ID = 'camera-marker';
+const PRESCRIBED_ICON_ID = 'prescribed-marker';
 
-// Font Awesome private-use codepoints drawn into canvas marker images
-const FA_FIRE_GLYPH = '\uf06d';
-const FA_CAMERA_GLYPH = '\uf030';
+// marker sizes in CSS pixels
+const CAMERA_MARKER_SIZE = 20;
+const PRESCRIBED_MARKER_SIZE = 18;
+
+// acreage drives which fire image is used; each entry is [minimum acres, size]
+const FIRE_MARKER_SIZES = [
+  [0, 14],
+  [1, 16],
+  [10, 18],
+  [100, 20],
+  [1_000, 24],
+  [10_000, 28],
+];
 
 // startup waits for the base style before registering application layers
 mapReady
@@ -51,10 +71,15 @@ async function loadMapLayers(map) {
   const dataPromise = loadLayerData();
 
   // temporary Oregon highlight off switch
-  // addOregonFocusLayers(map);
+  addOregonFocusLayers(map);
   addPerimeterLayers(map);
   await Promise.all([addFireLayer(map), addCameraLayer(map)]);
-  addPrescribedLayer(map);
+
+  // added last so prescribed burns draw above the other markers
+  await addPrescribedLayer(map);
+
+  // rebuilds every registered marker image when display density changes
+  watchMarkerIconDensity(map);
 
   // legend defaults need every controlled layer to exist first
   initLegend(map, legendItems());
@@ -62,7 +87,7 @@ async function loadMapLayers(map) {
   const { cameras, fires, oregonFocus, perimeters, prescribed } = await dataPromise;
 
   // matching source update for highlight switch above
-  // setSourceData(map, LAYER_IDS.oregonFocusSource, oregonFocus);
+  setSourceData(map, LAYER_IDS.oregonFocusSource, oregonFocus);
 
   setSourceData(map, LAYER_IDS.cameras, cameras);
 
@@ -157,11 +182,10 @@ async function loadAlertWestCameras() {
 
 async function addCameraLayer(map) {
   // symbol layers can only reference images already registered on the map
-  await addFaMarkerIcon(map, {
+  await registerMarkerIcon(map, {
     id: CAMERA_ICON_ID,
-    glyph: FA_CAMERA_GLYPH,
-    fill: '#7a7a7a',
-    shape: 'square',
+    url: MARKER_ICON_URLS.camera,
+    size: CAMERA_MARKER_SIZE,
   });
 
   addGeoJSONSource(map, LAYER_IDS.cameras);
@@ -171,32 +195,26 @@ async function addCameraLayer(map) {
     source: LAYER_IDS.cameras,
     layout: {
       'icon-image': CAMERA_ICON_ID,
-      'icon-size': [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-
-        // each pair is zoom level then icon scale
-        5, 0.28,
-        10, 0.35,
-        14, 0.42,
-      ],
+      // 1 draws the image at its authored size so Mapbox never rescales it
+      'icon-size': 1,
       // keep every camera visible when Mapbox symbols overlap
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,
     },
   });
 
-  bindLayerInteractions(map, LAYER_IDS.cameras, showCameraPopup);
+  bindLayerInteractions(map, LAYER_IDS.cameras, showCameraPopup, {
+    show: showCameraPreview,
+    hide: hideCameraPreview,
+  });
 }
 
 async function addFireLayer(map) {
   // symbol layers can only reference images already registered on the map
-  await addFaMarkerIcon(map, {
+  await registerMarkerIconSizes(map, {
     id: FIRE_ICON_ID,
-    glyph: FA_FIRE_GLYPH,
-    fill: '#d64545',
-    shape: 'circle',
+    url: MARKER_ICON_URLS.fire,
+    sizes: FIRE_MARKER_SIZES.map(([, size]) => size),
   });
 
   addGeoJSONSource(map, LAYER_IDS.fires);
@@ -205,21 +223,9 @@ async function addFireLayer(map) {
     type: 'symbol',
     source: LAYER_IDS.fires,
     layout: {
-      'icon-image': FIRE_ICON_ID,
-      'icon-size': [
-        'interpolate',
-        ['linear'],
-        // missing and nonpositive acreage use the smallest marker stop
-        ['max', ['coalesce', ['to-number', ['get', 'acres']], 0.1], 0.1],
-
-        // each pair is acres then icon scale
-        0.1, 0.25,
-        1, 0.3,
-        10, 0.35,
-        100, 0.45,
-        1_000, 0.55,
-        10_000, 0.75,
-      ],
+      'icon-image': fireIconExpression(),
+      // 1 draws each image at its authored size so Mapbox never rescales it
+      'icon-size': 1,
       // keep every incident visible when Mapbox symbols overlap
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,
@@ -229,55 +235,23 @@ async function addFireLayer(map) {
   bindLayerInteractions(map, LAYER_IDS.fires, showFirePopup);
 }
 
-// registers Font Awesome glyph as a Mapbox image
-async function addFaMarkerIcon(map, { id, glyph, fill, shape }) {
-  if (map.hasImage(id)) return;
+/**
+ * picks a prerendered fire image by acreage
+ * swapping images instead of scaling one keeps every size pixel aligned
+ */
+function fireIconExpression() {
+  const [[, smallestSize], ...largerSizes] = FIRE_MARKER_SIZES;
 
-  await document.fonts.ready;
-  const fontFaces = await document.fonts.load(
-    '900 64px "Font Awesome 6 Free"',
-    glyph
-  );
-
-  // marker geometry uses backing pixels for clean edges
-  const size = 128;
-  const inset = 8;
-  const box = size - inset * 2;
-
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('Canvas 2D is unavailable');
-
-  // colored shape and border remain useful when the icon font is unavailable
-  context.beginPath();
-  if (shape === 'square') {
-    context.roundRect(inset, inset, box, box, 16);
-  } else {
-    context.arc(size / 2, size / 2, box / 2, 0, Math.PI * 2);
-  }
-
-  context.fillStyle = fill;
-  context.fill();
-  context.lineWidth = 8;
-  context.strokeStyle = '#ffffff';
-  context.stroke();
-
-  // glyph is optional so stylesheet or font failures dont hide the marker
-  if (fontFaces.length > 0) {
-    context.fillStyle = '#ffffff';
-    context.font = '900 64px "Font Awesome 6 Free"';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-
-    // 2 backing pixels optically center the glyph in its background
-    context.fillText(glyph, size / 2, size / 2 + 2);
-  }
-
-  // pixelRatio 2 presents 128 backing pixels as a 64px map image
-  map.addImage(id, context.getImageData(0, 0, size, size), { pixelRatio: 2 });
+  return [
+    'step',
+    // missing or nonpositive acreage falls back to the smallest marker
+    ['max', ['coalesce', ['to-number', ['get', 'acres']], 0], 0],
+    sizedIconId(FIRE_ICON_ID, smallestSize),
+    ...largerSizes.flatMap(([acres, size]) => [
+      acres,
+      sizedIconId(FIRE_ICON_ID, size),
+    ]),
+  ];
 }
 
 function addPerimeterLayers(map) {
@@ -307,26 +281,26 @@ function addPerimeterLayers(map) {
   bindLayerInteractions(map, LAYER_IDS.perimetersFill, showFirePopup);
 }
 
-function addPrescribedLayer(map) {
+async function addPrescribedLayer(map) {
+  // symbol layers can only reference images already registered on the map
+  await registerMarkerIcon(map, {
+    id: PRESCRIBED_ICON_ID,
+    url: MARKER_ICON_URLS.prescribed,
+    size: PRESCRIBED_MARKER_SIZE,
+  });
+
   addGeoJSONSource(map, LAYER_IDS.prescribedSource);
   map.addLayer({
     id: LAYER_IDS.prescribed,
-    type: 'circle',
+    type: 'symbol',
     source: LAYER_IDS.prescribedSource,
-    paint: {
-      'circle-radius': [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-
-        // each pair is zoom level then radius in screen pixels
-        5, 5,
-        10, 7,
-        14, 9,
-      ],
-      'circle-color': '#e6a817',
-      'circle-stroke-color': '#ffffff',
-      'circle-stroke-width': 2,
+    layout: {
+      'icon-image': PRESCRIBED_ICON_ID,
+      // 1 draws the image at its authored size so Mapbox never rescales it
+      'icon-size': 1,
+      // keep every burn visible when Mapbox symbols overlap
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
     },
   });
 
@@ -352,15 +326,24 @@ function setSourceData(map, sourceId, data) {
   source.setData(data);
 }
 
-// shares pointer affordance and popup dispatch across interactive layers
-function bindLayerInteractions(map, layerId, showPopup) {
+/**
+ * shares pointer affordance and popup dispatch across interactive layers
+ * a preview pair adds the hover popup that a click then expands
+ */
+function bindLayerInteractions(map, layerId, showPopup, preview) {
   map.on('mouseenter', layerId, () => {
     map.getCanvas().style.cursor = 'pointer';
   });
 
   map.on('mouseleave', layerId, () => {
     map.getCanvas().style.cursor = '';
+    preview?.hide(map);
   });
+
+  // mousemove also catches moving between two markers that sit side by side
+  if (preview) {
+    map.on('mousemove', layerId, (event) => preview.show(map, event));
+  }
 
   map.on('click', layerId, (event) => showPopup(map, event));
 }
@@ -370,16 +353,12 @@ function legendItems() {
   return [
     {
       label: 'ALERTWest cameras',
-      color: '#7a7a7a',
-      shape: 'camera',
-      icon: 'fa-solid fa-camera',
+      iconUrl: MARKER_ICON_URLS.camera,
       layerIds: [LAYER_IDS.cameras],
     },
     {
       label: 'Fires (NIFC)',
-      color: '#d64545',
-      shape: 'fire',
-      icon: 'fa-solid fa-fire',
+      iconUrl: MARKER_ICON_URLS.fire,
       visible: false,
       layerIds: [
         LAYER_IDS.fires,
@@ -389,8 +368,7 @@ function legendItems() {
     },
     {
       label: 'Prescribed fires (Watch Duty)',
-      color: '#e6a817',
-      shape: 'circle',
+      iconUrl: MARKER_ICON_URLS.prescribed,
       visible: false,
       layerIds: [LAYER_IDS.prescribed],
     },

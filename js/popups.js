@@ -21,7 +21,40 @@ const POPUP_MARKER_GAP = 14;
 let popupTitleId = 0;
 
 export function showCameraPopup(map, event) {
+  const feature = event.features?.[0];
+  if (!feature) return;
+
+  const active = ACTIVE_POPUPS.get(map);
+  const key = featureKey(feature);
+
+  // upgrading the hover preview in place avoids a close and reopen flash
+  if (key != null && active?.isPreview && active.featureKey === key) {
+    active.promote(createCameraPopup(feature.properties || {}));
+    return;
+  }
+
   showPopup(map, event, createCameraPopup);
+}
+
+/** lightweight hover popup carrying only the camera name and locality */
+export function showCameraPreview(map, event) {
+  const feature = event.features?.[0];
+  if (!feature) return;
+
+  const active = ACTIVE_POPUPS.get(map);
+
+  // a clicked popup outranks previews so hovering cannot discard it
+  if (active && !active.isPreview) return;
+
+  const key = featureKey(feature);
+  if (active?.isPreview && active.featureKey === key) return;
+
+  showPopup(map, event, createCameraPreview, { preview: true, featureKey: key });
+}
+
+export function hideCameraPreview(map) {
+  const active = ACTIVE_POPUPS.get(map);
+  if (active?.isPreview) active.close();
 }
 
 export function showFirePopup(map, event) {
@@ -32,7 +65,7 @@ export function showPrescribedPopup(map, event) {
   showPopup(map, event, createPrescribedPopup);
 }
 
-function showPopup(map, event, createContent) {
+function showPopup(map, event, createContent, options = {}) {
   const feature = event.features?.[0];
   if (!feature) return;
 
@@ -46,18 +79,26 @@ function showPopup(map, event, createContent) {
   const popup = new FeaturePopup(
     map,
     coordinates,
-    createContent(feature.properties || {})
+    createContent(feature.properties || {}),
+    options
   );
   ACTIVE_POPUPS.set(map, popup);
   popup.open();
 }
 
+// identifies a hovered feature so its preview can be matched on click
+function featureKey(feature) {
+  return feature.properties?.id ?? feature.id ?? null;
+}
+
 /** owns a popup DOM element along with its map listeners and screen position */
 class FeaturePopup {
-  constructor(map, coordinates, content) {
+  constructor(map, coordinates, content, { preview = false, featureKey = null } = {}) {
     this.map = map;
     this.coordinates = coordinates;
-    this.element = createPopupElement(content);
+    this.isPreview = preview;
+    this.featureKey = featureKey;
+    this.element = createPopupElement(content, { preview });
     this.animationFrame = null;
     this.mapClickTimer = null;
     this.resizeObserver =
@@ -73,6 +114,30 @@ class FeaturePopup {
     this.map.on('resize', this.schedulePositionUpdate);
     document.addEventListener('keydown', this.handleKeyDown);
 
+    // previews are dismissed by leaving the feature rather than by the user
+    if (!this.isPreview) this.enableDismissal();
+
+    this.updatePosition();
+
+    // start the transition after the browser has laid out the hidden popup
+    requestAnimationFrame(() => {
+      this.element.classList.add('is-open');
+    });
+  }
+
+  /** swaps preview content for the full dialog without reopening it */
+  promote(content) {
+    if (!this.isPreview) return;
+
+    this.isPreview = false;
+    this.element.classList.remove('feature-popup--preview');
+    this.element.replaceChildren(createCloseButton(), content);
+    labelPopup(this.element, content);
+    this.enableDismissal();
+    this.schedulePositionUpdate();
+  }
+
+  enableDismissal() {
     this.element
       .querySelector('.feature-popup__close')
       .addEventListener('click', this.handleCloseClick);
@@ -83,13 +148,6 @@ class FeaturePopup {
         .getCanvasContainer()
         .addEventListener('click', this.handleMapClick, { capture: true });
     }, 0);
-
-    this.updatePosition();
-
-    // start the transition after the browser has laid out the hidden popup
-    requestAnimationFrame(() => {
-      this.element.classList.add('is-open');
-    });
   }
 
   close({ immediate = false } = {}) {
@@ -193,37 +251,59 @@ class FeaturePopup {
   };
 }
 
-function createPopupElement(content) {
+function createPopupElement(content, { preview = false } = {}) {
   const popup = document.createElement('section');
-  popup.className = 'feature-popup';
+  popup.className = preview ? 'feature-popup feature-popup--preview' : 'feature-popup';
   popup.setAttribute('role', 'dialog');
+  labelPopup(popup, content);
 
-  const title = content.querySelector('strong');
-  if (title) {
-    // generated title becomes the accessible dialog label
-    popupTitleId += 1;
-    title.id = `feature-popup-title-${popupTitleId}`;
-    popup.setAttribute('aria-labelledby', title.id);
+  // a preview closes on mouseleave, so a close button would be unreachable
+  if (preview) {
+    popup.append(content);
+    return popup;
   }
 
+  popup.append(createCloseButton(), content);
+  return popup;
+}
+
+function createCloseButton() {
   const closeButton = document.createElement('button');
   closeButton.className = 'feature-popup__close';
   closeButton.type = 'button';
   closeButton.setAttribute('aria-label', 'Close popup');
   closeButton.textContent = '\u00d7';
+  return closeButton;
+}
 
-  popup.append(closeButton, content);
-  return popup;
+// generated title becomes the accessible dialog label
+function labelPopup(popup, content) {
+  const title = content.querySelector('strong');
+  if (!title) return;
+
+  popupTitleId += 1;
+  title.id = `feature-popup-title-${popupTitleId}`;
+  popup.setAttribute('aria-labelledby', title.id);
 }
 
 function clamp(value, minimum, maximum) {
   return Math.min(Math.max(value, minimum), Math.max(minimum, maximum));
 }
 
+// hover preview stays limited to what identifies the camera at a glance
+function createCameraPreview({ name, state, county }) {
+  const popup = createPopupContainer(name || 'Camera');
+
+  const location = cameraLocation({ county, state });
+  if (location) popup.append(createMetaLine(location));
+
+  return popup;
+}
+
 function createCameraPopup({ name, id, pan, image, state, county }) {
   const popup = createPopupContainer(name || 'Camera');
 
-  const location = [county, state].filter(Boolean).join(', ');
+  const location = cameraLocation({ county, state });
   if (location) popup.append(createMetaLine(location));
 
   const numericPan = Number(pan);
@@ -253,6 +333,10 @@ function createCameraPopup({ name, id, pan, image, state, county }) {
   }
 
   return popup;
+}
+
+function cameraLocation({ county, state }) {
+  return [county, state].filter(Boolean).join(', ');
 }
 
 function createFirePopup(properties) {

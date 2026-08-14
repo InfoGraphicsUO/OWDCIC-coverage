@@ -31,22 +31,16 @@ function createLegendRow(map, item) {
     setLayersVisible(map, item.layerIds, checkbox.checked);
   });
 
-  const swatch = document.createElement('span');
-  swatch.className = 'legend-swatch';
-  swatch.dataset.shape = item.shape || 'circle';
-  swatch.style.setProperty('--swatch-color', item.color);
-
-  if (item.icon) {
-    const icon = document.createElement('i');
-    icon.className = item.icon;
-    icon.setAttribute('aria-hidden', 'true');
-    swatch.append(icon);
-  }
+  // legend reuses each layer's map marker file so the two always match
+  const icon = document.createElement('img');
+  icon.className = 'legend-icon';
+  icon.src = item.iconUrl;
+  icon.alt = '';
 
   const label = document.createElement('span');
   label.textContent = item.label;
 
-  row.append(checkbox, swatch, label);
+  row.append(checkbox, icon, label);
 
   // keep controls and Mapbox state aligned from first render
   setLayersVisible(map, item.layerIds, checkbox.checked);

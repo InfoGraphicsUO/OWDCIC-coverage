@@ -13,6 +13,13 @@ export const DATA_URLS = Object.freeze({
     'https://services5.arcgis.com/VNhSlpl1umSknM3q/arcgis/rest/services/Watch_Duty_Prescribed_Fires/FeatureServer/0',
 });
 
+// marker artwork rasterized by js/marker-icons.js and shown in the legend
+export const MARKER_ICON_URLS = Object.freeze({
+  camera: 'img/camera-marker.svg',
+  fire: 'img/fire-marker.svg',
+  prescribed: 'img/prescribed-marker.svg',
+});
+
 export const LAYER_IDS = Object.freeze({
   oregonFocusSource: 'oregon-focus',
   outsideOregonClip: 'outside-oregon-clip',

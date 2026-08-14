@@ -1,0 +1,6 @@
+<!-- map marker for Watch Duty prescribed fires; no width or height so js/marker-icons.js can rasterize it at any density -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" role="img" aria-label="Prescribed fire">
+  <circle cx="12" cy="12" r="11.5" fill="#e6a817"/>
+  <path fill="#ffffff" d="M12 4.4C15.2 8.3 17 10.8 17 13.7A5 5 0 0 1 7 13.7C7 10.8 8.8 8.3 12 4.4Z"/>
+  <path fill="#e6a817" d="M12 11.4C13.4 13.1 14.1 14 14.1 15A2.1 2.1 0 0 1 9.9 15C9.9 14 10.6 13.1 12 11.4Z"/>
+</svg>
