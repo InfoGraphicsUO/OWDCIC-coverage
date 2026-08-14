@@ -38,6 +38,8 @@ async function initializeMap() {
     zoom: DEFAULT_VIEW.zoom,
     minZoom: 6,
     maxBounds: MAP_BOUNDS,
+    attributionControl: false,
+    performanceMetricsCollection: false,
   });
 
   // full style install can emit errors before initialization finishes
@@ -48,6 +50,9 @@ async function initializeMap() {
     'top-left'
   );
   map.addControl(new HomeControl(), 'top-left');
+  map.addControl(new mapboxgl.AttributionControl({
+    customAttribution: '<a href="https://infographics.uoregon.edu/">UO InfoGraphics Lab</a> | <a href="https://ohaz.uoregon.edu/">OHAZ</a>'
+  }));
   map.once('load', () => initBasemapPicker(map));
 
   return map;
@@ -131,9 +136,12 @@ function handleMapError(event) {
   const isStaleWorkerTransfer =
     error?.name === 'InvalidStateError' &&
     error.message?.includes('no longer, usable');
+  const isKnownStyleImageDecodeNoise =
+    error instanceof DOMException &&
+    error.message === 'The image could not be decoded';
 
-  // ignore Mapbox stale worker-transfer noise but surface every other error
-  if (isStaleWorkerTransfer) return;
+  // ignore confirmed worker noise while continuing to surface actionable errors
+  if (isStaleWorkerTransfer || isKnownStyleImageDecodeNoise) return;
 
   console.error('mapbox error:', error);
 }

@@ -117,12 +117,25 @@ async function fetchArcGISPage(featureLayerUrl, params, { retries }) {
  * reads JSON while preserving enough status context for retry decisions
  */
 async function readJson(response) {
-  try {
-    return await response.json();
-  } catch (cause) {
-    const error = new Error(`ArcGIS returned invalid JSON (HTTP ${response.status})`, { cause });
+  const body = await response.text();
 
-    error.retryable = response.status === 429 || response.status >= 500;
+  try {
+    return JSON.parse(body);
+  } catch (cause) {
+    const preview = body.trim().replace(/\s+/g, ' ').slice(0, 160);
+    const detail = preview ? `: ${preview}` : '';
+    const error = new Error(
+      `ArcGIS returned invalid JSON (HTTP ${response.status})${detail}`,
+      { cause }
+    );
+
+    // ArcGIS edge nodes occasionally return an HTML/plain-text 400 for a
+    // valid query; unlike structured ArcGIS JSON errors, that is transient.
+    error.retryable =
+      response.status === 400 ||
+      response.status === 408 ||
+      response.status === 429 ||
+      response.status >= 500;
 
     throw error;
   }

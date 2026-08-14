@@ -24,6 +24,7 @@
     margin: 0;
     padding: 3px 0;
     cursor: pointer;
+    user-select: none;
 }
 
 .legend-icon {
