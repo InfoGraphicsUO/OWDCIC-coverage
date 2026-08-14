@@ -1,0 +1,39 @@
+.legend {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    font: 13px/1.4 system-ui, sans-serif;
+}
+
+.legend-title {
+    margin: 0 0 8px;
+    color: #444;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    /* text-transform: uppercase; */
+}
+
+.legend-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 3px 0;
+    cursor: pointer;
+}
+
+.legend-icon {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 14px;
+}
+
+@media (max-width: 520px) {
+    .legend {
+        font-size: 12px;
+    }
+}

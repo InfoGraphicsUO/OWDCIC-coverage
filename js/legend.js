@@ -1,26 +1,41 @@
 /**
- * rebuilds layer controls and applies each initial visibility
+ * renders controls immediately, then connects them after Mapbox layers exist
  * one item may control several Mapbox layer IDs
  */
-export function initLegend(map, items) {
+export function initLegend(items) {
   const legend = document.getElementById('legend');
   if (!legend) {
     throw new Error('Legend container #legend is missing');
   }
 
   legend.replaceChildren();
+  const bindings = [];
+  let activeMap;
 
   const title = document.createElement('h2');
   title.className = 'legend-title';
-  title.textContent = 'Layers';
+  title.textContent = 'Map layers';
   legend.append(title);
 
   for (const item of items) {
-    legend.append(createLegendRow(map, item));
+    const binding = createLegendRow(item, () => activeMap);
+    bindings.push(binding);
+    legend.append(binding.row);
   }
+
+  return {
+    connect(map) {
+      activeMap = map;
+
+      // honor the current checkbox state, including changes made while loading
+      for (const { checkbox, item } of bindings) {
+        setLayersVisible(map, item.layerIds, checkbox.checked);
+      }
+    },
+  };
 }
 
-function createLegendRow(map, item) {
+function createLegendRow(item, getMap) {
   const row = document.createElement('label');
   row.className = 'legend-row';
 
@@ -28,7 +43,8 @@ function createLegendRow(map, item) {
   checkbox.type = 'checkbox';
   checkbox.checked = item.visible !== false;
   checkbox.addEventListener('change', () => {
-    setLayersVisible(map, item.layerIds, checkbox.checked);
+    const map = getMap();
+    if (map) setLayersVisible(map, item.layerIds, checkbox.checked);
   });
 
   // legend reuses each layer's map marker file so the two always match
@@ -41,11 +57,7 @@ function createLegendRow(map, item) {
   label.textContent = item.label;
 
   row.append(checkbox, icon, label);
-
-  // keep controls and Mapbox state aligned from first render
-  setLayersVisible(map, item.layerIds, checkbox.checked);
-
-  return row;
+  return { checkbox, item, row };
 }
 
 function setLayersVisible(map, layerIds, visible) {

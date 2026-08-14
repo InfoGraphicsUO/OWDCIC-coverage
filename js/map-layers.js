@@ -13,6 +13,7 @@ import {
   filterGeoJSONByBounds,
 } from './geojson-transform.js';
 import { initLegend } from './legend.js';
+import { hideMapLoading } from './loading.js';
 import { mapReady } from './map.js';
 import {
   registerMarkerIcon,
@@ -50,11 +51,15 @@ const FIRE_MARKER_SIZES = [
   [10_000, 28],
 ];
 
+// render layer names and defaults without waiting for Mapbox or data providers
+const legendControl = initLegend(legendItems());
+
 // startup waits for the base style before registering application layers
 mapReady
   .then(waitForMapLoad)
   .then(loadMapLayers)
-  .catch((error) => console.error('Failed to initialize map:', error));
+  .catch((error) => console.error('Failed to initialize map:', error))
+  .finally(hideMapLoading);
 
 // resolves immediately for cached styles or waits for the first full load
 function waitForMapLoad(map) {
@@ -81,8 +86,8 @@ async function loadMapLayers(map) {
   // rebuilds every registered marker image when display density changes
   watchMarkerIconDensity(map);
 
-  // legend defaults need every controlled layer to exist first
-  initLegend(map, legendItems());
+  // Mapbox visibility can now follow the legend that was rendered at startup
+  legendControl.connect(map);
 
   const { cameras, fires, oregonFocus, perimeters, prescribed } = await dataPromise;
 
@@ -352,7 +357,7 @@ function bindLayerInteractions(map, layerId, showPopup, preview) {
 function legendItems() {
   return [
     {
-      label: 'ALERTWest cameras',
+      label: 'Cameras (ALERTWest)',
       iconUrl: MARKER_ICON_URLS.camera,
       layerIds: [LAYER_IDS.cameras],
     },

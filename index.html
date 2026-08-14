@@ -10,14 +10,45 @@
         <link href="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.css" rel="stylesheet">
         <script defer src="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.js"></script>
 
+        <link rel="stylesheet" href="css/site.css">
         <link rel="stylesheet" href="css/map.css">
+        <link rel="stylesheet" href="css/legend.css">
+        <link rel="stylesheet" href="css/popups.css">
+        <link rel="stylesheet" href="css/loading.css">
 
         <script type="module" src="js/map-layers.js"></script>
     </head>
     <body>
-        <main>
+        <header class="site-banner">
+            <img class="site-banner__logo" src="img/OHAZ-logo.png" alt="OHAZ">
+            <h1 class="site-banner__title">OWDCIC Camera Coverage Map</h1>
+        </header>
+        <main aria-busy="true">
             <div id="map" role="region" aria-label="Oregon wildfire camera map"></div>
-            <aside id="legend" class="legend" aria-label="Map layers"></aside>
+            <div class="map-panels">
+                <aside id="legend" class="legend" aria-label="Map layers"></aside>
+                <div
+                    id="basemap-picker"
+                    class="basemap-picker"
+                    role="radiogroup"
+                    aria-label="Basemap"
+                >
+                    <label class="basemap-picker__option">
+                        <input type="radio" name="basemap" value="outdoors" checked>
+                        <span>Default</span>
+                    </label>
+                    <label class="basemap-picker__option">
+                        <input type="radio" name="basemap" value="satellite">
+                        <span>Satellite</span>
+                    </label>
+                </div>
+            </div>
         </main>
+        <div id="map-loading" class="map-loading" role="status" aria-live="polite">
+            <div class="map-loading__content">
+                <span class="map-loading__spinner" aria-hidden="true"></span>
+                <span>Loading map data...</span>
+            </div>
+        </div>
     </body>
 </html>

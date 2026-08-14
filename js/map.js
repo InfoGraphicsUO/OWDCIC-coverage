@@ -4,6 +4,14 @@ mapboxgl.accessToken =
 // Mapbox account/style slug for the Outdoors-based map theme
 const MAPBOX_STYLE = 'infographics/cmspb7yx9000s01px89hr8i1a';
 
+const DEFAULT_VIEW = Object.freeze({
+  center: Object.freeze([-120.558, 44.133]),
+  zoom: 6.5,
+});
+
+const SATELLITE_SOURCE_ID = 'mapbox-satellite-basemap';
+const SATELLITE_LAYER_ID = 'mapbox-satellite-basemap';
+
 // padded southwest and northeast corners keep navigation near Oregon
 // coordinates stay in Mapbox [longitude, latitude] order
 const MAP_BOUNDS = [
@@ -19,24 +27,103 @@ async function initializeMap() {
   // repair source conflicts before Mapbox sends the style to its workers
   const style = await loadMapStyle();
   removeDuplicateTerrainDem(style);
+  addSatelliteBasemap(style);
 
   // delay style processing until the error handler is attached below
   const map = new mapboxgl.Map({
     container: 'map',
     style: null,
     projection: 'mercator',
-    center: [-120.558, 43.933],
-    zoom: 7,
-    minZoom: 6.5,
+    center: DEFAULT_VIEW.center,
+    zoom: DEFAULT_VIEW.zoom,
+    minZoom: 6,
     maxBounds: MAP_BOUNDS,
   });
 
   // full style install can emit errors before initialization finishes
   map.on('error', handleMapError);
   map.setStyle(style, { diff: false });
-  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+  map.addControl(
+    new mapboxgl.NavigationControl({ showCompass: false, showZoom: true }),
+    'top-left'
+  );
+  map.addControl(new HomeControl(), 'top-left');
+  map.once('load', () => initBasemapPicker(map));
 
   return map;
+}
+
+class HomeControl {
+  onAdd(map) {
+    this.map = map;
+
+    const container = document.createElement('div');
+    container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+
+    const button = document.createElement('button');
+    button.className = 'mapboxgl-ctrl-home';
+    button.type = 'button';
+    button.title = 'Reset to the default Oregon extent';
+    button.setAttribute('aria-label', button.title);
+
+    const icon = document.createElement('img');
+    icon.src = 'img/oregon.svg';
+    icon.alt = '';
+    button.append(icon);
+    button.addEventListener('click', () => resetMapView(map));
+
+    container.append(button);
+    this.container = container;
+    return container;
+  }
+
+  onRemove() {
+    this.container?.remove();
+    this.map = undefined;
+  }
+}
+
+function resetMapView(map) {
+  map.easeTo({
+    center: DEFAULT_VIEW.center,
+    zoom: DEFAULT_VIEW.zoom,
+    bearing: 0,
+    pitch: 0,
+    duration: 700,
+  });
+}
+
+function initBasemapPicker(map) {
+  const picker = document.getElementById('basemap-picker');
+  if (!picker) throw new Error('Basemap picker #basemap-picker is missing');
+
+  picker.addEventListener('change', (event) => {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement) || input.name !== 'basemap') return;
+
+    map.setLayoutProperty(
+      SATELLITE_LAYER_ID,
+      'visibility',
+      input.value === 'satellite' ? 'visible' : 'none'
+    );
+  });
+}
+
+// satellite is a topmost base-style layer; application layers load above it
+function addSatelliteBasemap(style) {
+  style.sources ||= {};
+  style.layers ||= [];
+  style.sources[SATELLITE_SOURCE_ID] = {
+    type: 'raster',
+    url: 'mapbox://mapbox.satellite',
+    tileSize: 256,
+  };
+  style.layers.push({
+    id: SATELLITE_LAYER_ID,
+    type: 'raster',
+    source: SATELLITE_SOURCE_ID,
+    layout: { visibility: 'none' },
+  });
 }
 
 function handleMapError(event) {
