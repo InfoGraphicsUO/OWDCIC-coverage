@@ -51,7 +51,7 @@ async function initializeMap() {
   );
   map.addControl(new HomeControl(), 'top-left');
   map.addControl(new mapboxgl.AttributionControl({
-    customAttribution: '<a href="https://infographics.uoregon.edu/">UO InfoGraphics Lab</a> | <a href="https://ohaz.uoregon.edu/">OHAZ</a>'
+    customAttribution: '<a href="https://infographics.uoregon.edu/" target="_blank" rel="noopener noreferrer">UO InfoGraphics Lab</a> | <a href="https://ohaz.uoregon.edu/" target="_blank" rel="noopener noreferrer">OHAZ</a>'
   }));
   map.once('load', () => initBasemapPicker(map));
 
