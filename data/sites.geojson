@@ -1,0 +1,1264 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.74476,
+          45.52028
+        ]
+      },
+      "properties": {
+        "name": "Portland Tower",
+        "aliases": [
+          "PDX Tower"
+        ],
+        "cameraHeightFt": 377.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.07524,
+          43.9555
+        ]
+      },
+      "properties": {
+        "name": "Glenada Ridge",
+        "aliases": [],
+        "cameraHeightFt": 215.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.04087,
+          44.29507
+        ]
+      },
+      "properties": {
+        "name": "Smith Ridge",
+        "aliases": [],
+        "cameraHeightFt": 190.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.836677,
+          44.475433
+        ]
+      },
+      "properties": {
+        "name": "Table Mountain",
+        "aliases": [],
+        "cameraHeightFt": 190.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.16713,
+          45.350261
+        ]
+      },
+      "properties": {
+        "name": "Lenhart",
+        "aliases": [],
+        "cameraHeightFt": 183.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.40588,
+          43.77552
+        ]
+      },
+      "properties": {
+        "name": "Dead Mountain",
+        "aliases": [],
+        "cameraHeightFt": 182.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.01284,
+          44.12439
+        ]
+      },
+      "properties": {
+        "name": "Herman Peak",
+        "aliases": [],
+        "cameraHeightFt": 182.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.81005,
+          45.47179
+        ]
+      },
+      "properties": {
+        "name": "Jordan Butte",
+        "aliases": [],
+        "cameraHeightFt": 182.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.63129,
+          44.763325
+        ]
+      },
+      "properties": {
+        "name": "McCully Mountain",
+        "aliases": [],
+        "cameraHeightFt": 180.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.961877,
+          44.505504
+        ]
+      },
+      "properties": {
+        "name": "Peterson Butte",
+        "aliases": [],
+        "cameraHeightFt": 170.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.718728,
+          42.707285
+        ]
+      },
+      "properties": {
+        "name": "Applegate",
+        "aliases": [],
+        "cameraHeightFt": 163.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.92506,
+          42.18684
+        ]
+      },
+      "properties": {
+        "name": "Fish Rim Peak",
+        "aliases": [
+          "Fish Rim"
+        ],
+        "cameraHeightFt": 161.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.64339,
+          42.15653
+        ]
+      },
+      "properties": {
+        "name": "Cave Junction Tower",
+        "aliases": [
+          "Cave Junction"
+        ],
+        "cameraHeightFt": 150.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.10823,
+          44.00139
+        ]
+      },
+      "properties": {
+        "name": "Crestview",
+        "aliases": [],
+        "cameraHeightFt": 150.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.03987,
+          45.39741
+        ]
+      },
+      "properties": {
+        "name": "Brightwood Mtn",
+        "aliases": [
+          "Brightwood"
+        ],
+        "cameraHeightFt": 134.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.5907,
+          44.27961
+        ]
+      },
+      "properties": {
+        "name": "Prairie Peak",
+        "aliases": [
+          "PrairieRidge"
+        ],
+        "cameraHeightFt": 130.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.97897,
+          44.19744
+        ]
+      },
+      "properties": {
+        "name": "Powell Butte",
+        "aliases": [],
+        "cameraHeightFt": 128.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.303628,
+          44.25183
+        ]
+      },
+      "properties": {
+        "name": "Cline Butte",
+        "aliases": [],
+        "cameraHeightFt": 127.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.7308,
+          45.7405
+        ]
+      },
+      "properties": {
+        "name": "Juniper",
+        "aliases": [],
+        "cameraHeightFt": 122.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.13497,
+          45.74376
+        ]
+      },
+      "properties": {
+        "name": "Buxton Mountain",
+        "aliases": [],
+        "cameraHeightFt": 120.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.954128,
+          44.43758
+        ]
+      },
+      "properties": {
+        "name": "Grizzly Mtn",
+        "aliases": [],
+        "cameraHeightFt": 120.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.71451,
+          45.33302
+        ]
+      },
+      "properties": {
+        "name": "Timberline Lodge",
+        "aliases": [
+          "Timberline"
+        ],
+        "cameraHeightFt": 120.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.07834,
+          44.04415
+        ]
+      },
+      "properties": {
+        "name": "UO Prince Lucien Campbell Hall",
+        "aliases": [
+          "UOPLC"
+        ],
+        "cameraHeightFt": 118.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.218521,
+          44.718899
+        ]
+      },
+      "properties": {
+        "name": "Halls Ridge",
+        "aliases": [],
+        "cameraHeightFt": 117.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.8688,
+          43.81028
+        ]
+      },
+      "properties": {
+        "name": "King Mountain Lookout",
+        "aliases": [],
+        "cameraHeightFt": 114.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.8390006,
+          42.307664
+        ]
+      },
+      "properties": {
+        "name": "Rouge Valley Manor",
+        "aliases": [
+          "Rogue Valley Manor"
+        ],
+        "cameraHeightFt": 110.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.30008,
+          42.12326
+        ]
+      },
+      "properties": {
+        "name": "Red Mound Mtn",
+        "aliases": [
+          "Redmound"
+        ],
+        "cameraHeightFt": 106.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.97322,
+          42.07764
+        ]
+      },
+      "properties": {
+        "name": "Hamaker Mountain",
+        "aliases": [
+          "Hamaker"
+        ],
+        "cameraHeightFt": 105.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.114217,
+          48.317588
+        ]
+      },
+      "properties": {
+        "name": "McClure Mountain",
+        "aliases": [
+          "McClure FTS"
+        ],
+        "cameraHeightFt": 105.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.42908,
+          46.733534
+        ]
+      },
+      "properties": {
+        "name": "Selah Butte",
+        "aliases": [],
+        "cameraHeightFt": 103.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.961639,
+          42.905667
+        ]
+      },
+      "properties": {
+        "name": "Callahan Ridge",
+        "aliases": [],
+        "cameraHeightFt": 102.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.98698,
+          44.19762
+        ]
+      },
+      "properties": {
+        "name": "Buck Mtn",
+        "aliases": [
+          "Buck"
+        ],
+        "cameraHeightFt": 100.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.08822,
+          45.29928
+        ]
+      },
+      "properties": {
+        "name": "Tygh Ridge",
+        "aliases": [],
+        "cameraHeightFt": 100.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.97596,
+          47.24036
+        ]
+      },
+      "properties": {
+        "name": "Roslyn Ridge FTS",
+        "aliases": [],
+        "cameraHeightFt": 100.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.97586,
+          42.31406
+        ]
+      },
+      "properties": {
+        "name": "Britt Water Tank",
+        "aliases": [],
+        "cameraHeightFt": 95.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.837336,
+          45.025808
+        ]
+      },
+      "properties": {
+        "name": "Shaniko Tangager",
+        "aliases": [],
+        "cameraHeightFt": 95.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.117535,
+          45.71162
+        ]
+      },
+      "properties": {
+        "name": "Stacker Butte",
+        "aliases": [],
+        "cameraHeightFt": 82.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.89189,
+          43.84281
+        ]
+      },
+      "properties": {
+        "name": "Bear Mountain",
+        "aliases": [],
+        "cameraHeightFt": 80.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.30751,
+          44.08865
+        ]
+      },
+      "properties": {
+        "name": "Bend",
+        "aliases": [
+          "BEND-AW"
+        ],
+        "cameraHeightFt": 80.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.10738,
+          43.52217
+        ]
+      },
+      "properties": {
+        "name": "Harness Mountain",
+        "aliases": [],
+        "cameraHeightFt": 80.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.572476,
+          44.507353
+        ]
+      },
+      "properties": {
+        "name": "Mary's Peak",
+        "aliases": [
+          "Mary's Peak West"
+        ],
+        "cameraHeightFt": 80.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.87449,
+          43.81126
+        ]
+      },
+      "properties": {
+        "name": "Pine Mountain",
+        "aliases": [],
+        "cameraHeightFt": 79.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.10956,
+          43.24096
+        ]
+      },
+      "properties": {
+        "name": "Cinnamon Butte",
+        "aliases": [],
+        "cameraHeightFt": 78.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.04546,
+          42.2416
+        ]
+      },
+      "properties": {
+        "name": "Quail Prairie Mtn",
+        "aliases": [],
+        "cameraHeightFt": 78.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.65521,
+          44.16302
+        ]
+      },
+      "properties": {
+        "name": "Cottonwood Mountain",
+        "aliases": [
+          "Cottonwood"
+        ],
+        "cameraHeightFt": 68.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.23839,
+          43.25044
+        ]
+      },
+      "properties": {
+        "name": "Mahogany Peak",
+        "aliases": [
+          "Mahogany"
+        ],
+        "cameraHeightFt": 67.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.86926,
+          45.45751
+        ]
+      },
+      "properties": {
+        "name": "Cooper Mountain",
+        "aliases": [],
+        "cameraHeightFt": 65.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.7249555,
+          43.38672109
+        ]
+      },
+      "properties": {
+        "name": "Green Mtn Lookout",
+        "aliases": [],
+        "cameraHeightFt": 65.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.226,
+          42.21203
+        ]
+      },
+      "properties": {
+        "name": "Bosley Butte",
+        "aliases": [
+          "KBO Bosley Butte"
+        ],
+        "cameraHeightFt": 64.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.27814,
+          44.60883
+        ]
+      },
+      "properties": {
+        "name": "Big Lookout Mountain",
+        "aliases": [
+          "Big Lookout"
+        ],
+        "cameraHeightFt": 62.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.27602,
+          44.1349
+        ]
+      },
+      "properties": {
+        "name": "Deathball Mountain",
+        "aliases": [
+          "Deathball"
+        ],
+        "cameraHeightFt": 60.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.22347,
+          43.97696
+        ]
+      },
+      "properties": {
+        "name": "Rhinehart Mountain",
+        "aliases": [
+          "Rhinehart"
+        ],
+        "cameraHeightFt": 60.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.97528,
+          46.49111
+        ]
+      },
+      "properties": {
+        "name": "Rattlesnake Ridge",
+        "aliases": [],
+        "cameraHeightFt": 52.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.48589,
+          44.33555
+        ]
+      },
+      "properties": {
+        "name": "Henkle",
+        "aliases": [],
+        "cameraHeightFt": 52.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.034255,
+          47.806984
+        ]
+      },
+      "properties": {
+        "name": "Chelan Butte FTS",
+        "aliases": [],
+        "cameraHeightFt": 50.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.1960892,
+          47.57829924
+        ]
+      },
+      "properties": {
+        "name": "Ski Badger FTS",
+        "aliases": [],
+        "cameraHeightFt": 50.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.89131,
+          43.66426
+        ]
+      },
+      "properties": {
+        "name": "Monument Mountain",
+        "aliases": [
+          "Monument"
+        ],
+        "cameraHeightFt": 43.33,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.87523,
+          42.32136
+        ]
+      },
+      "properties": {
+        "name": "Blue Mtn",
+        "aliases": [
+          "Blue"
+        ],
+        "cameraHeightFt": 43.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.767306,
+          42.2403606
+        ]
+      },
+      "properties": {
+        "name": "Fiddler Mountain",
+        "aliases": [
+          "Fiddler"
+        ],
+        "cameraHeightFt": 42.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.2817,
+          43.77377
+        ]
+      },
+      "properties": {
+        "name": "Hampton Butte",
+        "aliases": [],
+        "cameraHeightFt": 38.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.1329759,
+          42.10378
+        ]
+      },
+      "properties": {
+        "name": "Acty Mountain",
+        "aliases": [],
+        "cameraHeightFt": 31.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.78644,
+          42.45653
+        ]
+      },
+      "properties": {
+        "name": "Eagle Point Water Reservoir #3",
+        "aliases": [],
+        "cameraHeightFt": 30.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.83482,
+          42.49397
+        ]
+      },
+      "properties": {
+        "name": "Long Mountain",
+        "aliases": [
+          "Long"
+        ],
+        "cameraHeightFt": 30.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.75108,
+          42.29765
+        ]
+      },
+      "properties": {
+        "name": "Mt Baldy",
+        "aliases": [
+          "Baldy"
+        ],
+        "cameraHeightFt": 30.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.57668,
+          42.63619
+        ]
+      },
+      "properties": {
+        "name": "Steens Mountain",
+        "aliases": [
+          "Steens",
+          "Steens Mtn"
+        ],
+        "cameraHeightFt": 30.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.0200014,
+          43.60672381
+        ]
+      },
+      "properties": {
+        "name": "Willamette Pass",
+        "aliases": [],
+        "cameraHeightFt": 30.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.4991,
+          43.10013
+        ]
+      },
+      "properties": {
+        "name": "Riddle Mountain",
+        "aliases": [
+          "Riddle"
+        ],
+        "cameraHeightFt": 27.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.27639,
+          42.03463
+        ]
+      },
+      "properties": {
+        "name": "Bryant Mtn",
+        "aliases": [
+          "Bryant"
+        ],
+        "cameraHeightFt": 25.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.951014,
+          42.360421
+        ]
+      },
+      "properties": {
+        "name": "Central Point Water Reservioir",
+        "aliases": [],
+        "cameraHeightFt": 25.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.7413391,
+          42.45962786
+        ]
+      },
+      "properties": {
+        "name": "Warner Peak",
+        "aliases": [],
+        "cameraHeightFt": 24.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.891542,
+          43.34891
+        ]
+      },
+      "properties": {
+        "name": "Wagontire Mountain",
+        "aliases": [
+          "Wagontire"
+        ],
+        "cameraHeightFt": 23.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.26029,
+          42.76725
+        ]
+      },
+      "properties": {
+        "name": "Butler Butte",
+        "aliases": [],
+        "cameraHeightFt": 22.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.95261,
+          43.04198
+        ]
+      },
+      "properties": {
+        "name": "Jackass Mountain",
+        "aliases": [],
+        "cameraHeightFt": 17.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.33212,
+          42.38591
+        ]
+      },
+      "properties": {
+        "name": "Beaty's Butte",
+        "aliases": [],
+        "cameraHeightFt": 13.0,
+        "alertWestLive": true
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.80443,
+          42.27574
+        ]
+      },
+      "properties": {
+        "name": "Phoenix Water Tank",
+        "aliases": [],
+        "cameraHeightFt": null,
+        "alertWestLive": true
+      }
+    }
+  ]
+}
