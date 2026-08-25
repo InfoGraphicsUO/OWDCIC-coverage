@@ -8,6 +8,7 @@ import csv
 import json
 import math
 import re
+import tempfile
 import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -215,6 +216,17 @@ def ensure_geodatabase(arcpy, output_dir: Path) -> Path:
     return geodatabase
 
 
+def ensure_local_scratch_geodatabase(arcpy) -> str:
+    """keeps ArcGIS intermediate rasters off network workspaces"""
+
+    scratch_dir = Path(tempfile.gettempdir()) / "owdcic_viewsheds"
+    scratch_dir.mkdir(parents=True, exist_ok=True)
+    scratch_geodatabase = scratch_dir / "scratch.gdb"
+    if not arcpy.Exists(str(scratch_geodatabase)):
+        arcpy.management.CreateFileGDB(str(scratch_dir), scratch_geodatabase.name)
+    return str(scratch_geodatabase)
+
+
 def create_camera_feature_class(arcpy, geodatabase: Path, sites: list[Site]) -> str:
     """creates a clean observer feature class from the minimal GeoJSON fields"""
 
@@ -362,6 +374,7 @@ def process_viewsheds(
     camera_features: str,
     mosaic: str,
     geodatabase: Path,
+    scratch_geodatabase: str,
     output_dir: Path,
     radius_km: float,
     overwrite: bool,
@@ -418,13 +431,17 @@ def process_viewsheds(
 
                     # frequency with one observer produces a binary 0/1 viewshed
                     with arcpy.EnvManager(
+                        workspace=str(geodatabase),
+                        scratchWorkspace=scratch_geodatabase,
                         extent=analysis_extent,
                         snapRaster=mosaic,
                         cellSize=mosaic,
                     ):
-                        result = arcpy.sa.Viewshed2(
+                        # explicit output avoids a fragile Map Algebra temp raster
+                        arcpy.ddd.Viewshed2(
                             in_raster=mosaic,
                             in_observer_features=observer,
+                            out_raster=raster,
                             analysis_type="FREQUENCY",
                             vertical_error=0,
                             refractivity_coefficient=0.13,
@@ -442,7 +459,6 @@ def process_viewsheds(
                             analysis_method="ALL_SIGHTLINES",
                             analysis_target_device=target_device,
                         )
-                        result.save(raster)
                     raster_created = True
 
                 if polygons:
@@ -530,6 +546,8 @@ def run_workflow(
     arcpy.env.overwriteOutput = True
     message(arcpy, f"Using {len(dem_files)} GeoTIFF DEMs from {dem_dir}")
     geodatabase = ensure_geodatabase(arcpy, output_dir)
+    scratch_geodatabase = ensure_local_scratch_geodatabase(arcpy)
+    message(arcpy, f"Local scratch geodatabase: {scratch_geodatabase}")
     camera_features = create_camera_feature_class(arcpy, geodatabase, sites)
     mosaic = prepare_mosaic_dataset(
         arcpy,
@@ -550,6 +568,7 @@ def run_workflow(
             camera_features,
             mosaic,
             geodatabase,
+            scratch_geodatabase,
             output_dir,
             radius_km,
             overwrite_viewsheds,
