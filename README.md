@@ -1,1 +1,4 @@
-An interactive web map to view the locations and viewshed coverages of wildfire spotting cameras in Oregon. 
+An interactive web map showing wildfire cameras, viewshed coverage, and fire activity across Oregon and Washington.
+
+The repository includes a resumable macOS and Windows GDAL workflow for
+generating the viewsheds. See [the GDAL runner guide](docs/gdal-camera-viewsheds.md).

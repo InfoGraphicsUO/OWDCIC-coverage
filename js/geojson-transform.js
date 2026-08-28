@@ -1,4 +1,6 @@
-//converts Oregon AlertWest camera records into GeoJSON points
+const REGION_STATE_CODES = new Set(['OR', 'WA']);
+
+// converts Oregon and Washington AlertWest camera records into GeoJSON points
 export function camerasToGeoJSON(cameras) {
   if (!Array.isArray(cameras)) {
     throw new TypeError('Camera API returned an unexpected payload');
@@ -8,7 +10,7 @@ export function camerasToGeoJSON(cameras) {
 
   for (const camera of cameras) {
     // source nests location under site and may vary state-code casing
-    if (String(camera.site?.state || '').toUpperCase() !== 'OR') {
+    if (!REGION_STATE_CODES.has(String(camera.site?.state || '').toUpperCase())) {
       continue;
     }
 
@@ -38,6 +40,80 @@ export function camerasToGeoJSON(cameras) {
   }
 
   return { type: 'FeatureCollection', features };
+}
+
+// links live camera points to viewshed ids from manifest
+export function attachViewshedIds(cameras, manifest) {
+  const cameraFeatures = getFeatures(cameras);
+  const idLookup = new Map();
+  const nameLookup = new Map();
+
+  for (const entry of getManifestEntries(manifest)) {
+    const viewshedId = stringValue(entry.viewshed_id);
+    if (!viewshedId) continue;
+
+    for (const cameraId of arrayValues(entry.alertwest_site_ids)) {
+      idLookup.set(String(cameraId), viewshedId);
+    }
+
+    for (const name of [entry.site_name, ...arrayValues(entry.aliases)]) {
+      const normalized = normalizeSiteName(name);
+      if (normalized) nameLookup.set(normalized, viewshedId);
+    }
+  }
+
+  return {
+    type: 'FeatureCollection',
+    features: cameraFeatures.map((feature) => {
+      const properties = feature.properties || {};
+      const cameraId = stringValue(properties.id);
+      const cameraName = normalizeSiteName(properties.name);
+      const viewshedId =
+        (cameraId && idLookup.get(cameraId)) ||
+        (cameraName && nameLookup.get(cameraName)) ||
+        null;
+
+      return {
+        ...feature,
+        properties: { ...properties, viewshed_id: viewshedId },
+      };
+    }),
+  };
+}
+
+function getManifestEntries(manifest) {
+  return Array.isArray(manifest?.viewsheds) ? manifest.viewsheds : [];
+}
+
+function arrayValues(value) {
+  if (Array.isArray(value)) return value;
+  if (value == null || value === '') return [];
+
+  // ArcGIS may serialize a list field as JSON or delimited text
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      return value.split(/[;,|]/).map((item) => item.trim()).filter(Boolean);
+    }
+  }
+
+  return [value];
+}
+
+function normalizeSiteName(value) {
+  return stringValue(value)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/^axis/, '')
+    .replace(/[^a-z0-9]+/g, '');
+}
+
+function stringValue(value) {
+  if (value == null) return '';
+  return String(value).trim();
 }
 
 /**
@@ -112,16 +188,12 @@ export function addNumericProperty(geojson, targetName, sourceNames) {
   return { type: 'FeatureCollection', features };
 }
 
-/**
- * treats missing or malformed feature arrays as empty provider data
- */
+// treats missing or malformed feature arrays as empty provider data
 function getFeatures(geojson) {
   return Array.isArray(geojson?.features) ? geojson.features : [];
 }
 
-/**
- * accepts numeric strings while rejecting empty and non-finite values
- */
+// accepts numeric strings while rejecting empty and non-finite values
 function toFiniteNumber(value) {
   if (value == null || value === '') {
     return null;

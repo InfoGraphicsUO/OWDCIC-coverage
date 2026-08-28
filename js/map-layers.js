@@ -4,11 +4,12 @@ import {
   DATA_URLS,
   LAYER_IDS,
   MARKER_ICON_URLS,
-  OREGON_DATA_BOUNDS,
+  REGION_DATA_BOUNDS,
   emptyFeatureCollection,
 } from './config.js';
 import {
   addNumericProperty,
+  attachViewshedIds,
   camerasToGeoJSON,
   filterGeoJSONByBounds,
 } from './geojson-transform.js';
@@ -22,9 +23,9 @@ import {
   watchMarkerIconDensity,
 } from './marker-icons.js';
 import {
-  addOregonFocusLayers,
-  loadOregonFocusData,
-} from './oregon-highlight.js';
+  addRegionFocusLayers,
+  loadRegionFocusData,
+} from './states-highlight.js';
 import {
   hideCameraPreview,
   showCameraPopup,
@@ -36,6 +37,22 @@ import {
 const FIRE_ICON_ID = 'fire-marker';
 const CAMERA_ICON_ID = 'camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
+const VIEWSHED_COLOR = '#1769aa';
+const VIEWSHED_HIGHLIGHT_COLOR = '#f8e109';
+const NO_VIEWSHED_SELECTED = '__none__';
+const VIEWSHED_SOURCE = Object.freeze({
+  source: LAYER_IDS.viewshedsSource,
+  'source-layer': DATA_URLS.cameraViewshedsSourceLayer,
+});
+const VIEWSHED_HIGHLIGHT_LAYER_IDS = Object.freeze([
+  LAYER_IDS.viewshedsHighlightFill,
+  LAYER_IDS.viewshedsHighlightLine,
+]);
+const VIEWSHED_LAYER_IDS = Object.freeze([
+  LAYER_IDS.viewshedsFill,
+  LAYER_IDS.viewshedsLine,
+  ...VIEWSHED_HIGHLIGHT_LAYER_IDS,
+]);
 
 // marker sizes in CSS pixels
 const CAMERA_MARKER_SIZE = 20;
@@ -75,8 +92,8 @@ async function loadMapLayers(map) {
   // overlap network requests with source and marker setup
   const dataPromise = loadLayerData();
 
-  // temporary Oregon highlight off switch
-  addOregonFocusLayers(map);
+  addRegionFocusLayers(map);
+  addViewshedLayers(map);
   addPerimeterLayers(map);
   await Promise.all([addFireLayer(map), addCameraLayer(map)]);
 
@@ -89,12 +106,27 @@ async function loadMapLayers(map) {
   // Mapbox visibility can now follow the legend that was rendered at startup
   legendControl.connect(map);
 
-  const { cameras, fires, oregonFocus, perimeters, prescribed } = await dataPromise;
+  const {
+    cameras,
+    fires,
+    regionFocus,
+    perimeters,
+    prescribed,
+    viewshedManifest,
+  } = await dataPromise;
 
   // matching source update for highlight switch above
-  setSourceData(map, LAYER_IDS.oregonFocusSource, oregonFocus);
+  setSourceData(map, LAYER_IDS.regionFocusSource, regionFocus);
 
-  setSourceData(map, LAYER_IDS.cameras, cameras);
+  setSourceData(
+    map,
+    LAYER_IDS.cameras,
+    attachViewshedIds(cameras, viewshedManifest)
+  );
+  legendControl.updateInfo(
+    'Camera viewsheds',
+    `Contains ${viewshedEntries(viewshedManifest).length} camera viewsheds from ALERTWest`
+  );
 
   // copy provider acreage into the local field used by marker sizing
   setSourceData(
@@ -109,12 +141,19 @@ async function loadMapLayers(map) {
 
 // starts every provider together and keeps results aligned by layer
 async function loadLayerData() {
-  const [cameras, fires, oregonFocus, perimeters, prescribed] = await Promise.all([
+  const [
+    cameras,
+    fires,
+    regionFocus,
+    perimeters,
+    prescribed,
+    viewshedManifest,
+  ] = await Promise.all([
     safelyLoad('ALERTWest cameras', loadAlertWestCameras),
 
     safelyLoad('NIFC fires', () =>
       fetchArcGISGeoJSON(DATA_URLS.nifcFires, {
-        where: "POOState='US-OR'",
+        where: "POOState IN ('US-OR','US-WA')",
         outFields: [
           'IncidentName',
           'IncidentSize',
@@ -126,13 +165,13 @@ async function loadLayerData() {
       })
     ),
 
-    safelyLoad('Oregon boundary', loadOregonFocusData),
+    safelyLoad('Oregon and Washington boundary', loadRegionFocusData),
 
     safelyLoad('NIFC perimeters', () =>
       fetchArcGISGeoJSON(
         DATA_URLS.nifcPerimeters,
         {
-          where: "attr_POOState='US-OR'",
+          where: "attr_POOState IN ('US-OR','US-WA')",
           outFields: [
             'poly_IncidentName',
             'attr_IncidentName',
@@ -153,36 +192,52 @@ async function loadLayerData() {
     safelyLoad('Watch Duty prescribed fires', async () => {
       const geojson = await fetchArcGISGeoJSON(DATA_URLS.prescribedFires, {
         outFields: 'name,prescribed_date_start,watchduty_url,acreage',
-        // server-side envelope avoids downloading records far outside Oregon
-        geometry: OREGON_DATA_BOUNDS.flat().join(','),
+        // server-side envelope avoids downloading records outside the region
+        geometry: REGION_DATA_BOUNDS.flat().join(','),
         geometryType: 'esriGeometryEnvelope',
         spatialRel: 'esriSpatialRelIntersects',
       });
 
       // enforce the same inclusive bounds on whatever the service returns
-      return filterGeoJSONByBounds(geojson, OREGON_DATA_BOUNDS);
+      return filterGeoJSONByBounds(geojson, REGION_DATA_BOUNDS);
     }),
+
+    safelyLoad(
+      'viewshed manifest',
+      () => fetchJson(DATA_URLS.viewshedManifest, 'Viewshed manifest'),
+      { viewsheds: [] }
+    ),
   ]);
 
-  return { cameras, fires, oregonFocus, perimeters, prescribed };
+  return {
+    cameras,
+    fires,
+    regionFocus,
+    perimeters,
+    prescribed,
+    viewshedManifest,
+  };
 }
 
 // turns one provider failure into an empty layer without blocking the rest
-async function safelyLoad(label, loader) {
+async function safelyLoad(label, loader, fallback = emptyFeatureCollection()) {
   try {
     return await loader();
   } catch (error) {
     console.error(`Failed to load ${label}:`, error);
-    return emptyFeatureCollection();
+    return fallback;
   }
+}
+
+async function fetchJson(url, label) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`${label} HTTP ${response.status}`);
+  return response.json();
 }
 
 // adapts ALERTWest records to the GeoJSON contract used by map sources
 async function loadAlertWestCameras() {
-  const response = await fetch(CAMERA_API);
-  if (!response.ok) throw new Error(`Camera API HTTP ${response.status}`);
-
-  return camerasToGeoJSON(await response.json());
+  return camerasToGeoJSON(await fetchJson(CAMERA_API, 'Camera API'));
 }
 
 async function addCameraLayer(map) {
@@ -198,20 +253,81 @@ async function addCameraLayer(map) {
     id: LAYER_IDS.cameras,
     type: 'symbol',
     source: LAYER_IDS.cameras,
-    layout: {
-      'icon-image': CAMERA_ICON_ID,
-      // 1 draws the image at its authored size so Mapbox never rescales it
-      'icon-size': 1,
-      // keep every camera visible when Mapbox symbols overlap
-      'icon-allow-overlap': true,
-      'icon-ignore-placement': true,
-    },
+    layout: markerLayout(CAMERA_ICON_ID),
+  });
+
+  map.on('click', LAYER_IDS.cameras, (event) => {
+    selectCameraViewshed(map, event.features?.[0]?.properties?.viewshed_id);
   });
 
   bindLayerInteractions(map, LAYER_IDS.cameras, showCameraPopup, {
     show: showCameraPreview,
     hide: hideCameraPreview,
   });
+}
+
+function addViewshedLayers(map) {
+  map.addSource(LAYER_IDS.viewshedsSource, {
+    type: 'vector',
+    url: DATA_URLS.cameraViewsheds,
+  });
+
+  map.addLayer({
+    id: LAYER_IDS.viewshedsFill,
+    type: 'fill',
+    ...VIEWSHED_SOURCE,
+    paint: {
+      'fill-color': VIEWSHED_COLOR,
+      'fill-opacity': 0.16,
+    },
+  });
+
+  map.addLayer({
+    id: LAYER_IDS.viewshedsLine,
+    type: 'line',
+    ...VIEWSHED_SOURCE,
+    paint: {
+      'line-color': VIEWSHED_COLOR,
+      'line-opacity': 0.9,
+      'line-width': 1.25,
+    },
+  });
+
+  const selectedFilter = viewshedFilter(NO_VIEWSHED_SELECTED);
+
+  map.addLayer({
+    id: LAYER_IDS.viewshedsHighlightFill,
+    type: 'fill',
+    ...VIEWSHED_SOURCE,
+    filter: selectedFilter,
+    paint: {
+      'fill-color': VIEWSHED_HIGHLIGHT_COLOR,
+      'fill-opacity': 0.36,
+    },
+  });
+
+  map.addLayer({
+    id: LAYER_IDS.viewshedsHighlightLine,
+    type: 'line',
+    ...VIEWSHED_SOURCE,
+    filter: selectedFilter,
+    paint: {
+      'line-color': VIEWSHED_HIGHLIGHT_COLOR,
+      'line-width': 3,
+    },
+  });
+}
+
+function selectCameraViewshed(map, viewshedId) {
+  const filter = viewshedFilter(viewshedId || NO_VIEWSHED_SELECTED);
+
+  for (const layerId of VIEWSHED_HIGHLIGHT_LAYER_IDS) {
+    if (map.getLayer(layerId)) map.setFilter(layerId, filter);
+  }
+}
+
+function viewshedFilter(viewshedId) {
+  return ['==', ['get', 'viewshed_id'], viewshedId];
 }
 
 async function addFireLayer(map) {
@@ -227,14 +343,7 @@ async function addFireLayer(map) {
     id: LAYER_IDS.fires,
     type: 'symbol',
     source: LAYER_IDS.fires,
-    layout: {
-      'icon-image': fireIconExpression(),
-      // 1 draws each image at its authored size so Mapbox never rescales it
-      'icon-size': 1,
-      // keep every incident visible when Mapbox symbols overlap
-      'icon-allow-overlap': true,
-      'icon-ignore-placement': true,
-    },
+    layout: markerLayout(fireIconExpression()),
   });
 
   bindLayerInteractions(map, LAYER_IDS.fires, showFirePopup);
@@ -299,17 +408,20 @@ async function addPrescribedLayer(map) {
     id: LAYER_IDS.prescribed,
     type: 'symbol',
     source: LAYER_IDS.prescribedSource,
-    layout: {
-      'icon-image': PRESCRIBED_ICON_ID,
-      // 1 draws the image at its authored size so Mapbox never rescales it
-      'icon-size': 1,
-      // keep every burn visible when Mapbox symbols overlap
-      'icon-allow-overlap': true,
-      'icon-ignore-placement': true,
-    },
+    layout: markerLayout(PRESCRIBED_ICON_ID),
   });
 
   bindLayerInteractions(map, LAYER_IDS.prescribed, showPrescribedPopup);
+}
+
+function markerLayout(iconImage) {
+  return {
+    'icon-image': iconImage,
+    // icon atlas already matches physical pixels so Mapbox must not rescale it
+    'icon-size': 1,
+    'icon-allow-overlap': true,
+    'icon-ignore-placement': true,
+  };
 }
 
 // sources exist before requests finish so layer registration can proceed
@@ -362,6 +474,12 @@ function legendItems() {
       layerIds: [LAYER_IDS.cameras],
     },
     {
+      label: 'Camera viewsheds',
+      swatchColor: VIEWSHED_COLOR,
+      infoText: 'Loading camera viewshed count…',
+      layerIds: VIEWSHED_LAYER_IDS,
+    },
+    {
       label: 'Fires (NIFC)',
       iconUrl: MARKER_ICON_URLS.fire,
       visible: false,
@@ -378,4 +496,8 @@ function legendItems() {
       layerIds: [LAYER_IDS.prescribed],
     },
   ];
+}
+
+function viewshedEntries(manifest) {
+  return Array.isArray(manifest?.viewsheds) ? manifest.viewsheds : [];
 }

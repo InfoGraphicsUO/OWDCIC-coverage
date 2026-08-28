@@ -1,10 +1,15 @@
 // live AlertWest camera metadata and image URLs
 export const CAMERA_API = 'https://api.cdn.prod.alertwest.com/api/firecams/v0/cameras';
 
-// ArcGIS layer roots used by shared GeoJSON requests
+// hosted tilesets and provider endpoints used by the map layers
 export const DATA_URLS = Object.freeze({
-  censusOregonBoundary:
+  cameraViewsheds: 'mapbox://infographics.s4u0rv', // latest camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.s4u0rv/
+  cameraViewshedsSourceLayer: 'camera_viewsheds',
+  viewshedManifest: 'data/viewshed-manifest.json',
+  censusStateBoundaries:
     'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/10',
+  worldCountries:
+    'https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0',
   nifcFires:
     'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Incident_Locations_Current/FeatureServer/0',
   nifcPerimeters:
@@ -21,11 +26,16 @@ export const MARKER_ICON_URLS = Object.freeze({
 });
 
 export const LAYER_IDS = Object.freeze({
-  oregonFocusSource: 'oregon-focus',
-  outsideOregonClip: 'outside-oregon-clip',
-  outsideOregonFill: 'outside-oregon-fill',
-  oregonOutline: 'oregon-outline',
+  regionFocusSource: 'region-focus',
+  outsideRegionClip: 'outside-region-clip',
+  outsideRegionFill: 'outside-region-fill',
+  regionOutline: 'region-outline',
   cameras: 'alertwest-cameras',
+  viewshedsSource: 'camera-viewsheds',
+  viewshedsFill: 'camera-viewsheds-fill',
+  viewshedsLine: 'camera-viewsheds-line',
+  viewshedsHighlightFill: 'camera-viewsheds-highlight-fill',
+  viewshedsHighlightLine: 'camera-viewsheds-highlight-line',
   fires: 'nifc-fires',
   perimetersSource: 'nifc-perimeters',
   perimetersFill: 'nifc-perimeters-fill',
@@ -34,14 +44,12 @@ export const LAYER_IDS = Object.freeze({
   prescribed: 'watchduty-prescribed',
 });
 
-export const OREGON_DATA_BOUNDS = Object.freeze([
-  Object.freeze([-124.7, 41.9]),
-  Object.freeze([-116.4, 46.4]),
+export const REGION_DATA_BOUNDS = Object.freeze([
+  Object.freeze([-124.85, 41.99]),
+  Object.freeze([-116.4, 49.01]),
 ]);
 
-/**
- * returns a fresh collection for empty map sources and provider fallbacks
- */
+// returns new collection for empty map sources and provider fallbacks
 export function emptyFeatureCollection() {
   return { type: 'FeatureCollection', features: [] };
 }

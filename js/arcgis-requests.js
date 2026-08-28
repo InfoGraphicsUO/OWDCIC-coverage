@@ -29,11 +29,9 @@ export async function fetchArcGISGeoJSON(
       outFields: '*',
       returnGeometry: 'true',
       outSR: '4326',
-      // stable object ID order keeps offset pages aligned
-      orderByFields: 'OBJECTID',
+      orderByFields: 'OBJECTID', // stable object ID order keeps offset pages aligned
       resultOffset: String(offset),
       resultRecordCount: String(pageSize),
-      // caller values intentionally win over the shared query defaults
       ...extraParams,
     };
 
@@ -62,11 +60,9 @@ export async function fetchArcGISGeoJSON(
   return { type: 'FeatureCollection', features };
 }
 
-/**
- * fetches one ArcGIS page with retry handling for transient failures
- */
+// fetch one arc page with retry handling for any failure
 async function fetchArcGISPage(featureLayerUrl, params, { retries }) {
-  const queryUrl = `${featureLayerUrl.replace(/\/$/, '')}/query`;
+  const queryUrl = `${featureLayerUrl.replace(/\/$/, '')}/query`; // remove trailing slash from url
   let lastError;
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -80,7 +76,7 @@ async function fetchArcGISPage(featureLayerUrl, params, { retries }) {
       const payload = await readJson(response);
       const serviceError = payload?.error;
 
-      // ArcGIS may return its error object with a successful HTTP status
+      // ArcGIS sometimes returns error object with successful HTTP status
       if (response.ok && !serviceError) {
         return payload;
       }
@@ -113,9 +109,7 @@ async function fetchArcGISPage(featureLayerUrl, params, { retries }) {
   throw lastError;
 }
 
-/**
- * reads JSON while preserving enough status context for retry decisions
- */
+// read json while preserving status context for retry decisions
 async function readJson(response) {
   const body = await response.text();
 
@@ -129,8 +123,8 @@ async function readJson(response) {
       { cause }
     );
 
-    // ArcGIS edge nodes occasionally return an HTML/plain-text 400 for a
-    // valid query; unlike structured ArcGIS JSON errors, that is transient.
+    // ArcGIS edge nodes sometimes return an HTML/plain-text 400 for a
+    // valid query; unlike structured ArcGIS JSON errors, that is not retryable
     error.retryable =
       response.status === 400 ||
       response.status === 408 ||
@@ -141,9 +135,7 @@ async function readJson(response) {
   }
 }
 
-/**
- * converts Retry-After seconds or an HTTP date into milliseconds from now
- */
+// will convert Retry-After seconds or an HTTP date into milliseconds from now
 function parseRetryAfter(value) {
   if (!value) {
     return null;

@@ -1,0 +1,1018 @@
+{
+  "schema_version": 1,
+  "generated_utc": "2026-08-28T01:06:52+00:00",
+  "config_hash": "8ffd937c676f0251a20b5a3e28dbd87b31fb7d7464d95c5bdff181d4ff3da13e",
+  "combined_exact_polygon": "camera_viewsheds_exact_epsg5070.gpkg",
+  "viewsheds": [
+    {
+      "source_id": 1,
+      "viewshed_id": "portland-tower",
+      "site_name": "Portland Tower",
+      "aliases": [
+        "PDX Tower",
+        "Axis-PortlandWestHills1",
+        "Axis-PortlandWestHills2"
+      ],
+      "longitude": -122.74476,
+      "latitude": 45.52028,
+      "height_ft": 377.0,
+      "status": "complete",
+      "web_geojson": "web/portland-tower.geojson",
+      "exact_polygon": "polygons_exact/portland_tower.gpkg",
+      "alertwest_site_ids": [
+        "11134",
+        "11135"
+      ]
+    },
+    {
+      "source_id": 2,
+      "viewshed_id": "glenada-ridge",
+      "site_name": "Glenada Ridge",
+      "alertwest_site_ids": ["15781"],
+      "aliases": [],
+      "longitude": -124.07524,
+      "latitude": 43.9555,
+      "height_ft": 215.0,
+      "status": "complete",
+      "web_geojson": "web/glenada-ridge.geojson",
+      "exact_polygon": "polygons_exact/glenada_ridge.gpkg"
+    },
+    {
+      "source_id": 3,
+      "viewshed_id": "smith-ridge",
+      "site_name": "Smith Ridge",
+      "alertwest_site_ids": ["11140"],
+      "aliases": [],
+      "longitude": -122.04087,
+      "latitude": 44.29507,
+      "height_ft": 190.0,
+      "status": "complete",
+      "web_geojson": "web/smith-ridge.geojson",
+      "exact_polygon": "polygons_exact/smith_ridge.gpkg"
+    },
+    {
+      "source_id": 4,
+      "viewshed_id": "table-mountain",
+      "site_name": "Table Mountain",
+      "aliases": [],
+      "longitude": -123.836677,
+      "latitude": 44.475433,
+      "height_ft": 190.0,
+      "status": "complete",
+      "web_geojson": "web/table-mountain.geojson",
+      "exact_polygon": "polygons_exact/table_mountain.gpkg"
+    },
+    {
+      "source_id": 5,
+      "viewshed_id": "lenhart",
+      "site_name": "Lenhart",
+      "aliases": [],
+      "longitude": -122.16713,
+      "latitude": 45.350261,
+      "height_ft": 183.0,
+      "status": "complete",
+      "web_geojson": "web/lenhart.geojson",
+      "exact_polygon": "polygons_exact/lenhart.gpkg"
+    },
+    {
+      "source_id": 6,
+      "viewshed_id": "dead-mountain",
+      "site_name": "Dead Mountain",
+      "alertwest_site_ids": ["11119"],
+      "aliases": [],
+      "longitude": -122.40588,
+      "latitude": 43.77552,
+      "height_ft": 182.0,
+      "status": "complete",
+      "web_geojson": "web/dead-mountain.geojson",
+      "exact_polygon": "polygons_exact/dead_mountain.gpkg"
+    },
+    {
+      "source_id": 7,
+      "viewshed_id": "herman-peak",
+      "site_name": "Herman Peak",
+      "aliases": [],
+      "longitude": -124.01284,
+      "latitude": 44.12439,
+      "height_ft": 182.0,
+      "status": "complete",
+      "web_geojson": "web/herman-peak.geojson",
+      "exact_polygon": "polygons_exact/herman_peak.gpkg"
+    },
+    {
+      "source_id": 8,
+      "viewshed_id": "jordan-butte",
+      "site_name": "Jordan Butte",
+      "aliases": [],
+      "longitude": -119.81005,
+      "latitude": 45.47179,
+      "height_ft": 182.0,
+      "status": "complete",
+      "web_geojson": "web/jordan-butte.geojson",
+      "exact_polygon": "polygons_exact/jordan_butte.gpkg"
+    },
+    {
+      "source_id": 9,
+      "viewshed_id": "mccully-mountain",
+      "site_name": "McCully Mountain",
+      "aliases": [],
+      "longitude": -122.63129,
+      "latitude": 44.763325,
+      "height_ft": 180.0,
+      "status": "complete",
+      "web_geojson": "web/mccully-mountain.geojson",
+      "exact_polygon": "polygons_exact/mccully_mountain.gpkg"
+    },
+    {
+      "source_id": 10,
+      "viewshed_id": "peterson-butte",
+      "site_name": "Peterson Butte",
+      "aliases": [],
+      "longitude": -122.961877,
+      "latitude": 44.505504,
+      "height_ft": 170.0,
+      "status": "complete",
+      "web_geojson": "web/peterson-butte.geojson",
+      "exact_polygon": "polygons_exact/peterson_butte.gpkg"
+    },
+    {
+      "source_id": 11,
+      "viewshed_id": "applegate",
+      "site_name": "Applegate",
+      "alertwest_site_ids": ["15512"],
+      "aliases": [],
+      "longitude": -121.718728,
+      "latitude": 42.707285,
+      "height_ft": 163.0,
+      "status": "complete",
+      "web_geojson": "web/applegate.geojson",
+      "exact_polygon": "polygons_exact/applegate.gpkg"
+    },
+    {
+      "source_id": 12,
+      "viewshed_id": "fish-rim-peak",
+      "site_name": "Fish Rim Peak",
+      "alertwest_site_ids": ["11121"],
+      "aliases": [
+        "Fish Rim"
+      ],
+      "longitude": -119.92506,
+      "latitude": 42.18684,
+      "height_ft": 161.0,
+      "status": "complete",
+      "web_geojson": "web/fish-rim-peak.geojson",
+      "exact_polygon": "polygons_exact/fish_rim_peak.gpkg"
+    },
+    {
+      "source_id": 13,
+      "viewshed_id": "cave-junction-tower",
+      "site_name": "Cave Junction Tower",
+      "aliases": [
+        "Cave Junction"
+      ],
+      "longitude": -123.64339,
+      "latitude": 42.15653,
+      "height_ft": 150.0,
+      "status": "complete",
+      "web_geojson": "web/cave-junction-tower.geojson",
+      "exact_polygon": "polygons_exact/cave_junction_tower.gpkg"
+    },
+    {
+      "source_id": 14,
+      "viewshed_id": "crestview",
+      "site_name": "Crestview",
+      "aliases": [],
+      "longitude": -123.10823,
+      "latitude": 44.00139,
+      "height_ft": 150.0,
+      "status": "complete",
+      "web_geojson": "web/crestview.geojson",
+      "exact_polygon": "polygons_exact/crestview.gpkg"
+    },
+    {
+      "source_id": 15,
+      "viewshed_id": "brightwood-mtn",
+      "site_name": "Brightwood Mtn",
+      "aliases": [
+        "Brightwood"
+      ],
+      "longitude": -122.03987,
+      "latitude": 45.39741,
+      "height_ft": 134.0,
+      "status": "complete",
+      "web_geojson": "web/brightwood-mtn.geojson",
+      "exact_polygon": "polygons_exact/brightwood_mtn.gpkg"
+    },
+    {
+      "source_id": 16,
+      "viewshed_id": "prairie-peak",
+      "site_name": "Prairie Peak",
+      "aliases": [
+        "PrairieRidge"
+      ],
+      "longitude": -123.5907,
+      "latitude": 44.27961,
+      "height_ft": 130.0,
+      "status": "complete",
+      "web_geojson": "web/prairie-peak.geojson",
+      "exact_polygon": "polygons_exact/prairie_peak.gpkg"
+    },
+    {
+      "source_id": 17,
+      "viewshed_id": "powell-butte",
+      "site_name": "Powell Butte",
+      "aliases": [],
+      "longitude": -120.97897,
+      "latitude": 44.19744,
+      "height_ft": 128.0,
+      "status": "complete",
+      "web_geojson": "web/powell-butte.geojson",
+      "exact_polygon": "polygons_exact/powell_butte.gpkg"
+    },
+    {
+      "source_id": 18,
+      "viewshed_id": "cline-butte",
+      "site_name": "Cline Butte",
+      "aliases": [],
+      "longitude": -121.303628,
+      "latitude": 44.25183,
+      "height_ft": 127.0,
+      "status": "complete",
+      "web_geojson": "web/cline-butte.geojson",
+      "exact_polygon": "polygons_exact/cline_butte.gpkg"
+    },
+    {
+      "source_id": 19,
+      "viewshed_id": "juniper",
+      "site_name": "Juniper",
+      "aliases": [],
+      "longitude": -120.7308,
+      "latitude": 45.7405,
+      "height_ft": 122.0,
+      "status": "complete",
+      "web_geojson": "web/juniper.geojson",
+      "exact_polygon": "polygons_exact/juniper.gpkg"
+    },
+    {
+      "source_id": 20,
+      "viewshed_id": "buxton-mountain",
+      "site_name": "Buxton Mountain",
+      "alertwest_site_ids": ["11147"],
+      "aliases": [],
+      "longitude": -123.13497,
+      "latitude": 45.74376,
+      "height_ft": 120.0,
+      "status": "complete",
+      "web_geojson": "web/buxton-mountain.geojson",
+      "exact_polygon": "polygons_exact/buxton_mountain.gpkg"
+    },
+    {
+      "source_id": 21,
+      "viewshed_id": "grizzly-mtn",
+      "site_name": "Grizzly Mtn",
+      "aliases": [],
+      "longitude": -120.954128,
+      "latitude": 44.43758,
+      "height_ft": 120.0,
+      "status": "complete",
+      "web_geojson": "web/grizzly-mtn.geojson",
+      "exact_polygon": "polygons_exact/grizzly_mtn.gpkg"
+    },
+    {
+      "source_id": 22,
+      "viewshed_id": "timberline-lodge",
+      "site_name": "Timberline Lodge",
+      "aliases": [
+        "Timberline"
+      ],
+      "longitude": -121.71451,
+      "latitude": 45.33302,
+      "height_ft": 120.0,
+      "status": "complete",
+      "web_geojson": "web/timberline-lodge.geojson",
+      "exact_polygon": "polygons_exact/timberline_lodge.gpkg"
+    },
+    {
+      "source_id": 23,
+      "viewshed_id": "uo-prince-lucien-campbell-hall",
+      "site_name": "UO Prince Lucien Campbell Hall",
+      "alertwest_site_ids": ["11132", "11133"],
+      "aliases": [
+        "UOPLC"
+      ],
+      "longitude": -123.07834,
+      "latitude": 44.04415,
+      "height_ft": 118.0,
+      "status": "complete",
+      "web_geojson": "web/uo-prince-lucien-campbell-hall.geojson",
+      "exact_polygon": "polygons_exact/uo_prince_lucien_campbell_hall.gpkg"
+    },
+    {
+      "source_id": 24,
+      "viewshed_id": "halls-ridge",
+      "site_name": "Halls Ridge",
+      "aliases": [],
+      "longitude": -122.218521,
+      "latitude": 44.718899,
+      "height_ft": 117.0,
+      "status": "complete",
+      "web_geojson": "web/halls-ridge.geojson",
+      "exact_polygon": "polygons_exact/halls_ridge.gpkg"
+    },
+    {
+      "source_id": 25,
+      "viewshed_id": "king-mountain-lookout",
+      "site_name": "King Mountain Lookout",
+      "alertwest_site_ids": ["15805"],
+      "aliases": [],
+      "longitude": -118.8688,
+      "latitude": 43.81028,
+      "height_ft": 114.0,
+      "status": "complete",
+      "web_geojson": "web/king-mountain-lookout.geojson",
+      "exact_polygon": "polygons_exact/king_mountain_lookout.gpkg"
+    },
+    {
+      "source_id": 26,
+      "viewshed_id": "rouge-valley-manor",
+      "site_name": "Rouge Valley Manor",
+      "aliases": [
+        "Rogue Valley Manor"
+      ],
+      "longitude": -122.8390006,
+      "latitude": 42.307664,
+      "height_ft": 110.0,
+      "status": "complete",
+      "web_geojson": "web/rouge-valley-manor.geojson",
+      "exact_polygon": "polygons_exact/rouge_valley_manor.gpkg"
+    },
+    {
+      "source_id": 27,
+      "viewshed_id": "red-mound-mtn",
+      "site_name": "Red Mound Mtn",
+      "aliases": [
+        "Redmound"
+      ],
+      "longitude": -124.30008,
+      "latitude": 42.12326,
+      "height_ft": 106.0,
+      "status": "complete",
+      "web_geojson": "web/red-mound-mtn.geojson",
+      "exact_polygon": "polygons_exact/red_mound_mtn.gpkg"
+    },
+    {
+      "source_id": 28,
+      "viewshed_id": "hamaker-mountain",
+      "site_name": "Hamaker Mountain",
+      "aliases": [
+        "Hamaker"
+      ],
+      "longitude": -121.97322,
+      "latitude": 42.07764,
+      "height_ft": 105.0,
+      "status": "complete",
+      "web_geojson": "web/hamaker-mountain.geojson",
+      "exact_polygon": "polygons_exact/hamaker_mountain.gpkg"
+    },
+    {
+      "source_id": 29,
+      "viewshed_id": "mcclure-mountain",
+      "site_name": "McClure Mountain",
+      "alertwest_site_ids": ["23604"],
+      "aliases": [
+        "McClure FTS"
+      ],
+      "longitude": -120.114217,
+      "latitude": 48.317588,
+      "height_ft": 105.0,
+      "status": "complete",
+      "web_geojson": "web/mcclure-mountain.geojson",
+      "exact_polygon": "polygons_exact/mcclure_mountain.gpkg"
+    },
+    {
+      "source_id": 30,
+      "viewshed_id": "selah-butte",
+      "site_name": "Selah Butte",
+      "aliases": [],
+      "longitude": -120.42908,
+      "latitude": 46.733534,
+      "height_ft": 103.0,
+      "status": "complete",
+      "web_geojson": "web/selah-butte.geojson",
+      "exact_polygon": "polygons_exact/selah_butte.gpkg"
+    },
+    {
+      "source_id": 31,
+      "viewshed_id": "callahan-ridge",
+      "site_name": "Callahan Ridge",
+      "aliases": [],
+      "longitude": -122.961639,
+      "latitude": 42.905667,
+      "height_ft": 102.0,
+      "status": "complete",
+      "web_geojson": "web/callahan-ridge.geojson",
+      "exact_polygon": "polygons_exact/callahan_ridge.gpkg"
+    },
+    {
+      "source_id": 32,
+      "viewshed_id": "buck-mtn",
+      "site_name": "Buck Mtn",
+      "alertwest_site_ids": ["11114"],
+      "aliases": [
+        "Buck"
+      ],
+      "longitude": -122.98698,
+      "latitude": 44.19762,
+      "height_ft": 100.0,
+      "status": "complete",
+      "web_geojson": "web/buck-mtn.geojson",
+      "exact_polygon": "polygons_exact/buck_mtn.gpkg"
+    },
+    {
+      "source_id": 33,
+      "viewshed_id": "tygh-ridge",
+      "site_name": "Tygh Ridge",
+      "aliases": [],
+      "longitude": -121.08822,
+      "latitude": 45.29928,
+      "height_ft": 100.0,
+      "status": "complete",
+      "web_geojson": "web/tygh-ridge.geojson",
+      "exact_polygon": "polygons_exact/tygh_ridge.gpkg"
+    },
+    {
+      "source_id": 34,
+      "viewshed_id": "roslyn-ridge-fts",
+      "site_name": "Roslyn Ridge FTS",
+      "alertwest_site_ids": ["23411"],
+      "aliases": [],
+      "longitude": -120.97596,
+      "latitude": 47.24036,
+      "height_ft": 100.0,
+      "status": "complete",
+      "web_geojson": "web/roslyn-ridge-fts.geojson",
+      "exact_polygon": "polygons_exact/roslyn_ridge_fts.gpkg"
+    },
+    {
+      "source_id": 35,
+      "viewshed_id": "britt-water-tank",
+      "site_name": "Britt Water Tank",
+      "alertwest_site_ids": ["16761"],
+      "aliases": [],
+      "longitude": -122.97586,
+      "latitude": 42.31406,
+      "height_ft": 95.0,
+      "status": "complete",
+      "web_geojson": "web/britt-water-tank.geojson",
+      "exact_polygon": "polygons_exact/britt_water_tank.gpkg"
+    },
+    {
+      "source_id": 36,
+      "viewshed_id": "shaniko-tangager",
+      "site_name": "Shaniko Tangager",
+      "alertwest_site_ids": ["16189"],
+      "aliases": [],
+      "longitude": -120.837336,
+      "latitude": 45.025808,
+      "height_ft": 95.0,
+      "status": "complete",
+      "web_geojson": "web/shaniko-tangager.geojson",
+      "exact_polygon": "polygons_exact/shaniko_tangager.gpkg"
+    },
+    {
+      "source_id": 37,
+      "viewshed_id": "stacker-butte",
+      "site_name": "Stacker Butte",
+      "alertwest_site_ids": ["18201", "23883"],
+      "aliases": [],
+      "longitude": -121.117535,
+      "latitude": 45.71162,
+      "height_ft": 82.0,
+      "status": "complete",
+      "web_geojson": "web/stacker-butte.geojson",
+      "exact_polygon": "polygons_exact/stacker_butte.gpkg"
+    },
+    {
+      "source_id": 38,
+      "viewshed_id": "bear-mountain",
+      "site_name": "Bear Mountain",
+      "aliases": [],
+      "longitude": -122.89189,
+      "latitude": 43.84281,
+      "height_ft": 80.0,
+      "status": "complete",
+      "web_geojson": "web/bear-mountain.geojson",
+      "exact_polygon": "polygons_exact/bear_mountain.gpkg"
+    },
+    {
+      "source_id": 39,
+      "viewshed_id": "bend",
+      "site_name": "Bend",
+      "alertwest_site_ids": ["11107"],
+      "aliases": [
+        "BEND-AW"
+      ],
+      "longitude": -121.30751,
+      "latitude": 44.08865,
+      "height_ft": 80.0,
+      "status": "complete",
+      "web_geojson": "web/bend.geojson",
+      "exact_polygon": "polygons_exact/bend.gpkg"
+    },
+    {
+      "source_id": 40,
+      "viewshed_id": "harness-mountain",
+      "site_name": "Harness Mountain",
+      "alertwest_site_ids": ["11123"],
+      "aliases": [],
+      "longitude": -123.10738,
+      "latitude": 43.52217,
+      "height_ft": 80.0,
+      "status": "complete",
+      "web_geojson": "web/harness-mountain.geojson",
+      "exact_polygon": "polygons_exact/harness_mountain.gpkg"
+    },
+    {
+      "source_id": 41,
+      "viewshed_id": "mary-s-peak",
+      "site_name": "Mary's Peak",
+      "aliases": [
+        "Mary's Peak West"
+      ],
+      "longitude": -123.572476,
+      "latitude": 44.507353,
+      "height_ft": 80.0,
+      "status": "complete",
+      "web_geojson": "web/mary-s-peak.geojson",
+      "exact_polygon": "polygons_exact/mary_s_peak.gpkg"
+    },
+    {
+      "source_id": 42,
+      "viewshed_id": "pine-mountain",
+      "site_name": "Pine Mountain",
+      "alertwest_site_ids": ["11130", "11131"],
+      "aliases": [],
+      "longitude": -120.87449,
+      "latitude": 43.81126,
+      "height_ft": 79.0,
+      "status": "complete",
+      "web_geojson": "web/pine-mountain.geojson",
+      "exact_polygon": "polygons_exact/pine_mountain.gpkg"
+    },
+    {
+      "source_id": 43,
+      "viewshed_id": "cinnamon-butte",
+      "site_name": "Cinnamon Butte",
+      "aliases": [],
+      "longitude": -122.10956,
+      "latitude": 43.24096,
+      "height_ft": 78.0,
+      "status": "complete",
+      "web_geojson": "web/cinnamon-butte.geojson",
+      "exact_polygon": "polygons_exact/cinnamon_butte.gpkg"
+    },
+    {
+      "source_id": 44,
+      "viewshed_id": "quail-prairie-mtn",
+      "site_name": "Quail Prairie Mtn",
+      "aliases": [
+        "Axis-QuailPrairieLookout",
+        "Quail Prairie Mountain"
+      ],
+      "longitude": -124.04546,
+      "latitude": 42.2416,
+      "height_ft": 78.0,
+      "status": "complete",
+      "web_geojson": "web/quail-prairie-mtn.geojson",
+      "exact_polygon": "polygons_exact/quail_prairie_mtn.gpkg",
+      "alertwest_site_ids": [
+        "15693"
+      ]
+    },
+    {
+      "source_id": 45,
+      "viewshed_id": "cottonwood-mountain",
+      "site_name": "Cottonwood Mountain",
+      "alertwest_site_ids": ["11117"],
+      "aliases": [
+        "Cottonwood"
+      ],
+      "longitude": -117.65521,
+      "latitude": 44.16302,
+      "height_ft": 68.0,
+      "status": "complete",
+      "web_geojson": "web/cottonwood-mountain.geojson",
+      "exact_polygon": "polygons_exact/cottonwood_mountain.gpkg"
+    },
+    {
+      "source_id": 46,
+      "viewshed_id": "mahogany-peak",
+      "site_name": "Mahogany Peak",
+      "aliases": [
+        "Mahogany"
+      ],
+      "longitude": -117.23839,
+      "latitude": 43.25044,
+      "height_ft": 67.0,
+      "status": "complete",
+      "web_geojson": "web/mahogany-peak.geojson",
+      "exact_polygon": "polygons_exact/mahogany_peak.gpkg"
+    },
+    {
+      "source_id": 47,
+      "viewshed_id": "cooper-mountain",
+      "site_name": "Cooper Mountain",
+      "alertwest_site_ids": ["11116"],
+      "aliases": [],
+      "longitude": -122.86926,
+      "latitude": 45.45751,
+      "height_ft": 65.0,
+      "status": "complete",
+      "web_geojson": "web/cooper-mountain.geojson",
+      "exact_polygon": "polygons_exact/cooper_mountain.gpkg"
+    },
+    {
+      "source_id": 48,
+      "viewshed_id": "green-mtn-lookout",
+      "site_name": "Green Mtn Lookout",
+      "alertwest_site_ids": ["13499"],
+      "aliases": [],
+      "longitude": -120.7249555,
+      "latitude": 43.38672109,
+      "height_ft": 65.0,
+      "status": "complete",
+      "web_geojson": "web/green-mtn-lookout.geojson",
+      "exact_polygon": "polygons_exact/green_mtn_lookout.gpkg"
+    },
+    {
+      "source_id": 49,
+      "viewshed_id": "bosley-butte",
+      "site_name": "Bosley Butte",
+      "aliases": [
+        "KBO Bosley Butte"
+      ],
+      "longitude": -124.226,
+      "latitude": 42.21203,
+      "height_ft": 64.0,
+      "status": "complete",
+      "web_geojson": "web/bosley-butte.geojson",
+      "exact_polygon": "polygons_exact/bosley_butte.gpkg"
+    },
+    {
+      "source_id": 50,
+      "viewshed_id": "big-lookout-mountain",
+      "site_name": "Big Lookout Mountain",
+      "aliases": [
+        "Big Lookout"
+      ],
+      "longitude": -117.27814,
+      "latitude": 44.60883,
+      "height_ft": 62.0,
+      "status": "complete",
+      "web_geojson": "web/big-lookout-mountain.geojson",
+      "exact_polygon": "polygons_exact/big_lookout_mountain.gpkg"
+    },
+    {
+      "source_id": 51,
+      "viewshed_id": "deathball-mountain",
+      "site_name": "Deathball Mountain",
+      "alertwest_site_ids": ["11120"],
+      "aliases": [
+        "Deathball"
+      ],
+      "longitude": -122.27602,
+      "latitude": 44.1349,
+      "height_ft": 60.0,
+      "status": "complete",
+      "web_geojson": "web/deathball-mountain.geojson",
+      "exact_polygon": "polygons_exact/deathball_mountain.gpkg"
+    },
+    {
+      "source_id": 52,
+      "viewshed_id": "rhinehart-mountain",
+      "site_name": "Rhinehart Mountain",
+      "alertwest_site_ids": ["11138"],
+      "aliases": [
+        "Rhinehart"
+      ],
+      "longitude": -117.22347,
+      "latitude": 43.97696,
+      "height_ft": 60.0,
+      "status": "complete",
+      "web_geojson": "web/rhinehart-mountain.geojson",
+      "exact_polygon": "polygons_exact/rhinehart_mountain.gpkg"
+    },
+    {
+      "source_id": 53,
+      "viewshed_id": "rattlesnake-ridge",
+      "site_name": "Rattlesnake Ridge",
+      "aliases": [],
+      "longitude": -119.97528,
+      "latitude": 46.49111,
+      "height_ft": 52.0,
+      "status": "complete",
+      "web_geojson": "web/rattlesnake-ridge.geojson",
+      "exact_polygon": "polygons_exact/rattlesnake_ridge.gpkg"
+    },
+    {
+      "source_id": 54,
+      "viewshed_id": "henkle",
+      "site_name": "Henkle",
+      "alertwest_site_ids": ["13503"],
+      "aliases": [],
+      "longitude": -121.48589,
+      "latitude": 44.33555,
+      "height_ft": 52.0,
+      "status": "complete",
+      "web_geojson": "web/henkle.geojson",
+      "exact_polygon": "polygons_exact/henkle.gpkg"
+    },
+    {
+      "source_id": 55,
+      "viewshed_id": "chelan-butte-fts",
+      "site_name": "Chelan Butte FTS",
+      "alertwest_site_ids": ["23455"],
+      "aliases": [],
+      "longitude": -120.034255,
+      "latitude": 47.806984,
+      "height_ft": 50.0,
+      "status": "complete",
+      "web_geojson": "web/chelan-butte-fts.geojson",
+      "exact_polygon": "polygons_exact/chelan_butte_fts.gpkg"
+    },
+    {
+      "source_id": 56,
+      "viewshed_id": "ski-badger-fts",
+      "site_name": "Ski Badger FTS",
+      "alertwest_site_ids": ["23454"],
+      "aliases": [],
+      "longitude": -120.1960892,
+      "latitude": 47.57829924,
+      "height_ft": 50.0,
+      "status": "complete",
+      "web_geojson": "web/ski-badger-fts.geojson",
+      "exact_polygon": "polygons_exact/ski_badger_fts.gpkg"
+    },
+    {
+      "source_id": 57,
+      "viewshed_id": "monument-mountain",
+      "site_name": "Monument Mountain",
+      "alertwest_site_ids": ["11127"],
+      "aliases": [
+        "Monument"
+      ],
+      "longitude": -117.89131,
+      "latitude": 43.66426,
+      "height_ft": 43.33,
+      "status": "complete",
+      "web_geojson": "web/monument-mountain.geojson",
+      "exact_polygon": "polygons_exact/monument_mountain.gpkg"
+    },
+    {
+      "source_id": 58,
+      "viewshed_id": "blue-mtn",
+      "site_name": "Blue Mtn",
+      "aliases": [
+        "Blue"
+      ],
+      "longitude": -117.87523,
+      "latitude": 42.32136,
+      "height_ft": 43.0,
+      "status": "complete",
+      "web_geojson": "web/blue-mtn.geojson",
+      "exact_polygon": "polygons_exact/blue_mtn.gpkg"
+    },
+    {
+      "source_id": 59,
+      "viewshed_id": "fiddler-mountain",
+      "site_name": "Fiddler Mountain",
+      "aliases": [
+        "Fiddler"
+      ],
+      "longitude": -123.767306,
+      "latitude": 42.2403606,
+      "height_ft": 42.0,
+      "status": "complete",
+      "web_geojson": "web/fiddler-mountain.geojson",
+      "exact_polygon": "polygons_exact/fiddler_mountain.gpkg"
+    },
+    {
+      "source_id": 60,
+      "viewshed_id": "hampton-butte",
+      "site_name": "Hampton Butte",
+      "aliases": [],
+      "longitude": -120.2817,
+      "latitude": 43.77377,
+      "height_ft": 38.0,
+      "status": "complete",
+      "web_geojson": "web/hampton-butte.geojson",
+      "exact_polygon": "polygons_exact/hampton_butte.gpkg"
+    },
+    {
+      "source_id": 61,
+      "viewshed_id": "acty-mountain",
+      "site_name": "Acty Mountain",
+      "alertwest_site_ids": ["15546"],
+      "aliases": [],
+      "longitude": -119.1329759,
+      "latitude": 42.10378,
+      "height_ft": 31.0,
+      "status": "complete",
+      "web_geojson": "web/acty-mountain.geojson",
+      "exact_polygon": "polygons_exact/acty_mountain.gpkg"
+    },
+    {
+      "source_id": 62,
+      "viewshed_id": "eagle-point-water-reservoir-3",
+      "site_name": "Eagle Point Water Reservoir #3",
+      "alertwest_site_ids": ["16525"],
+      "aliases": [],
+      "longitude": -122.78644,
+      "latitude": 42.45653,
+      "height_ft": 30.0,
+      "status": "complete",
+      "web_geojson": "web/eagle-point-water-reservoir-3.geojson",
+      "exact_polygon": "polygons_exact/eagle_point_water_reservoir_3.gpkg"
+    },
+    {
+      "source_id": 63,
+      "viewshed_id": "long-mountain",
+      "site_name": "Long Mountain",
+      "alertwest_site_ids": ["11124"],
+      "aliases": [
+        "Long"
+      ],
+      "longitude": -122.83482,
+      "latitude": 42.49397,
+      "height_ft": 30.0,
+      "status": "complete",
+      "web_geojson": "web/long-mountain.geojson",
+      "exact_polygon": "polygons_exact/long_mountain.gpkg"
+    },
+    {
+      "source_id": 64,
+      "viewshed_id": "mt-baldy",
+      "site_name": "Mt Baldy",
+      "alertwest_site_ids": ["11128"],
+      "aliases": [
+        "Baldy"
+      ],
+      "longitude": -122.75108,
+      "latitude": 42.29765,
+      "height_ft": 30.0,
+      "status": "complete",
+      "web_geojson": "web/mt-baldy.geojson",
+      "exact_polygon": "polygons_exact/mt_baldy.gpkg"
+    },
+    {
+      "source_id": 65,
+      "viewshed_id": "steens-mountain",
+      "site_name": "Steens Mountain",
+      "aliases": [
+        "Steens",
+        "Steens Mtn"
+      ],
+      "longitude": -118.57668,
+      "latitude": 42.63619,
+      "height_ft": 30.0,
+      "status": "complete",
+      "web_geojson": "web/steens-mountain.geojson",
+      "exact_polygon": "polygons_exact/steens_mountain.gpkg"
+    },
+    {
+      "source_id": 66,
+      "viewshed_id": "willamette-pass",
+      "site_name": "Willamette Pass",
+      "aliases": [],
+      "longitude": -122.0200014,
+      "latitude": 43.60672381,
+      "height_ft": 30.0,
+      "status": "complete",
+      "web_geojson": "web/willamette-pass.geojson",
+      "exact_polygon": "polygons_exact/willamette_pass.gpkg"
+    },
+    {
+      "source_id": 67,
+      "viewshed_id": "riddle-mountain",
+      "site_name": "Riddle Mountain",
+      "aliases": [
+        "Riddle"
+      ],
+      "longitude": -118.4991,
+      "latitude": 43.10013,
+      "height_ft": 27.0,
+      "status": "complete",
+      "web_geojson": "web/riddle-mountain.geojson",
+      "exact_polygon": "polygons_exact/riddle_mountain.gpkg"
+    },
+    {
+      "source_id": 68,
+      "viewshed_id": "bryant-mtn",
+      "site_name": "Bryant Mtn",
+      "alertwest_site_ids": ["11112", "11113"],
+      "aliases": [
+        "Bryant"
+      ],
+      "longitude": -121.27639,
+      "latitude": 42.03463,
+      "height_ft": 25.0,
+      "status": "complete",
+      "web_geojson": "web/bryant-mtn.geojson",
+      "exact_polygon": "polygons_exact/bryant_mtn.gpkg"
+    },
+    {
+      "source_id": 69,
+      "viewshed_id": "central-point-water-reservioir",
+      "site_name": "Central Point Water Reservioir",
+      "alertwest_site_ids": ["16762"],
+      "aliases": [],
+      "longitude": -122.951014,
+      "latitude": 42.360421,
+      "height_ft": 25.0,
+      "status": "complete",
+      "web_geojson": "web/central-point-water-reservioir.geojson",
+      "exact_polygon": "polygons_exact/central_point_water_reservioir.gpkg"
+    },
+    {
+      "source_id": 70,
+      "viewshed_id": "warner-peak",
+      "site_name": "Warner Peak",
+      "aliases": [],
+      "longitude": -119.7413391,
+      "latitude": 42.45962786,
+      "height_ft": 24.0,
+      "status": "complete",
+      "web_geojson": "web/warner-peak.geojson",
+      "exact_polygon": "polygons_exact/warner_peak.gpkg"
+    },
+    {
+      "source_id": 71,
+      "viewshed_id": "wagontire-mountain",
+      "site_name": "Wagontire Mountain",
+      "aliases": [
+        "Wagontire"
+      ],
+      "longitude": -119.891542,
+      "latitude": 43.34891,
+      "height_ft": 23.0,
+      "status": "complete",
+      "web_geojson": "web/wagontire-mountain.geojson",
+      "exact_polygon": "polygons_exact/wagontire_mountain.gpkg"
+    },
+    {
+      "source_id": 72,
+      "viewshed_id": "butler-butte",
+      "site_name": "Butler Butte",
+      "alertwest_site_ids": ["11089"],
+      "aliases": [],
+      "longitude": -124.26029,
+      "latitude": 42.76725,
+      "height_ft": 22.0,
+      "status": "complete",
+      "web_geojson": "web/butler-butte.geojson",
+      "exact_polygon": "polygons_exact/butler_butte.gpkg"
+    },
+    {
+      "source_id": 73,
+      "viewshed_id": "jackass-mountain",
+      "site_name": "Jackass Mountain",
+      "aliases": [],
+      "longitude": -118.95261,
+      "latitude": 43.04198,
+      "height_ft": 17.0,
+      "status": "complete",
+      "web_geojson": "web/jackass-mountain.geojson",
+      "exact_polygon": "polygons_exact/jackass_mountain.gpkg"
+    },
+    {
+      "source_id": 74,
+      "viewshed_id": "beaty-s-butte",
+      "site_name": "Beaty's Butte",
+      "aliases": [
+        "Axis-BeatyButte",
+        "Beaty Butte"
+      ],
+      "longitude": -119.33212,
+      "latitude": 42.38591,
+      "height_ft": 13.0,
+      "status": "complete",
+      "web_geojson": "web/beaty-s-butte.geojson",
+      "exact_polygon": "polygons_exact/beaty_s_butte.gpkg",
+      "alertwest_site_ids": [
+        "11106"
+      ]
+    },
+    {
+      "source_id": 75,
+      "viewshed_id": "phoenix-water-tank",
+      "site_name": "Phoenix Water Tank",
+      "aliases": [],
+      "longitude": -122.80443,
+      "latitude": 42.27574,
+      "height_ft": null,
+      "status": "skipped_missing_height",
+      "web_geojson": null,
+      "exact_polygon": null
+    }
+  ]
+}

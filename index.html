@@ -4,12 +4,14 @@
         <meta charset="UTF-8">
         <title>OWDCIC Camera Coverage</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="icon" href="img/oregon.svg" type="image/svg+xml">
+        <link rel="preconnect" href="https://kit.fontawesome.com" crossorigin>
+        <link rel="icon" href="img/OHAZ-logo.png" type="image/png">
 
         <!-- mapboxgl global must exist before js/map.js initializes the map -->
         <link href="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.css" rel="stylesheet">
         <script defer src="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.js"></script>
-
+        <script defer src="https://kit.fontawesome.com/be4ea184d4.js" crossorigin="anonymous"></script>
+        
         <link rel="stylesheet" href="css/site.css">
         <link rel="stylesheet" href="css/map.css">
         <link rel="stylesheet" href="css/legend.css">
@@ -24,8 +26,9 @@
             <h1 class="site-banner__title">OWDCIC Camera Coverage Map</h1>
         </header>
         <main aria-busy="true">
-            <div id="map" role="region" aria-label="Oregon wildfire camera map"></div>
+            <div id="map" role="region" aria-label="Oregon and Washington wildfire camera map"></div>
             <div class="map-panels">
+                <output id="zoom-viewer" class="zoom-viewer" aria-label="Current map zoom">zoom: 5.4</output>
                 <aside id="legend" class="legend" aria-label="Map layers"></aside>
                 <div
                     id="basemap-picker"

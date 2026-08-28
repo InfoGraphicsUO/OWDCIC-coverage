@@ -3,6 +3,8 @@
     --ohaz-yellow: #f8e109;
     --ohaz-green: #3c6b03;
     --banner-height: 82px;
+    --panel-background: rgba(255, 255, 255, 0.94);
+    --panel-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 html,
