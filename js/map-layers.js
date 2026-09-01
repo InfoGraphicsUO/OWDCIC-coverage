@@ -38,9 +38,10 @@ import {
 const FIRE_ICON_ID = 'fire-marker';
 const CAMERA_ICON_ID = 'camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
-const VIEWSHED_COLOR = '#1769aa';
+const BOUNDARY_COLOR = '#1769aa';
+const VIEWSHED_COLOR = '#F28D05';
 const VIEWSHED_HIGHLIGHT_COLOR = '#f8e109';
-const LOOKOUT_COLOR = '#7c3aed';
+const LOOKOUT_COLOR = '#8154BD';
 const NO_VIEWSHED_SELECTED = '__none__';
 const VIEWSHED_SOURCE = Object.freeze({
   source: LAYER_IDS.viewshedsSource,
@@ -52,9 +53,42 @@ const VIEWSHED_HIGHLIGHT_LAYER_IDS = Object.freeze([
 ]);
 const VIEWSHED_LAYER_IDS = Object.freeze([
   LAYER_IDS.viewshedsFill,
-  LAYER_IDS.viewshedsLine,
   ...VIEWSHED_HIGHLIGHT_LAYER_IDS,
 ]);
+const REGION_STATE_WHERE = "STATE IN ('41','53')";
+const CENSUS_ATTRIBUTION =
+  '<a href="https://tigerweb.geo.census.gov/" target="_blank" rel="noopener noreferrer">U.S. Census Bureau TIGERweb</a>';
+const BOUNDARY_TYPES = Object.freeze([
+  Object.freeze({
+    value: 'county',
+    label: 'County',
+    sourceId: LAYER_IDS.countyBoundariesSource,
+    layerId: LAYER_IDS.countyBoundaries,
+    url: DATA_URLS.censusCountyBoundaries,
+  }),
+  Object.freeze({
+    value: 'senate',
+    label: 'Senate',
+    sourceId: LAYER_IDS.senateBoundariesSource,
+    layerId: LAYER_IDS.senateBoundaries,
+    url: DATA_URLS.censusStateSenateDistricts,
+  }),
+  Object.freeze({
+    value: 'house',
+    label: 'House',
+    sourceId: LAYER_IDS.houseBoundariesSource,
+    layerId: LAYER_IDS.houseBoundaries,
+    url: DATA_URLS.censusStateHouseDistricts,
+  }),
+  Object.freeze({
+    value: 'us-house',
+    label: 'US House',
+    sourceId: LAYER_IDS.congressionalBoundariesSource,
+    layerId: LAYER_IDS.congressionalBoundaries,
+    url: DATA_URLS.censusCongressionalDistricts,
+  }),
+]);
+const boundaryLoads = new Map();
 
 // marker sizes in CSS pixels
 const CAMERA_MARKER_SIZE = 20;
@@ -71,7 +105,7 @@ const FIRE_MARKER_SIZES = [
 ];
 
 // render layer names and defaults without waiting for Mapbox or data providers
-const legendControl = initLegend(legendItems());
+const legendControl = initLegend(legendItems(), [boundaryLayerSelect()]);
 
 // startup waits for the base style before registering application layers
 mapReady
@@ -95,6 +129,7 @@ async function loadMapLayers(map) {
   const dataPromise = loadLayerData();
 
   addRegionFocusLayers(map);
+  addBoundaryLayers(map);
   addViewshedLayers(map);
   addPerimeterLayers(map);
   addLookoutLayer(map);
@@ -142,6 +177,54 @@ async function loadMapLayers(map) {
   setSourceData(map, LAYER_IDS.perimetersSource, perimeters);
   setSourceData(map, LAYER_IDS.prescribedSource, prescribed);
   setSourceData(map, LAYER_IDS.lookouts, lookouts);
+}
+
+function addBoundaryLayers(map) {
+  for (const boundary of BOUNDARY_TYPES) {
+    map.addSource(boundary.sourceId, {
+      type: 'geojson',
+      data: emptyFeatureCollection(),
+      attribution: CENSUS_ATTRIBUTION,
+    });
+
+    map.addLayer({
+      id: boundary.layerId,
+      type: 'line',
+      source: boundary.sourceId,
+      layout: { visibility: 'none' },
+      paint: {
+        'line-color': BOUNDARY_COLOR,
+        'line-opacity': 0.92,
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          5, 1.25,
+          9, 2,
+          13, 3,
+        ],
+        'line-emissive-strength': 1,
+      },
+    });
+  }
+}
+
+function loadBoundary(map, boundary) {
+  if (boundaryLoads.has(boundary.value)) {
+    return boundaryLoads.get(boundary.value);
+  }
+
+  const load = safelyLoad(`${boundary.label} boundaries`, () =>
+    fetchArcGISGeoJSON(boundary.url, {
+      where: REGION_STATE_WHERE,
+      outFields: 'STATE,GEOID,BASENAME',
+      geometryPrecision: '5',
+      maxAllowableOffset: '0.0005',
+    })
+  ).then((data) => setSourceData(map, boundary.sourceId, data));
+
+  boundaryLoads.set(boundary.value, load);
+  return load;
 }
 
 // starts every provider together and keeps results aligned by layer
@@ -289,18 +372,7 @@ function addViewshedLayers(map) {
     ...VIEWSHED_SOURCE,
     paint: {
       'fill-color': VIEWSHED_COLOR,
-      'fill-opacity': 0.16,
-    },
-  });
-
-  map.addLayer({
-    id: LAYER_IDS.viewshedsLine,
-    type: 'line',
-    ...VIEWSHED_SOURCE,
-    paint: {
-      'line-color': VIEWSHED_COLOR,
-      'line-opacity': 0.9,
-      'line-width': 1.25,
+      'fill-opacity': 0.35,
     },
   });
 
@@ -504,6 +576,7 @@ function legendItems() {
     {
       label: 'Camera viewsheds',
       swatchColor: VIEWSHED_COLOR,
+      swatchBorder: false,
       infoText: 'Loading camera viewshed count…',
       layerIds: VIEWSHED_LAYER_IDS,
     },
@@ -530,6 +603,23 @@ function legendItems() {
       layerIds: [LAYER_IDS.prescribed],
     },
   ];
+}
+
+function boundaryLayerSelect() {
+  return {
+    id: 'legend-boundary-select',
+    label: 'Boundaries',
+    defaultValue: '',
+    options: [
+      { value: '', label: 'None', layerIds: [] },
+      ...BOUNDARY_TYPES.map((boundary) => ({
+        value: boundary.value,
+        label: boundary.label,
+        layerIds: [boundary.layerId],
+        activate: (map) => loadBoundary(map, boundary),
+      })),
+    ],
+  };
 }
 
 function viewshedEntries(manifest) {
