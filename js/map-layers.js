@@ -31,6 +31,7 @@ import {
   showCameraPopup,
   showCameraPreview,
   showFirePopup,
+  showLookoutPopup,
   showPrescribedPopup,
 } from './popups.js';
 
@@ -39,6 +40,7 @@ const CAMERA_ICON_ID = 'camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
 const VIEWSHED_COLOR = '#1769aa';
 const VIEWSHED_HIGHLIGHT_COLOR = '#f8e109';
+const LOOKOUT_COLOR = '#2563eb';
 const NO_VIEWSHED_SELECTED = '__none__';
 const VIEWSHED_SOURCE = Object.freeze({
   source: LAYER_IDS.viewshedsSource,
@@ -95,6 +97,7 @@ async function loadMapLayers(map) {
   addRegionFocusLayers(map);
   addViewshedLayers(map);
   addPerimeterLayers(map);
+  addLookoutLayer(map);
   await Promise.all([addFireLayer(map), addCameraLayer(map)]);
 
   // added last so prescribed burns draw above the other markers
@@ -113,6 +116,7 @@ async function loadMapLayers(map) {
     perimeters,
     prescribed,
     viewshedManifest,
+    lookouts,
   } = await dataPromise;
 
   // matching source update for highlight switch above
@@ -137,6 +141,7 @@ async function loadMapLayers(map) {
 
   setSourceData(map, LAYER_IDS.perimetersSource, perimeters);
   setSourceData(map, LAYER_IDS.prescribedSource, prescribed);
+  setSourceData(map, LAYER_IDS.lookouts, lookouts);
 }
 
 // starts every provider together and keeps results aligned by layer
@@ -148,6 +153,7 @@ async function loadLayerData() {
     perimeters,
     prescribed,
     viewshedManifest,
+    lookouts,
   ] = await Promise.all([
     safelyLoad('ALERTWest cameras', loadAlertWestCameras),
 
@@ -207,6 +213,10 @@ async function loadLayerData() {
       () => fetchJson(DATA_URLS.viewshedManifest, 'Viewshed manifest'),
       { viewsheds: [] }
     ),
+
+    safelyLoad('standing lookouts', () =>
+      fetchJson(DATA_URLS.standingLookouts, 'Standing lookouts')
+    ),
   ]);
 
   return {
@@ -216,6 +226,7 @@ async function loadLayerData() {
     perimeters,
     prescribed,
     viewshedManifest,
+    lookouts,
   };
 }
 
@@ -414,6 +425,23 @@ async function addPrescribedLayer(map) {
   bindLayerInteractions(map, LAYER_IDS.prescribed, showPrescribedPopup);
 }
 
+function addLookoutLayer(map) {
+  addGeoJSONSource(map, LAYER_IDS.lookouts);
+  map.addLayer({
+    id: LAYER_IDS.lookouts,
+    type: 'circle',
+    source: LAYER_IDS.lookouts,
+    paint: {
+      'circle-radius': 5,
+      'circle-color': LOOKOUT_COLOR,
+      'circle-stroke-width': 1.25,
+      'circle-stroke-color': '#fff',
+    },
+  });
+
+  bindLayerInteractions(map, LAYER_IDS.lookouts, showLookoutPopup);
+}
+
 function markerLayout(iconImage) {
   return {
     'icon-image': iconImage,
@@ -478,6 +506,12 @@ function legendItems() {
       swatchColor: VIEWSHED_COLOR,
       infoText: 'Loading camera viewshed count…',
       layerIds: VIEWSHED_LAYER_IDS,
+    },
+    {
+      label: 'Standing lookouts',
+      swatchColor: LOOKOUT_COLOR,
+      swatchShape: 'circle',
+      layerIds: [LAYER_IDS.lookouts],
     },
     {
       label: 'Fires (NIFC)',

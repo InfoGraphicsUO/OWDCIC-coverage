@@ -1,0 +1,2599 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.64641,
+          43.05216
+        ]
+      },
+      "properties": {
+        "name": "Acker Rock",
+        "County": "Douglas",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 355, OR 41"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.45136,
+          44.37751
+        ]
+      },
+      "properties": {
+        "name": "Aldrich Mountain",
+        "County": "Grant",
+        "Type": "3-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 453, OR 56"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.41924,
+          44.04246
+        ]
+      },
+      "properties": {
+        "name": "Antelope Mountain",
+        "County": "Grant",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 913, OR 117"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.78977,
+          42.61439
+        ]
+      },
+      "properties": {
+        "name": "Bald (Ingram) Butte",
+        "County": "Lake",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 258, OR 29"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.36789,
+          43.68311
+        ]
+      },
+      "properties": {
+        "name": "Bald Butte",
+        "County": "Harney",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 425, OR 50"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.03978,
+          42.69356
+        ]
+      },
+      "properties": {
+        "name": "Bald Knob",
+        "County": "Coos",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1572, OR 131"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.35531,
+          43.27429
+        ]
+      },
+      "properties": {
+        "name": "Bald Mountain",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 480, OR 73"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.58121,
+          43.26926
+        ]
+      },
+      "properties": {
+        "name": "Baughman Mountain",
+        "County": "Douglas",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 331, OR 33"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.41515,
+          43.09982
+        ]
+      },
+      "properties": {
+        "name": "Bear Butte",
+        "County": "Klamath",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1605, OR 133"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.27815,
+          44.60888
+        ]
+      },
+      "properties": {
+        "name": "Big Lookout Mountain",
+        "County": "Baker",
+        "Type": "2-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1606, OR 134"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.45103,
+          44.26803
+        ]
+      },
+      "properties": {
+        "name": "Big Rock",
+        "County": "Linn",
+        "Type": "2-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1607, OR 134"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.13866,
+          44.54003
+        ]
+      },
+      "properties": {
+        "name": "Black Butte",
+        "County": "Grant",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 951, OR 123"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.63547,
+          44.39972
+        ]
+      },
+      "properties": {
+        "name": "Black Butte",
+        "County": "Jefferson",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 91, OR 12"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.11917,
+          42.9691
+        ]
+      },
+      "properties": {
+        "name": "Bland Mountain",
+        "County": "Douglas",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 481, OR 74"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.03024,
+          44.98546
+        ]
+      },
+      "properties": {
+        "name": "Bone Point",
+        "County": "Grant",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1600, OR 132"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.27603,
+          42.0338
+        ]
+      },
+      "properties": {
+        "name": "Bryant Mountain",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1608, OR 135"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -116.8228,
+          45.75375
+        ]
+      },
+      "properties": {
+        "name": "Buckhorn Mountain",
+        "County": "Wallowa",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1609, OR 136"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.20489,
+          43.35173
+        ]
+      },
+      "properties": {
+        "name": "Bunker Hill",
+        "County": "Coos",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 473, OR 70"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.82537,
+          43.92866
+        ]
+      },
+      "properties": {
+        "name": "Calamity Butte",
+        "County": "Harney",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 73, OR 10"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.55943,
+          42.63156
+        ]
+      },
+      "properties": {
+        "name": "Calimus Butte",
+        "County": "Klamath",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 259, OR 30"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.14385,
+          44.28119
+        ]
+      },
+      "properties": {
+        "name": "Carpenter Mountain",
+        "County": "Linn",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 484, OR 77"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.99416,
+          42.09462
+        ]
+      },
+      "properties": {
+        "name": "Chase Mountain",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 485, OR 78"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.10986,
+          43.24102
+        ]
+      },
+      "properties": {
+        "name": "Cinnamon Butte",
+        "County": "Douglas",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 486, OR 79"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.71856,
+          45.15647
+        ]
+      },
+      "properties": {
+        "name": "Clear Lake Butte",
+        "County": "Wasco",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 11, OR 3"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.04433,
+          44.62139
+        ]
+      },
+      "properties": {
+        "name": "Coffin Mountain",
+        "County": "Linn",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 888, OR 114"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.87102,
+          43.59705
+        ]
+      },
+      "properties": {
+        "name": "Cougar Pass",
+        "County": "Douglas",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 952, OR 124"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.37372,
+          45.88024
+        ]
+      },
+      "properties": {
+        "name": "Courtney Butte",
+        "County": "Wallowa",
+        "Type": "3-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1184, OR 128"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.66448,
+          44.8505
+        ]
+      },
+      "properties": {
+        "name": "Desolation Butte",
+        "County": "Grant",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1610, OR 137"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.87568,
+          45.26415
+        ]
+      },
+      "properties": {
+        "name": "Devils Peak",
+        "County": "Clackamas",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 521, OR 102"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.62649,
+          44.58294
+        ]
+      },
+      "properties": {
+        "name": "Dixie Butte",
+        "County": "Grant",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 657, OR 108"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.71824,
+          42.11856
+        ]
+      },
+      "properties": {
+        "name": "Dog Mountain",
+        "County": "Lake",
+        "Type": "2-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 475, OR 71"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.15793,
+          42.30051
+        ]
+      },
+      "properties": {
+        "name": "Drake Peak",
+        "County": "Lake",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 487, OR 80"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.56371,
+          43.67196
+        ]
+      },
+      "properties": {
+        "name": "Dry Mountain",
+        "County": "Harney",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 426, OR 51"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.91087,
+          44.20831
+        ]
+      },
+      "properties": {
+        "name": "Dry Soda",
+        "County": "Grant",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 116, OR 16"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.89085,
+          42.04357
+        ]
+      },
+      "properties": {
+        "name": "Dutchmans Peak",
+        "County": "Jackson",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 19, OR 5"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.23481,
+          44.83982
+        ]
+      },
+      "properties": {
+        "name": "Eagle Butte",
+        "County": "Wasco",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 488, OR 81"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.99576,
+          43.66715
+        ]
+      },
+      "properties": {
+        "name": "East Butte",
+        "County": "Lake",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 464, OR 61"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.9551,
+          42.8701
+        ]
+      },
+      "properties": {
+        "name": "Eden Ridge",
+        "County": "Coos",
+        "Type": "Tower",
+        "Status": "Standing"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.33409,
+          42.87244
+        ]
+      },
+      "properties": {
+        "name": "Edson Butte",
+        "County": "Coos",
+        "Type": "Tower",
+        "Status": "Standing"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.20542,
+          45.59815
+        ]
+      },
+      "properties": {
+        "name": "Elk Mountain",
+        "County": "Wallowa",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1614, OR 138"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.65324,
+          43.58578
+        ]
+      },
+      "properties": {
+        "name": "Fairview Peak",
+        "County": "Lane",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 472, OR 69"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.04274,
+          44.29368
+        ]
+      },
+      "properties": {
+        "name": "Fall Mountain",
+        "County": "Grant",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 115, OR 15"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.46869,
+          45.41005
+        ]
+      },
+      "properties": {
+        "name": "Fivemile Butte",
+        "County": "Wasco",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 914, OR 118"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.28115,
+          44.18625
+        ]
+      },
+      "properties": {
+        "name": "Flagtail Mountain",
+        "County": "Grant",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 454, OR 57"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.78501,
+          44.52703
+        ]
+      },
+      "properties": {
+        "name": "Foley Butte",
+        "County": "Crook",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 455, OR 58"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.84279,
+          43.61062
+        ]
+      },
+      "properties": {
+        "name": "Fox Butte",
+        "County": "Lake",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 146, OR 22"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.648,
+          44.09404
+        ]
+      },
+      "properties": {
+        "name": "Frazier Point",
+        "County": "Grant",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 456, OR 59"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.28193,
+          43.14508
+        ]
+      },
+      "properties": {
+        "name": "Garwood Butte",
+        "County": "Douglas",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1615, OR 139"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.46,
+          44.26323
+        ]
+      },
+      "properties": {
+        "name": "Gerow Butte",
+        "County": "Crook",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1616, OR 140"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.075,
+          45.20488
+        ]
+      },
+      "properties": {
+        "name": "Glass Hill",
+        "County": "Union",
+        "Type": "Tower",
+        "Status": "Standing*"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.08364,
+          44.80521
+        ]
+      },
+      "properties": {
+        "name": "Gold Butte",
+        "County": "Marion",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 134, OR 18"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.20925,
+          45.58912
+        ]
+      },
+      "properties": {
+        "name": "Goodman Ridge",
+        "County": "Umatilla",
+        "Type": "Tower",
+        "Status": "Standing*"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.7249,
+          43.38672
+        ]
+      },
+      "properties": {
+        "name": "Green Mountain",
+        "County": "Lake",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1618, OR 141"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.58291,
+          44.48307
+        ]
+      },
+      "properties": {
+        "name": "Green Peter",
+        "County": "Linn",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 490, OR 83"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.60882,
+          44.53392
+        ]
+      },
+      "properties": {
+        "name": "Green Ridge",
+        "County": "Jefferson",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 287, OR 32"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.36531,
+          42.39725
+        ]
+      },
+      "properties": {
+        "name": "Grizzly Mountain",
+        "County": "Curry",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1619, OR 142"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.03165,
+          43.00931
+        ]
+      },
+      "properties": {
+        "name": "Hager Mountain",
+        "County": "Lake",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1620, OR 143"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.08829,
+          44.86
+        ]
+      },
+      "properties": {
+        "name": "Halfway (Pine Ranger Station)",
+        "County": "Baker",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1623, OR 144"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.54906,
+          42.80388
+        ]
+      },
+      "properties": {
+        "name": "Halls Point",
+        "County": "Jackson",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 491, OR 84"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -116.87712,
+          45.32863
+        ]
+      },
+      "properties": {
+        "name": "Harl Butte",
+        "County": "Wallowa",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 550, OR 103"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.89312,
+          45.44042
+        ]
+      },
+      "properties": {
+        "name": "Harris, Mount",
+        "County": "Union",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1635, OR 152"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -116.66173,
+          45.43783
+        ]
+      },
+      "properties": {
+        "name": "Hat Point",
+        "County": "Wallowa",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 605, OR 106"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.84292,
+          43.26376
+        ]
+      },
+      "properties": {
+        "name": "Headquarters (Sod House) (USFWS)",
+        "County": "Harney",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 429, OR 54"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.48585,
+          44.33567
+        ]
+      },
+      "properties": {
+        "name": "Henkle Butte",
+        "County": "Deschutes",
+        "Type": "3-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 915, OR 119"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.45491,
+          43.03353
+        ]
+      },
+      "properties": {
+        "name": "Hershberger Mountain",
+        "County": "Douglas",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 21, OR 6"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.91152,
+          45.41298
+        ]
+      },
+      "properties": {
+        "name": "Hickman Butte",
+        "County": "Clackamas",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 369, OR 43"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.10191,
+          45.68256
+        ]
+      },
+      "properties": {
+        "name": "High Ridge",
+        "County": "Union",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 551, OR 104"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.7059,
+          42.24288
+        ]
+      },
+      "properties": {
+        "name": "Hogback Mountain",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 492, OR 85"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.61091,
+          45.94772
+        ]
+      },
+      "properties": {
+        "name": "Hoodoo Ridge",
+        "County": "Wallowa",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 916, OR 120"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.04889,
+          42.26416
+        ]
+      },
+      "properties": {
+        "name": "Horsefly Mountain",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 332, OR 34"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.7371,
+          45.72377
+        ]
+      },
+      "properties": {
+        "name": "Howard Butte",
+        "County": "Wallowa",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1624, OR 145"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.31814,
+          43.84666
+        ]
+      },
+      "properties": {
+        "name": "Huckleberry Mountain",
+        "County": "Lane",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 26, OR 8"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.56276,
+          43.34909
+        ]
+      },
+      "properties": {
+        "name": "Illahee Rock",
+        "County": "Douglas",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 98, OR 13"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.25484,
+          44.00564
+        ]
+      },
+      "properties": {
+        "name": "Indian Ridge",
+        "County": "Lane",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 133, OR 17"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.69165,
+          44.7568
+        ]
+      },
+      "properties": {
+        "name": "Indian Rock",
+        "County": "Grant",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1625, OR 146"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.32061,
+          44.83688
+        ]
+      },
+      "properties": {
+        "name": "Ireland, Mount",
+        "County": "Grant",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1338, OR 153"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.4031,
+          45.12515
+        ]
+      },
+      "properties": {
+        "name": "Johnson Rock",
+        "County": "Union",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1628, OR 147"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.86906,
+          43.81051
+        ]
+      },
+      "properties": {
+        "name": "King Mountain",
+        "County": "Harney",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 469, OR 66"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.12857,
+          42.59419
+        ]
+      },
+      "properties": {
+        "name": "Lake O\u2019 Woods",
+        "County": "Curry",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 494, OR 87"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.35609,
+          43.91791
+        ]
+      },
+      "properties": {
+        "name": "Lava Butte",
+        "County": "Deschutes",
+        "Type": "2-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 508, OR 100"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.50354,
+          44.03861
+        ]
+      },
+      "properties": {
+        "name": "Little Cowhorn",
+        "County": "Lane",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 400, OR 47"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.49391,
+          42.19825
+        ]
+      },
+      "properties": {
+        "name": "Little Grayback",
+        "County": "Josephine",
+        "Type": "2-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 917, OR 121"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -116.90509,
+          45.67196
+        ]
+      },
+      "properties": {
+        "name": "Long Ridge",
+        "County": "Wallowa",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1629, OR 148"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.39413,
+          44.8786
+        ]
+      },
+      "properties": {
+        "name": "Lookout Mountain",
+        "County": "Marion",
+        "Type": "Tower",
+        "Status": "Standing"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.78939,
+          45.85046
+        ]
+      },
+      "properties": {
+        "name": "Lookout Mountain",
+        "County": "Union",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 604, OR 105"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.80149,
+          42.46282
+        ]
+      },
+      "properties": {
+        "name": "Lookout Rock",
+        "County": "Lake",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 336, OR 38"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.81743,
+          43.78953
+        ]
+      },
+      "properties": {
+        "name": "Mackey (Norcross) Butte",
+        "County": "Crook",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1631, OR 149"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.47482,
+          45.10738
+        ]
+      },
+      "properties": {
+        "name": "Madison Butte",
+        "County": "Morrow",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1632, OR 150"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -116.77812,
+          45.17636
+        ]
+      },
+      "properties": {
+        "name": "McGraw",
+        "County": "Wallowa",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1633, OR 151"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.54435,
+          42.53999
+        ]
+      },
+      "properties": {
+        "name": "Morgan Butte",
+        "County": "Lake",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 495, OR 88"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.50294,
+          45.13044
+        ]
+      },
+      "properties": {
+        "name": "Mule Peak",
+        "County": "Union",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1636, OR 154"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.86397,
+          43.47064
+        ]
+      },
+      "properties": {
+        "name": "Odell Butte",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 466, OR 63"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.61613,
+          42.45442
+        ]
+      },
+      "properties": {
+        "name": "Onion Mountain",
+        "County": "Josephine",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 393, OR 46"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.88655,
+          42.82848
+        ]
+      },
+      "properties": {
+        "name": "P Ranch (USFWS)",
+        "County": "Harney",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 430, OR 55"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.27883,
+          42.10531
+        ]
+      },
+      "properties": {
+        "name": "Parker Mountain",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 497, OR 90"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.8457,
+          42.29884
+        ]
+      },
+      "properties": {
+        "name": "Pearsoll Peak",
+        "County": "Curry",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 51, OR 9"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.29691,
+          44.93419
+        ]
+      },
+      "properties": {
+        "name": "Pechuck Mountain",
+        "County": "Clackamas",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 2, OR 2"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.14526,
+          42.51338
+        ]
+      },
+      "properties": {
+        "name": "Pelican Butte",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 499, OR 92"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.85585,
+          42.94352
+        ]
+      },
+      "properties": {
+        "name": "Pickett Butte",
+        "County": "Douglas",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 354, OR 40"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.37989,
+          43.2642
+        ]
+      },
+      "properties": {
+        "name": "Pig Iron",
+        "County": "Douglas",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 335, OR 37"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.23616,
+          44.45707
+        ]
+      },
+      "properties": {
+        "name": "Pisgah, Mount",
+        "County": "Wheeler",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 457, OR 60"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.70209,
+          45.37176
+        ]
+      },
+      "properties": {
+        "name": "Point Prominence",
+        "County": "Union",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1638, OR 156"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.04589,
+          42.24191
+        ]
+      },
+      "properties": {
+        "name": "Quail Prairie",
+        "County": "Curry",
+        "Type": "Tower",
+        "Status": "Standing*",
+        "NHLR/FFLOS": "NHLR US 467, OR 64"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.62426,
+          44.8331
+        ]
+      },
+      "properties": {
+        "name": "Rajneesh Ranch",
+        "County": "Wasco",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 471, OR 68"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.13763,
+          44.89829
+        ]
+      },
+      "properties": {
+        "name": "Rancheria Rock",
+        "County": "Wheeler",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 470, OR 67"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.88897,
+          43.14139
+        ]
+      },
+      "properties": {
+        "name": "Rattlesnake (USFWS)",
+        "County": "Harney",
+        "Type": "Tower",
+        "Status": "Standing"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.88083,
+          43.16572
+        ]
+      },
+      "properties": {
+        "name": "Red Butte",
+        "County": "Douglas",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 390, OR 44"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.10259,
+          45.78848
+        ]
+      },
+      "properties": {
+        "name": "Red Hill",
+        "County": "Wallowa",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1679, OR 166"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.49913,
+          43.1002
+        ]
+      },
+      "properties": {
+        "name": "Riddle Mountain",
+        "County": "Harney",
+        "Type": "2-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 953, OR 125"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.07136,
+          44.83359
+        ]
+      },
+      "properties": {
+        "name": "Ritter Butte",
+        "County": "Grant",
+        "Type": "3-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 658, OR 109"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.3817,
+          42.36451
+        ]
+      },
+      "properties": {
+        "name": "Robinson Butte",
+        "County": "Jackson",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 740, OR 112"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.71021,
+          43.75748
+        ]
+      },
+      "properties": {
+        "name": "Round Mountain",
+        "County": "Deschutes",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 468, OR 65"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.9909,
+          42.70186
+        ]
+      },
+      "properties": {
+        "name": "Round Top",
+        "County": "Jackson",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 501, OR 93"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.08696,
+          45.06842
+        ]
+      },
+      "properties": {
+        "name": "Russel Mountain",
+        "County": "Baker",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1639, OR 157"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.34812,
+          42.61927
+        ]
+      },
+      "properties": {
+        "name": "Rustler Peak",
+        "County": "Jackson",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 217, OR 27"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.51049,
+          43.89374
+        ]
+      },
+      "properties": {
+        "name": "Saddleblanket Mountain",
+        "County": "Lane",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 25, OR 7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.928,
+          44.38477
+        ]
+      },
+      "properties": {
+        "name": "Sand Mountain",
+        "County": "Linn",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1, OR 1"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.01625,
+          42.92291
+        ]
+      },
+      "properties": {
+        "name": "Scott, Mount",
+        "County": "Klamath",
+        "Type": "2-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 402, OR 49"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.36548,
+          42.60014
+        ]
+      },
+      "properties": {
+        "name": "Sexton Mountain",
+        "County": "Josephine",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 741, OR 113"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.61079,
+          44.74501
+        ]
+      },
+      "properties": {
+        "name": "Shitike Butte",
+        "County": "Jefferson",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 656, OR 107"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.53932,
+          44.92621
+        ]
+      },
+      "properties": {
+        "name": "Sidwalter Butte",
+        "County": "Wasco",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 739, OR 111"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.84469,
+          44.89929
+        ]
+      },
+      "properties": {
+        "name": "Sisi Butte",
+        "County": "Clackamas",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 368, OR 42"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.16547,
+          42.34389
+        ]
+      },
+      "properties": {
+        "name": "Snow Camp",
+        "County": "Curry",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 13, OR 4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.49632,
+          43.97038
+        ]
+      },
+      "properties": {
+        "name": "Snow Mountain",
+        "County": "Grant",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 502, OR 94"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.47904,
+          42.06478
+        ]
+      },
+      "properties": {
+        "name": "Soda Mountain",
+        "County": "Jackson",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 340, OR 39"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.97138,
+          44.65666
+        ]
+      },
+      "properties": {
+        "name": "South Baldy",
+        "County": "Wheeler",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1640, OR 158"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.26905,
+          42.59306
+        ]
+      },
+      "properties": {
+        "name": "Spodue Mountain",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 503, OR 95"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.3481,
+          43.52332
+        ]
+      },
+      "properties": {
+        "name": "Spring Butte",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 174, OR 25"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.0121,
+          42.0697
+        ]
+      },
+      "properties": {
+        "name": "Squaw Peak",
+        "County": "Jackson",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 504, OR 96"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.43469,
+          42.93754
+        ]
+      },
+      "properties": {
+        "name": "Stella, Mount",
+        "County": "Jackson",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 496, OR 89"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.91706,
+          43.17083
+        ]
+      },
+      "properties": {
+        "name": "Stubblefield Butte (USFWS)",
+        "County": "Harney",
+        "Type": "Tower",
+        "Status": "Standing"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.23928,
+          43.91573
+        ]
+      },
+      "properties": {
+        "name": "Sugarloaf Mountain",
+        "County": "Harney",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 427, OR 52"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.60711,
+          43.11696
+        ]
+      },
+      "properties": {
+        "name": "Sugarpine Mountain",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1641, OR 159"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.23926,
+          44.98287
+        ]
+      },
+      "properties": {
+        "name": "Summit Point",
+        "County": "Baker",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1642, OR 160"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.49288,
+          42.19776
+        ]
+      },
+      "properties": {
+        "name": "Table Mountain",
+        "County": "Jackson",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1643, OR 161"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.31656,
+          44.33403
+        ]
+      },
+      "properties": {
+        "name": "Table Rock",
+        "County": "Baker",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 263, OR 31"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.66146,
+          44.87379
+        ]
+      },
+      "properties": {
+        "name": "Tamarack Mountain",
+        "County": "Grant",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1516, OR 130"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.40341,
+          45.65276
+        ]
+      },
+      "properties": {
+        "name": "Tope Creek",
+        "County": "Wallowa",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 222, OR 28"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.5689,
+          45.0543
+        ]
+      },
+      "properties": {
+        "name": "Tower Mountain",
+        "County": "Umatilla",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 142, OR 20"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.29569,
+          44.05735
+        ]
+      },
+      "properties": {
+        "name": "Tower Point",
+        "County": "Crook",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1644, OR 162"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.66957,
+          44.24114
+        ]
+      },
+      "properties": {
+        "name": "Trout Creek Butte",
+        "County": "Deschutes",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 506, OR 98"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.18814,
+          44.43675
+        ]
+      },
+      "properties": {
+        "name": "Unity Ranger Station",
+        "County": "Baker",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1645, OR 163"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.89151,
+          43.34877
+        ]
+      },
+      "properties": {
+        "name": "Wagontire Mountain",
+        "County": "Harney",
+        "Type": "2-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 954, OR 126"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.09898,
+          43.76522
+        ]
+      },
+      "properties": {
+        "name": "Waldo Mountain",
+        "County": "Lane",
+        "Type": "Ground",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 135, OR 19"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.71696,
+          43.30521
+        ]
+      },
+      "properties": {
+        "name": "Walker Mountain",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 145, OR 21"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.3664,
+          43.5434
+        ]
+      },
+      "properties": {
+        "name": "Warner Ridge",
+        "County": "Lane",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 84, OR 11"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.17237,
+          42.94294
+        ]
+      },
+      "properties": {
+        "name": "Watchman, The",
+        "County": "Klamath",
+        "Type": "2-Story cab",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 401, OR 48"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.16028,
+          43.97464
+        ]
+      },
+      "properties": {
+        "name": "West Myrtle Butte",
+        "County": "Grant",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 428, OR 53"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.5527,
+          42.77075
+        ]
+      },
+      "properties": {
+        "name": "White Point",
+        "County": "Jackson",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 507, OR 99"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.16032,
+          42.471
+        ]
+      },
+      "properties": {
+        "name": "Wildhorse",
+        "County": "Curry",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 509, OR 101"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.71545,
+          44.3282
+        ]
+      },
+      "properties": {
+        "name": "Wolf Mountain",
+        "County": "Wheeler",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 902, OR 115"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.26976,
+          42.32651
+        ]
+      },
+      "properties": {
+        "name": "Yainax Butte",
+        "County": "Klamath",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1646, OR 164"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.06784,
+          42.78413
+        ]
+      },
+      "properties": {
+        "name": "ZX Ranch",
+        "County": "Lake",
+        "Type": "Tower",
+        "Status": "Standing",
+        "NHLR/FFLOS": "NHLR US 1647, OR 165"
+      }
+    }
+  ]
+}

@@ -55,7 +55,7 @@ function createLegendRow(item, getMap) {
   });
 
   const icon = item.swatchColor
-    ? createLegendSwatch(item.swatchColor)
+    ? createLegendSwatch(item.swatchColor, item.swatchShape)
     : createLegendIcon(item.iconUrl);
 
   const label = document.createElement('span');
@@ -92,9 +92,10 @@ function createLegendIcon(iconUrl) {
   return icon;
 }
 
-function createLegendSwatch(color) {
+function createLegendSwatch(color, shape) {
   const swatch = document.createElement('span');
-  swatch.className = 'legend-swatch';
+  swatch.className =
+    shape === 'circle' ? 'legend-swatch legend-swatch--circle' : 'legend-swatch';
   swatch.style.setProperty('--legend-swatch-color', color);
   swatch.setAttribute('aria-hidden', 'true');
   return swatch;
