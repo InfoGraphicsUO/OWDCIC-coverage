@@ -40,7 +40,7 @@ const CAMERA_ICON_ID = 'camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
 const VIEWSHED_COLOR = '#1769aa';
 const VIEWSHED_HIGHLIGHT_COLOR = '#f8e109';
-const LOOKOUT_COLOR = '#2563eb';
+const LOOKOUT_COLOR = '#7c3aed';
 const NO_VIEWSHED_SELECTED = '__none__';
 const VIEWSHED_SOURCE = Object.freeze({
   source: LAYER_IDS.viewshedsSource,
