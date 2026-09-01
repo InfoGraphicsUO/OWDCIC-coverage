@@ -6,6 +6,7 @@ export const DATA_URLS = Object.freeze({
   cameraViewsheds: 'mapbox://infographics.s4u0rv', // latest camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.s4u0rv/
   cameraViewshedsSourceLayer: 'camera_viewsheds',
   viewshedManifest: 'data/viewshed-manifest.json',
+  standingLookouts: 'data/or-standing-lookouts.geojson',
   censusStateBoundaries:
     'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/10',
   worldCountries:
@@ -42,6 +43,7 @@ export const LAYER_IDS = Object.freeze({
   perimetersLine: 'nifc-perimeters-line',
   prescribedSource: 'watchduty-prescribed',
   prescribed: 'watchduty-prescribed',
+  lookouts: 'or-standing-lookouts',
 });
 
 export const REGION_DATA_BOUNDS = Object.freeze([

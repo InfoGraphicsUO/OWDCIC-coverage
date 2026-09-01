@@ -93,6 +93,17 @@
     border-radius: 3px;
 }
 
+.legend-swatch--circle {
+    width: 11px;
+    height: 11px;
+    flex: 0 0 11px;
+    margin: 0 3px;
+    background: var(--legend-swatch-color);
+    border: 1.5px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(31, 41, 51, 0.28);
+}
+
 @media (max-width: 520px) {
     .legend {
         font-size: 12px;

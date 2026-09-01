@@ -65,6 +65,10 @@ export function showPrescribedPopup(map, event) {
   showPopup(map, event, createPrescribedPopup);
 }
 
+export function showLookoutPopup(map, event) {
+  showPopup(map, event, createLookoutPopup);
+}
+
 function showPopup(map, event, createContent, options = {}) {
   const feature = event.features?.[0];
   if (!feature) return;
@@ -367,6 +371,21 @@ function createFirePopup(properties) {
     .filter(Boolean)
     .join(', ');
   if (location) popup.append(createMetaLine(location));
+
+  return popup;
+}
+
+function createLookoutPopup(properties) {
+  const popup = createPopupContainer(properties.name || 'Lookout');
+
+  const location = [properties.County, 'OR'].filter(Boolean).join(', ');
+  if (properties.County) popup.append(createMetaLine(location));
+
+  const details = [properties.Type, properties.Status].filter(Boolean).join(' · ');
+  if (details) popup.append(createMetaLine(details));
+
+  const nhlr = properties['NHLR/FFLOS'];
+  if (nhlr) popup.append(createMetaLine(nhlr));
 
   return popup;
 }
