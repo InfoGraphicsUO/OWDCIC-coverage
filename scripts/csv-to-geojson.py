@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Convert a CSV with latitude/longitude columns to GeoJSON points.
 
-    python scripts/csv-to-geojson.py data/or-standing-lookouts.csv
+    python scripts/csv-to-geojson.py data/standing-lookouts.csv
     python scripts/csv-to-geojson.py data/sites.csv data/sites.geojson --sites
 """
 

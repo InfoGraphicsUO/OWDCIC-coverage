@@ -378,8 +378,8 @@ function createFirePopup(properties) {
 function createLookoutPopup(properties) {
   const popup = createPopupContainer(properties.name || 'Lookout');
 
-  const location = [properties.County, 'OR'].filter(Boolean).join(', ');
-  if (properties.County) popup.append(createMetaLine(location));
+  const location = [properties.County, properties.State].filter(Boolean).join(', ');
+  if (location) popup.append(createMetaLine(location));
 
   const details = [properties.Type, properties.Status].filter(Boolean).join(' · ');
   if (details) popup.append(createMetaLine(details));
