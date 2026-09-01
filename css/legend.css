@@ -104,6 +104,41 @@
     box-shadow: 0 0 0 1px rgba(31, 41, 51, 0.28);
 }
 
+.legend-swatch--fill {
+    border: 0;
+    background: var(--legend-swatch-color);
+}
+
+.legend-layer-select {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 7px;
+    padding-top: 8px;
+    border-top: 1px solid #d8d8d8;
+}
+
+.legend-layer-select__label {
+    color: #444;
+    font-weight: 600;
+}
+
+.legend-layer-select__control {
+    min-width: 112px;
+    padding: 3px 22px 3px 6px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
+    font: inherit;
+}
+
+.legend-layer-select__control:focus-visible {
+    outline: 2px solid var(--ohaz-yellow);
+    outline-offset: 1px;
+}
+
 @media (max-width: 520px) {
     .legend {
         font-size: 12px;

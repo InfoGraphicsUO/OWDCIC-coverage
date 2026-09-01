@@ -2,7 +2,7 @@
  * renders controls immediately, then connects them after Mapbox layers exist
  * one item may control several Mapbox layer IDs
  */
-export function initLegend(items) {
+export function initLegend(items, layerSelects = []) {
   const legend = document.getElementById('legend');
   if (!legend) {
     throw new Error('Legend container #legend is missing');
@@ -23,6 +23,12 @@ export function initLegend(items) {
     legend.append(binding.row);
   }
 
+  const selectBindings = layerSelects.map((item) => {
+    const binding = createLayerSelect(item, () => activeMap);
+    legend.append(binding.row);
+    return binding;
+  });
+
   return {
     connect(map) {
       activeMap = map;
@@ -30,6 +36,10 @@ export function initLegend(items) {
       // honor the current checkbox state, including changes made while loading
       for (const { checkbox, item } of bindings) {
         setLayersVisible(map, item.layerIds, checkbox.checked);
+      }
+
+      for (const { item, select } of selectBindings) {
+        applyLayerSelection(map, item, select.value);
       }
     },
     updateInfo(label, text) {
@@ -39,6 +49,45 @@ export function initLegend(items) {
       binding.infoButton.setAttribute('aria-label', text);
     },
   };
+}
+
+function createLayerSelect(item, getMap) {
+  const row = document.createElement('div');
+  row.className = 'legend-layer-select';
+
+  const label = document.createElement('label');
+  label.className = 'legend-layer-select__label';
+  label.htmlFor = item.id;
+  label.textContent = item.label;
+
+  const select = document.createElement('select');
+  select.className = 'legend-layer-select__control';
+  select.id = item.id;
+
+  for (const optionItem of item.options) {
+    const option = document.createElement('option');
+    option.value = optionItem.value;
+    option.textContent = optionItem.label;
+    select.append(option);
+  }
+
+  select.value = item.defaultValue ?? '';
+  select.addEventListener('change', () => {
+    const map = getMap();
+    if (map) applyLayerSelection(map, item, select.value);
+  });
+
+  row.append(label, select);
+  return { item, row, select };
+}
+
+function applyLayerSelection(map, item, selectedValue) {
+  for (const option of item.options) {
+    setLayersVisible(map, option.layerIds || [], option.value === selectedValue);
+  }
+
+  const selected = item.options.find(({ value }) => value === selectedValue);
+  selected?.activate?.(map);
 }
 
 function createLegendRow(item, getMap) {
@@ -55,7 +104,7 @@ function createLegendRow(item, getMap) {
   });
 
   const icon = item.swatchColor
-    ? createLegendSwatch(item.swatchColor, item.swatchShape)
+    ? createLegendSwatch(item)
     : createLegendIcon(item.iconUrl);
 
   const label = document.createElement('span');
@@ -92,11 +141,13 @@ function createLegendIcon(iconUrl) {
   return icon;
 }
 
-function createLegendSwatch(color, shape) {
+function createLegendSwatch(item) {
   const swatch = document.createElement('span');
-  swatch.className =
-    shape === 'circle' ? 'legend-swatch legend-swatch--circle' : 'legend-swatch';
-  swatch.style.setProperty('--legend-swatch-color', color);
+  const classes = ['legend-swatch'];
+  if (item.swatchShape === 'circle') classes.push('legend-swatch--circle');
+  if (item.swatchBorder === false) classes.push('legend-swatch--fill');
+  swatch.className = classes.join(' ');
+  swatch.style.setProperty('--legend-swatch-color', item.swatchColor);
   swatch.setAttribute('aria-hidden', 'true');
   return swatch;
 }

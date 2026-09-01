@@ -152,9 +152,9 @@ class ViewshedWindow(QMainWindow):
         group = QGroupBox("Run settings")
         form = QFormLayout(group)
         self.mode = QComboBox()
-        self.mode.addItem("Portland pilot — 1 camera", "pilot")
-        self.mode.addItem("Validation — 3 cameras", "validation")
-        self.mode.addItem("Production — all 75 cameras", "production")
+        self.mode.addItem("1 camera (Portland)", "pilot")
+        self.mode.addItem("3 cameras", "validation")
+        self.mode.addItem("All cameras", "production")
 
         self.radius = QDoubleSpinBox()
         self.radius.setRange(0.1, 100.0)
