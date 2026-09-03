@@ -29,6 +29,9 @@ export function initLegend(items, layerSelects = []) {
     return binding;
   });
 
+  const findBinding = (label) =>
+    bindings.find(({ item }) => item.label === label);
+
   return {
     connect(map) {
       activeMap = map;
@@ -43,10 +46,16 @@ export function initLegend(items, layerSelects = []) {
       }
     },
     updateInfo(label, text) {
-      const binding = bindings.find(({ item }) => item.label === label);
-      if (!binding?.infoButton) return;
-      binding.infoButton.dataset.tooltip = text;
-      binding.infoButton.setAttribute('aria-label', text);
+      const infoButton = findBinding(label)?.infoButton;
+      if (!infoButton) return;
+      infoButton.dataset.tooltip = text;
+      infoButton.setAttribute('aria-label', text);
+    },
+    updateSwatchColor(label, color, { darkOutline = false } = {}) {
+      const swatch = findBinding(label)?.swatch;
+      if (!swatch) return;
+      swatch.style.setProperty('--legend-swatch-color', color);
+      swatch.classList.toggle('legend-swatch--dark-outline', darkOutline);
     },
   };
 }
@@ -103,9 +112,8 @@ function createLegendRow(item, getMap) {
     if (map) setLayersVisible(map, item.layerIds, checkbox.checked);
   });
 
-  const icon = item.swatchColor
-    ? createLegendSwatch(item)
-    : createLegendIcon(item.iconUrl);
+  const swatch = item.swatchColor ? createLegendSwatch(item) : null;
+  const icon = swatch ?? createLegendIcon(item.iconUrl);
 
   const label = document.createElement('span');
   label.textContent = item.label;
@@ -130,7 +138,7 @@ function createLegendRow(item, getMap) {
 
   row.append(labelText);
   if (infoButton) row.append(infoButton);
-  return { checkbox, infoButton, item, row };
+  return { checkbox, infoButton, item, row, swatch };
 }
 
 function createLegendIcon(iconUrl) {

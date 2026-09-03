@@ -1,5 +1,6 @@
 import { fetchArcGISGeoJSON } from './arcgis-requests.js';
 import {
+  BURN_PROBABILITY_MIN,
   CAMERA_API,
   DATA_URLS,
   LAYER_IDS,
@@ -15,7 +16,7 @@ import {
 } from './geojson-transform.js';
 import { initLegend } from './legend.js';
 import { hideMapLoading } from './loading.js';
-import { mapReady } from './map.js';
+import { mapReady, onBasemapChange } from './map.js';
 import {
   registerMarkerIcon,
   registerMarkerIconSizes,
@@ -39,25 +40,43 @@ const FIRE_ICON_ID = 'fire-marker';
 const CAMERA_ICON_ID = 'camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
 const BOUNDARY_COLOR = '#1769aa';
-const VIEWSHED_COLOR = '#F28D05';
-const VIEWSHED_HIGHLIGHT_COLOR = '#f8e109';
+const VIEWSHED_LEGEND_LABEL = 'Camera viewsheds';
+const VIEWSHED_FILL_COLOR = Object.freeze({
+  outdoors: '#F28D05',
+  satellite: '#F4F1EA',
+});
+const VIEWSHED_HIGHLIGHT_COLOR = '#ffee00';
+const VIEWSHED_FILL_OPACITY = 0.5;
+const VIEWSHED_HIGHLIGHT_OPACITY = 0.55;
 const LOOKOUT_COLOR = '#8154BD';
+const NATIONAL_FOREST_COLOR = '#3b7d4f';
+const BLM_LAND_COLOR = '#f6d94a';
+const ODF_PROTECTION_COLOR = '#008fb3';
+const BURN_PROBABILITY_COLOR = '#d7191c';
 const NO_VIEWSHED_SELECTED = '__none__';
 const VIEWSHED_SOURCE = Object.freeze({
   source: LAYER_IDS.viewshedsSource,
   'source-layer': DATA_URLS.cameraViewshedsSourceLayer,
 });
-const VIEWSHED_HIGHLIGHT_LAYER_IDS = Object.freeze([
-  LAYER_IDS.viewshedsHighlightFill,
-  LAYER_IDS.viewshedsHighlightLine,
-]);
+const VIEWSHED_COVERAGE_SOURCE = Object.freeze({
+  source: LAYER_IDS.viewshedsSource,
+  'source-layer': DATA_URLS.cameraViewshedsCoverageSourceLayer,
+});
 const VIEWSHED_LAYER_IDS = Object.freeze([
   LAYER_IDS.viewshedsFill,
-  ...VIEWSHED_HIGHLIGHT_LAYER_IDS,
+  LAYER_IDS.viewshedsHighlightFill,
 ]);
 const REGION_STATE_WHERE = "STATE IN ('41','53')";
 const CENSUS_ATTRIBUTION =
   '<a href="https://tigerweb.geo.census.gov/" target="_blank" rel="noopener noreferrer">U.S. Census Bureau TIGERweb</a>';
+const NATIONAL_FOREST_ATTRIBUTION =
+  '<a href="https://www.arcgis.com/home/item.html?id=4710a9e7cac3445eacc8265f7f61b813" target="_blank" rel="noopener noreferrer">U.S. Forest Service</a>';
+const BLM_ATTRIBUTION =
+  '<a href="https://www.arcgis.com/home/item.html?id=f8b3161f734f48f2971f4222411f1304" target="_blank" rel="noopener noreferrer">Bureau of Land Management</a>';
+const ODF_ATTRIBUTION =
+  '<a href="https://oregon-department-of-forestry-geo.hub.arcgis.com/datasets/odf-forest-protection-districts" target="_blank" rel="noopener noreferrer">Oregon Department of Forestry</a>';
+const BURN_PROBABILITY_ATTRIBUTION =
+  '<a href="https://www.arcgis.com/home/item.html?id=55a7c77f09064571ae3d06dc76411cef" target="_blank" rel="noopener noreferrer">Oregon Explorer / 2023 PNW QWRA</a>';
 const BOUNDARY_TYPES = Object.freeze([
   Object.freeze({
     value: 'county',
@@ -127,8 +146,10 @@ function waitForMapLoad(map) {
 async function loadMapLayers(map) {
   // overlap network requests with source and marker setup
   const dataPromise = loadLayerData();
+  globalThis.__owdcicMap = map;
 
   addRegionFocusLayers(map);
+  addContextLayers(map);
   addBoundaryLayers(map);
   addViewshedLayers(map);
   addPerimeterLayers(map);
@@ -152,6 +173,8 @@ async function loadMapLayers(map) {
     prescribed,
     viewshedManifest,
     lookouts,
+    nationalForests,
+    odfProtectionDistricts,
   } = await dataPromise;
 
   // matching source update for highlight switch above
@@ -163,7 +186,7 @@ async function loadMapLayers(map) {
     attachViewshedIds(cameras, viewshedManifest)
   );
   legendControl.updateInfo(
-    'Camera viewsheds',
+    VIEWSHED_LEGEND_LABEL,
     `Contains ${viewshedEntries(viewshedManifest).length} camera viewsheds from ALERTWest`
   );
 
@@ -177,6 +200,125 @@ async function loadMapLayers(map) {
   setSourceData(map, LAYER_IDS.perimetersSource, perimeters);
   setSourceData(map, LAYER_IDS.prescribedSource, prescribed);
   setSourceData(map, LAYER_IDS.lookouts, lookouts);
+  setSourceData(map, LAYER_IDS.nationalForestsSource, nationalForests);
+  setSourceData(map, LAYER_IDS.odfProtectionSource, odfProtectionDistricts);
+}
+
+function addContextLayers(map) {
+  const beforeId = LAYER_IDS.outsideRegionFill;
+
+  map.addSource(LAYER_IDS.burnProbabilitySource, {
+    type: 'raster',
+    tiles: [DATA_URLS.burnProbabilityTiles],
+    tileSize: 256,
+    minzoom: 6,
+    maxzoom: 16,
+    bounds: [-124.85, 41.9, -116.4, 46.35],
+    attribution: BURN_PROBABILITY_ATTRIBUTION,
+  });
+  map.addLayer({
+    id: LAYER_IDS.burnProbability,
+    type: 'raster',
+    source: LAYER_IDS.burnProbabilitySource,
+    layout: { visibility: 'none' },
+    paint: burnProbabilityPaint(),
+  }, beforeId);
+
+  map.addSource(LAYER_IDS.blmLandsSource, {
+    type: 'raster',
+    tiles: [DATA_URLS.blmLandTiles],
+    tileSize: 256,
+    maxzoom: 14,
+    attribution: BLM_ATTRIBUTION,
+  });
+  map.addLayer({
+    id: LAYER_IDS.blmLands,
+    type: 'raster',
+    source: LAYER_IDS.blmLandsSource,
+    layout: { visibility: 'none' },
+    paint: { 'raster-opacity': 0.68 },
+  }, beforeId);
+
+  addGeoJSONSource(map, LAYER_IDS.nationalForestsSource, {
+    attribution: NATIONAL_FOREST_ATTRIBUTION,
+  });
+  map.addLayer({
+    id: LAYER_IDS.nationalForestsFill,
+    type: 'fill',
+    source: LAYER_IDS.nationalForestsSource,
+    layout: { visibility: 'none' },
+    paint: {
+      'fill-color': NATIONAL_FOREST_COLOR,
+      'fill-opacity': 0.28,
+    },
+  }, beforeId);
+  map.addLayer({
+    id: LAYER_IDS.nationalForestsLine,
+    type: 'line',
+    source: LAYER_IDS.nationalForestsSource,
+    layout: { visibility: 'none' },
+    paint: {
+      'line-color': NATIONAL_FOREST_COLOR,
+      'line-width': 1.25,
+    },
+  }, beforeId);
+
+  addGeoJSONSource(map, LAYER_IDS.odfProtectionSource, {
+    attribution: ODF_ATTRIBUTION,
+  });
+  map.addLayer({
+    id: LAYER_IDS.odfProtectionFill,
+    type: 'fill',
+    source: LAYER_IDS.odfProtectionSource,
+    layout: { visibility: 'none' },
+    paint: {
+      'fill-color': ODF_PROTECTION_COLOR,
+      'fill-opacity': 0.10,
+    },
+  }, beforeId);
+  map.addLayer({
+    id: LAYER_IDS.odfProtectionLine,
+    type: 'line',
+    source: LAYER_IDS.odfProtectionSource,
+    layout: { visibility: 'none' },
+    paint: {
+      'line-color': ODF_PROTECTION_COLOR,
+      'line-dasharray': [3, 2],
+      'line-opacity': 0.95,
+      'line-width': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        5, 1.25,
+        10, 2.5,
+      ],
+    },
+  }, beforeId);
+}
+
+/**
+ * QWRA tiles are pre-classed ColorBrewer YlOrRd, not raw probability values.
+ * Hidden classes are pale yellow–orange with blue >= 50; red and darker stay.
+ */
+function burnProbabilityPaint() {
+  return {
+    'raster-opacity': 0.72,
+    'raster-resampling': 'nearest',
+    'raster-color-mix': [0, 0, 255, 0],
+    'raster-color-range': [0, 255],
+    'raster-color': [
+      'interpolate',
+      ['linear'],
+      ['raster-value'],
+      0, 'rgb(89, 25, 0)',
+      28, 'rgb(227, 26, 28)',
+      38, 'rgb(189, 0, 38)',
+      42, 'rgb(252, 78, 42)',
+      49, 'rgb(252, 78, 42)',
+      50, 'rgba(0, 0, 0, 0)',
+      255, 'rgba(0, 0, 0, 0)',
+    ],
+  };
 }
 
 function addBoundaryLayers(map) {
@@ -237,6 +379,8 @@ async function loadLayerData() {
     prescribed,
     viewshedManifest,
     lookouts,
+    nationalForests,
+    odfProtectionDistricts,
   ] = await Promise.all([
     safelyLoad('ALERTWest cameras', loadAlertWestCameras),
 
@@ -300,6 +444,28 @@ async function loadLayerData() {
     safelyLoad('standing lookouts', () =>
       fetchJson(DATA_URLS.standingLookouts, 'Standing lookouts')
     ),
+
+    safelyLoad('national forests', () =>
+      fetchArcGISGeoJSON(DATA_URLS.nationalForests, {
+        where: "ownerclassification='USDA FOREST SERVICE'",
+        outFields: 'ownerclassification,forestname',
+        orderByFields: 'objectid',
+        geometry: REGION_DATA_BOUNDS.flat().join(','),
+        geometryType: 'esriGeometryEnvelope',
+        inSR: '4326',
+        spatialRel: 'esriSpatialRelIntersects',
+        geometryPrecision: '4',
+        maxAllowableOffset: '0.005',
+      })
+    ),
+
+    safelyLoad('ODF protection districts', () =>
+      fetchArcGISGeoJSON(DATA_URLS.odfProtectionDistricts, {
+        outFields: 'ODF_FPD',
+        geometryPrecision: '4',
+        maxAllowableOffset: '0.001',
+      })
+    ),
   ]);
 
   return {
@@ -310,6 +476,8 @@ async function loadLayerData() {
     prescribed,
     viewshedManifest,
     lookouts,
+    nationalForests,
+    odfProtectionDistricts,
   };
 }
 
@@ -364,49 +532,51 @@ function addViewshedLayers(map) {
   map.addSource(LAYER_IDS.viewshedsSource, {
     type: 'vector',
     url: DATA_URLS.cameraViewsheds,
+    minzoom: 5,
+    maxzoom: 12,
   });
 
+  // dissolved coverage layer so overlapping cameras do not stack opacity
   map.addLayer({
     id: LAYER_IDS.viewshedsFill,
     type: 'fill',
-    ...VIEWSHED_SOURCE,
+    ...VIEWSHED_COVERAGE_SOURCE,
     paint: {
-      'fill-color': VIEWSHED_COLOR,
-      'fill-opacity': 0.35,
+      'fill-color': VIEWSHED_FILL_COLOR.outdoors,
+      'fill-opacity': VIEWSHED_FILL_OPACITY,
     },
   });
-
-  const selectedFilter = viewshedFilter(NO_VIEWSHED_SELECTED);
 
   map.addLayer({
     id: LAYER_IDS.viewshedsHighlightFill,
     type: 'fill',
     ...VIEWSHED_SOURCE,
-    filter: selectedFilter,
+    filter: viewshedFilter(NO_VIEWSHED_SELECTED),
     paint: {
       'fill-color': VIEWSHED_HIGHLIGHT_COLOR,
-      'fill-opacity': 0.36,
+      'fill-opacity': VIEWSHED_HIGHLIGHT_OPACITY,
     },
   });
 
-  map.addLayer({
-    id: LAYER_IDS.viewshedsHighlightLine,
-    type: 'line',
-    ...VIEWSHED_SOURCE,
-    filter: selectedFilter,
-    paint: {
-      'line-color': VIEWSHED_HIGHLIGHT_COLOR,
-      'line-width': 3,
-    },
+  onBasemapChange((basemap) => applyViewshedSymbology(map, basemap));
+}
+
+function applyViewshedSymbology(map, basemap) {
+  const satellite = basemap === 'satellite';
+  const fillColor =
+    VIEWSHED_FILL_COLOR[basemap] ?? VIEWSHED_FILL_COLOR.outdoors;
+
+  map.setPaintProperty(LAYER_IDS.viewshedsFill, 'fill-color', fillColor);
+  legendControl.updateSwatchColor(VIEWSHED_LEGEND_LABEL, fillColor, {
+    darkOutline: satellite,
   });
 }
 
 function selectCameraViewshed(map, viewshedId) {
-  const filter = viewshedFilter(viewshedId || NO_VIEWSHED_SELECTED);
-
-  for (const layerId of VIEWSHED_HIGHLIGHT_LAYER_IDS) {
-    if (map.getLayer(layerId)) map.setFilter(layerId, filter);
-  }
+  map.setFilter(
+    LAYER_IDS.viewshedsHighlightFill,
+    viewshedFilter(viewshedId || NO_VIEWSHED_SELECTED)
+  );
 }
 
 function viewshedFilter(viewshedId) {
@@ -525,10 +695,11 @@ function markerLayout(iconImage) {
 }
 
 // sources exist before requests finish so layer registration can proceed
-function addGeoJSONSource(map, sourceId) {
+function addGeoJSONSource(map, sourceId, options = {}) {
   map.addSource(sourceId, {
     type: 'geojson',
     data: emptyFeatureCollection(),
+    ...options,
   });
 }
 
@@ -574,8 +745,8 @@ function legendItems() {
       layerIds: [LAYER_IDS.cameras],
     },
     {
-      label: 'Camera viewsheds',
-      swatchColor: VIEWSHED_COLOR,
+      label: VIEWSHED_LEGEND_LABEL,
+      swatchColor: VIEWSHED_FILL_COLOR.outdoors,
       swatchBorder: false,
       infoText: 'Loading camera viewshed count…',
       layerIds: VIEWSHED_LAYER_IDS,
@@ -585,6 +756,42 @@ function legendItems() {
       swatchColor: LOOKOUT_COLOR,
       swatchShape: 'circle',
       layerIds: [LAYER_IDS.lookouts],
+    },
+    {
+      label: 'National forests',
+      swatchColor: NATIONAL_FOREST_COLOR,
+      visible: false,
+      infoText: 'Surface ownership parcels from the U.S. Forest Service',
+      layerIds: [
+        LAYER_IDS.nationalForestsFill,
+        LAYER_IDS.nationalForestsLine,
+      ],
+    },
+    {
+      label: 'BLM lands',
+      swatchColor: BLM_LAND_COLOR,
+      swatchBorder: false,
+      visible: false,
+      infoText: 'Surface management areas from the Bureau of Land Management',
+      layerIds: [LAYER_IDS.blmLands],
+    },
+    {
+      label: 'ODF protection districts',
+      swatchColor: ODF_PROTECTION_COLOR,
+      visible: false,
+      infoText: 'Forest protection districts from the Oregon Department of Forestry',
+      layerIds: [
+        LAYER_IDS.odfProtectionFill,
+        LAYER_IDS.odfProtectionLine,
+      ],
+    },
+    {
+      label: 'Burn probability (QWRA)',
+      swatchColor: BURN_PROBABILITY_COLOR,
+      swatchBorder: false,
+      visible: false,
+      infoText: `Annual burn probability from the 2023 Pacific Northwest QWRA. Values below ${BURN_PROBABILITY_MIN} are hidden.`,
+      layerIds: [LAYER_IDS.burnProbability],
     },
     {
       label: 'Fires (NIFC)',
