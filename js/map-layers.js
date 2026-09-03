@@ -146,7 +146,6 @@ function waitForMapLoad(map) {
 async function loadMapLayers(map) {
   // overlap network requests with source and marker setup
   const dataPromise = loadLayerData();
-  globalThis.__owdcicMap = map;
 
   addRegionFocusLayers(map);
   addContextLayers(map);
@@ -298,25 +297,23 @@ function addContextLayers(map) {
 
 /**
  * QWRA tiles are pre-classed ColorBrewer YlOrRd, not raw probability values.
- * Hidden classes are pale yellow–orange with blue >= 50; red and darker stay.
+ * Blue channel below ~0.196 is red through dark brown (>= 0.002154); paler classes hide.
  */
 function burnProbabilityPaint() {
   return {
     'raster-opacity': 0.72,
     'raster-resampling': 'nearest',
-    'raster-color-mix': [0, 0, 255, 0],
-    'raster-color-range': [0, 255],
+    'raster-color-mix': [0, 0, 1, 0],
+    'raster-color-range': [0, 1],
     'raster-color': [
-      'interpolate',
-      ['linear'],
+      'step',
       ['raster-value'],
-      0, 'rgb(89, 25, 0)',
-      28, 'rgb(227, 26, 28)',
-      38, 'rgb(189, 0, 38)',
-      42, 'rgb(252, 78, 42)',
-      49, 'rgb(252, 78, 42)',
-      50, 'rgba(0, 0, 0, 0)',
-      255, 'rgba(0, 0, 0, 0)',
+      'rgb(89, 25, 0)',
+      13 / 255, 'rgb(128, 0, 38)',
+      27 / 255, 'rgb(227, 26, 28)',
+      33 / 255, 'rgb(189, 0, 38)',
+      40 / 255, 'rgb(252, 78, 42)',
+      50 / 255, 'rgba(0, 0, 0, 0)',
     ],
   };
 }
