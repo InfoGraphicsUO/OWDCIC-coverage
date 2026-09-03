@@ -154,6 +154,7 @@ function createLegendSwatch(item) {
   const classes = ['legend-swatch'];
   if (item.swatchShape === 'circle') classes.push('legend-swatch--circle');
   if (item.swatchBorder === false) classes.push('legend-swatch--fill');
+  if (item.swatchClass) classes.push(item.swatchClass);
   swatch.className = classes.join(' ');
   swatch.style.setProperty('--legend-swatch-color', item.swatchColor);
   swatch.setAttribute('aria-hidden', 'true');

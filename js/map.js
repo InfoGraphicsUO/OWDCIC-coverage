@@ -9,6 +9,7 @@ const DEFAULT_VIEW = Object.freeze({
 });
 
 const SATELLITE_ID = 'mapbox-satellite-basemap';
+const DEFAULT_BASEMAP = 'outdoors';
 const basemapChangeListeners = [];
 
 const MAP_BOUNDS = [
@@ -27,10 +28,15 @@ function selectedBasemap() {
   const checked = document.querySelector(
     '#basemap-picker input[name="basemap"]:checked'
   );
-  return checked?.value ?? 'outdoors';
+  return checked?.value ?? DEFAULT_BASEMAP;
 }
 
 async function initializeMap() {
+  // Browsers may restore the last radio-button value after a reload. The map
+  // itself always starts with the default style, so reset the control before
+  // any listeners use it to set viewshed symbology.
+  resetBasemapPicker();
+
   const style = await loadMapStyle();
   removeDuplicateTerrainDem(style);
   enableContourLineMetrics(style);
@@ -50,19 +56,24 @@ async function initializeMap() {
   });
 
   map.on('load', () => {
-    // 1. Add a raster-dem source (required for terrain)
     map.addSource('mapbox-dem', {
         'type': 'raster-dem',
         'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
         'tileSize': 512,
         'maxzoom': 14
     });
-
-    // 2. Enable terrain and set the vertical exaggeration
     map.setTerrain({ 
         'source': 'mapbox-dem', 
-        'exaggeration': 1.8 // Multiplies elevation. 1.0 is realistic, > 1.0 is exaggerated.
+        'exaggeration': [
+          'interpolate', ['exponential', 0.5],
+          ['zoom'], 
+          5, 0.2,
+          12, 1.6
+        ]
     });
+    map.setFog({
+      range: [1, 5], // first is the number where fog starts to become more opaque, second is full opaque
+    })
   });
 
 
@@ -70,7 +81,7 @@ async function initializeMap() {
   map.on('error', handleMapError);
   map.setStyle(style, { diff: false });
   map.addControl(
-    new mapboxgl.NavigationControl({ showCompass: false, showZoom: true }),
+    new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }),
     'top-left'
   );
   map.addControl(new HomeControl(), 'top-left');
@@ -139,6 +150,12 @@ function initBasemapPicker(map) {
   const picker = document.getElementById('basemap-picker');
   if (!picker) throw new Error('Basemap picker #basemap-picker is missing');
 
+  // Explicitly establish the startup state as well as the input state. This
+  // keeps the control and the rendered basemap in sync even when the browser
+  // restores form values during a reload.
+  resetBasemapPicker();
+  map.setLayoutProperty(SATELLITE_ID, 'visibility', 'none');
+
   picker.addEventListener('change', (event) => {
     const input = event.target;
     if (!(input instanceof HTMLInputElement) || input.name !== 'basemap') return;
@@ -151,6 +168,13 @@ function initBasemapPicker(map) {
 
     for (const listener of basemapChangeListeners) listener(input.value);
   });
+}
+
+function resetBasemapPicker() {
+  const defaultInput = document.querySelector(
+    `#basemap-picker input[name="basemap"][value="${DEFAULT_BASEMAP}"]`
+  );
+  if (defaultInput) defaultInput.checked = true;
 }
 
 // satellite is a topmost base-style layer; application layers load above

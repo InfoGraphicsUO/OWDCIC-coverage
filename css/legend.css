@@ -109,6 +109,10 @@
     background: var(--legend-swatch-color);
 }
 
+.legend-swatch--burn-probability {
+    background: linear-gradient(to right, #f2774f, #b83745);
+}
+
 .legend-swatch--fill.legend-swatch--dark-outline {
     border: 1px solid #2a2a2a;
 }
