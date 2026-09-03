@@ -9,6 +9,7 @@ const DEFAULT_VIEW = Object.freeze({
 });
 
 const SATELLITE_ID = 'mapbox-satellite-basemap';
+const basemapChangeListeners = [];
 
 const MAP_BOUNDS = [
   [-135, 38],
@@ -17,9 +18,22 @@ const MAP_BOUNDS = [
 
 export const mapReady = initializeMap();
 
+export function onBasemapChange(listener) {
+  basemapChangeListeners.push(listener);
+  listener(selectedBasemap());
+}
+
+function selectedBasemap() {
+  const checked = document.querySelector(
+    '#basemap-picker input[name="basemap"]:checked'
+  );
+  return checked?.value ?? 'outdoors';
+}
+
 async function initializeMap() {
   const style = await loadMapStyle();
   removeDuplicateTerrainDem(style);
+  enableContourLineMetrics(style);
   addSatelliteBasemap(style);
 
   const map = new mapboxgl.Map({
@@ -29,10 +43,28 @@ async function initializeMap() {
     center: DEFAULT_VIEW.center,
     zoom: DEFAULT_VIEW.zoom,
     minZoom: 5,
+    maxZoom: 12,
     maxBounds: MAP_BOUNDS,
     attributionControl: false,
     performanceMetricsCollection: false,
   });
+
+  map.on('load', () => {
+    // 1. Add a raster-dem source (required for terrain)
+    map.addSource('mapbox-dem', {
+        'type': 'raster-dem',
+        'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+        'tileSize': 512,
+        'maxzoom': 14
+    });
+
+    // 2. Enable terrain and set the vertical exaggeration
+    map.setTerrain({ 
+        'source': 'mapbox-dem', 
+        'exaggeration': 1.8 // Multiplies elevation. 1.0 is realistic, > 1.0 is exaggerated.
+    });
+  });
+
 
   // full style install can emit errors before initialization finishes
   map.on('error', handleMapError);
@@ -116,6 +148,8 @@ function initBasemapPicker(map) {
       'visibility',
       input.value === 'satellite' ? 'visible' : 'none'
     );
+
+    for (const listener of basemapChangeListeners) listener(input.value);
   });
 }
 
@@ -144,9 +178,15 @@ function handleMapError(event) {
   const isKnownStyleImageDecodeNoise =
     error instanceof DOMException &&
     error.message === 'The image could not be decoded';
+  const isEmptyVectorTile =
+    error?.status === 404 &&
+    typeof error?.url === 'string' &&
+    error.url.includes('.vector.pbf');
 
   // ignore confirmed worker noise while surfacing actionable errors
-  if (isStaleWorkerTransfer || isKnownStyleImageDecodeNoise) return;
+  if (isStaleWorkerTransfer || isKnownStyleImageDecodeNoise || isEmptyVectorTile) {
+    return;
+  }
 
   console.error('mapbox error:', error);
 }
@@ -162,6 +202,13 @@ async function loadMapStyle() {
   }
 
   return response.json();
+}
+
+function enableContourLineMetrics(style) {
+  const contourSource = style.sources?.['mapbox://mapbox.mapbox-terrain-v2-contour'];
+  if (contourSource?.type === 'vector') {
+    contourSource.lineMetrics = true;
+  }
 }
 
 // remove redundant terrain DEM while preserving any hillshade that shares it
