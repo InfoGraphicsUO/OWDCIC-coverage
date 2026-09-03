@@ -783,9 +783,10 @@ function legendItems() {
       ],
     },
     {
-      label: 'Burn probability (QWRA)',
+      label: 'OR Burn probability (QWRA)',
       swatchColor: BURN_PROBABILITY_COLOR,
       swatchBorder: false,
+      swatchClass: 'legend-swatch--burn-probability',
       visible: false,
       infoText: `Annual burn probability from the 2023 Pacific Northwest QWRA. Values below ${BURN_PROBABILITY_MIN} are hidden.`,
       layerIds: [LAYER_IDS.burnProbability],
