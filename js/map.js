@@ -49,7 +49,7 @@ async function initializeMap() {
     center: DEFAULT_VIEW.center,
     zoom: DEFAULT_VIEW.zoom,
     minZoom: 5,
-    maxZoom: 12,
+    // maxZoom: 12,
     maxBounds: MAP_BOUNDS,
     attributionControl: false,
     performanceMetricsCollection: false,
