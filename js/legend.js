@@ -45,17 +45,49 @@ export function initLegend(items, layerSelects = []) {
         applyLayerSelection(map, item, select.value);
       }
     },
+
     updateInfo(label, text) {
+    // info button for layers that require additional info
       const infoButton = findBinding(label)?.infoButton;
       if (!infoButton) return;
       infoButton.dataset.tooltip = text;
       infoButton.setAttribute('aria-label', text);
     },
+
     updateSwatchColor(label, color, { darkOutline = false } = {}) {
+    // switch color, primarily used for camera viewsheds when switching to satellite
       const swatch = findBinding(label)?.swatch;
       if (!swatch) return;
       swatch.style.setProperty('--legend-swatch-color', color);
       swatch.classList.toggle('legend-swatch--dark-outline', darkOutline);
+    },
+
+    setLoading(label, loading) {
+      // set loading if we're having trouble pinging a layer
+      const visual = findBinding(label)?.visual;
+      if (!visual) return;
+
+      visual.classList.toggle('legend-visual--loading', loading);
+      if (loading) {
+        visual.setAttribute('role', 'status');
+        visual.setAttribute('aria-label', `Loading ${label}`);
+      } else if (!visual.classList.contains('legend-visual--error')) {
+        visual.removeAttribute('role');
+        visual.removeAttribute('aria-label');
+      }
+    },
+
+    setError(label, message) {
+      // set an error symbol if the layer failed to load
+      const visual = findBinding(label)?.visual;
+      if (!visual) return;
+
+      visual.classList.remove('legend-visual--loading');
+      visual.classList.add('legend-visual--error');
+      visual.dataset.tooltip = message;
+      visual.setAttribute('aria-label', message);
+      visual.removeAttribute('role');
+      visual.tabIndex = 0;
     },
   };
 }
@@ -114,6 +146,7 @@ function createLegendRow(item, getMap) {
 
   const swatch = item.swatchColor ? createLegendSwatch(item) : null;
   const icon = swatch ?? createLegendIcon(item.iconUrl);
+  const visual = createLegendVisual(icon, item.loading === true, item.label);
 
   const label = document.createElement('span');
   label.textContent = item.label;
@@ -123,7 +156,7 @@ function createLegendRow(item, getMap) {
   labelText.className = 'legend-label';
   labelText.append(label);
 
-  row.append(checkbox, icon);
+  row.append(checkbox, visual);
 
   let infoButton;
   if (item.infoText !== undefined) {
@@ -138,7 +171,30 @@ function createLegendRow(item, getMap) {
 
   row.append(labelText);
   if (infoButton) row.append(infoButton);
-  return { checkbox, infoButton, item, row, swatch };
+  return { checkbox, infoButton, item, row, swatch, visual };
+}
+
+function createLegendVisual(icon, loading, label) {
+  const visual = document.createElement('span');
+  visual.className = 'legend-visual';
+
+  const loader = document.createElement('span');
+  loader.className = 'legend-loader';
+  loader.setAttribute('aria-hidden', 'true');
+
+  const error = document.createElement('span');
+  error.className = 'legend-error';
+  error.textContent = '!';
+  error.setAttribute('aria-hidden', 'true');
+
+  visual.append(icon, loader, error);
+  if (loading) {
+    visual.classList.add('legend-visual--loading');
+    visual.setAttribute('role', 'status');
+    visual.setAttribute('aria-label', `Loading ${label}`);
+  }
+
+  return visual;
 }
 
 function createLegendIcon(iconUrl) {
