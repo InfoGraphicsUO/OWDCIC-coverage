@@ -1,3 +1,4 @@
+from contextlib import closing
 import importlib.util
 import json
 from pathlib import Path
@@ -24,31 +25,50 @@ except ImportError:
     np = None
 
 
+def make_args(directory: Path, **overrides):
+    dem = directory / "dem.tif"
+    dem.write_bytes(b"dem")
+    sites = directory / "sites.geojson"
+    sites.write_text("{}", encoding="utf-8")
+    boundary = directory / "boundary.geojson"
+    boundary.write_text("boundary", encoding="utf-8")
+    values = dict(
+        radius_miles=20.0,
+        cell_size=10.0,
+        web_resolution=50.0,
+        simplify_tolerance=25.0,
+        smooth_iterations=1,
+        web_majority_filter=True,
+        min_web_patch_cells=0,
+        web_clip=True,
+        web_clip_boundary=boundary,
+        skip_exact_polygons=False,
+    )
+    values.update(overrides)
+    return SimpleNamespace(**values), [dem], sites
+
+
 class ConfigurationTests(unittest.TestCase):
-    def test_analysis_match_ignores_web_settings(self):
-        previous = {
-            "sites_sha256": "sites",
-            "dem_inventory": [{"name": "dem.tif"}],
-            "radius_m": 100,
-            "cell_size_m": 10,
-            "refraction_coefficient": 0.13,
-            "web_resolution_m": 50,
-        }
-        current = {**previous, "web_resolution_m": 100}
+    def test_web_settings_change_only_web_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args, dems, sites = make_args(Path(directory))
+            first = viewsheds.config_document(args, dems, sites)
+            args.web_resolution = 100.0
+            second = viewsheds.config_document(args, dems, sites)
 
-        self.assertTrue(viewsheds.analysis_configs_match(previous, current))
+        self.assertEqual(first["analysis_hash"], second["analysis_hash"])
+        self.assertNotEqual(first["web_hash"], second["web_hash"])
+        self.assertNotEqual(first["config_hash"], second["config_hash"])
 
-    def test_analysis_match_rejects_dem_change(self):
-        previous = {
-            "sites_sha256": "sites",
-            "dem_inventory": [{"name": "old.tif"}],
-            "radius_m": 100,
-            "cell_size_m": 10,
-            "refraction_coefficient": 0.13,
-        }
-        current = {**previous, "dem_inventory": [{"name": "new.tif"}]}
+    def test_dem_change_invalidates_analysis_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args, dems, sites = make_args(Path(directory))
+            first = viewsheds.config_document(args, dems, sites)
+            dems[0].write_bytes(b"dem with more bytes")
+            second = viewsheds.config_document(args, dems, sites)
 
-        self.assertFalse(viewsheds.analysis_configs_match(previous, current))
+        self.assertNotEqual(first["analysis_hash"], second["analysis_hash"])
+        self.assertNotEqual(first["web_hash"], second["web_hash"])
 
     def test_boundary_change_invalidates_only_web_configuration(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -105,42 +125,68 @@ class BoundaryDataTests(unittest.TestCase):
 
 
 class ResumeTests(unittest.TestCase):
-    def test_version_one_state_reuses_analysis_but_not_web(self):
+    def make_state(self, root: Path, **overrides):
+        outputs = {}
+        for key, name in (("raster", "camera.tif"), ("exact", "camera.gpkg"), ("web", "camera.geojson")):
+            path = root / name
+            path.touch()
+            outputs[key] = str(path)
+        state = {
+            "status": "complete",
+            "analysis_hash": "analysis",
+            "web_hash": "web",
+            "outputs": outputs,
+        }
+        state.update(overrides)
+        return state
+
+    def test_matching_hashes_reuse_every_stage(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            raster = root / "camera.tif"
-            exact = root / "camera.gpkg"
-            web = root / "camera.geojson"
-            for path in (raster, exact, web):
-                path.touch()
-            state_path = root / "state.json"
-            state_path.write_text(
-                json.dumps(
-                    {
-                        "status": "complete",
-                        "config_hash": "legacy",
-                        "outputs": {
-                            "raster": str(raster),
-                            "exact": str(exact),
-                            "web": str(web),
-                        },
-                    }
-                ),
-                encoding="utf-8",
+            state = self.make_state(Path(directory))
+            self.assertEqual(
+                viewsheds.reusable_stages(state, "analysis", "web", True),
+                (True, True, True),
             )
 
-            _, analysis, exact_stage, web_stage = viewsheds.reusable_stages(
-                state_path,
-                "analysis-v2",
-                "web-v2",
-                True,
-                {"legacy"},
-                True,
+    def test_web_change_keeps_raster_and_exact_polygon(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state = self.make_state(Path(directory))
+            self.assertEqual(
+                viewsheds.reusable_stages(state, "analysis", "web-changed", True),
+                (True, True, False),
             )
 
-            self.assertTrue(analysis)
-            self.assertTrue(exact_stage)
-            self.assertFalse(web_stage)
+    def test_analysis_change_rebuilds_everything(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state = self.make_state(Path(directory))
+            self.assertEqual(
+                viewsheds.reusable_stages(state, "analysis-changed", "web", True),
+                (False, False, False),
+            )
+
+    def test_missing_output_file_is_not_reusable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state = self.make_state(Path(directory))
+            Path(state["outputs"]["exact"]).unlink()
+            self.assertEqual(
+                viewsheds.reusable_stages(state, "analysis", "web", True),
+                (True, False, True),
+            )
+            # exact polygons are not required, so their absence does not matter
+            self.assertEqual(
+                viewsheds.reusable_stages(state, "analysis", "web", False),
+                (True, True, True),
+            )
+
+    def test_incomplete_or_missing_state_is_not_reusable(self):
+        self.assertEqual(
+            viewsheds.reusable_stages(None, "analysis", "web", True),
+            (False, False, False),
+        )
+        self.assertEqual(
+            viewsheds.reusable_stages({"status": "failed"}, "analysis", "web", True),
+            (False, False, False),
+        )
 
 
 @unittest.skipIf(np is None, "QGIS NumPy runtime not available")
@@ -188,7 +234,7 @@ class MbtilesValidationTests(unittest.TestCase):
                     {"id": viewsheds.COVERAGE_LAYER},
                 ]
             }
-            with sqlite3.connect(path) as connection:
+            with closing(sqlite3.connect(path)) as connection:
                 connection.execute("CREATE TABLE metadata (name TEXT, value TEXT)")
                 connection.executemany(
                     "INSERT INTO metadata VALUES (?, ?)",
@@ -198,6 +244,7 @@ class MbtilesValidationTests(unittest.TestCase):
                         ("maxzoom", str(viewsheds.MAPBOX_MAX_ZOOM)),
                     ],
                 )
+                connection.commit()
 
             viewsheds.validate_mbtiles(path)
 

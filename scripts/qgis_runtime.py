@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""finds QGIS and exposes its bundled GDAL tools across desktop platforms"""
+"""finds QGIS and describes its bundled GDAL/PROJ/Python layout across desktop platforms"""
 
 from __future__ import annotations
 
@@ -12,19 +12,6 @@ from typing import Mapping, Sequence
 
 
 QGIS_ROOT_ENV = "OWDCIC_QGIS_ROOT"
-REQUIRED_GDAL_TOOLS = (
-    "gdalbuildvrt",
-    "gdalwarp",
-    "gdal_viewshed",
-    "gdalinfo",
-    "gdaltransform",
-    "gdal_calc",
-    "gdal_polygonize",
-    "gdal_sieve",
-    "ogr2ogr",
-    "ogrinfo",
-    "qgis_process",
-)
 
 
 def _version_key(path: Path) -> tuple[int, ...]:
@@ -103,38 +90,6 @@ class QgisRuntime:
             env["QT_PLUGIN_PATH"] = separator.join(map(str, self.qt_plugin_paths))
         return env
 
-    def tool(self, name: str, python_executable: str | None = None) -> list[str]:
-        """returns a directly executable command prefix for one bundled tool"""
-
-        suffixes = ("", ".exe", ".py", ".bat", ".cmd")
-        candidate = _first_file(
-            [
-                directory / f"{name}{suffix}"
-                for directory in self.tool_directories
-                for suffix in suffixes
-            ]
-        )
-        if candidate is None:
-            raise RuntimeError(f"QGIS GDAL command missing: {name}")
-        suffix = candidate.suffix.casefold()
-        if suffix == ".py":
-            return [python_executable or sys.executable, str(candidate)]
-        if suffix in {".bat", ".cmd"}:
-            return [os.environ.get("COMSPEC", "cmd.exe"), "/d", "/c", str(candidate)]
-        return [str(candidate)]
-
-    def validate_tools(self, required: Sequence[str] = REQUIRED_GDAL_TOOLS) -> None:
-        """raises one actionable error listing every unavailable GDAL command"""
-
-        missing = []
-        for name in required:
-            try:
-                self.tool(name)
-            except RuntimeError:
-                missing.append(name)
-        if missing:
-            raise RuntimeError(f"QGIS GDAL commands missing: {', '.join(missing)}")
-
     def qgis_launch(self, project: Path) -> tuple[str, list[str]]:
         """returns the native desktop command for opening a QGIS project"""
 
@@ -165,19 +120,9 @@ def qgis_runtime(
             (qgis_root / "apps/qgis", qgis_root / "apps/qgis-ltr"),
             qgis_root,
         )
-        python_script_directories = sorted(
-            qgis_root.glob("apps/Python*/Scripts"),
-            key=lambda path: _version_key(path.parent),
-            reverse=True,
-        )
         tools = tuple(
             path
-            for path in (
-                qgis_root / "bin",
-                prefix / "bin",
-                qgis_root / "apps/gdal/bin",
-                *python_script_directories,
-            )
+            for path in (qgis_root / "bin", prefix / "bin", qgis_root / "apps/gdal/bin")
             if path.is_dir()
         ) or (qgis_root / "bin",)
         proj_data = _first_directory(
