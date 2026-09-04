@@ -68,16 +68,6 @@ const VIEWSHED_LAYER_IDS = Object.freeze([
   LAYER_IDS.viewshedsHighlightFill,
 ]);
 const REGION_STATE_WHERE = "STATE IN ('41','53')";
-const CENSUS_ATTRIBUTION =
-  '<a href="https://tigerweb.geo.census.gov/" target="_blank" rel="noopener noreferrer">U.S. Census Bureau TIGERweb</a>';
-const NATIONAL_FOREST_ATTRIBUTION =
-  '<a href="https://www.arcgis.com/home/item.html?id=4710a9e7cac3445eacc8265f7f61b813" target="_blank" rel="noopener noreferrer">U.S. Forest Service</a>';
-const BLM_ATTRIBUTION =
-  '<a href="https://www.arcgis.com/home/item.html?id=f8b3161f734f48f2971f4222411f1304" target="_blank" rel="noopener noreferrer">Bureau of Land Management</a>';
-const ODF_ATTRIBUTION =
-  '<a href="https://oregon-department-of-forestry-geo.hub.arcgis.com/datasets/odf-forest-protection-districts" target="_blank" rel="noopener noreferrer">Oregon Department of Forestry</a>';
-const BURN_PROBABILITY_ATTRIBUTION =
-  '<a href="https://www.arcgis.com/home/item.html?id=55a7c77f09064571ae3d06dc76411cef" target="_blank" rel="noopener noreferrer">Oregon Explorer / 2023 PNW QWRA</a>';
 const BOUNDARY_TYPES = Object.freeze([
   Object.freeze({
     value: 'county',
@@ -252,7 +242,6 @@ function addContextLayers(map) {
     minzoom: 6,
     maxzoom: 16,
     bounds: [-124.85, 41.9, -116.4, 46.35],
-    attribution: BURN_PROBABILITY_ATTRIBUTION,
   });
   map.addLayer({
     id: LAYER_IDS.burnProbability,
@@ -267,7 +256,6 @@ function addContextLayers(map) {
     tiles: [DATA_URLS.blmLandTiles],
     tileSize: 256,
     maxzoom: 14,
-    attribution: BLM_ATTRIBUTION,
   });
   map.addLayer({
     id: LAYER_IDS.blmLands,
@@ -277,9 +265,7 @@ function addContextLayers(map) {
     paint: { 'raster-opacity': 0.68 },
   }, beforeId);
 
-  addGeoJSONSource(map, LAYER_IDS.nationalForestsSource, {
-    attribution: NATIONAL_FOREST_ATTRIBUTION,
-  });
+  addGeoJSONSource(map, LAYER_IDS.nationalForestsSource);
   map.addLayer({
     id: LAYER_IDS.nationalForestsFill,
     type: 'fill',
@@ -301,9 +287,7 @@ function addContextLayers(map) {
     },
   }, beforeId);
 
-  addGeoJSONSource(map, LAYER_IDS.odfProtectionSource, {
-    attribution: ODF_ATTRIBUTION,
-  });
+  addGeoJSONSource(map, LAYER_IDS.odfProtectionSource);
   map.addLayer({
     id: LAYER_IDS.odfProtectionFill,
     type: 'fill',
@@ -362,7 +346,6 @@ function addBoundaryLayers(map) {
     map.addSource(boundary.sourceId, {
       type: 'geojson',
       data: emptyFeatureCollection(),
-      attribution: CENSUS_ATTRIBUTION,
     });
 
     map.addLayer({
