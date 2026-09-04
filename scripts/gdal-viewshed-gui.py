@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 import sys
 import time
@@ -75,6 +76,7 @@ RUNNER = PROJECT_ROOT / "scripts/gdal-camera-viewsheds.py"
 QGIS_PROJECT_BUILDER = PROJECT_ROOT / "scripts/build-qgis-viewshed-project.py"
 DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/or-wa-boundary.geojson"
+DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 PROGRESS_PREFIX = "@@PROGRESS@@"
 
 
@@ -201,6 +203,11 @@ class ViewshedWindow(QMainWindow):
         self.patch_cells.setValue(0)
         self.patch_cells.setToolTip("0 preserves all visible patches; higher values remove tiny web islands")
 
+        self.jobs = QSpinBox()
+        self.jobs.setRange(1, max(1, os.cpu_count() or 1))
+        self.jobs.setValue(DEFAULT_JOBS)
+        self.jobs.setToolTip("cameras processed at the same time; each needs roughly 1 GB of memory")
+
         self.exact = QCheckBox("Create exact 10 m EPSG:5070 polygons")
         self.exact.setChecked(True)
         self.keep_dems = QCheckBox("Keep per-camera working DEMs")
@@ -215,6 +222,7 @@ class ViewshedWindow(QMainWindow):
         form.addRow(self.web_majority)
         form.addRow(self.web_clip)
         form.addRow("Minimum web patch cells", self.patch_cells)
+        form.addRow("Parallel cameras", self.jobs)
         form.addRow(self.exact)
         form.addRow(self.keep_dems)
         form.addRow(self.overwrite)
@@ -281,6 +289,8 @@ class ViewshedWindow(QMainWindow):
             str(self.smooth_iterations.value()),
             "--min-web-patch-cells",
             str(self.patch_cells.value()),
+            "--jobs",
+            str(self.jobs.value()),
             "--json-progress",
         ]
         arguments.append(
@@ -305,11 +315,6 @@ class ViewshedWindow(QMainWindow):
             problems.append(f"Web clip boundary not found: {DEFAULT_CLIP_BOUNDARY}")
         if not self.qgis_runtime.root.is_dir():
             problems.append(f"QGIS not found: {self.qgis_runtime.root}")
-        else:
-            try:
-                self.qgis_runtime.validate_tools()
-            except RuntimeError as error:
-                problems.append(str(error))
         if problems:
             QMessageBox.critical(self, "Cannot start", "\n".join(problems))
             return False

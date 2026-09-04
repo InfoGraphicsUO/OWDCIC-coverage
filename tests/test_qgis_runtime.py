@@ -9,7 +9,6 @@ sys.path.insert(0, str(SCRIPTS))
 
 from qgis_runtime import (  # noqa: E402
     QGIS_ROOT_ENV,
-    REQUIRED_GDAL_TOOLS,
     default_qgis_root,
     qgis_runtime,
 )
@@ -25,24 +24,16 @@ class QgisRuntimeTests(unittest.TestCase):
             root = Path(temporary) / "QGIS 4.2.1"
             bin_directory = root / "bin"
             prefix = root / "apps/qgis"
-            python_scripts = root / "apps/Python312/Scripts"
             for directory in (
                 bin_directory,
                 prefix / "bin",
                 prefix / "python",
                 prefix / "qtplugins",
-                python_scripts,
                 root / "share/proj",
                 root / "share/gdal",
             ):
                 directory.mkdir(parents=True, exist_ok=True)
 
-            for name in REQUIRED_GDAL_TOOLS:
-                if name == "gdal_calc":
-                    destination = python_scripts / f"{name}.py"
-                else:
-                    destination = bin_directory / f"{name}.exe"
-                destination.write_text("", encoding="utf-8")
             qgis_executable = bin_directory / "qgis-bin.exe"
             qgis_executable.write_text("", encoding="utf-8")
 
@@ -50,15 +41,11 @@ class QgisRuntimeTests(unittest.TestCase):
             root = root.resolve()
             bin_directory = root / "bin"
             prefix = root / "apps/qgis"
-            python_scripts = root / "apps/Python312/Scripts"
             qgis_executable = bin_directory / "qgis-bin.exe"
-            runtime.validate_tools()
             self.assertEqual(runtime.prefix, prefix)
-            self.assertEqual(runtime.tool("gdalwarp"), [str(bin_directory / "gdalwarp.exe")])
-            self.assertEqual(
-                runtime.tool("gdal_calc", "python.exe"),
-                ["python.exe", str(python_scripts / "gdal_calc.py")],
-            )
+            self.assertEqual(runtime.tool_directories, (bin_directory, prefix / "bin"))
+            self.assertEqual(runtime.proj_data, root / "share/proj")
+            self.assertEqual(runtime.gdal_data, root / "share/gdal")
 
             environment = runtime.environment({"PATH": "C:/Windows/System32"})
             self.assertEqual(environment[QGIS_ROOT_ENV], str(root.resolve()))
