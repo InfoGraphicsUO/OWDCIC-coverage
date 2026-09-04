@@ -810,6 +810,7 @@ function legendItems() {
       swatchShape: 'circle',
       visible: false,
       loading: true,
+      infoText: 'Fire lookout tower locations from Firelookout.org',
       layerIds: [LAYER_IDS.lookouts],
     },
     {
@@ -828,7 +829,6 @@ function legendItems() {
       swatchColor: BLM_LAND_COLOR,
       swatchBorder: false,
       visible: false,
-      infoText: 'Surface management areas from the Bureau of Land Management',
       layerIds: [LAYER_IDS.blmLands],
     },
     {
