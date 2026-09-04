@@ -10,6 +10,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import sqlite3
 import shutil
 import signal
 import subprocess
@@ -25,12 +26,17 @@ DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_SITES = PROJECT_ROOT / "data/sites.geojson"
 DEFAULT_DEMS = PROJECT_ROOT / "data/dems"
 DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds"
+DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/or-wa-boundary.geojson"
 
 PILOT_NAMES = ("Portland Tower",)
 VALIDATION_NAMES = ("Portland Tower", "Quail Prairie Mtn", "Beaty's Butte")
 CANONICAL_CRS = "EPSG:5070"
 WEB_CRS = "EPSG:4326"
 REFRACTION_COEFFICIENT = 0.13
+INDIVIDUAL_LAYER = "camera_viewsheds"
+COVERAGE_LAYER = "camera_viewshed_coverage"
+MAPBOX_MIN_ZOOM = 5
+MAPBOX_MAX_ZOOM = 12
 STAGE_FRACTIONS = {
     "preparing": 0.00,
     "dem": 0.20,
@@ -154,6 +160,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--cell-size", type=float, default=10.0)
     parser.add_argument("--web-resolution", type=float, default=50.0)
     parser.add_argument("--simplify-tolerance", type=float, default=25.0)
+    parser.add_argument("--smooth-iterations", type=int, default=1)
+    parser.add_argument("--web-clip-boundary", type=Path, default=DEFAULT_CLIP_BOUNDARY)
+    parser.add_argument(
+        "--web-clip",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="clip web polygons to Oregon and Washington (default: enabled)",
+    )
+    parser.add_argument(
+        "--web-majority-filter",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="apply a 3x3 majority filter to the web mask (default: enabled)",
+    )
     parser.add_argument("--min-web-patch-cells", type=int, default=0)
     parser.add_argument("--skip-exact-polygons", action="store_true")
     parser.add_argument("--keep-working-dems", action="store_true")
@@ -164,8 +184,8 @@ def parse_args() -> argparse.Namespace:
     for name in ("radius_miles", "cell_size", "web_resolution"):
         if getattr(args, name) <= 0:
             parser.error(f"--{name.replace('_', '-')} must be positive")
-    if args.simplify_tolerance < 0 or args.min_web_patch_cells < 0:
-        parser.error("simplification and patch thresholds cannot be negative")
+    if args.simplify_tolerance < 0 or args.smooth_iterations < 0 or args.min_web_patch_cells < 0:
+        parser.error("simplification, smoothing, and patch thresholds cannot be negative")
     return args
 
 
@@ -236,7 +256,20 @@ def select_sites(sites: list[Site], args: argparse.Namespace) -> list[Site]:
 def qgis_environment(qgis_root: Path) -> tuple[dict[str, str], QgisRuntime]:
     runtime = qgis_runtime(qgis_root)
     runtime.validate_tools()
-    return runtime.environment(), runtime
+    env = runtime.environment()
+    env["OGR_GEOJSON_MAX_OBJ_SIZE"] = "0"
+    for name in (
+        "OWDCIC_QGIS_ROOT",
+        "QGIS_PREFIX_PATH",
+        "PROJ_DATA",
+        "GDAL_DATA",
+        "PATH",
+        "PYTHONPATH",
+        "QT_PLUGIN_PATH",
+    ):
+        if name in env:
+            os.environ[name] = env[name]
+    return env, runtime
 
 
 def run_command(
@@ -289,9 +322,13 @@ def output_paths(output_dir: Path, site: Site) -> dict[str, Path]:
         "raw": work / "visible_raw.gpkg",
         "web_raster": work / "web_generalized.tif",
         "web_mask": work / "web_mask.tif",
+        "web_filtered": work / "web_majority.tif",
         "web_sieved": work / "web_sieved.tif",
         "web_raw": work / "web_raw.gpkg",
         "web_projected": work / "web_epsg5070.gpkg",
+        "web_simplified": work / "web_simplified_epsg5070.gpkg",
+        "web_smoothed": work / "web_smoothed_epsg5070.gpkg",
+        "web_clipped": work / "web_clipped_epsg5070.gpkg",
         "raster": output_dir / "rasters_10m" / f"{site.stem}.tif",
         "exact": output_dir / "polygons_exact" / f"{site.stem}.gpkg",
         "web": output_dir / "web" / f"{site.viewshed_id}.geojson",
@@ -309,13 +346,21 @@ def prepare_output(output_dir: Path) -> None:
         (output_dir / name).mkdir(parents=True, exist_ok=True)
 
 
-def config_payload(
+def payload_hash(payload: dict[str, Any]) -> str:
+    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def analysis_config_payload(
     args: argparse.Namespace,
     dem_files: list[Path],
     sites_path: Path,
 ) -> dict[str, Any]:
     return {
-        "schema_version": 1,
         "sites_sha256": hashlib.sha256(sites_path.read_bytes()).hexdigest(),
         "dem_inventory": [
             {"name": path.name, "size": path.stat().st_size, "mtime_ns": path.stat().st_mtime_ns}
@@ -323,32 +368,80 @@ def config_payload(
         ],
         "radius_m": args.radius_miles * 1609.344,
         "cell_size_m": args.cell_size,
-        "web_resolution_m": args.web_resolution,
-        "simplify_tolerance_m": args.simplify_tolerance,
-        "min_web_patch_cells": args.min_web_patch_cells,
         "refraction_coefficient": REFRACTION_COEFFICIENT,
-        "exact_polygons": not args.skip_exact_polygons,
     }
 
 
-def write_config(output_dir: Path, payload: dict[str, Any]) -> str:
-    serialized = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-    config_hash = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
-    document = {**payload, "config_hash": config_hash}
+def web_config_payload(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "web_resolution_m": args.web_resolution,
+        "simplify_tolerance_m": args.simplify_tolerance,
+        "smooth_iterations": args.smooth_iterations,
+        "web_majority_filter": args.web_majority_filter,
+        "min_web_patch_cells": args.min_web_patch_cells,
+        "web_clip": args.web_clip,
+        "web_clip_boundary_sha256": (
+            file_sha256(args.web_clip_boundary) if args.web_clip else None
+        ),
+    }
+
+
+def config_document(
+    args: argparse.Namespace,
+    dem_files: list[Path],
+    sites_path: Path,
+) -> dict[str, Any]:
+    analysis = analysis_config_payload(args, dem_files, sites_path)
+    web = web_config_payload(args)
+    analysis_hash = payload_hash(analysis)
+    web_hash = payload_hash({"analysis_hash": analysis_hash, **web})
+    base = {
+        "schema_version": 2,
+        **analysis,
+        **web,
+        "exact_polygons": not args.skip_exact_polygons,
+    }
+    return {
+        **base,
+        "analysis_hash": analysis_hash,
+        "web_hash": web_hash,
+        "config_hash": payload_hash(base),
+    }
+
+
+def write_config(output_dir: Path, document: dict[str, Any]) -> None:
     (output_dir / "analysis_config.json").write_text(
         json.dumps(document, indent=2) + "\n", encoding="utf-8"
     )
-    return config_hash
 
 
-def existing_config_hash(output_dir: Path) -> str | None:
+def read_existing_config(output_dir: Path) -> dict[str, Any] | None:
     path = output_dir / "analysis_config.json"
     if not path.exists():
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8")).get("config_hash")
+        document = json.loads(path.read_text(encoding="utf-8"))
+        return document if isinstance(document, dict) else None
     except (OSError, json.JSONDecodeError):
         return None
+
+
+ANALYSIS_CONFIG_KEYS = (
+    "sites_sha256",
+    "dem_inventory",
+    "radius_m",
+    "cell_size_m",
+    "refraction_coefficient",
+)
+
+
+def analysis_configs_match(
+    previous: dict[str, Any] | None,
+    current: dict[str, Any],
+) -> bool:
+    if not previous:
+        return False
+    return all(previous.get(key) == current.get(key) for key in ANALYSIS_CONFIG_KEYS)
 
 
 def build_vrt(
@@ -371,6 +464,40 @@ def build_vrt(
         f"DEM index for {len(dem_files)} TIFFs",
     )
     return vrt
+
+
+def prepare_web_clip_boundary(
+    source: Path,
+    output_dir: Path,
+    runtime: QgisRuntime,
+    env: dict[str, str],
+    emitter: ProgressEmitter,
+) -> Path:
+    """projects the shared web clipping boundary to EPSG:5070"""
+
+    projected = output_dir / "work/web_clip_boundary_epsg5070.gpkg"
+    safe_unlink(projected)
+    run_command(
+        [
+            *runtime.tool("ogr2ogr"),
+            "-f",
+            "GPKG",
+            str(projected),
+            str(source),
+            "-t_srs",
+            CANONICAL_CRS,
+            "-makevalid",
+            "-nln",
+            "web_clip_boundary",
+        ],
+        env,
+        emitter,
+        "Oregon and Washington web clip boundary",
+    )
+    validate_vector(projected, "web_clip_boundary", runtime, env, emitter)
+    if geopackage_feature_count(projected, "web_clip_boundary") != 1:
+        raise RuntimeError("web clip boundary must contain exactly one feature")
+    return projected
 
 
 def transform_observer(
@@ -555,6 +682,69 @@ def build_mask(
     )
 
 
+def majority_filter_array(values: Any) -> Any:
+    """returns a binary raster where at least 5 of 9 cells are visible"""
+
+    import numpy as np
+
+    visible = np.asarray(values) == 1
+    # cells beyond the raster boundary count as not visible
+    padded = np.pad(visible, 1, mode="constant", constant_values=False)
+    counts = np.zeros(visible.shape, dtype=np.uint8)
+    for row_offset in range(3):
+        for column_offset in range(3):
+            counts += padded[
+                row_offset : row_offset + visible.shape[0],
+                column_offset : column_offset + visible.shape[1],
+            ]
+    return (counts >= 5).astype(np.uint8)
+
+
+def majority_filter_raster(source: Path, destination: Path) -> dict[str, int | float]:
+    """writes the 3x3 majority result while preserving raster alignment"""
+
+    import numpy as np
+    from osgeo import gdal
+
+    gdal.UseExceptions()
+    dataset = gdal.Open(str(source), gdal.GA_ReadOnly)
+    if dataset is None:
+        raise RuntimeError(f"could not open web mask: {source}")
+    values = dataset.GetRasterBand(1).ReadAsArray()
+    filtered = majority_filter_array(values)
+    raw_visible = int(np.count_nonzero(values == 1))
+    filtered_visible = int(np.count_nonzero(filtered == 1))
+    changed = int(np.count_nonzero((values == 1) != (filtered == 1)))
+
+    safe_unlink(destination)
+    output = gdal.GetDriverByName("GTiff").Create(
+        str(destination),
+        dataset.RasterXSize,
+        dataset.RasterYSize,
+        1,
+        gdal.GDT_Byte,
+        options=("TILED=YES", "COMPRESS=DEFLATE"),
+    )
+    if output is None:
+        raise RuntimeError(f"could not create majority raster: {destination}")
+    output.SetGeoTransform(dataset.GetGeoTransform())
+    output.SetProjection(dataset.GetProjection())
+    band = output.GetRasterBand(1)
+    band.SetNoDataValue(0)
+    band.WriteArray(filtered)
+    band.FlushCache()
+    output.FlushCache()
+    output = None
+    dataset = None
+    total_cells = int(values.size)
+    return {
+        "raw_visible_cells": raw_visible,
+        "filtered_visible_cells": filtered_visible,
+        "changed_cells": changed,
+        "changed_percent": changed / total_cells * 100 if total_cells else 0.0,
+    }
+
+
 def polygonize_mask(
     mask: Path,
     output: Path,
@@ -660,7 +850,8 @@ def build_web_polygon(
     runtime: QgisRuntime,
     env: dict[str, str],
     emitter: ProgressEmitter,
-) -> None:
+    clip_boundary: Path | None,
+) -> dict[str, int | float | bool]:
     safe_unlink(paths["web_raster"])
     run_command(
         [
@@ -693,6 +884,27 @@ def build_web_polygon(
         paths["web_raster"], paths["web_mask"], runtime, env, emitter, f"web mask for {site.name}"
     )
     polygon_mask = paths["web_mask"]
+    if args.web_majority_filter:
+        filter_summary = majority_filter_raster(paths["web_mask"], paths["web_filtered"])
+        polygon_mask = paths["web_filtered"]
+        emitter.log(
+            f"3x3 majority filter changed {filter_summary['changed_percent']:.2f}% "
+            f"of web cells for {site.name}"
+        )
+    else:
+        from osgeo import gdal
+
+        gdal.UseExceptions()
+        dataset = gdal.Open(str(paths["web_mask"]), gdal.GA_ReadOnly)
+        values = dataset.GetRasterBand(1).ReadAsArray()
+        visible_cells = int((values == 1).sum())
+        filter_summary = {
+            "raw_visible_cells": visible_cells,
+            "filtered_visible_cells": visible_cells,
+            "changed_cells": 0,
+            "changed_percent": 0.0,
+        }
+        dataset = None
     if args.min_web_patch_cells:
         safe_unlink(paths["web_sieved"])
         run_command(
@@ -701,7 +913,8 @@ def build_web_polygon(
                 "-st",
                 str(args.min_web_patch_cells),
                 "-8",
-                str(paths["web_mask"]),
+                "-nomask",
+                str(polygon_mask),
                 str(paths["web_sieved"]),
             ],
             env,
@@ -723,48 +936,137 @@ def build_web_polygon(
         emitter,
         f"web polygon dissolve for {site.name}",
     )
-    safe_unlink(paths["web"])
-    command = [
-        *runtime.tool("ogr2ogr"),
-        "-f",
-        "GeoJSON",
-        str(paths["web"]),
-        str(paths["web_projected"]),
-        "camera_viewshed",
-        "-makevalid",
-    ]
+    polygon_source = paths["web_projected"]
+    polygon_layer = "camera_viewshed"
     if args.simplify_tolerance:
-        # runs in EPSG:5070 metres before the WGS84 reprojection
-        command.extend(("-simplify", str(args.simplify_tolerance)))
-    command.extend(("-t_srs", WEB_CRS, "-lco", "RFC7946=YES"))
-    run_command(command, env, emitter, f"smoothed web GeoJSON for {site.name}")
+        safe_unlink(paths["web_simplified"])
+        run_command(
+            [
+                *runtime.tool("ogr2ogr"),
+                "-f",
+                "GPKG",
+                str(paths["web_simplified"]),
+                str(polygon_source),
+                "camera_viewshed",
+                "-simplify",
+                str(args.simplify_tolerance),
+                "-makevalid",
+                "-nln",
+                "camera_viewshed",
+            ],
+            env,
+            emitter,
+            f"web polygon simplification for {site.name}",
+        )
+        polygon_source = paths["web_simplified"]
+
+    if args.smooth_iterations:
+        safe_unlink(paths["web_smoothed"])
+        run_command(
+            [
+                *runtime.tool("qgis_process"),
+                "run",
+                "native:smoothgeometry",
+                "--",
+                f"INPUT={polygon_source}|layername={polygon_layer}",
+                f"ITERATIONS={args.smooth_iterations}",
+                "OFFSET=0.25",
+                "MAX_ANGLE=180",
+                f"OUTPUT={paths['web_smoothed']}",
+            ],
+            env,
+            emitter,
+            f"web polygon smoothing for {site.name}",
+        )
+        polygon_source = paths["web_smoothed"]
+        polygon_layer = paths["web_smoothed"].stem
+
+    if clip_boundary:
+        safe_unlink(paths["web_clipped"])
+        run_command(
+            [
+                *runtime.tool("ogr2ogr"),
+                "-f",
+                "GPKG",
+                str(paths["web_clipped"]),
+                str(polygon_source),
+                polygon_layer,
+                "-clipsrc",
+                str(clip_boundary),
+                "-clipsrclayer",
+                "web_clip_boundary",
+                "-makevalid",
+                "-nln",
+                "camera_viewshed",
+            ],
+            env,
+            emitter,
+            f"Oregon and Washington clip for {site.name}",
+        )
+        polygon_source = paths["web_clipped"]
+        polygon_layer = "camera_viewshed"
+
+    safe_unlink(paths["web"])
+    run_command(
+        [
+            *runtime.tool("ogr2ogr"),
+            "-f",
+            "GeoJSON",
+            str(paths["web"]),
+            str(polygon_source),
+            polygon_layer,
+            "-makevalid",
+            "-t_srs",
+            WEB_CRS,
+            "-lco",
+            "RFC7946=YES",
+            "-nln",
+            "camera_viewshed",
+        ],
+        env,
+        emitter,
+        f"smoothed web GeoJSON for {site.name}",
+    )
+    return {
+        **filter_summary,
+        "majority_enabled": args.web_majority_filter,
+        "sieve_threshold_cells": args.min_web_patch_cells,
+        "clip_enabled": clip_boundary is not None,
+    }
 
 
 def validate_vector(
     path: Path,
-    layer: str,
+    layer: str | None,
     runtime: QgisRuntime,
     env: dict[str, str],
     emitter: ProgressEmitter,
 ) -> None:
+    describe_command = [*runtime.tool("ogrinfo"), "-so", "-al", str(path)]
+    if layer:
+        describe_command.append(layer)
     description = run_command(
-        [*runtime.tool("ogrinfo"), "-so", "-al", str(path), layer],
+        describe_command,
         env,
         emitter,
         f"geometry metadata for {path.name}",
     )
     geometry_column = "geometry"
+    detected_layer = layer
     for line in description.splitlines():
+        if line.startswith("Layer name:") and not detected_layer:
+            detected_layer = line.split(":", 1)[1].strip()
         if line.startswith("Geometry Column ="):
             geometry_column = line.split("=", 1)[1].strip()
-            break
+    if not detected_layer:
+        raise RuntimeError(f"could not determine output layer: {path}")
     output = run_command(
         [
             *runtime.tool("ogrinfo"),
             "-dialect",
             "SQLITE",
             "-sql",
-            f'SELECT ST_IsValid("{geometry_column}") AS is_valid FROM "{layer}"',
+            f'SELECT MIN(ST_IsValid("{geometry_column}")) AS is_valid FROM "{detected_layer}"',
             str(path),
         ],
         env,
@@ -775,24 +1077,47 @@ def validate_vector(
         raise RuntimeError(f"invalid output geometry: {path}")
 
 
-def state_is_reusable(
-    state_path: Path,
-    config_hash: str,
-    exact_required: bool,
-) -> bool:
-    if not state_path.exists():
-        return False
+def load_state(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
     try:
-        state = json.loads(state_path.read_text(encoding="utf-8"))
+        state = json.loads(path.read_text(encoding="utf-8"))
+        return state if isinstance(state, dict) else None
     except (OSError, json.JSONDecodeError):
-        return False
-    if state.get("status") != "complete" or state.get("config_hash") != config_hash:
-        return False
+        return None
+
+
+def reusable_stages(
+    state_path: Path,
+    analysis_hash: str,
+    web_hash: str,
+    exact_required: bool,
+    legacy_config_hashes: set[str],
+    legacy_analysis_matches: bool,
+) -> tuple[dict[str, Any] | None, bool, bool, bool]:
+    state = load_state(state_path)
+    if not state or state.get("status") != "complete":
+        return state, False, False, False
     outputs = state.get("outputs", {})
-    required = [outputs.get("raster"), outputs.get("web")]
-    if exact_required:
-        required.append(outputs.get("exact"))
-    return all(value and Path(value).is_file() for value in required)
+    current_analysis = state.get("analysis_hash") == analysis_hash
+    # version 1 states only carry the prior full config hash
+    migrated_analysis = (
+        legacy_analysis_matches
+        and state.get("config_hash") in legacy_config_hashes
+    )
+    analysis_reusable = (current_analysis or migrated_analysis) and bool(
+        outputs.get("raster") and Path(outputs["raster"]).is_file()
+    )
+    exact_reusable = not exact_required or (
+        analysis_reusable
+        and bool(outputs.get("exact") and Path(outputs["exact"]).is_file())
+    )
+    web_reusable = (
+        analysis_reusable
+        and state.get("web_hash") == web_hash
+        and bool(outputs.get("web") and Path(outputs["web"]).is_file())
+    )
+    return state, analysis_reusable, exact_reusable, web_reusable
 
 
 def write_state(path: Path, document: dict[str, Any]) -> None:
@@ -805,17 +1130,24 @@ def process_site(
     args: argparse.Namespace,
     source_vrt: Path,
     config_hash: str,
+    analysis_hash: str,
+    web_hash: str,
+    legacy_config_hashes: set[str],
+    legacy_analysis_matches: bool,
     radius_m: float,
     runtime: QgisRuntime,
     env: dict[str, str],
     emitter: ProgressEmitter,
+    clip_boundary: Path | None,
 ) -> dict[str, Any]:
     paths = output_paths(args.output_dir, site)
     if site.height_m is None:
         document = {
-            "schema_version": 1,
+            "schema_version": 2,
             "status": "skipped_missing_height",
             "config_hash": config_hash,
+            "analysis_hash": analysis_hash,
+            "web_hash": web_hash,
             "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "site": asdict(site),
             "outputs": {"raster": None, "exact": None, "web": None},
@@ -829,11 +1161,24 @@ def process_site(
             f"[{site_index}/{emitter.total_sites}] skipped {site.name}: missing camera height",
         )
         return document
-    if not args.overwrite and state_is_reusable(
-        paths["state"], config_hash, not args.skip_exact_polygons
-    ):
-        emitter.progress(site_index, site, "complete", f"[{site_index}/{emitter.total_sites}] reused {site.name}")
-        return json.loads(paths["state"].read_text(encoding="utf-8"))
+    previous_state, analysis_reusable, exact_reusable, web_reusable = reusable_stages(
+        paths["state"],
+        analysis_hash,
+        web_hash,
+        not args.skip_exact_polygons,
+        legacy_config_hashes,
+        legacy_analysis_matches,
+    )
+    if args.overwrite:
+        analysis_reusable = exact_reusable = web_reusable = False
+    if analysis_reusable and exact_reusable and web_reusable:
+        emitter.progress(
+            site_index,
+            site,
+            "complete",
+            f"[{site_index}/{emitter.total_sites}] reused {site.name}",
+        )
+        return previous_state or {}
 
     if paths["work"].exists():
         shutil.rmtree(paths["work"])
@@ -844,31 +1189,68 @@ def process_site(
 
     started = time.monotonic()
     emitter.progress(site_index, site, "preparing", f"[{site_index}/{emitter.total_sites}] preparing {site.name}")
-    observer = transform_observer(site, runtime, env, emitter)
-    build_dem(site, observer, source_vrt, paths, radius_m, args.cell_size, runtime, env, emitter)
-    emitter.progress(site_index, site, "dem", f"[{site_index}/{emitter.total_sites}] projected DEM ready")
-    build_viewshed(site, observer, paths, radius_m, runtime, env, emitter)
-    summary = raster_summary(paths["raster"], args.cell_size, runtime, env, emitter)
-    emitter.progress(site_index, site, "viewshed", f"[{site_index}/{emitter.total_sites}] viewshed validated")
+    if analysis_reusable:
+        summary = (previous_state or {}).get("raster")
+        if not summary:
+            summary = raster_summary(paths["raster"], args.cell_size, runtime, env, emitter)
+        emitter.progress(
+            site_index,
+            site,
+            "viewshed",
+            f"[{site_index}/{emitter.total_sites}] reused 10 m viewshed",
+        )
+    else:
+        observer = transform_observer(site, runtime, env, emitter)
+        build_dem(site, observer, source_vrt, paths, radius_m, args.cell_size, runtime, env, emitter)
+        emitter.progress(site_index, site, "dem", f"[{site_index}/{emitter.total_sites}] projected DEM ready")
+        build_viewshed(site, observer, paths, radius_m, runtime, env, emitter)
+        summary = raster_summary(paths["raster"], args.cell_size, runtime, env, emitter)
+        emitter.progress(site_index, site, "viewshed", f"[{site_index}/{emitter.total_sites}] viewshed validated")
 
-    if not args.skip_exact_polygons:
+    if not args.skip_exact_polygons and not exact_reusable:
         build_exact_polygon(site, paths, radius_m, args.cell_size, runtime, env, emitter)
         validate_vector(paths["exact"], "camera_viewshed", runtime, env, emitter)
-    emitter.progress(site_index, site, "exact_polygon", f"[{site_index}/{emitter.total_sites}] exact polygon ready")
+    if args.skip_exact_polygons:
+        exact_detail = "exact polygon skipped"
+    else:
+        exact_detail = "reused exact polygon" if exact_reusable else "exact polygon ready"
+    emitter.progress(site_index, site, "exact_polygon", f"[{site_index}/{emitter.total_sites}] {exact_detail}")
 
-    build_web_polygon(site, paths, args, radius_m, runtime, env, emitter)
-    validate_vector(paths["web"], "camera_viewshed", runtime, env, emitter)
-    emitter.progress(site_index, site, "web_polygon", f"[{site_index}/{emitter.total_sites}] web polygon ready")
+    if web_reusable:
+        web_filter = (previous_state or {}).get("web_filter", {})
+        web_detail = "reused web polygon"
+    else:
+        web_filter = build_web_polygon(
+            site,
+            paths,
+            args,
+            radius_m,
+            runtime,
+            env,
+            emitter,
+            clip_boundary,
+        )
+        validate_vector(paths["web"], "camera_viewshed", runtime, env, emitter)
+        web_detail = "web polygon ready"
+    emitter.progress(
+        site_index,
+        site,
+        "web_polygon",
+        f"[{site_index}/{emitter.total_sites}] {web_detail}",
+    )
 
     document = {
-        "schema_version": 1,
+        "schema_version": 2,
         "status": "complete",
         "config_hash": config_hash,
+        "analysis_hash": analysis_hash,
+        "web_hash": web_hash,
         "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "site": asdict(site),
         "analysis_crs": f"EPSG:{site.utm_epsg}",
         "observer_height_m_agl": site.height_m,
         "raster": summary,
+        "web_filter": web_filter,
         "outputs": {
             "raster": str(paths["raster"]),
             "exact": str(paths["exact"]) if not args.skip_exact_polygons else None,
@@ -906,11 +1288,206 @@ def rebuild_combined_exact(
     return combined
 
 
+def geopackage_feature_count(path: Path, layer: str) -> int | None:
+    if not path.is_file() or not layer.replace("_", "").isalnum():
+        return None
+    try:
+        with sqlite3.connect(path) as connection:
+            row = connection.execute(f'SELECT COUNT(*) FROM "{layer}"').fetchone()
+        return int(row[0]) if row else None
+    except sqlite3.Error:
+        return None
+
+
+def find_tippecanoe(env: dict[str, str]) -> Path | None:
+    discovered = shutil.which("tippecanoe", path=env.get("PATH"))
+    candidates = [
+        Path(discovered) if discovered else None,
+        Path("/opt/homebrew/bin/tippecanoe"),
+        Path("/usr/local/bin/tippecanoe"),
+    ]
+    return next((path for path in candidates if path and path.is_file()), None)
+
+
+def validate_mbtiles(path: Path) -> None:
+    with sqlite3.connect(path) as connection:
+        row = connection.execute(
+            "SELECT value FROM metadata WHERE name = 'json'"
+        ).fetchone()
+        zooms = dict(
+            connection.execute(
+                "SELECT name, value FROM metadata WHERE name IN ('minzoom', 'maxzoom')"
+            )
+        )
+    if not row:
+        raise RuntimeError(f"MBTiles layer metadata missing: {path}")
+    metadata = json.loads(row[0])
+    layer_ids = {layer.get("id") for layer in metadata.get("vector_layers", [])}
+    expected = {INDIVIDUAL_LAYER, COVERAGE_LAYER}
+    if not expected.issubset(layer_ids):
+        raise RuntimeError(f"MBTiles layers missing: {', '.join(sorted(expected - layer_ids))}")
+    if zooms != {"minzoom": str(MAPBOX_MIN_ZOOM), "maxzoom": str(MAPBOX_MAX_ZOOM)}:
+        raise RuntimeError(f"unexpected MBTiles zoom metadata: {zooms}")
+
+
+def rebuild_web_products(
+    states: list[dict[str, Any]],
+    output_dir: Path,
+    runtime: QgisRuntime,
+    env: dict[str, str],
+    emitter: ProgressEmitter,
+) -> dict[str, Any] | None:
+    inputs = [Path(state["outputs"]["web"]) for state in states if state["outputs"].get("web")]
+    if not inputs:
+        return None
+
+    mapbox_dir = output_dir / "mapbox"
+    mapbox_dir.mkdir(parents=True, exist_ok=True)
+    staging = mapbox_dir / "camera_viewsheds_web_epsg5070.gpkg"
+    coverage_staging = mapbox_dir / "coverage_staging.gpkg"
+    individual_geojson = mapbox_dir / "camera-viewsheds.geojson"
+    coverage_geojson = mapbox_dir / "camera-viewshed-coverage.geojson"
+    mbtiles = mapbox_dir / "camera-viewsheds-z5.mbtiles"
+    for path in (staging, coverage_staging, individual_geojson, coverage_geojson, mbtiles):
+        safe_unlink(path)
+
+    # projected staging keeps the full union away from degree-based geometry math
+    for index, source in enumerate(inputs):
+        command = runtime.tool("ogr2ogr")
+        if index == 0:
+            command.extend(("-f", "GPKG", str(staging), str(source), "camera_viewshed"))
+        else:
+            command.extend(("-update", "-append", str(staging), str(source), "camera_viewshed"))
+        command.extend(("-t_srs", CANONICAL_CRS, "-makevalid", "-nln", INDIVIDUAL_LAYER))
+        run_command(command, env, emitter, f"combined web polygon {index + 1}/{len(inputs)}")
+    validate_vector(staging, INDIVIDUAL_LAYER, runtime, env, emitter)
+    individual_count = geopackage_feature_count(staging, INDIVIDUAL_LAYER)
+    if individual_count != len(inputs):
+        raise RuntimeError(
+            f"combined web feature count is {individual_count}; expected {len(inputs)}"
+        )
+
+    run_command(
+        [
+            *runtime.tool("ogr2ogr"),
+            "-f",
+            "GPKG",
+            str(coverage_staging),
+            str(staging),
+            "-dialect",
+            "SQLITE",
+            "-sql",
+            (
+                "SELECT ST_Union(geom) AS geom, 'all' AS coverage_id "
+                f'FROM "{INDIVIDUAL_LAYER}"'
+            ),
+            "-nln",
+            COVERAGE_LAYER,
+        ],
+        env,
+        emitter,
+        "dissolved web coverage",
+    )
+    validate_vector(coverage_staging, COVERAGE_LAYER, runtime, env, emitter)
+    if geopackage_feature_count(coverage_staging, COVERAGE_LAYER) != 1:
+        raise RuntimeError("dissolved web coverage must contain exactly one feature")
+
+    # second layer makes the local review package match the hosted tileset
+    run_command(
+        [
+            *runtime.tool("ogr2ogr"),
+            "-update",
+            str(staging),
+            str(coverage_staging),
+            COVERAGE_LAYER,
+            "-nln",
+            COVERAGE_LAYER,
+        ],
+        env,
+        emitter,
+        "add dissolved coverage to review package",
+    )
+    safe_unlink(coverage_staging)
+
+    for source_layer, destination in (
+        (INDIVIDUAL_LAYER, individual_geojson),
+        (COVERAGE_LAYER, coverage_geojson),
+    ):
+        run_command(
+            [
+                *runtime.tool("ogr2ogr"),
+                "-f",
+                "GeoJSON",
+                str(destination),
+                str(staging),
+                source_layer,
+                "-t_srs",
+                WEB_CRS,
+                "-makevalid",
+                "-lco",
+                "RFC7946=YES",
+            ],
+            env,
+            emitter,
+            f"Mapbox source {source_layer}",
+        )
+        validate_vector(destination, None, runtime, env, emitter)
+
+    tippecanoe = find_tippecanoe(env)
+    packaging: dict[str, Any] = {
+        "status": "skipped_tippecanoe_missing",
+        "mbtiles": None,
+        "error": None,
+    }
+    if tippecanoe:
+        try:
+            run_command(
+                [
+                    str(tippecanoe),
+                    "--force",
+                    f"--minimum-zoom={MAPBOX_MIN_ZOOM}",
+                    f"--maximum-zoom={MAPBOX_MAX_ZOOM}",
+                    "--drop-densest-as-needed",
+                    f"--output={mbtiles}",
+                    "-L",
+                    f"{INDIVIDUAL_LAYER}:{individual_geojson}",
+                    "-L",
+                    f"{COVERAGE_LAYER}:{coverage_geojson}",
+                ],
+                env,
+                emitter,
+                "multilayer Mapbox MBTiles",
+            )
+            validate_mbtiles(mbtiles)
+            packaging.update(status="complete", mbtiles=str(mbtiles))
+        except CancelledError:
+            safe_unlink(mbtiles)
+            raise
+        except Exception as error:
+            safe_unlink(mbtiles)
+            packaging.update(status="failed", error=str(error))
+            emitter.log(f"Mapbox packaging failed: {error}")
+    else:
+        emitter.log("Tippecanoe not found; GeoJSON sources are ready but MBTiles was not built")
+
+    return {
+        "individual_geojson": str(individual_geojson),
+        "coverage_geojson": str(coverage_geojson),
+        "review_geopackage": str(staging),
+        "individual_layer": INDIVIDUAL_LAYER,
+        "coverage_layer": COVERAGE_LAYER,
+        "minzoom": MAPBOX_MIN_ZOOM,
+        "maxzoom": MAPBOX_MAX_ZOOM,
+        **packaging,
+    }
+
+
 def write_manifest(
     states: list[dict[str, Any]],
     output_dir: Path,
-    config_hash: str,
+    config: dict[str, Any],
     combined_exact: Path | None,
+    web_products: dict[str, Any] | None,
 ) -> Path:
     entries = []
     for state in states:
@@ -941,12 +1518,41 @@ def write_manifest(
     manifest.write_text(
         json.dumps(
             {
-                "schema_version": 1,
+                "schema_version": 2,
                 "generated_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                "config_hash": config_hash,
+                "config_hash": config["config_hash"],
+                "web_processing": {
+                    "resolution_m": config["web_resolution_m"],
+                    "simplify_tolerance_m": config["simplify_tolerance_m"],
+                    "smooth_iterations": config["smooth_iterations"],
+                    "majority_filter": config["web_majority_filter"],
+                    "minimum_patch_cells": config["min_web_patch_cells"],
+                    "clip": {
+                        "enabled": config["web_clip"],
+                        "boundary_sha256": config["web_clip_boundary_sha256"],
+                    },
+                },
                 "combined_exact_polygon": (
                     str(combined_exact.relative_to(output_dir))
                     if combined_exact
+                    else None
+                ),
+                "web_products": (
+                    {
+                        key: (
+                            str(Path(value).relative_to(output_dir))
+                            if key in {
+                                "individual_geojson",
+                                "coverage_geojson",
+                                "review_geopackage",
+                                "mbtiles",
+                            }
+                            and value
+                            else value
+                        )
+                        for key, value in web_products.items()
+                    }
+                    if web_products
                     else None
                 ),
                 "viewsheds": entries,
@@ -964,6 +1570,9 @@ def main() -> int:
     signal.signal(signal.SIGINT, request_cancel)
     args = parse_args()
     args.output_dir = args.output_dir.resolve()
+    args.web_clip_boundary = args.web_clip_boundary.resolve()
+    if args.web_clip and not args.web_clip_boundary.is_file():
+        raise FileNotFoundError(f"web clip boundary not found: {args.web_clip_boundary}")
     env, runtime = qgis_environment(args.qgis_app)
     sites = load_sites(args.sites)
     selected = select_sites(sites, args)
@@ -972,9 +1581,23 @@ def main() -> int:
     if not dem_files:
         raise RuntimeError(f"no GeoTIFF DEMs found in {args.dem_dir}")
     prepare_output(args.output_dir)
-    config = config_payload(args, dem_files, args.sites)
-    previous_hash = existing_config_hash(args.output_dir)
-    config_hash = write_config(args.output_dir, config)
+    previous_config = read_existing_config(args.output_dir)
+    config = config_document(args, dem_files, args.sites)
+    legacy_analysis_matches = analysis_configs_match(previous_config, config)
+    # keeps untouched v1 states reusable after pilot or interrupted runs
+    legacy_config_hashes = set(
+        (previous_config or {}).get("compatible_legacy_config_hashes", [])
+    )
+    if legacy_analysis_matches and previous_config and previous_config.get("config_hash"):
+        legacy_config_hashes.add(previous_config["config_hash"])
+    config["compatible_legacy_config_hashes"] = sorted(legacy_config_hashes)
+    previous_analysis_hash = (
+        previous_config.get("analysis_hash")
+        if previous_config
+        else None
+    )
+    if previous_analysis_hash is None and legacy_analysis_matches:
+        previous_analysis_hash = config["analysis_hash"]
     emitter.progress(0, None, "preparing", f"loaded {len(selected)} cameras and {len(dem_files)} DEMs")
     source_vrt = build_vrt(
         args.output_dir,
@@ -982,7 +1605,18 @@ def main() -> int:
         runtime,
         env,
         emitter,
-        args.overwrite or previous_hash != config_hash,
+        args.overwrite or previous_analysis_hash != config["analysis_hash"],
+    )
+    clip_boundary = (
+        prepare_web_clip_boundary(
+            args.web_clip_boundary,
+            args.output_dir,
+            runtime,
+            env,
+            emitter,
+        )
+        if args.web_clip
+        else None
     )
     radius_m = args.radius_miles * 1609.344
 
@@ -996,11 +1630,16 @@ def main() -> int:
                     site_index,
                     args,
                     source_vrt,
-                    config_hash,
+                    config["config_hash"],
+                    config["analysis_hash"],
+                    config["web_hash"],
+                    legacy_config_hashes,
+                    legacy_analysis_matches,
                     radius_m,
                     runtime,
                     env,
                     emitter,
+                    clip_boundary,
                 )
             )
         except CancelledError:
@@ -1012,10 +1651,32 @@ def main() -> int:
             if args.fail_fast:
                 break
 
+    if not failures:
+        write_config(args.output_dir, config)
+
     combined = None
     if completed and not args.skip_exact_polygons:
-        combined = rebuild_combined_exact(completed, args.output_dir, runtime, env, emitter)
-    manifest = write_manifest(completed, args.output_dir, config_hash, combined)
+        expected_exact_count = sum(bool(state["outputs"].get("exact")) for state in completed)
+        existing_combined = args.output_dir / "camera_viewsheds_exact_epsg5070.gpkg"
+        reuse_combined = (
+            not args.overwrite
+            and previous_analysis_hash == config["analysis_hash"]
+            and geopackage_feature_count(existing_combined, INDIVIDUAL_LAYER)
+            == expected_exact_count
+        )
+        if reuse_combined:
+            combined = existing_combined
+            emitter.log(f"reusing combined exact polygon: {combined}")
+        else:
+            combined = rebuild_combined_exact(completed, args.output_dir, runtime, env, emitter)
+    web_products = rebuild_web_products(completed, args.output_dir, runtime, env, emitter)
+    manifest = write_manifest(
+        completed,
+        args.output_dir,
+        config,
+        combined,
+        web_products,
+    )
     (args.output_dir / "failures.json").write_text(
         json.dumps(failures, indent=2) + "\n", encoding="utf-8"
     )
@@ -1026,7 +1687,8 @@ def main() -> int:
         f"completed {complete_count}/{len(selected)} cameras; "
         f"skipped: {skipped_count}; failures: {len(failures)}"
     )
-    return 1 if failures else 0
+    packaging_failed = bool(web_products and web_products.get("status") == "failed")
+    return 1 if failures or packaging_failed else 0
 
 
 if __name__ == "__main__":

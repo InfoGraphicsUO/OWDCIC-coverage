@@ -23,6 +23,7 @@ REQUIRED_GDAL_TOOLS = (
     "gdal_sieve",
     "ogr2ogr",
     "ogrinfo",
+    "qgis_process",
 )
 
 
