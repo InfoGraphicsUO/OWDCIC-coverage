@@ -142,10 +142,10 @@ function waitForMapLoad(map) {
   });
 }
 
-// registers empty layers while providers run then hydrates all sources together
+// registers empty layers while providers run then hydrates each source as ready
 async function loadMapLayers(map) {
   // overlap network requests with source and marker setup
-  const dataPromise = loadLayerData();
+  const data = loadLayerData();
 
   addRegionFocusLayers(map);
   addContextLayers(map);
@@ -164,43 +164,81 @@ async function loadMapLayers(map) {
   // Mapbox visibility can now follow the legend that was rendered at startup
   legendControl.connect(map);
 
-  const {
-    cameras,
-    fires,
-    regionFocus,
-    perimeters,
-    prescribed,
-    viewshedManifest,
-    lookouts,
-    nationalForests,
-    odfProtectionDistricts,
-  } = await dataPromise;
+  // The map is usable now; slow or unavailable data providers hydrate their
+  // sources in the background and should not hold the full-screen overlay.
+  hideMapLoading();
 
-  // matching source update for highlight switch above
-  setSourceData(map, LAYER_IDS.regionFocusSource, regionFocus);
+  await Promise.all([
+    data.regionFocus.then((regionFocus) => {
+      setSourceData(map, LAYER_IDS.regionFocusSource, regionFocus);
+    }),
+    hydrateLegendLayer(
+      'Cameras (ALERTWest)',
+      Promise.all([data.cameras, data.viewshedManifest]),
+      ([cameras, viewshedManifest]) => {
+        setSourceData(
+          map,
+          LAYER_IDS.cameras,
+          attachViewshedIds(cameras, viewshedManifest)
+        );
+      }
+    ),
+    hydrateLegendLayer(
+      VIEWSHED_LEGEND_LABEL,
+      data.viewshedManifest,
+      (viewshedManifest) => {
+        legendControl.updateInfo(
+          VIEWSHED_LEGEND_LABEL,
+          `Contains ${viewshedEntries(viewshedManifest).length} camera viewsheds from ALERTWest`
+        );
+      }
+    ),
+    hydrateLegendLayer(
+      'Fires (NIFC)',
+      Promise.all([data.fires, data.perimeters]),
+      ([fires, perimeters]) => {
+        // copy provider acreage into the local field used by marker sizing
+        setSourceData(
+          map,
+          LAYER_IDS.fires,
+          addNumericProperty(fires, 'acres', ['IncidentSize'])
+        );
+        setSourceData(map, LAYER_IDS.perimetersSource, perimeters);
+      }
+    ),
+    hydrateLegendLayer(
+      'Prescribed fires (Watch Duty)',
+      data.prescribed,
+      (prescribed) => {
+        setSourceData(map, LAYER_IDS.prescribedSource, prescribed);
+      }
+    ),
+    hydrateLegendLayer('Standing lookouts', data.lookouts, (lookouts) => {
+      setSourceData(map, LAYER_IDS.lookouts, lookouts);
+    }),
+    hydrateLegendLayer(
+      'National forests',
+      data.nationalForests,
+      (nationalForests) => {
+        setSourceData(map, LAYER_IDS.nationalForestsSource, nationalForests);
+      }
+    ),
+    hydrateLegendLayer(
+      'ODF protection districts',
+      data.odfProtectionDistricts,
+      (odfProtectionDistricts) => {
+        setSourceData(map, LAYER_IDS.odfProtectionSource, odfProtectionDistricts);
+      }
+    ),
+  ]);
+}
 
-  setSourceData(
-    map,
-    LAYER_IDS.cameras,
-    attachViewshedIds(cameras, viewshedManifest)
-  );
-  legendControl.updateInfo(
-    VIEWSHED_LEGEND_LABEL,
-    `Contains ${viewshedEntries(viewshedManifest).length} camera viewsheds from ALERTWest`
-  );
-
-  // copy provider acreage into the local field used by marker sizing
-  setSourceData(
-    map,
-    LAYER_IDS.fires,
-    addNumericProperty(fires, 'acres', ['IncidentSize'])
-  );
-
-  setSourceData(map, LAYER_IDS.perimetersSource, perimeters);
-  setSourceData(map, LAYER_IDS.prescribedSource, prescribed);
-  setSourceData(map, LAYER_IDS.lookouts, lookouts);
-  setSourceData(map, LAYER_IDS.nationalForestsSource, nationalForests);
-  setSourceData(map, LAYER_IDS.odfProtectionSource, odfProtectionDistricts);
+async function hydrateLegendLayer(label, dataPromise, applyData) {
+  try {
+    applyData(await dataPromise);
+  } finally {
+    legendControl.setLoading(label, false);
+  }
 }
 
 function addContextLayers(map) {
@@ -367,21 +405,15 @@ function loadBoundary(map, boundary) {
 }
 
 // starts every provider together and keeps results aligned by layer
-async function loadLayerData() {
-  const [
-    cameras,
-    fires,
-    regionFocus,
-    perimeters,
-    prescribed,
-    viewshedManifest,
-    lookouts,
-    nationalForests,
-    odfProtectionDistricts,
-  ] = await Promise.all([
-    safelyLoad('ALERTWest cameras', loadAlertWestCameras),
+function loadLayerData() {
+  return {
+    cameras: safelyLoadLegend(
+      'ALERTWest cameras',
+      'Cameras (ALERTWest)',
+      loadAlertWestCameras
+    ),
 
-    safelyLoad('NIFC fires', () =>
+    fires: safelyLoadLegend('NIFC fires', 'Fires (NIFC)', () =>
       fetchArcGISGeoJSON(DATA_URLS.nifcFires, {
         where: "POOState IN ('US-OR','US-WA')",
         outFields: [
@@ -395,9 +427,12 @@ async function loadLayerData() {
       })
     ),
 
-    safelyLoad('Oregon and Washington boundary', loadRegionFocusData),
+    regionFocus: safelyLoad(
+      'Oregon and Washington boundary',
+      loadRegionFocusData
+    ),
 
-    safelyLoad('NIFC perimeters', () =>
+    perimeters: safelyLoadLegend('NIFC perimeters', 'Fires (NIFC)', () =>
       fetchArcGISGeoJSON(
         DATA_URLS.nifcPerimeters,
         {
@@ -419,73 +454,92 @@ async function loadLayerData() {
       )
     ),
 
-    safelyLoad('Watch Duty prescribed fires', async () => {
-      const geojson = await fetchArcGISGeoJSON(DATA_URLS.prescribedFires, {
-        outFields: 'name,prescribed_date_start,watchduty_url,acreage',
-        // server-side envelope avoids downloading records outside the region
-        geometry: REGION_DATA_BOUNDS.flat().join(','),
-        geometryType: 'esriGeometryEnvelope',
-        spatialRel: 'esriSpatialRelIntersects',
-      });
+    prescribed: safelyLoadLegend(
+      'Watch Duty prescribed fires',
+      'Prescribed fires (Watch Duty)',
+      async () => {
+        const geojson = await fetchArcGISGeoJSON(DATA_URLS.prescribedFires, {
+          outFields: 'name,prescribed_date_start,watchduty_url,acreage',
+          // server-side envelope avoids downloading records outside the region
+          geometry: REGION_DATA_BOUNDS.flat().join(','),
+          geometryType: 'esriGeometryEnvelope',
+          spatialRel: 'esriSpatialRelIntersects',
+        });
 
-      // enforce the same inclusive bounds on whatever the service returns
-      return filterGeoJSONByBounds(geojson, REGION_DATA_BOUNDS);
-    }),
+        // enforce the same inclusive bounds on whatever the service returns
+        return filterGeoJSONByBounds(geojson, REGION_DATA_BOUNDS);
+      }
+    ),
 
-    safelyLoad(
+    viewshedManifest: safelyLoadLegend(
       'viewshed manifest',
+      VIEWSHED_LEGEND_LABEL,
       () => fetchJson(DATA_URLS.viewshedManifest, 'Viewshed manifest'),
       { viewsheds: [] }
     ),
 
-    safelyLoad('standing lookouts', () =>
+    lookouts: safelyLoadLegend('standing lookouts', 'Standing lookouts', () =>
       fetchJson(DATA_URLS.standingLookouts, 'Standing lookouts')
     ),
 
-    safelyLoad('national forests', () =>
-      fetchArcGISGeoJSON(DATA_URLS.nationalForests, {
-        where: "ownerclassification='USDA FOREST SERVICE'",
-        outFields: 'ownerclassification,forestname',
-        orderByFields: 'objectid',
-        geometry: REGION_DATA_BOUNDS.flat().join(','),
-        geometryType: 'esriGeometryEnvelope',
-        inSR: '4326',
-        spatialRel: 'esriSpatialRelIntersects',
-        geometryPrecision: '4',
-        maxAllowableOffset: '0.005',
-      })
+    nationalForests: safelyLoadLegend(
+      'national forests',
+      'National forests',
+      () =>
+        fetchArcGISGeoJSON(DATA_URLS.nationalForests, {
+          where: "ownerclassification='USDA FOREST SERVICE'",
+          outFields: 'ownerclassification,forestname',
+          orderByFields: 'objectid',
+          geometry: REGION_DATA_BOUNDS.flat().join(','),
+          geometryType: 'esriGeometryEnvelope',
+          inSR: '4326',
+          spatialRel: 'esriSpatialRelIntersects',
+          geometryPrecision: '4',
+          maxAllowableOffset: '0.005',
+        })
     ),
 
-    safelyLoad('ODF protection districts', () =>
-      fetchArcGISGeoJSON(DATA_URLS.odfProtectionDistricts, {
-        outFields: 'ODF_FPD',
-        geometryPrecision: '4',
-        maxAllowableOffset: '0.001',
-      })
+    odfProtectionDistricts: safelyLoadLegend(
+      'ODF protection districts',
+      'ODF protection districts',
+      () =>
+        fetchArcGISGeoJSON(DATA_URLS.odfProtectionDistricts, {
+          outFields: 'ODF_FPD',
+          geometryPrecision: '4',
+          maxAllowableOffset: '0.001',
+        })
     ),
-  ]);
-
-  return {
-    cameras,
-    fires,
-    regionFocus,
-    perimeters,
-    prescribed,
-    viewshedManifest,
-    lookouts,
-    nationalForests,
-    odfProtectionDistricts,
   };
 }
 
+function safelyLoadLegend(label, legendLabel, loader, fallback) {
+  return safelyLoad(label, loader, fallback, (error) => {
+    legendControl.setError(
+      legendLabel,
+      `${label} did not load: ${shortErrorMessage(error)}`
+    );
+  });
+}
+
 // turns one provider failure into an empty layer without blocking the rest
-async function safelyLoad(label, loader, fallback = emptyFeatureCollection()) {
+async function safelyLoad(
+  label,
+  loader,
+  fallback = emptyFeatureCollection(),
+  onError
+) {
   try {
     return await loader();
   } catch (error) {
     console.error(`Failed to load ${label}:`, error);
+    onError?.(error);
     return fallback;
   }
+}
+
+function shortErrorMessage(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.replace(/\s+/g, ' ').slice(0, 120);
 }
 
 async function fetchJson(url, label) {
@@ -739,6 +793,7 @@ function legendItems() {
     {
       label: 'Cameras (ALERTWest)',
       iconUrl: MARKER_ICON_URLS.camera,
+      loading: true,
       layerIds: [LAYER_IDS.cameras],
     },
     {
@@ -746,18 +801,21 @@ function legendItems() {
       swatchColor: VIEWSHED_FILL_COLOR.outdoors,
       swatchBorder: false,
       infoText: 'Loading camera viewshed count…',
+      loading: true,
       layerIds: VIEWSHED_LAYER_IDS,
     },
     {
       label: 'Standing lookouts',
       swatchColor: LOOKOUT_COLOR,
       swatchShape: 'circle',
+      loading: true,
       layerIds: [LAYER_IDS.lookouts],
     },
     {
       label: 'National forests',
       swatchColor: NATIONAL_FOREST_COLOR,
       visible: false,
+      loading: true,
       infoText: 'Surface ownership parcels from the U.S. Forest Service',
       layerIds: [
         LAYER_IDS.nationalForestsFill,
@@ -777,6 +835,7 @@ function legendItems() {
       swatchColor: ODF_PROTECTION_COLOR,
       visible: false,
       infoText: 'Forest protection districts from the Oregon Department of Forestry',
+      loading: true,
       layerIds: [
         LAYER_IDS.odfProtectionFill,
         LAYER_IDS.odfProtectionLine,
@@ -795,6 +854,7 @@ function legendItems() {
       label: 'Fires (NIFC)',
       iconUrl: MARKER_ICON_URLS.fire,
       visible: false,
+      loading: true,
       layerIds: [
         LAYER_IDS.fires,
         LAYER_IDS.perimetersFill,
@@ -805,6 +865,7 @@ function legendItems() {
       label: 'Prescribed fires (Watch Duty)',
       iconUrl: MARKER_ICON_URLS.prescribed,
       visible: false,
+      loading: true,
       layerIds: [LAYER_IDS.prescribed],
     },
   ];

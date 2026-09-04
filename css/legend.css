@@ -77,20 +77,113 @@
     transform: translate(-50%, 0);
 }
 
+.legend-visual {
+    display: grid;
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+    place-items: center;
+}
+
+.legend-visual > * {
+    grid-area: 1 / 1;
+}
+
+.legend-loader {
+    display: none;
+    box-sizing: border-box;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(68, 68, 68, 0.25);
+    border-top-color: #555;
+    border-radius: 50%;
+    animation: legend-loading-spin 700ms linear infinite;
+}
+
+.legend-visual--loading .legend-icon,
+.legend-visual--loading .legend-swatch {
+    visibility: hidden;
+}
+
+.legend-visual--loading .legend-loader {
+    display: block;
+}
+
+.legend-error {
+    display: none;
+    box-sizing: border-box;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #c62828;
+    color: #fff;
+    font: 700 11px/15px system-ui, sans-serif;
+    text-align: center;
+}
+
+.legend-visual--error {
+    position: relative;
+    cursor: help;
+}
+
+.legend-visual--error .legend-icon,
+.legend-visual--error .legend-swatch {
+    visibility: hidden;
+}
+
+.legend-visual--error .legend-error {
+    display: block;
+}
+
+.legend-visual--error::after {
+    position: absolute;
+    z-index: 10;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    width: max-content;
+    max-width: 240px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: #333;
+    color: #fff;
+    content: attr(data-tooltip);
+    font: 12px/1.3 system-ui, sans-serif;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, 3px);
+    transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.legend-visual--error:hover::after,
+.legend-visual--error:focus-visible::after {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.legend-visual--error:focus-visible {
+    outline: 2px solid var(--ohaz-yellow);
+    outline-offset: 2px;
+    border-radius: 50%;
+}
+
 .legend-icon {
     width: 17px;
     height: 17px;
-    flex: 0 0 14px;
 }
 
 .legend-swatch {
     box-sizing: border-box;
     width: 17px;
     height: 17px;
-    flex: 0 0 17px;
     background: color-mix(in srgb, var(--legend-swatch-color) 24%, transparent);
     border: 2px solid var(--legend-swatch-color);
     border-radius: 3px;
+}
+
+@keyframes legend-loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .legend-swatch--circle {
@@ -150,5 +243,11 @@
 @media (max-width: 520px) {
     .legend {
         font-size: 12px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .legend-loader {
+        animation: none;
     }
 }
