@@ -808,6 +808,7 @@ function legendItems() {
       label: 'Standing lookouts',
       swatchColor: LOOKOUT_COLOR,
       swatchShape: 'circle',
+      visible: false,
       loading: true,
       layerIds: [LAYER_IDS.lookouts],
     },
