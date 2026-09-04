@@ -74,6 +74,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUNNER = PROJECT_ROOT / "scripts/gdal-camera-viewsheds.py"
 QGIS_PROJECT_BUILDER = PROJECT_ROOT / "scripts/build-qgis-viewshed-project.py"
 DEFAULT_QGIS_ROOT = default_qgis_root()
+DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/or-wa-boundary.geojson"
 PROGRESS_PREFIX = "@@PROGRESS@@"
 
 
@@ -178,6 +179,23 @@ class ViewshedWindow(QMainWindow):
         self.simplify.setSuffix(" m")
         self.simplify.setToolTip("topology-preserving simplification applied only to web polygons")
 
+        self.smooth_iterations = QSpinBox()
+        self.smooth_iterations.setRange(0, 3)
+        self.smooth_iterations.setValue(1)
+        self.smooth_iterations.setToolTip(
+            "corner-cutting passes applied only to web polygons; 0 disables smoothing"
+        )
+
+        self.web_majority = QCheckBox("Smooth web mask with a 3×3 majority filter")
+        self.web_majority.setChecked(True)
+        self.web_majority.setToolTip(
+            "a web cell is visible when at least 5 cells in its 3×3 neighborhood are visible"
+        )
+
+        self.web_clip = QCheckBox("Clip web polygons to Oregon and Washington")
+        self.web_clip.setChecked(True)
+        self.web_clip.setToolTip(f"uses {DEFAULT_CLIP_BOUNDARY}")
+
         self.patch_cells = QSpinBox()
         self.patch_cells.setRange(0, 10000)
         self.patch_cells.setValue(0)
@@ -193,6 +211,9 @@ class ViewshedWindow(QMainWindow):
         form.addRow("Analysis cell size", self.cell_size)
         form.addRow("Web polygon grid", self.web_resolution)
         form.addRow("Web simplify tolerance", self.simplify)
+        form.addRow("Web smoothing passes", self.smooth_iterations)
+        form.addRow(self.web_majority)
+        form.addRow(self.web_clip)
         form.addRow("Minimum web patch cells", self.patch_cells)
         form.addRow(self.exact)
         form.addRow(self.keep_dems)
@@ -256,10 +277,16 @@ class ViewshedWindow(QMainWindow):
             str(self.web_resolution.value()),
             "--simplify-tolerance",
             str(self.simplify.value()),
+            "--smooth-iterations",
+            str(self.smooth_iterations.value()),
             "--min-web-patch-cells",
             str(self.patch_cells.value()),
             "--json-progress",
         ]
+        arguments.append(
+            "--web-majority-filter" if self.web_majority.isChecked() else "--no-web-majority-filter"
+        )
+        arguments.append("--web-clip" if self.web_clip.isChecked() else "--no-web-clip")
         if not self.exact.isChecked():
             arguments.append("--skip-exact-polygons")
         if self.keep_dems.isChecked():
@@ -274,6 +301,8 @@ class ViewshedWindow(QMainWindow):
             problems.append(f"Sites file not found: {self.sites.path()}")
         if not self.dems.path().is_dir():
             problems.append(f"DEM folder not found: {self.dems.path()}")
+        if self.web_clip.isChecked() and not DEFAULT_CLIP_BOUNDARY.is_file():
+            problems.append(f"Web clip boundary not found: {DEFAULT_CLIP_BOUNDARY}")
         if not self.qgis_runtime.root.is_dir():
             problems.append(f"QGIS not found: {self.qgis_runtime.root}")
         else:
@@ -382,8 +411,9 @@ class ViewshedWindow(QMainWindow):
         self.start_button.setEnabled(idle)
         self.cancel_button.setEnabled(not idle)
         self.open_output_button.setEnabled(idle and self.output.path().exists())
-        combined = self.output.path() / "camera_viewsheds_exact_epsg5070.gpkg"
-        self.open_qgis_button.setEnabled(idle and combined.exists())
+        exact = self.output.path() / "camera_viewsheds_exact_epsg5070.gpkg"
+        web = self.output.path() / "mapbox/camera_viewsheds_web_epsg5070.gpkg"
+        self.open_qgis_button.setEnabled(idle and (exact.exists() or web.exists()))
 
     def open_output(self) -> None:
         self.output.path().mkdir(parents=True, exist_ok=True)
@@ -391,9 +421,10 @@ class ViewshedWindow(QMainWindow):
 
     def open_in_qgis(self) -> None:
         combined = self.output.path() / "camera_viewsheds_exact_epsg5070.gpkg"
+        web = self.output.path() / "mapbox/camera_viewsheds_web_epsg5070.gpkg"
         review_project = self.output.path() / "camera_viewsheds_review.qgz"
-        if not combined.exists():
-            QMessageBox.information(self, "No polygons yet", "Run the exact polygon workflow first.")
+        if not combined.exists() and not web.exists():
+            QMessageBox.information(self, "No polygons yet", "Run the viewshed workflow first.")
             return
         builder = QProcess(self)
         builder.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
@@ -405,6 +436,8 @@ class ViewshedWindow(QMainWindow):
                 str(self.qgis_runtime.root),
                 "--gpkg",
                 str(combined),
+                "--web-gpkg",
+                str(web),
                 "--output",
                 str(review_project),
             ],

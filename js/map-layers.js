@@ -54,7 +54,8 @@ const BLM_LAND_COLOR = '#f6d94a';
 const ODF_PROTECTION_COLOR = '#008fb3';
 const BURN_PROBABILITY_COLOR = '#d7191c';
 const NO_VIEWSHED_SELECTED = '__none__';
-const VIEWSHED_SOURCE = Object.freeze({
+// dissolved base avoids stacked opacity while individual features keep selection ids
+const VIEWSHED_INDIVIDUAL_SOURCE = Object.freeze({
   source: LAYER_IDS.viewshedsSource,
   'source-layer': DATA_URLS.cameraViewshedsSourceLayer,
 });
@@ -601,7 +602,7 @@ function addViewshedLayers(map) {
   map.addLayer({
     id: LAYER_IDS.viewshedsHighlightFill,
     type: 'fill',
-    ...VIEWSHED_SOURCE,
+    ...VIEWSHED_INDIVIDUAL_SOURCE,
     filter: viewshedFilter(NO_VIEWSHED_SELECTED),
     paint: {
       'fill-color': VIEWSHED_HIGHLIGHT_COLOR,
