@@ -2,7 +2,7 @@
  * renders controls immediately, then connects them after Mapbox layers exist
  * one item may control several Mapbox layer IDs
  */
-export function initLegend(items, layerSelects = []) {
+export function initLegend(items) {
   const legend = document.getElementById('legend');
   if (!legend) {
     throw new Error('Legend container #legend is missing');
@@ -23,12 +23,6 @@ export function initLegend(items, layerSelects = []) {
     legend.append(binding.row);
   }
 
-  const selectBindings = layerSelects.map((item) => {
-    const binding = createLayerSelect(item, () => activeMap);
-    legend.append(binding.row);
-    return binding;
-  });
-
   const findBinding = (label) =>
     bindings.find(({ item }) => item.label === label);
 
@@ -39,10 +33,6 @@ export function initLegend(items, layerSelects = []) {
       // honor the current checkbox state, including changes made while loading
       for (const { checkbox, item } of bindings) {
         setLayersVisible(map, item.layerIds, checkbox.checked);
-      }
-
-      for (const { item, select } of selectBindings) {
-        applyLayerSelection(map, item, select.value);
       }
     },
 
@@ -92,43 +82,179 @@ export function initLegend(items, layerSelects = []) {
   };
 }
 
-function createLayerSelect(item, getMap) {
-  const row = document.createElement('div');
-  row.className = 'legend-layer-select';
-
-  const label = document.createElement('label');
-  label.className = 'legend-layer-select__label';
-  label.htmlFor = item.id;
-  label.textContent = item.label;
-
-  const select = document.createElement('select');
-  select.className = 'legend-layer-select__control';
-  select.id = item.id;
-
-  for (const optionItem of item.options) {
-    const option = document.createElement('option');
-    option.value = optionItem.value;
-    option.textContent = optionItem.label;
-    select.append(option);
+// builds the paired boundary controls
+export function initDivisionFilter(config) {
+  const legend = document.getElementById('legend');
+  if (!legend) {
+    throw new Error('Legend container #legend is missing');
   }
 
-  select.value = item.defaultValue ?? '';
-  select.addEventListener('change', () => {
-    const map = getMap();
-    if (map) applyLayerSelection(map, item, select.value);
+  const {
+    types,
+    loadOptions,
+    onTypeSelected = () => {},
+    onDivisionSelected,
+    onClear,
+  } = config;
+  const control = document.createElement('div');
+  control.className = 'legend-division-filter';
+
+  const parentRow = createDivisionFilterRow(
+    'Filter by',
+    'legend-division-filter-type',
+    'Select a boundary'
+  );
+  const divisionRow = createDivisionFilterRow(
+    'Division/County',
+    'legend-division-filter-division',
+    'Select a filter first'
+  );
+  divisionRow.select.disabled = true;
+  const status = document.createElement('div');
+  status.className = 'legend-division-filter__status';
+  status.id = 'legend-division-filter-status';
+  status.setAttribute('aria-live', 'polite');
+  status.setAttribute('aria-atomic', 'true');
+  parentRow.select.setAttribute('aria-describedby', status.id);
+  divisionRow.select.setAttribute('aria-describedby', status.id);
+
+  for (const type of types) {
+    const option = document.createElement('option');
+    option.value = type.value;
+    option.textContent = type.label;
+    parentRow.select.append(option);
+  }
+  parentRow.select.value = '';
+
+  control.append(parentRow.row, divisionRow.row, status);
+  legend.append(control);
+
+  let activeMap;
+  let requestId = 0;
+
+  const setStatus = (message, isError = false) => {
+    status.textContent = message;
+    status.classList.toggle('legend-division-filter__status--error', isError);
+    if (isError) {
+      status.setAttribute('role', 'alert');
+    } else {
+      status.setAttribute('role', 'status');
+    }
+  };
+
+  const resetDivision = (placeholder = 'Select a filter first') => {
+    divisionRow.select.replaceChildren(createOption('', placeholder));
+    divisionRow.select.disabled = true;
+  };
+
+  const clearFilter = () => {
+    requestId += 1;
+    parentRow.select.value = '';
+    resetDivision();
+    setStatus('');
+  };
+
+  const loadDivisions = async () => {
+    const typeValue = parentRow.select.value;
+    const map = activeMap;
+    const currentRequestId = ++requestId;
+
+    resetDivision(typeValue ? 'Loading…' : 'Select a filter first');
+    setStatus(typeValue ? 'Loading…' : '');
+    if (!typeValue) {
+      if (map) onClear(map);
+      return;
+    }
+    if (!map) return;
+    onClear(map);
+
+    try {
+      const options = await loadOptions(map, typeValue);
+      if (currentRequestId !== requestId) return;
+
+      divisionRow.select.replaceChildren(
+        createOption('', 'Select a county'),
+        ...options.map((optionItem) =>
+          createOption(optionItem.value, optionItem.label)
+        )
+      );
+      divisionRow.select.disabled = false;
+      setStatus('');
+      onTypeSelected(map, typeValue);
+    } catch {
+      if (currentRequestId !== requestId) return;
+
+      resetDivision('County data unavailable');
+      setStatus('County data unavailable', true);
+      onClear(map);
+    }
+  };
+
+  parentRow.select.addEventListener('change', loadDivisions);
+  divisionRow.select.addEventListener('change', () => {
+    if (!activeMap) return;
+    onDivisionSelected(
+      activeMap,
+      parentRow.select.value,
+      divisionRow.select.value
+    );
   });
 
-  row.append(label, select);
-  return { item, row, select };
+  return {
+    connect(map) {
+      activeMap = map;
+      if (parentRow.select.value) loadDivisions();
+    },
+
+    reset() {
+      clearFilter();
+      if (activeMap) onClear(activeMap);
+    },
+
+    select(typeValue, divisionValue) {
+      if (
+        !activeMap ||
+        parentRow.select.value !== typeValue ||
+        divisionRow.select.disabled
+      ) {
+        return false;
+      }
+
+      const hasOption = Array.from(divisionRow.select.options).some(
+        (option) => option.value === divisionValue
+      );
+      if (!hasOption) return false;
+
+      divisionRow.select.value = divisionValue;
+      onDivisionSelected(activeMap, typeValue, divisionValue);
+      return true;
+    },
+  };
 }
 
-function applyLayerSelection(map, item, selectedValue) {
-  for (const option of item.options) {
-    setLayersVisible(map, option.layerIds || [], option.value === selectedValue);
-  }
+function createDivisionFilterRow(labelText, id, placeholder) {
+  const row = document.createElement('div');
+  row.className = 'legend-division-filter__row';
 
-  const selected = item.options.find(({ value }) => value === selectedValue);
-  selected?.activate?.(map);
+  const label = document.createElement('label');
+  label.className = 'legend-division-filter__label';
+  label.htmlFor = id;
+  label.textContent = labelText;
+
+  const select = document.createElement('select');
+  select.className = 'legend-division-filter__control';
+  select.id = id;
+  select.append(createOption('', placeholder));
+
+  row.append(label, select);
+  return { row, select };
+}
+
+function createOption(value, label) {
+  const option = document.createElement('option');
+  option.value = value;
+  option.textContent = label;
+  return option;
 }
 
 function createLegendRow(item, getMap) {

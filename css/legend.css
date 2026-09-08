@@ -210,24 +210,31 @@
     border: 1px solid #2a2a2a;
 }
 
-.legend-layer-select {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
+.legend-division-filter {
     margin-top: 7px;
     padding-top: 8px;
     border-top: 1px solid #d8d8d8;
 }
 
-.legend-layer-select__label {
+.legend-division-filter__row {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    gap: 2px;
+    margin: 0;
+    padding: 3px 0;
+}
+
+.legend-division-filter__label {
     color: #444;
     font-weight: 600;
 }
 
-.legend-layer-select__control {
-    min-width: 112px;
-    padding: 3px 22px 3px 6px;
+.legend-division-filter__control {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 4px 22px 4px 6px;
     border: 1px solid #aaa;
     border-radius: 4px;
     background: #fff;
@@ -235,15 +242,33 @@
     font: inherit;
 }
 
-.legend-layer-select__control:focus-visible {
+.legend-division-filter__control:focus-visible {
     outline: 2px solid var(--ohaz-yellow);
     outline-offset: 1px;
+}
+
+.legend-division-filter__control:disabled {
+    color: #666;
+    cursor: not-allowed;
+}
+
+.legend-division-filter__status {
+    min-height: 1.4em;
+    margin: 3px 0 0;
+    color: #555;
+    font-size: 12px;
+}
+
+.legend-division-filter__status--error {
+    color: #b42318;
+    font-weight: 600;
 }
 
 @media (max-width: 520px) {
     .legend {
         font-size: 12px;
     }
+
 }
 
 @media (prefers-reduced-motion: reduce) {

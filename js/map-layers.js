@@ -14,9 +14,9 @@ import {
   camerasToGeoJSON,
   filterGeoJSONByBounds,
 } from './geojson-transform.js';
-import { initLegend } from './legend.js';
+import { initDivisionFilter, initLegend } from './legend.js';
 import { hideMapLoading } from './loading.js';
-import { mapReady, onBasemapChange } from './map.js';
+import { MAP_HOME_EVENT, mapReady, onBasemapChange } from './map.js';
 import {
   registerMarkerIcon,
   registerMarkerIconSizes,
@@ -29,8 +29,10 @@ import {
 } from './states-highlight.js';
 import {
   hideCameraPreview,
+  hideDivisionPopup,
   showCameraPopup,
   showCameraPreview,
+  showDivisionPopup,
   showFirePopup,
   showLookoutPopup,
   showPrescribedPopup,
@@ -40,6 +42,8 @@ const FIRE_ICON_ID = 'fire-marker';
 const CAMERA_ICON_ID = 'camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
 const BOUNDARY_COLOR = '#1769aa';
+const BOUNDARY_FILL_COLOR = '#397b9d';
+const SELECTED_BOUNDARY_COLOR = '#f8e109';
 const VIEWSHED_LEGEND_LABEL = 'Camera viewsheds';
 const VIEWSHED_FILL_COLOR = Object.freeze({
   outdoors: '#F28D05',
@@ -67,38 +71,22 @@ const VIEWSHED_LAYER_IDS = Object.freeze([
   LAYER_IDS.viewshedsFill,
   LAYER_IDS.viewshedsHighlightFill,
 ]);
-const REGION_STATE_WHERE = "STATE IN ('41','53')";
-const BOUNDARY_TYPES = Object.freeze([
+const NO_DIVISION_SELECTED = '__none__';
+const DIVISION_TYPES = Object.freeze([
   Object.freeze({
     value: 'county',
     label: 'County',
     sourceId: LAYER_IDS.countyBoundariesSource,
+    fillLayerId: LAYER_IDS.countyBoundaryFill,
+    hoverLayerId: LAYER_IDS.countyBoundaryHover,
     layerId: LAYER_IDS.countyBoundaries,
-    url: DATA_URLS.censusCountyBoundaries,
-  }),
-  Object.freeze({
-    value: 'senate',
-    label: 'Senate',
-    sourceId: LAYER_IDS.senateBoundariesSource,
-    layerId: LAYER_IDS.senateBoundaries,
-    url: DATA_URLS.censusStateSenateDistricts,
-  }),
-  Object.freeze({
-    value: 'house',
-    label: 'House',
-    sourceId: LAYER_IDS.houseBoundariesSource,
-    layerId: LAYER_IDS.houseBoundaries,
-    url: DATA_URLS.censusStateHouseDistricts,
-  }),
-  Object.freeze({
-    value: 'us-house',
-    label: 'US House',
-    sourceId: LAYER_IDS.congressionalBoundariesSource,
-    layerId: LAYER_IDS.congressionalBoundaries,
-    url: DATA_URLS.censusCongressionalDistricts,
+    labelLayerId: LAYER_IDS.countyBoundaryLabels,
+    selectedLayerId: LAYER_IDS.countyBoundarySelected,
+    dataUrl: DATA_URLS.countyDivisions,
   }),
 ]);
-const boundaryLoads = new Map();
+const divisionLoads = new Map();
+const divisionFeatures = new Map();
 
 // marker sizes in CSS pixels
 const CAMERA_MARKER_SIZE = 20;
@@ -115,7 +103,14 @@ const FIRE_MARKER_SIZES = [
 ];
 
 // render layer names and defaults without waiting for Mapbox or data providers
-const legendControl = initLegend(legendItems(), [boundaryLayerSelect()]);
+const legendControl = initLegend(legendItems());
+const divisionFilterControl = initDivisionFilter({
+  types: DIVISION_TYPES.map(({ value, label }) => ({ value, label })),
+  loadOptions: loadDivisionOptions,
+  onTypeSelected: showDivisionType,
+  onDivisionSelected: selectDivision,
+  onClear: clearDivisionFilter,
+});
 
 // startup waits for the base style before registering application layers
 mapReady
@@ -141,6 +136,8 @@ async function loadMapLayers(map) {
   addRegionFocusLayers(map);
   addContextLayers(map);
   addBoundaryLayers(map);
+  divisionFilterControl.connect(map);
+  map.on(MAP_HOME_EVENT, () => divisionFilterControl.reset());
   addViewshedLayers(map);
   addPerimeterLayers(map);
   addLookoutLayer(map);
@@ -148,6 +145,8 @@ async function loadMapLayers(map) {
 
   // added last so prescribed burns draw above the other markers
   await addPrescribedLayer(map);
+
+  orderDivisionLayers(map);
 
   // rebuilds every registered marker image when display density changes
   watchMarkerIconDensity(map);
@@ -342,50 +341,334 @@ function burnProbabilityPaint() {
 }
 
 function addBoundaryLayers(map) {
-  for (const boundary of BOUNDARY_TYPES) {
-    map.addSource(boundary.sourceId, {
+  for (const division of DIVISION_TYPES) {
+    map.addSource(division.sourceId, {
       type: 'geojson',
       data: emptyFeatureCollection(),
     });
 
     map.addLayer({
-      id: boundary.layerId,
+      id: division.fillLayerId,
+      type: 'fill',
+      source: division.sourceId,
+      layout: { visibility: 'none' },
+      paint: {
+        'fill-color': BOUNDARY_FILL_COLOR,
+        'fill-opacity': 0.065,
+      },
+    });
+
+    map.addLayer({
+      id: division.hoverLayerId,
+      type: 'fill',
+      source: division.sourceId,
+      filter: divisionFilterExpression(NO_DIVISION_SELECTED),
+      layout: { visibility: 'none' },
+      paint: {
+        'fill-color': SELECTED_BOUNDARY_COLOR,
+        'fill-opacity': 0.13,
+      },
+    });
+
+    map.addLayer({
+      id: division.layerId,
       type: 'line',
-      source: boundary.sourceId,
+      source: division.sourceId,
       layout: { visibility: 'none' },
       paint: {
         'line-color': BOUNDARY_COLOR,
-        'line-opacity': 0.92,
+        'line-opacity': 0.38,
         'line-width': [
           'interpolate',
           ['linear'],
           ['zoom'],
-          5, 1.25,
-          9, 2,
-          13, 3,
+          5, 0.8,
+          9, 1.35,
+          13, 2,
+        ],
+        'line-emissive-strength': 0.65,
+      },
+    });
+
+    map.addLayer({
+      id: division.labelLayerId,
+      type: 'symbol',
+      source: division.sourceId,
+      layout: {
+        visibility: 'none',
+        'text-field': ['get', 'shortName'],
+        'text-size': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          5, 10,
+          8, 11.5,
+          12, 13,
+        ],
+        'text-max-width': 9,
+        'text-padding': 5,
+        'text-variable-anchor': ['center', 'top', 'bottom'],
+        'text-radial-offset': 0.35,
+      },
+      paint: {
+        'text-color': '#334553',
+        'text-halo-color': 'rgba(255, 255, 255, 0.94)',
+        'text-halo-width': 1.5,
+        'text-halo-blur': 0.25,
+      },
+    });
+
+    map.addLayer({
+      id: division.selectedLayerId,
+      type: 'line',
+      source: division.sourceId,
+      filter: divisionFilterExpression(NO_DIVISION_SELECTED),
+      layout: { visibility: 'none' },
+      paint: {
+        'line-color': SELECTED_BOUNDARY_COLOR,
+        'line-opacity': 1,
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          5, 3,
+          9, 4.5,
+          13, 6,
         ],
         'line-emissive-strength': 1,
       },
     });
+
+    bindDivisionInteractions(map, division);
   }
 }
 
-function loadBoundary(map, boundary) {
-  if (boundaryLoads.has(boundary.value)) {
-    return boundaryLoads.get(boundary.value);
+async function loadDivisionOptions(map, typeValue) {
+  const division = divisionType(typeValue);
+  if (!division) throw new Error(`Unknown division type: ${typeValue}`);
+
+  const data = await loadDivisionData(division);
+  setSourceData(map, division.sourceId, data);
+
+  return data.features.map((feature) => ({
+    value: feature.properties.divisionId,
+    label: feature.properties.label,
+  }));
+}
+
+function showDivisionType(map, typeValue) {
+  const selected = divisionType(typeValue);
+
+  for (const division of DIVISION_TYPES) {
+    const visible = division === selected;
+    for (const layerId of divisionLayerIds(division)) {
+      setLayerVisible(map, layerId, visible);
+    }
+    setDivisionLayerFilter(map, division, NO_DIVISION_SELECTED);
+    setDivisionHoverFilter(map, division, NO_DIVISION_SELECTED);
+  }
+  hideDivisionPopup(map);
+}
+
+function loadDivisionData(division) {
+  if (!divisionLoads.has(division.value)) {
+    const load = fetch(division.dataUrl)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`${division.label} data HTTP ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data?.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
+          throw new Error(`${division.label} data is not a FeatureCollection`);
+        }
+
+        const features = new Map(
+          data.features.map((feature) => [feature.properties?.divisionId, feature])
+        );
+        divisionFeatures.set(division.value, features);
+        return data;
+      })
+      .catch((error) => {
+        divisionLoads.delete(division.value);
+        console.error(`Failed to load ${division.label} divisions:`, error);
+        throw error;
+      });
+
+    divisionLoads.set(division.value, load);
   }
 
-  const load = safelyLoad(`${boundary.label} boundaries`, () =>
-    fetchArcGISGeoJSON(boundary.url, {
-      where: REGION_STATE_WHERE,
-      outFields: 'STATE,GEOID,BASENAME',
-      geometryPrecision: '5',
-      maxAllowableOffset: '0.0005',
-    })
-  ).then((data) => setSourceData(map, boundary.sourceId, data));
+  return divisionLoads.get(division.value);
+}
 
-  boundaryLoads.set(boundary.value, load);
-  return load;
+function selectDivision(map, typeValue, divisionId) {
+  const division = divisionType(typeValue);
+  if (!division) return;
+
+  setDivisionLayerFilter(
+    map,
+    division,
+    divisionId || NO_DIVISION_SELECTED
+  );
+
+  if (!divisionId) {
+    hideDivisionPopup(map);
+    return;
+  }
+
+  const feature = divisionFeatures.get(typeValue)?.get(divisionId);
+  if (!feature) {
+    console.warn(`Division ${divisionId} is not available`);
+    hideDivisionPopup(map);
+    return;
+  }
+
+  const [west, south, east, north] = feature.bbox;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  map.fitBounds(
+    [
+      [west, south],
+      [east, north],
+    ],
+    {
+      duration: reducedMotion ? 0 : 800,
+      maxZoom: 10,
+      padding: divisionFitPadding(map),
+    }
+  );
+
+  showDivisionPopup(map, feature.properties);
+}
+
+function clearDivisionFilter(map) {
+  for (const division of DIVISION_TYPES) {
+    for (const layerId of divisionLayerIds(division)) {
+      setLayerVisible(map, layerId, false);
+    }
+    setDivisionLayerFilter(map, division, NO_DIVISION_SELECTED);
+    setDivisionHoverFilter(map, division, NO_DIVISION_SELECTED);
+  }
+  map.getCanvas().style.cursor = '';
+  hideDivisionPopup(map);
+}
+
+function divisionType(value) {
+  return DIVISION_TYPES.find((division) => division.value === value);
+}
+
+function setLayerVisible(map, layerId, visible) {
+  if (map.getLayer(layerId)) {
+    map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+  }
+}
+
+function setDivisionLayerFilter(map, division, divisionId) {
+  if (map.getLayer(division.selectedLayerId)) {
+    map.setFilter(division.selectedLayerId, divisionFilterExpression(divisionId));
+  }
+}
+
+function setDivisionHoverFilter(map, division, divisionId) {
+  if (map.getLayer(division.hoverLayerId)) {
+    map.setFilter(division.hoverLayerId, divisionFilterExpression(divisionId));
+  }
+}
+
+function divisionFilterExpression(divisionId) {
+  return ['==', ['get', 'divisionId'], divisionId];
+}
+
+function divisionLayerIds(division) {
+  return [
+    division.fillLayerId,
+    division.hoverLayerId,
+    division.layerId,
+    division.labelLayerId,
+    division.selectedLayerId,
+  ];
+}
+
+function bindDivisionInteractions(map, division) {
+  map.on('mousemove', division.fillLayerId, (event) => {
+    const divisionId = event.features?.[0]?.properties?.divisionId;
+    if (!divisionId) return;
+
+    map.getCanvas().style.cursor = 'pointer';
+    setDivisionHoverFilter(map, division, divisionId);
+  });
+
+  map.on('mouseleave', division.fillLayerId, () => {
+    map.getCanvas().style.cursor = '';
+    setDivisionHoverFilter(map, division, NO_DIVISION_SELECTED);
+  });
+
+  map.on('click', division.fillLayerId, (event) => {
+    if (hasInteractiveFeatureAtPoint(map, event.point)) return;
+
+    const divisionId = event.features?.[0]?.properties?.divisionId;
+    if (divisionId) divisionFilterControl.select(division.value, divisionId);
+  });
+}
+
+function hasInteractiveFeatureAtPoint(map, point) {
+  const layerIds = [
+    LAYER_IDS.cameras,
+    LAYER_IDS.fires,
+    LAYER_IDS.perimetersFill,
+    LAYER_IDS.prescribed,
+    LAYER_IDS.lookouts,
+  ].filter((layerId) => map.getLayer(layerId));
+
+  return (
+    layerIds.length > 0 &&
+    map.queryRenderedFeatures(point, { layers: layerIds }).length > 0
+  );
+}
+
+function orderDivisionLayers(map) {
+  const firstPointLayer = [
+    LAYER_IDS.lookouts,
+    LAYER_IDS.fires,
+    LAYER_IDS.cameras,
+    LAYER_IDS.prescribed,
+  ].find((layerId) => map.getLayer(layerId));
+
+  for (const division of DIVISION_TYPES) {
+    if (firstPointLayer) {
+      for (const layerId of [
+        division.hoverLayerId,
+        division.layerId,
+        division.labelLayerId,
+      ]) {
+        if (map.getLayer(layerId)) map.moveLayer(layerId, firstPointLayer);
+      }
+    }
+
+    if (map.getLayer(division.selectedLayerId)) {
+      map.moveLayer(division.selectedLayerId);
+    }
+  }
+}
+
+function divisionFitPadding(map) {
+  const container = map.getContainer();
+  if (container.clientWidth > 620) {
+    return { top: 48, right: 48, bottom: 48, left: 320 };
+  }
+
+  const panel = document.querySelector('.map-panels');
+  const panelBottom = panel
+    ? panel.getBoundingClientRect().bottom - container.getBoundingClientRect().top
+    : 0;
+
+  // leave enough clear map below the stacked mobile panel for the label popup
+  const top = Math.min(
+    Math.max(36, panelBottom + 18),
+    Math.max(36, container.clientHeight - 220)
+  );
+  return { top, right: 24, bottom: 36, left: 24 };
 }
 
 // starts every provider together and keeps results aligned by layer
@@ -854,23 +1137,6 @@ function legendItems() {
       layerIds: [LAYER_IDS.prescribed],
     },
   ];
-}
-
-function boundaryLayerSelect() {
-  return {
-    id: 'legend-boundary-select',
-    label: 'Boundaries',
-    defaultValue: '',
-    options: [
-      { value: '', label: 'None', layerIds: [] },
-      ...BOUNDARY_TYPES.map((boundary) => ({
-        value: boundary.value,
-        label: boundary.label,
-        layerIds: [boundary.layerId],
-        activate: (map) => loadBoundary(map, boundary),
-      })),
-    ],
-  };
 }
 
 function viewshedEntries(manifest) {

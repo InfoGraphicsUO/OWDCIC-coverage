@@ -8,16 +8,9 @@ export const DATA_URLS = Object.freeze({
   cameraViewshedsCoverageSourceLayer: 'camera_viewshed_coverage',
   viewshedManifest: 'data/viewshed-manifest.json',
   standingLookouts: 'data/standing-lookouts.geojson',
+  countyDivisions: 'data/divisions/counties.geojson',
   censusStateBoundaries:
     'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/10',
-  censusCountyBoundaries:
-    'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/1',
-  censusCongressionalDistricts:
-    'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/0',
-  censusStateSenateDistricts:
-    'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/1',
-  censusStateHouseDistricts:
-    'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Legislative/MapServer/2',
   worldCountries:
     'https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0',
   nifcFires:
@@ -52,13 +45,11 @@ export const LAYER_IDS = Object.freeze({
   outsideRegionFill: 'outside-region-fill',
   regionOutline: 'region-outline',
   countyBoundariesSource: 'county-boundaries-source',
+  countyBoundaryFill: 'county-boundary-fill',
+  countyBoundaryHover: 'county-boundary-hover',
   countyBoundaries: 'county-boundaries',
-  senateBoundariesSource: 'senate-boundaries-source',
-  senateBoundaries: 'senate-boundaries',
-  houseBoundariesSource: 'house-boundaries-source',
-  houseBoundaries: 'house-boundaries',
-  congressionalBoundariesSource: 'congressional-boundaries-source',
-  congressionalBoundaries: 'congressional-boundaries',
+  countyBoundaryLabels: 'county-boundary-labels',
+  countyBoundarySelected: 'county-boundary-selected',
   nationalForestsSource: 'national-forests-source',
   nationalForestsFill: 'national-forests-fill',
   nationalForestsLine: 'national-forests-line',
