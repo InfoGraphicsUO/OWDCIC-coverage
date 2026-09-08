@@ -5,6 +5,10 @@ const ACRES_FORMAT = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 0,
 });
+const PERCENT_FORMAT = new Intl.NumberFormat('en-US', {
+  maximumFractionDigits: 1,
+  minimumFractionDigits: 0,
+});
 const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
@@ -69,6 +73,23 @@ export function showLookoutPopup(map, event) {
   showPopup(map, event, createLookoutPopup);
 }
 
+export function showDivisionPopup(map, properties) {
+  const coordinates = properties?.labelPoint;
+  if (!validCoordinates(coordinates)) return;
+
+  showPopupAt(
+    map,
+    coordinates,
+    createDivisionPopup(properties),
+    { closeOnMapClick: false, kind: 'division' }
+  );
+}
+
+export function hideDivisionPopup(map) {
+  const active = ACTIVE_POPUPS.get(map);
+  if (active?.kind === 'division') active.close({ immediate: true });
+}
+
 function showPopup(map, event, createContent, options = {}) {
   const feature = event.features?.[0];
   if (!feature) return;
@@ -77,17 +98,24 @@ function showPopup(map, event, createContent, options = {}) {
   const coordinates = featurePoint(feature) || event.lngLat;
   if (!coordinates) return;
 
+  showPopupAt(map, coordinates, createContent(feature.properties || {}), options);
+}
+
+function showPopupAt(map, coordinates, content, options = {}) {
   // replacing in place prevents overlapping dialogs and stale listeners
   ACTIVE_POPUPS.get(map)?.close({ immediate: true });
 
-  const popup = new FeaturePopup(
-    map,
-    coordinates,
-    createContent(feature.properties || {}),
-    options
-  );
+  const popup = new FeaturePopup(map, coordinates, content, options);
   ACTIVE_POPUPS.set(map, popup);
   popup.open();
+}
+
+function validCoordinates(coordinates) {
+  return (
+    Array.isArray(coordinates) &&
+    coordinates.length === 2 &&
+    coordinates.every(Number.isFinite)
+  );
 }
 
 // identifies a hovered feature so its preview can be matched on click
@@ -97,11 +125,23 @@ function featureKey(feature) {
 
 /** owns a popup DOM element along with its map listeners and screen position */
 class FeaturePopup {
-  constructor(map, coordinates, content, { preview = false, featureKey = null } = {}) {
+  constructor(
+    map,
+    coordinates,
+    content,
+    {
+      closeOnMapClick = true,
+      featureKey = null,
+      kind = 'feature',
+      preview = false,
+    } = {}
+  ) {
     this.map = map;
     this.coordinates = coordinates;
+    this.closeOnMapClick = closeOnMapClick;
     this.isPreview = preview;
     this.featureKey = featureKey;
+    this.kind = kind;
     this.element = createPopupElement(content, { preview });
     this.animationFrame = null;
     this.mapClickTimer = null;
@@ -145,6 +185,8 @@ class FeaturePopup {
     this.element
       .querySelector('.feature-popup__close')
       .addEventListener('click', this.handleCloseClick);
+
+    if (!this.closeOnMapClick) return;
 
     // wait for the feature click to finish before map clicks can dismiss it
     this.mapClickTimer = window.setTimeout(() => {
@@ -402,6 +444,17 @@ function createPrescribedPopup(properties) {
   const watchDutyUrl = getHttpsUrl(properties.watchduty_url);
   if (watchDutyUrl) appendExternalLink(popup, watchDutyUrl, 'Open in Watch Duty');
 
+  return popup;
+}
+
+function createDivisionPopup({ name, stateName, cameraViewshedCoveragePct }) {
+  const popup = createPopupContainer(name || 'County');
+  if (stateName) popup.append(createMetaLine(stateName));
+
+  const coverage = formatNumber(cameraViewshedCoveragePct, PERCENT_FORMAT);
+  if (coverage != null) {
+    popup.append(createMetaLine(`Camera viewshed coverage: ${coverage}%`));
+  }
   return popup;
 }
 

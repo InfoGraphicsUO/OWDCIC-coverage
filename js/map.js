@@ -12,6 +12,8 @@ const SATELLITE_ID = 'mapbox-satellite-basemap';
 const DEFAULT_BASEMAP = 'outdoors';
 const basemapChangeListeners = [];
 
+export const MAP_HOME_EVENT = 'apphome';
+
 const MAP_BOUNDS = [
   [-135, 38],
   [-106, 53],
@@ -137,6 +139,9 @@ class HomeControl {
 }
 
 function resetMapView(map) {
+  // feature controllers clear their state before the camera returns home
+  map.fire(MAP_HOME_EVENT);
+
   map.easeTo({
     center: DEFAULT_VIEW.center,
     zoom: DEFAULT_VIEW.zoom,
