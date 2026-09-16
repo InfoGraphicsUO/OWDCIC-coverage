@@ -17,7 +17,16 @@ export function initLegend(items) {
   title.textContent = 'Map layers';
   legend.append(title);
 
+  const groupBindings = [];
   for (const item of items) {
+    if (Array.isArray(item.children) && item.children.length > 0) {
+      const group = createLegendGroup(item, () => activeMap);
+      bindings.push(group.parent, ...group.children);
+      groupBindings.push(group);
+      legend.append(group.element);
+      continue;
+    }
+
     const binding = createLegendRow(item, () => activeMap);
     bindings.push(binding);
     legend.append(binding.row);
@@ -34,6 +43,7 @@ export function initLegend(items) {
       for (const { checkbox, item } of bindings) {
         setLayersVisible(map, item.layerIds, checkbox.checked);
       }
+      for (const group of groupBindings) group.syncParent();
     },
 
     updateInfo(label, text) {
@@ -80,6 +90,76 @@ export function initLegend(items) {
       visual.tabIndex = 0;
     },
   };
+}
+
+function createLegendGroup(item, getMap) {
+  // create groups in the legend
+  // currently being used for digitized camera operations
+  const element = document.createElement('section');
+  element.className = 'legend-group';
+
+  let children = [];
+
+  const parent = createLegendRow(item, getMap, (checked, map) => {
+    for (const child of children) {
+      child.checkbox.checked = checked;
+
+      if (map) setLayersVisible(map, child.item.layerIds, checked);
+    }
+    syncParent();
+  });
+  
+  parent.row.classList.add('legend-group__parent');
+  element.append(parent.row);
+
+  if (Array.isArray(item.keyItems)) {
+    const key = document.createElement('div');
+    key.className = 'legend-group__key';
+
+    for (const keyItem of item.keyItems) {
+      const entry = document.createElement('span');
+      entry.className = 'legend-group__key-item';
+
+      const symbol = document.createElement('span');
+      symbol.className =
+        `legend-camera-symbol legend-camera-symbol--${keyItem.shape}`;
+      symbol.setAttribute('aria-hidden', 'true');
+
+      const label = document.createElement('span');
+      label.textContent = keyItem.label;
+      entry.append(symbol, label);
+      key.append(entry);
+    }
+
+    element.append(key);
+  }
+
+  const childContainer = document.createElement('div');
+  childContainer.className = 'legend-group__children';
+  children = item.children.map((childItem) => {
+    const child = createLegendRow(childItem, getMap, (checked, map) => {
+      if (map) setLayersVisible(map, childItem.layerIds, checked);
+      syncParent();
+    });
+    child.row.classList.add('legend-group__child');
+    childContainer.append(child.row);
+    return child;
+  });
+  element.append(childContainer);
+
+  parent.checkbox.setAttribute(
+    'aria-controls',
+    children.map(({ checkbox }) => checkbox.id).join(' ')
+  );
+
+  function syncParent() {
+    const checkedCount = children.filter(({ checkbox }) => checkbox.checked).length;
+    parent.checkbox.checked = checkedCount === children.length;
+    parent.checkbox.indeterminate = checkedCount > 0 && checkedCount < children.length;
+  }
+
+  syncParent();
+  return { element, parent, children, syncParent };
 }
 
 // builds the paired boundary controls
@@ -257,7 +337,7 @@ function createOption(value, label) {
   return option;
 }
 
-function createLegendRow(item, getMap) {
+function createLegendRow(item, getMap, onToggle) {
   const row = document.createElement('div');
   row.className = 'legend-row';
 
@@ -267,11 +347,16 @@ function createLegendRow(item, getMap) {
   checkbox.checked = item.visible !== false;
   checkbox.addEventListener('change', () => {
     const map = getMap();
-    if (map) setLayersVisible(map, item.layerIds, checkbox.checked);
+    if (onToggle) {
+      onToggle(checkbox.checked, map);
+    } else if (map) {
+      setLayersVisible(map, item.layerIds, checkbox.checked);
+    }
   });
 
   const swatch = item.swatchColor ? createLegendSwatch(item) : null;
-  const icon = swatch ?? createLegendIcon(item.iconUrl);
+  const icon =
+    createCameraLegendIcon(item) ?? swatch ?? createLegendIcon(item.iconUrl);
   const visual = createLegendVisual(icon, item.loading === true, item.label);
 
   const label = document.createElement('span');
@@ -298,6 +383,34 @@ function createLegendRow(item, getMap) {
   row.append(labelText);
   if (infoButton) row.append(infoButton);
   return { checkbox, infoButton, item, row, swatch, visual };
+}
+
+function createCameraLegendIcon(item) {
+  if (Array.isArray(item.groupColors)) {
+    const icon = document.createElement('span');
+    icon.className = 'legend-camera-group-symbol';
+    icon.setAttribute('aria-hidden', 'true');
+    for (const color of item.groupColors) {
+      const colorBlock = document.createElement('span');
+      colorBlock.style.background = color;
+      icon.append(colorBlock);
+    }
+    return icon;
+  }
+
+  if (!item.markerColor) return null;
+
+  const icon = document.createElement('span');
+  icon.className = 'legend-camera-symbols';
+  icon.style.setProperty('--legend-marker-color', item.markerColor);
+  icon.setAttribute('aria-hidden', 'true');
+
+  for (const shape of item.markerShapes || ['triangle', 'circle']) {
+    const symbol = document.createElement('span');
+    symbol.className = `legend-camera-symbol legend-camera-symbol--${shape}`;
+    icon.append(symbol);
+  }
+  return icon;
 }
 
 function createLegendVisual(icon, loading, label) {

@@ -40,6 +40,10 @@ export function showCameraPopup(map, event) {
   showPopup(map, event, createCameraPopup);
 }
 
+export function showDigitizedCameraPopup(map, event) {
+  showPopup(map, event, createDigitizedCameraPopup);
+}
+
 /** lightweight hover popup carrying only the camera name and locality */
 export function showCameraPreview(map, event) {
   const feature = event.features?.[0];
@@ -377,6 +381,31 @@ function createCameraPopup({ name, id, pan, image, state, county }) {
       'Open camera feed'
     );
   }
+
+  return popup;
+}
+
+function createDigitizedCameraPopup({
+  name,
+  operator,
+  status,
+  pointSourceName,
+  siteType,
+  cameraHeightFeet,
+}) {
+  const popup = createPopupContainer(name || 'Digitized camera');
+
+  const operatorStatus = [operator, status].filter(Boolean).join(' · ');
+  if (operatorStatus) popup.append(createMetaLine(operatorStatus));
+
+  if (pointSourceName && pointSourceName !== name) {
+    popup.append(createMetaLine(`Location source: ${pointSourceName}`));
+  }
+
+  const siteDetails = [siteType, cameraHeightFeet && `${cameraHeightFeet} ft`]
+    .filter(Boolean)
+    .join(' · ');
+  if (siteDetails) popup.append(createMetaLine(siteDetails));
 
   return popup;
 }

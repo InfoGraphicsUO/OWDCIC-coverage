@@ -7,6 +7,7 @@ export const DATA_URLS = Object.freeze({
   cameraViewshedsSourceLayer: 'camera_viewsheds',
   cameraViewshedsCoverageSourceLayer: 'camera_viewshed_coverage',
   viewshedManifest: 'data/viewshed-manifest.json',
+  digitizedCameraSources: 'data/digitized-camera-sources.geojson',
   standingLookouts: 'data/standing-lookouts.geojson',
   countyDivisions: 'data/divisions/counties.geojson',
   censusStateBoundaries:
@@ -39,6 +40,16 @@ export const MARKER_ICON_URLS = Object.freeze({
   prescribed: 'img/prescribed-marker.svg',
 });
 
+export const DIGITIZED_CAMERA_ICON_URLS = Object.freeze({
+  enviroVisionOperational: 'img/envirovision-operational.svg',
+  enviroVisionPlanned: 'img/envirovision-planned.svg',
+  alertWestOperational: 'img/alertwest-operational.svg',
+  alertWestPlanned: 'img/alertwest-planned.svg',
+  panoOperational: 'img/pano-operational.svg',
+  panoPlanned: 'img/pano-planned.svg',
+  joint: 'img/joint.svg',
+});
+
 export const LAYER_IDS = Object.freeze({
   regionFocusSource: 'region-focus',
   outsideRegionClip: 'outside-region-clip',
@@ -61,6 +72,11 @@ export const LAYER_IDS = Object.freeze({
   burnProbabilitySource: 'burn-probability-source',
   burnProbability: 'burn-probability',
   cameras: 'alertwest-cameras',
+  digitizedCamerasSource: 'digitized-camera-sources',
+  digitizedEnviroVision: 'digitized-cameras-envirovision',
+  digitizedAlertWest: 'digitized-cameras-alertwest',
+  digitizedPano: 'digitized-cameras-pano',
+  digitizedJoint: 'digitized-cameras-joint',
   viewshedsSource: 'camera-viewsheds',
   viewshedsFill: 'camera-viewsheds-fill',
   viewshedsHighlightFill: 'camera-viewsheds-highlight-fill',

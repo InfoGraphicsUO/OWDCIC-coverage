@@ -3,6 +3,7 @@ import {
   BURN_PROBABILITY_MIN,
   CAMERA_API,
   DATA_URLS,
+  DIGITIZED_CAMERA_ICON_URLS,
   LAYER_IDS,
   MARKER_ICON_URLS,
   REGION_DATA_BOUNDS,
@@ -32,6 +33,7 @@ import {
   hideDivisionPopup,
   showCameraPopup,
   showCameraPreview,
+  showDigitizedCameraPopup,
   showDivisionPopup,
   showFirePopup,
   showLookoutPopup,
@@ -41,6 +43,7 @@ import {
 const FIRE_ICON_ID = 'fire-marker';
 const CAMERA_ICON_ID = 'camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
+const DIGITIZED_CAMERA_GROUP_LABEL = 'Digitized Camera Sources';
 const BOUNDARY_COLOR = '#1769aa';
 const BOUNDARY_FILL_COLOR = '#397b9d';
 const SELECTED_BOUNDARY_COLOR = '#f8e109';
@@ -57,6 +60,12 @@ const NATIONAL_FOREST_COLOR = '#3b7d4f';
 const BLM_LAND_COLOR = '#f6d94a';
 const ODF_PROTECTION_COLOR = '#008fb3';
 const BURN_PROBABILITY_COLOR = '#d7191c';
+const DIGITIZED_CAMERA_COLORS = Object.freeze({
+  enviroVision: '#6eaa00',
+  alertWest: '#a80000',
+  pano: '#004ca9',
+  joint: '#f8e109',
+});
 const NO_VIEWSHED_SELECTED = '__none__';
 // dissolved base avoids stacked opacity while individual features keep selection ids
 const VIEWSHED_INDIVIDUAL_SOURCE = Object.freeze({
@@ -87,6 +96,53 @@ const DIVISION_TYPES = Object.freeze([
 ]);
 const divisionLoads = new Map();
 const divisionFeatures = new Map();
+
+const DIGITIZED_CAMERA_OPERATORS = Object.freeze([
+  Object.freeze({
+    operator: 'EnviroVision Solutions',
+    label: 'EnviroVision Solutions',
+    layerId: LAYER_IDS.digitizedEnviroVision,
+    color: DIGITIZED_CAMERA_COLORS.enviroVision,
+    operationalIconId: 'digitized-envirovision-operational',
+    operationalIconUrl: DIGITIZED_CAMERA_ICON_URLS.enviroVisionOperational,
+    plannedIconId: 'digitized-envirovision-planned',
+    plannedIconUrl: DIGITIZED_CAMERA_ICON_URLS.enviroVisionPlanned,
+  }),
+  Object.freeze({
+    operator: 'ALERTWest',
+    label: 'ALERTWest',
+    layerId: LAYER_IDS.digitizedAlertWest,
+    color: DIGITIZED_CAMERA_COLORS.alertWest,
+    operationalIconId: 'digitized-alertwest-operational',
+    operationalIconUrl: DIGITIZED_CAMERA_ICON_URLS.alertWestOperational,
+    plannedIconId: 'digitized-alertwest-planned',
+    plannedIconUrl: DIGITIZED_CAMERA_ICON_URLS.alertWestPlanned,
+  }),
+  Object.freeze({
+    operator: 'Pano AI',
+    label: 'Pano AI',
+    layerId: LAYER_IDS.digitizedPano,
+    color: DIGITIZED_CAMERA_COLORS.pano,
+    operationalIconId: 'digitized-pano-operational',
+    operationalIconUrl: DIGITIZED_CAMERA_ICON_URLS.panoOperational,
+    plannedIconId: 'digitized-pano-planned',
+    plannedIconUrl: DIGITIZED_CAMERA_ICON_URLS.panoPlanned,
+  }),
+  Object.freeze({
+    operator: 'Joint Site',
+    label: 'Joint Sites',
+    layerId: LAYER_IDS.digitizedJoint,
+    color: DIGITIZED_CAMERA_COLORS.joint,
+    operationalIconId: 'digitized-joint',
+    operationalIconUrl: DIGITIZED_CAMERA_ICON_URLS.joint,
+    plannedIconId: 'digitized-joint',
+    plannedIconUrl: DIGITIZED_CAMERA_ICON_URLS.joint,
+    markerShapes: ['square'],
+  }),
+]);
+const DIGITIZED_CAMERA_LAYER_IDS = Object.freeze(
+  DIGITIZED_CAMERA_OPERATORS.map(({ layerId }) => layerId)
+);
 
 // marker sizes in CSS pixels
 const CAMERA_MARKER_SIZE = 20;
@@ -141,7 +197,11 @@ async function loadMapLayers(map) {
   addViewshedLayers(map);
   addPerimeterLayers(map);
   addLookoutLayer(map);
-  await Promise.all([addFireLayer(map), addCameraLayer(map)]);
+  await Promise.all([
+    addFireLayer(map),
+    addCameraLayer(map),
+    addDigitizedCameraLayers(map),
+  ]);
 
   // added last so prescribed burns draw above the other markers
   await addPrescribedLayer(map);
@@ -170,6 +230,17 @@ async function loadMapLayers(map) {
           map,
           LAYER_IDS.cameras,
           attachViewshedIds(cameras, viewshedManifest)
+        );
+      }
+    ),
+    hydrateLegendLayer(
+      DIGITIZED_CAMERA_GROUP_LABEL,
+      data.digitizedCameras,
+      (digitizedCameras) => {
+        setSourceData(
+          map,
+          LAYER_IDS.digitizedCamerasSource,
+          digitizedCameras
         );
       }
     ),
@@ -615,6 +686,7 @@ function bindDivisionInteractions(map, division) {
 function hasInteractiveFeatureAtPoint(map, point) {
   const layerIds = [
     LAYER_IDS.cameras,
+    ...DIGITIZED_CAMERA_LAYER_IDS,
     LAYER_IDS.fires,
     LAYER_IDS.perimetersFill,
     LAYER_IDS.prescribed,
@@ -631,6 +703,7 @@ function orderDivisionLayers(map) {
   const firstPointLayer = [
     LAYER_IDS.lookouts,
     LAYER_IDS.fires,
+    ...DIGITIZED_CAMERA_LAYER_IDS,
     LAYER_IDS.cameras,
     LAYER_IDS.prescribed,
   ].find((layerId) => map.getLayer(layerId));
@@ -678,6 +751,16 @@ function loadLayerData() {
       'ALERTWest cameras',
       'Cameras (ALERTWest)',
       loadAlertWestCameras
+    ),
+
+    digitizedCameras: safelyLoadLegend(
+      'digitized camera sources',
+      DIGITIZED_CAMERA_GROUP_LABEL,
+      () =>
+        fetchJson(
+          DATA_URLS.digitizedCameraSources,
+          'Digitized camera sources'
+        )
     ),
 
     fires: safelyLoadLegend('NIFC fires', 'Fires (NIFC)', () =>
@@ -844,6 +927,47 @@ async function addCameraLayer(map) {
     show: showCameraPreview,
     hide: hideCameraPreview,
   });
+}
+
+async function addDigitizedCameraLayers(map) {
+  const icons = new Map();
+  for (const operator of DIGITIZED_CAMERA_OPERATORS) {
+    icons.set(operator.operationalIconId, operator.operationalIconUrl);
+    icons.set(operator.plannedIconId, operator.plannedIconUrl);
+  }
+
+  await Promise.all(
+    [...icons].map(([id, url]) =>
+      registerMarkerIcon(map, {
+        id,
+        url,
+        size: 18,
+      })
+    )
+  );
+
+  addGeoJSONSource(map, LAYER_IDS.digitizedCamerasSource);
+
+  for (const operator of DIGITIZED_CAMERA_OPERATORS) {
+    map.addLayer({
+      id: operator.layerId,
+      type: 'symbol',
+      source: LAYER_IDS.digitizedCamerasSource,
+      filter: ['==', ['get', 'operator'], operator.operator],
+      layout: {
+        ...markerLayout([
+          'match',
+          ['get', 'status'],
+          'Planned',
+          operator.plannedIconId,
+          operator.operationalIconId,
+        ]),
+        visibility: 'none',
+      },
+    });
+
+    bindLayerInteractions(map, operator.layerId, showDigitizedCameraPopup);
+  }
 }
 
 function addViewshedLayers(map) {
@@ -1062,6 +1186,24 @@ function legendItems() {
       iconUrl: MARKER_ICON_URLS.camera,
       loading: true,
       layerIds: [LAYER_IDS.cameras],
+    },
+    {
+      label: DIGITIZED_CAMERA_GROUP_LABEL,
+      groupColors: Object.values(DIGITIZED_CAMERA_COLORS),
+      visible: false,
+      loading: true,
+      keyItems: [
+        { shape: 'triangle', label: 'Operational' },
+        { shape: 'circle', label: 'Planned' },
+      ],
+      layerIds: DIGITIZED_CAMERA_LAYER_IDS,
+      children: DIGITIZED_CAMERA_OPERATORS.map((operator) => ({
+        label: operator.label,
+        markerColor: operator.color,
+        markerShapes: operator.markerShapes,
+        visible: false,
+        layerIds: [operator.layerId],
+      })),
     },
     {
       label: VIEWSHED_LEGEND_LABEL,

@@ -1,0 +1,2909 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.365297,
+          42.397246
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-1",
+        "name": "Grizzly Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Grizzly Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Ground",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.493945,
+          42.198258
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-2",
+        "name": "Little Grayback",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Little Grayback",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "2 Story cab",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.479027,
+          42.064778
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-3",
+        "name": "Soda Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Soda Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.278838,
+          42.105306
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-4",
+        "name": "Parker Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Parker Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.994146,
+          42.094616
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-5",
+        "name": "Chase Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Chase Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.890836,
+          42.043567
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-6",
+        "name": "Dutchman Peak",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Dutchmans Peak",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Ground",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.705889,
+          42.242878
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-7",
+        "name": "Hogback",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Hogback Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.269753,
+          42.326507
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-8",
+        "name": "Yainax Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Yainax Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.157914,
+          42.300507
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-9",
+        "name": "Drake Peak",
+        "operator": "EnviroVision Solutions",
+        "status": "Planned",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Drake Peak",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Ground",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.492871,
+          42.197759
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-10",
+        "name": "Table Mountain",
+        "operator": "ALERTWest",
+        "status": "Planned",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Table Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.616118,
+          42.454429
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-11",
+        "name": "Onion",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Onion Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.720254,
+          42.081033
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-12",
+        "name": "Mt Ashland",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "MT ASHLAND",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.507104,
+          42.492436
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-13",
+        "name": "Round Pass",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "ROUND PASS",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.990901,
+          42.701897
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-14",
+        "name": "Round Top",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Round Top",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.365467,
+          42.600137
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-15",
+        "name": "Sexton",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Sexton Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.119159,
+          42.969097
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-16",
+        "name": "Bland Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Bland Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.33431,
+          42.872012
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-17",
+        "name": "Edson Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Edson Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "source point slightly off structure"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.639485,
+          42.252593
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-18",
+        "name": "Grizzly Peak",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "GRIZZLY PEAK",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.876971,
+          41.830285
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-19",
+        "name": "Wild Frontier",
+        "operator": "ALERTWest",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "CAMP SIX",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.353514,
+          41.858009
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-20",
+        "name": "Slater Butter Lookout",
+        "operator": "ALERTWest",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "SLATER BUTTE",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.829701,
+          42.983697
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-21",
+        "name": "Latgawa Mountain",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "DEAD INDIAN MOUNTAIN",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.880818,
+          43.165719
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-22",
+        "name": "Red Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Red Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.581196,
+          43.269256
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-23",
+        "name": "Baughman",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Baughman Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.366383,
+          43.543397
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-24",
+        "name": "Warner Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Warner Ridge",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.716972,
+          43.305208
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-25",
+        "name": "Walker Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Walker Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.379935,
+          43.26423
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-26",
+        "name": "Pig Iron Mountain Lookout",
+        "operator": "ALERTWest",
+        "status": "Planned",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Pig Iron",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.348009,
+          43.523313
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-27",
+        "name": "Spring Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Planned",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Spring Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.230692,
+          43.616664
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-28",
+        "name": "Wolf Mountain",
+        "operator": "ALERTWest",
+        "status": "Planned",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "WOLF MOUNTAIN",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.653184,
+          43.585682
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-29",
+        "name": "Fairview Point Lookout",
+        "operator": "ALERTWest",
+        "status": "Planned",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Fairview Peak",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.563695,
+          43.671957
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-30",
+        "name": "Dry Mountain",
+        "operator": "ALERTWest",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Dry Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.552069,
+          44.07856
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-31",
+        "name": "Bearwallow Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "BEARWALLOW BUTTE",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.410502,
+          44.139149
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-32",
+        "name": "Hagen",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "MT HAGAN",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.451015,
+          44.268026
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-33",
+        "name": "Big Rock",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Big Rock",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "2 Story cab",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.310519,
+          44.479754
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-34",
+        "name": "Cougar Rock",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "COUGAR ROCK",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.582894,
+          44.483066
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-35",
+        "name": "Green Peter",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Green Peter",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Ground",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.784995,
+          44.527027
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-36",
+        "name": "Foley Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Foley Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.460077,
+          44.263359
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-37",
+        "name": "Gerow Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Gerow Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.539302,
+          44.92621
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-38",
+        "name": "Sidwalter",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Sidwalter Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.466612,
+          45.317845
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-39",
+        "name": "Flag Point",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "FLAG POINT",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.119184,
+          45.10657
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-40",
+        "name": "Whale Head",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "WHALEHEAD",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.182615,
+          45.186166
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-41",
+        "name": "Memaloose",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "MEMALOOSE",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.911251,
+          45.412484
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-42",
+        "name": "Hickman Butte Lookout",
+        "operator": "ALERTWest",
+        "status": "Planned",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Hickman Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.722629,
+          45.648653
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-43",
+        "name": "Mt Defiance",
+        "operator": "ALERTWest",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "MT DEFIANCE",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.661448,
+          44.873779
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-44",
+        "name": "Tamarack",
+        "operator": "EnviroVision Solutions",
+        "status": "Planned",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Tamarack Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.296538,
+          45.212869
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-45",
+        "name": "Black Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "BLACK MOUNTAIN",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.07143,
+          44.833624
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-46",
+        "name": "Ritter Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Ritter Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "3 Story cab",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.320485,
+          44.836903
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-47",
+        "name": "Mt Ireland",
+        "operator": "EnviroVision Solutions",
+        "status": "Planned",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Ireland, Mount",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Ground",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.075168,
+          45.205016
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-48",
+        "name": "Glass Hill",
+        "operator": "EnviroVision Solutions",
+        "status": "Planned",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Glass Hill",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.893078,
+          45.440419
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-49",
+        "name": "Mt Harris",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Harris, Mount",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.737165,
+          45.723766
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-50",
+        "name": "Howard Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Howard Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.4034,
+          45.652759
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-51",
+        "name": "Tope Creek",
+        "operator": "EnviroVision Solutions",
+        "status": "Planned",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Tope Creek",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.205406,
+          45.598172
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-52",
+        "name": "Elk Mountain NEO",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Elk Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Ground",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.088283,
+          44.860047
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-53",
+        "name": "Halfway",
+        "operator": "ALERTWest",
+        "status": "Operational",
+        "pointSource": "standing-lookouts",
+        "pointSourceName": "Halfway (Pine Range Station)",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": "Tower",
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.668641,
+          42.408293
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-54",
+        "name": "Swan Lake Point",
+        "operator": "ALERTWest",
+        "status": "Planned",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "SWAN LAKE",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-10",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.449863,
+          42.304302
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-55",
+        "name": "Manzanita",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Manzanita",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.151586,
+          42.19635
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-56",
+        "name": "Tallowbox",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Tallowbox",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.025026,
+          42.046024
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-57",
+        "name": "Chicken Hills",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Chicken Hills",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.104498,
+          42.303188
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-58",
+        "name": "Isabelle",
+        "operator": "Joint Site",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Isabelle",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.661515,
+          42.258382
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-59",
+        "name": "Eight Dollar Mountain",
+        "operator": "Joint Site",
+        "status": "Operational",
+        "pointSource": "usfs_communications_sites",
+        "pointSourceName": "EIGHT DOLLAR MOUNTAIN",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.472879,
+          42.41048
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-60",
+        "name": "Bieberstedt Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Bieberstedt Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.608768,
+          42.727752
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-61",
+        "name": "Flounce",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Flounce Rock",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.122302,
+          42.761729
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-62",
+        "name": "Cedar Springs Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Cedar Springs Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.642076,
+          42.601753
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-63",
+        "name": "Peavine",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Peavine",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.597025,
+          42.718699
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-64",
+        "name": "Reuben",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Reuben",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.052353,
+          42.935925
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-65",
+        "name": "Hood Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Hood Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.778764,
+          43.001775
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-66",
+        "name": "Signal Tree",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Signal Tree",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.660271,
+          42.866651
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-67",
+        "name": "Dutchman Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Dutchman Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.378392,
+          42.858982
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-68",
+        "name": "Silver Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Silver Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.286014,
+          42.902194
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-69",
+        "name": "Canyon Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Canyon Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.30544,
+          43.210098
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-70",
+        "name": "Beaver Hill",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Beaver Hill",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.417501,
+          43.187559
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-71",
+        "name": "Marsters Ridge",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Marsters Ridge",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.175532,
+          43.53383
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-72",
+        "name": "Shutters Landing",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Shutter Landing",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.97978,
+          43.614528
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-73",
+        "name": "Dean Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Dean Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.853147,
+          43.403912
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-74",
+        "name": "Ivers Peak",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Ivers Peak",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.669408,
+          43.510516
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-75",
+        "name": "Old Blue",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Old Blue",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.40357,
+          43.546523
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-76",
+        "name": "Yellow Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Yellow Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.064403,
+          43.371797
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-77",
+        "name": "Mt Scott",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Mt. Scott",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.731294,
+          43.432306
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-78",
+        "name": "Chilcoot",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Chilcoot",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.842707,
+          43.628028
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-79",
+        "name": "Table Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Table Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.738506,
+          43.912253
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-80",
+        "name": "Roman Nose",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Roman Nose",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.629118,
+          44.06661
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-81",
+        "name": "Walker Point",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Walker Point",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.715185,
+          44.153031
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-82",
+        "name": "Mt Nebo",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Mt. Nebo",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.863657,
+          44.3988
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-83",
+        "name": "Scott Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Planned",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Mt. Scott (Linn County)",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.39161,
+          44.537863
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-84",
+        "name": "Geneva",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Geneva",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.668026,
+          43.462753
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-85",
+        "name": "Crescent Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Crescent Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.350767,
+          42.785259
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-86",
+        "name": "Hamelton",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Hamelton",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.597205,
+          45.579332
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-87",
+        "name": "Middle Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Middle Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.335121,
+          45.616717
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-88",
+        "name": "Wasco Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Wasco Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.42581,
+          44.862053
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-89",
+        "name": "Monument Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Monument Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.948755,
+          45.281554
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-90",
+        "name": "Carney Butte",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Carney Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.421597,
+          45.44502
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-91",
+        "name": "Tiptop",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Tip Top",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.37586,
+          45.800118
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-92",
+        "name": "Weston High",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Weston",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "name mismatch"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.20319,
+          42.713816
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-93",
+        "name": "King Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "King Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "ref point offset to west by about 1.35 miles from location of actual tower in imagery"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.893451,
+          44.574343
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-94",
+        "name": "Bald Mountain",
+        "operator": "EnviroVision Solutions",
+        "status": "Operational",
+        "pointSource": "ODF_sites",
+        "pointSourceName": "Bald Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "questionable tower?"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.36255,
+          45.677163
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-95",
+        "name": "Round Top",
+        "operator": "Joint Site",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Portland Round Top",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 120,
+        "notes": "name mismatch, height pulled from \"Description\" column of PGE-towers_reduced.csv sheet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.040147,
+          45.690383
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-96",
+        "name": "Pumpkin Ridge",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Pumpkin Ridge",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 150,
+        "notes": "height pulled from \"Description\" column of PGE-towers_reduced.csv sheet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.098325,
+          45.645456
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-97",
+        "name": "Lodge Road",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Lodge Road",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 200,
+        "notes": "height pulled from \"Description\" column of PGE-towers_reduced.csv sheet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.217592,
+          45.642162
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-98",
+        "name": "Hayward",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Hayward",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 180,
+        "notes": "height pulled from \"Description\" column of PGE-towers_reduced.csv sheet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.795787,
+          45.5805
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-99",
+        "name": "Portland Willalatin Tank",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Portland Willalatin Tank",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE_towers_reduced, camera may be on actual water tank"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.168735,
+          45.484603
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-100",
+        "name": "High Compromise",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "High Compromise",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 180,
+        "notes": "height pulled from \"Description\" column of PGE-towers_reduced.csv sheet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.955,
+          45.782551
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-101",
+        "name": "Bald Hill",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Bald Hill",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE_towers_reduced"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.050737,
+          45.389184
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-102",
+        "name": "Bald Peak",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Bald Peak",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 120,
+        "notes": "height pulled from \"Description\" column of PGE-towers_reduced.csv sheet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.30969,
+          45.264441
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-103",
+        "name": "High Heaven",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "High Heaven",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE-towers_reduced"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.58438,
+          45.065409
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-104",
+        "name": "Spirit Mountain",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Spirit Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE-towers_reduced"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.511657,
+          45.023395
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-105",
+        "name": "Doane Creek",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Doane Creek",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE-towers_reduced"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.143056,
+          44.984537
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-106",
+        "name": "West Salem",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "West Salem",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "West Salem tower in PGE-towers_reduced appears to be different tower than West Salem tower in PGE_WF_Cameras"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.145852,
+          45.09898
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-107",
+        "name": "Eola Hills",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Eola Hills",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 120,
+        "notes": "height pulled from \"Description\" column of PGE-towers_reduced.csv sheet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.893046,
+          45.306441
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-108",
+        "name": "Parrott Mountain",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Parrett Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 150,
+        "notes": "name mismatch, height pulled from \"Description\" column of PGE-towers_reduced.csv"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.693667,
+          45.344206
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-109",
+        "name": "Pete's Mountain",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Pete's Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 150,
+        "notes": "height pulled from \"Description\" column of PGE-towers_reduced.csv sheet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.766501,
+          45.002977
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-110",
+        "name": "Silverton",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Silverton",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 160,
+        "notes": "height pulled from \"Description\" column of PGE-towers_reduced.csv sheet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.555241,
+          45.074846
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-111",
+        "name": "Sawtell",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Sawtell",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 150,
+        "notes": "height pulled from \"Description\" column of PGE-towers_reduced.csv sheet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.413156,
+          45.176573
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-112",
+        "name": "Colton",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Colton",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": 88,
+        "notes": "height pulled from \"Description\" column of PGE-towers_reduced.csv sheet"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.2916,
+          45.131078
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-113",
+        "name": "Goat Mountain",
+        "operator": "Joint Site",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Goat Mountain",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "structure shown in PGE-towers_reduced appears to be different than one marked in PGE_WF_cameras"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.129375,
+          45.483544
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-114",
+        "name": "Portland Lookout Point",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Portland Lookout Point",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE-towers_reduced"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.332978,
+          45.270771
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-115",
+        "name": "Day Hill",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Day Hill",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "two structures of differing heights both marked at this site, unclear which the camera may be on"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.475936,
+          44.761963
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-116",
+        "name": "Mill City",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Mill City",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE-towers_reduced"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.219019,
+          44.754983
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-117",
+        "name": "Warm Springs",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Warm Springs",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE-towers_reduced"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.267773,
+          44.602051
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-118",
+        "name": "Round Butte",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Round Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE-towers_reduced"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.9881,
+          42.853472
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-119",
+        "name": "Sycan Substation",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Sycan Substation",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE-towers_reduced"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.642863,
+          45.637998
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-120",
+        "name": "Biglow Canyon",
+        "operator": "Pano AI",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Biglow Canyon",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE-towers_reduced"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.990254,
+          45.048245
+        ]
+      },
+      "properties": {
+        "id": "digitized-camera-121",
+        "name": "Oak Grove Butte",
+        "operator": "Joint Site",
+        "status": "Operational",
+        "pointSource": "PGE_WF_Cameras",
+        "pointSourceName": "Oak Grove Butte",
+        "mapSource": "Oregon Wildfire Detection Network Map - PDF",
+        "digitizedBy": "Mason Weybright",
+        "digitizedDate": "2026-09-14",
+        "siteType": null,
+        "cameraHeightFeet": null,
+        "notes": "no entry for this site in PGE-towers_reduced"
+      }
+    }
+  ]
+}
