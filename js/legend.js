@@ -10,6 +10,7 @@ export function initLegend(items) {
 
   legend.replaceChildren();
   const bindings = [];
+  const topLevelBindings = [];
   let activeMap;
 
   const title = document.createElement('h2');
@@ -23,12 +24,16 @@ export function initLegend(items) {
       const group = createLegendGroup(item, () => activeMap);
       bindings.push(group.parent, ...group.children);
       groupBindings.push(group);
+      group.element.hidden = item.hidden === true;
+      topLevelBindings.push({ item, element: group.element });
       legend.append(group.element);
       continue;
     }
 
     const binding = createLegendRow(item, () => activeMap);
     bindings.push(binding);
+    binding.row.hidden = item.hidden === true;
+    topLevelBindings.push({ item, element: binding.row });
     legend.append(binding.row);
   }
 
@@ -44,6 +49,12 @@ export function initLegend(items) {
         setLayersVisible(map, item.layerIds, checkbox.checked);
       }
       for (const group of groupBindings) group.syncParent();
+    },
+
+    setHidden(label, hidden) {
+      const binding = topLevelBindings.find(({ item }) => item.label === label);
+      if (!binding) return;
+      binding.element.hidden = hidden;
     },
 
     updateInfo(label, text) {

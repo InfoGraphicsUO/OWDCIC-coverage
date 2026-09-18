@@ -44,6 +44,8 @@ const FIRE_ICON_ID = 'fire-marker';
 const CAMERA_ICON_ID = 'camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
 const DIGITIZED_CAMERA_GROUP_LABEL = 'Digitized Camera Sources';
+const DIGITIZED_CAMERA_UNLOCK_SEQUENCE = Object.freeze(['1', '2', '3', '4']); // press these numbers to show digitized camera layer
+const DIGITIZED_CAMERA_UNLOCK_TIMEOUT_MS = 2_000;
 const BOUNDARY_COLOR = '#1769aa';
 const BOUNDARY_FILL_COLOR = '#397b9d';
 const SELECTED_BOUNDARY_COLOR = '#f8e109';
@@ -96,6 +98,7 @@ const DIVISION_TYPES = Object.freeze([
 ]);
 const divisionLoads = new Map();
 const divisionFeatures = new Map();
+let digitizedCameraLoad;
 
 const DIGITIZED_CAMERA_OPERATORS = Object.freeze([
   Object.freeze({
@@ -213,6 +216,7 @@ async function loadMapLayers(map) {
 
   // Mapbox visibility can now follow the legend that was rendered at startup
   legendControl.connect(map);
+  bindDigitizedCameraUnlock(map);
 
   // The map is usable now; slow or unavailable data providers hydrate their
   // sources in the background and should not hold the full-screen overlay.
@@ -230,17 +234,6 @@ async function loadMapLayers(map) {
           map,
           LAYER_IDS.cameras,
           attachViewshedIds(cameras, viewshedManifest)
-        );
-      }
-    ),
-    hydrateLegendLayer(
-      DIGITIZED_CAMERA_GROUP_LABEL,
-      data.digitizedCameras,
-      (digitizedCameras) => {
-        setSourceData(
-          map,
-          LAYER_IDS.digitizedCamerasSource,
-          digitizedCameras
         );
       }
     ),
@@ -753,16 +746,6 @@ function loadLayerData() {
       loadAlertWestCameras
     ),
 
-    digitizedCameras: safelyLoadLegend(
-      'digitized camera sources',
-      DIGITIZED_CAMERA_GROUP_LABEL,
-      () =>
-        fetchJson(
-          DATA_URLS.digitizedCameraSources,
-          'Digitized camera sources'
-        )
-    ),
-
     fires: safelyLoadLegend('NIFC fires', 'Fires (NIFC)', () =>
       fetchArcGISGeoJSON(DATA_URLS.nifcFires, {
         where: "POOState IN ('US-OR','US-WA')",
@@ -860,6 +843,95 @@ function loadLayerData() {
         })
     ),
   };
+}
+
+// keeps unpublished camera locations out of the normal UI and startup requests
+function bindDigitizedCameraUnlock(map) {
+  let sequenceIndex = 0;
+  let sequenceStartedAt = 0;
+
+  const resetSequence = () => {
+    sequenceIndex = 0;
+    sequenceStartedAt = 0;
+  };
+
+  const handleKeyDown = (event) => {
+    if (
+      event.repeat ||
+      event.isComposing ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      isEditableKeyboardTarget(event.target)
+    ) {
+      resetSequence();
+      return;
+    }
+
+    const now = performance.now();
+    if (
+      sequenceStartedAt &&
+      now - sequenceStartedAt > DIGITIZED_CAMERA_UNLOCK_TIMEOUT_MS
+    ) {
+      resetSequence();
+    }
+
+    const expectedKey = DIGITIZED_CAMERA_UNLOCK_SEQUENCE[sequenceIndex];
+    if (event.key !== expectedKey) {
+      if (event.key === DIGITIZED_CAMERA_UNLOCK_SEQUENCE[0]) {
+        sequenceIndex = 1;
+        sequenceStartedAt = now;
+      } else {
+        resetSequence();
+      }
+      return;
+    }
+
+    if (sequenceIndex === 0) sequenceStartedAt = now;
+    sequenceIndex += 1;
+    if (sequenceIndex !== DIGITIZED_CAMERA_UNLOCK_SEQUENCE.length) return;
+
+    document.removeEventListener('keydown', handleKeyDown);
+    legendControl.setHidden(DIGITIZED_CAMERA_GROUP_LABEL, false);
+    loadDigitizedCameraSources(map);
+  };
+
+  document.addEventListener('keydown', handleKeyDown);
+}
+
+function isEditableKeyboardTarget(target) {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest(
+      'input, select, textarea, [contenteditable]:not([contenteditable="false"])'
+    )
+  );
+}
+
+// promise prevents repeat fetches if this is called again in the future
+function loadDigitizedCameraSources(map) {
+  digitizedCameraLoad ??= hydrateLegendLayer(
+    DIGITIZED_CAMERA_GROUP_LABEL,
+    safelyLoadLegend(
+      'digitized camera sources',
+      DIGITIZED_CAMERA_GROUP_LABEL,
+      () =>
+        fetchJson(
+          DATA_URLS.digitizedCameraSources,
+          'Digitized camera sources'
+        )
+    ),
+    (digitizedCameras) => {
+      setSourceData(
+        map,
+        LAYER_IDS.digitizedCamerasSource,
+        digitizedCameras
+      );
+    }
+  );
+
+  return digitizedCameraLoad;
 }
 
 function safelyLoadLegend(label, legendLabel, loader, fallback) {
@@ -1189,6 +1261,7 @@ function legendItems() {
     },
     {
       label: DIGITIZED_CAMERA_GROUP_LABEL,
+      hidden: true,
       groupColors: Object.values(DIGITIZED_CAMERA_COLORS),
       visible: false,
       loading: true,

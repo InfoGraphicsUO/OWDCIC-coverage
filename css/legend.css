@@ -35,6 +35,12 @@
     display: none;
 }
 
+/* grouped layers omit a normal parent icon but still expose load failures */
+.legend-group__parent .legend-visual--loading,
+.legend-group__parent .legend-visual--error {
+    display: grid;
+}
+
 .legend-group__children {
     padding-left: 19px;
 }
