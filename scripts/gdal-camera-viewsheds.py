@@ -36,6 +36,8 @@ else:
     gdal.UseExceptions()
     ogr.UseExceptions()
     osr.UseExceptions()
+    # trusted generated viewsheds can exceed GDAL 3.12's single-object limit
+    gdal.SetConfigOption("OGR_GEOJSON_MAX_OBJ_SIZE", "0")
 
 from qgis_runtime import default_qgis_root, qgis_runtime
 
@@ -45,7 +47,7 @@ DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_SITES = PROJECT_ROOT / "data/sites.geojson"
 DEFAULT_DEMS = PROJECT_ROOT / "data/dems"
 DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds"
-DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/or-wa-boundary.geojson"
+DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 
 PILOT_NAMES = ("Portland Tower",)  # 'pilot' mode processes only one site
@@ -180,7 +182,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--web-clip",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="clip web polygons to Oregon and Washington (default: enabled)",
+        help="clip web polygons at Pacific Northwest coastlines (default: enabled)",
     )
     parser.add_argument(
         "--web-majority-filter",
@@ -633,6 +635,29 @@ def as_multipolygon(geometry: Any) -> Any:
     return result
 
 
+def repair_polygon_parts(geometry: Any) -> Any:
+    """returns a valid polygon-only collection after reprojection or union"""
+    result = ogr.Geometry(ogr.wkbMultiPolygon)
+    for part in polygon_parts(geometry):
+        repaired = part if part.IsValid() else part.MakeValid()
+        for candidate in polygon_parts(repaired):
+            if not candidate.IsEmpty() and candidate.Area() > 0:
+                result.AddGeometry(candidate.Clone())
+    if result.IsEmpty():
+        return result
+
+    # Individual members can be valid while the MultiPolygon is not (for
+    # example, after reprojection when two boundaries become coincident).
+    # Repair the collection as well so the GeoJSON driver cannot serialize
+    # overlapping or collapsed rings as an invalid output geometry.
+    repaired_collection = result.MakeValid()
+    valid_result = ogr.Geometry(ogr.wkbMultiPolygon)
+    for part in polygon_parts(repaired_collection):
+        if not part.IsEmpty() and part.Area() > 0 and part.IsValid():
+            valid_result.AddGeometry(part.Clone())
+    return valid_result
+
+
 def polygonize_visible(
     visible: Any,
     geotransform: tuple[float, ...],
@@ -998,6 +1023,7 @@ def build_web_polygon(
 
     web_srs = spatial_reference(WEB_CRS)
     geometry.Transform(transformation(canonical, web_srs))
+    geometry = repair_polygon_parts(geometry)
     write_features(
         paths["web"],
         "GeoJSON",
@@ -1005,7 +1031,7 @@ def build_web_polygon(
         web_srs,
         SITE_FIELDS,
         [(geometry, site_attributes(site, config))],
-        layer_options=["RFC7946=YES"],
+        layer_options=["RFC7946=YES", "COORDINATE_PRECISION=9"],
     )
     validate_vector(paths["web"], None, 1)
     return filter_summary
@@ -1317,8 +1343,16 @@ def rebuild_web_products(states: list[dict[str, Any]], output_dir: Path, emitter
         for geometry, attributes in rows:
             clone = geometry.Clone()
             clone.Transform(to_web)
-            projected.append((clone, attributes))
-        write_features(destination, "GeoJSON", layer_name, web_srs, fields, projected, ["RFC7946=YES"])
+            projected.append((repair_polygon_parts(clone), attributes))
+        write_features(
+            destination,
+            "GeoJSON",
+            layer_name,
+            web_srs,
+            fields,
+            projected,
+            ["RFC7946=YES", "COORDINATE_PRECISION=9"],
+        )
         validate_vector(destination, None, len(rows))
 
     packaging: dict[str, Any] = {"status": "skipped_tippecanoe_missing", "mbtiles": None, "error": None}

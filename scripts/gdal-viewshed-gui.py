@@ -75,7 +75,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUNNER = PROJECT_ROOT / "scripts/gdal-camera-viewsheds.py"
 QGIS_PROJECT_BUILDER = PROJECT_ROOT / "scripts/build-qgis-viewshed-project.py"
 DEFAULT_QGIS_ROOT = default_qgis_root()
-DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/or-wa-boundary.geojson"
+DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 PROGRESS_PREFIX = "@@PROGRESS@@"
 
@@ -194,7 +194,7 @@ class ViewshedWindow(QMainWindow):
             "a web cell is visible when at least 5 cells in its 3×3 neighborhood are visible"
         )
 
-        self.web_clip = QCheckBox("Clip web polygons to Oregon and Washington")
+        self.web_clip = QCheckBox("Clip web polygons at Pacific Northwest coastlines")
         self.web_clip.setChecked(True)
         self.web_clip.setToolTip(f"uses {DEFAULT_CLIP_BOUNDARY}")
 
