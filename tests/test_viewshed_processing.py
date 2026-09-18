@@ -111,17 +111,53 @@ class ConfigurationTests(unittest.TestCase):
 
 
 class BoundaryDataTests(unittest.TestCase):
-    def test_checked_in_boundary_is_one_oregon_washington_feature(self):
-        boundary_path = SCRIPTS.parent / "data/or-wa-boundary.geojson"
+    def test_checked_in_boundary_is_one_regional_land_feature(self):
+        boundary_path = SCRIPTS.parent / "data/pacific-northwest-land-mask.geojson"
         boundary = json.loads(boundary_path.read_text(encoding="utf-8"))
 
         self.assertEqual(boundary["type"], "FeatureCollection")
         self.assertEqual(len(boundary["features"]), 1)
-        self.assertEqual(boundary["features"][0]["properties"]["region"], "OR-WA")
-        self.assertIn(
-            boundary["features"][0]["geometry"]["type"],
-            {"Polygon", "MultiPolygon"},
+        feature = boundary["features"][0]
+        self.assertEqual(feature["properties"]["region"], "PNW-LAND")
+        self.assertEqual(feature["properties"]["clip"], "coastline")
+        self.assertEqual(
+            feature["properties"]["bounds"],
+            [-127.5, 40.0, -114.0, 51.0],
         )
+        self.assertEqual(feature["geometry"]["type"], "MultiPolygon")
+
+
+@unittest.skipIf(viewsheds.ogr is None, "QGIS OGR runtime not available")
+class GeometryRepairTests(unittest.TestCase):
+    def test_self_intersecting_polygon_is_repaired(self):
+        ring = viewsheds.ogr.Geometry(viewsheds.ogr.wkbLinearRing)
+        for x, y in ((0, 0), (2, 2), (0, 2), (2, 0), (0, 0)):
+            ring.AddPoint_2D(x, y)
+        polygon = viewsheds.ogr.Geometry(viewsheds.ogr.wkbPolygon)
+        polygon.AddGeometry(ring)
+
+        repaired = viewsheds.repair_polygon_parts(polygon)
+
+        self.assertFalse(repaired.IsEmpty())
+        self.assertTrue(repaired.IsValid())
+
+    def test_overlapping_members_are_repaired_as_a_collection(self):
+        def square(x0, y0, x1, y1):
+            ring = viewsheds.ogr.Geometry(viewsheds.ogr.wkbLinearRing)
+            for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)):
+                ring.AddPoint_2D(x, y)
+            polygon = viewsheds.ogr.Geometry(viewsheds.ogr.wkbPolygon)
+            polygon.AddGeometry(ring)
+            return polygon
+
+        collection = viewsheds.ogr.Geometry(viewsheds.ogr.wkbMultiPolygon)
+        collection.AddGeometry(square(0, 0, 2, 2))
+        collection.AddGeometry(square(1, 1, 3, 3))
+
+        repaired = viewsheds.repair_polygon_parts(collection)
+
+        self.assertFalse(repaired.IsEmpty())
+        self.assertTrue(repaired.IsValid())
 
 
 class ResumeTests(unittest.TestCase):

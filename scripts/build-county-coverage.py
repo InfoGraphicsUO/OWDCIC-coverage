@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""adds precomputed camera viewshed coverage to the county map data"""
+
+'''
+this script builds a precomputed percentage of each county that is covered by a camera viewshed
+
+(area of county visible to at least one camera / total county area) * 100
+'''
+
 
 from __future__ import annotations
 
