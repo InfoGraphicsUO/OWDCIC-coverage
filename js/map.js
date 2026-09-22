@@ -272,6 +272,7 @@ function initBasemapPicker(map) {
 
   // reset browser-restored input state to match the style loaded at startup
   resetBasemapPicker();
+  updateBasemapPreview(selectedBasemap());
   // satellite imagery is an overlay; outdoors stays supplied by the base style
   map.setLayoutProperty(SATELLITE_ID, 'visibility', 'none');
 
@@ -341,7 +342,13 @@ function setSatelliteVisibility(map, basemap) {
 }
 
 function notifyBasemapChange(basemap) {
+  updateBasemapPreview(basemap);
   for (const listener of basemapChangeListeners) listener(basemap);
+}
+
+function updateBasemapPreview(basemap) {
+  const button = document.getElementById('control-tab-basemap');
+  if (button) button.dataset.basemap = basemap;
 }
 
 function resetBasemapPicker() {
