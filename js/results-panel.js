@@ -35,6 +35,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
   if (!element.parentElement) document.body.append(element);
   ensurePanelMarkup(element);
   const title = element.querySelector('[data-results-title]');
+  const subtitle = element.querySelector('[data-results-subtitle]');
   const content = element.querySelector('[data-results-content]');
   const exportButton = element.querySelector('[data-results-export]');
   const status = element.querySelector('[data-results-status]');
@@ -52,6 +53,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
     closeExportModal();
     // keep an empty panel out of both visual and accessibility navigation
     title.textContent = 'Select an area or camera';
+    subtitle.textContent = '';
     content.replaceChildren(emptyState());
     status.textContent = '';
     exportButton.disabled = true;
@@ -71,6 +73,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
     element.classList.add('results-panel--has-result', 'results-panel--loading');
     element.setAttribute('aria-busy', 'true');
     title.textContent = label;
+    subtitle.textContent = '';
     content.replaceChildren(messageState('Loading coverage statistics…', 'results-panel__loading'));
     status.textContent = '';
     exportButton.disabled = true;
@@ -87,6 +90,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
     element.classList.remove('results-panel--loading');
     element.removeAttribute('aria-busy');
     title.textContent = 'Coverage unavailable';
+    subtitle.textContent = '';
     content.replaceChildren(messageState(message || 'Coverage statistics could not be loaded.', 'results-panel__error'));
     status.textContent = message || 'Coverage statistics could not be loaded.';
     exportButton.disabled = true;
@@ -102,7 +106,8 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
   function showCamera(properties = {}, metrics = null, feature = null) {
     // camera location comes from geometry while descriptive fields stay in properties
     current = { kind: 'camera', properties, metrics, geometry: feature?.geometry };
-    presentResult(properties.name || 'Camera', renderCamera(properties, metrics));
+    const location = [properties.county, properties.state].filter(Boolean).join(', ');
+    presentResult(properties.name || 'Camera', renderCamera(properties, metrics), location);
   }
 
   async function openExportModal() {
@@ -160,7 +165,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
   clear();
   return { showPolygon, showCamera, showLoading, showError, clear, element };
 
-  function presentResult(heading, body) {
+  function presentResult(heading, body, detail = '') {
     // each result owns at most one chart and one export dialog
     destroyChart();
     closeExportModal();
@@ -170,6 +175,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
     element.classList.remove('results-panel--loading');
     element.removeAttribute('aria-busy');
     title.textContent = heading;
+    subtitle.textContent = detail;
     content.replaceChildren(body);
     const chartHost = content.querySelector('[data-results-chart]');
     // a Plotly promise may settle after a newer selection has replaced this host
@@ -223,6 +229,14 @@ function ensurePanelMarkup(element) {
     handle.setAttribute('aria-hidden', 'true');
     element.prepend(handle);
   }
+  if (!element.querySelector('[data-results-subtitle]')) {
+    // older page markup gets the camera locality slot without rebuilding the panel
+    const subtitle = document.createElement('p');
+    subtitle.className = 'results-panel__subtitle';
+    subtitle.dataset.resultsSubtitle = '';
+    const title = element.querySelector('[data-results-title]');
+    title?.parentElement?.append(subtitle);
+  }
   const exportButton = element.querySelector('[data-results-export]');
   if (exportButton) {
     // normalize older markup and supply a useful accessible name when absent
@@ -259,6 +273,7 @@ function createPanel() {
     <div class="results-panel__handle" data-results-handle aria-hidden="true"></div>
     <div class="results-panel__header">
       <h2 data-results-title>Select an area or camera</h2>
+      <p class="results-panel__subtitle" data-results-subtitle></p>
     </div>
     <div class="results-panel__content" data-results-content></div>
     <div class="results-panel__footer" data-results-footer>
@@ -428,6 +443,13 @@ function renderCamera(properties, metrics) {
   const wrapper = document.createElement('div');
   wrapper.className = 'results-panel__body results-panel__camera';
   const imageUrl = safeHttpsUrl(properties.image);
+  const preview = document.createElement('div');
+  preview.className = 'results-panel__camera-preview';
+  preview.setAttribute('role', 'group');
+  preview.setAttribute('aria-label', 'Camera preview');
+  const unavailable = document.createElement('span');
+  unavailable.className = 'results-panel__camera-placeholder';
+  unavailable.textContent = 'Camera preview unavailable';
   if (imageUrl) {
     // remove failed remote thumbnails instead of showing a broken image
     const image = document.createElement('img');
@@ -436,28 +458,39 @@ function renderCamera(properties, metrics) {
     image.alt = `${properties.name || 'Camera'} preview`;
     image.loading = 'lazy';
     image.decoding = 'async';
-    image.addEventListener('error', () => image.remove(), { once: true });
-    wrapper.append(image);
+    image.addEventListener('error', () => {
+      image.remove();
+      preview.prepend(unavailable);
+    }, { once: true });
+    preview.append(image);
+  } else {
+    preview.append(unavailable);
   }
-  const location = [properties.county, properties.state].filter(Boolean).join(', ');
-  if (location) wrapper.append(selfLine(`Located in ${location}`));
   const pan = formatPan(properties.pan);
-  if (pan) wrapper.append(selfLine(`Pan ${pan}`));
+  const overlay = document.createElement('div');
+  overlay.className = 'results-panel__camera-overlay';
   const fallbackFeed = properties.id == null ? '' : `https://alertwest.live/cam-console/${encodeURIComponent(String(properties.id))}`;
   // allow only AlertWest hosts, including generated camera-console links
   const feed = safeAlertWestUrl(properties.feed || properties.url || properties.link || fallbackFeed);
   if (feed) {
     // links open separately and cannot reach the parent window through window.opener
-    const row = document.createElement('p');
-    row.className = 'results-panel__line results-panel__feed';
     const a = document.createElement('a');
+    a.className = 'results-panel__feed';
     a.href = feed;
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
-    a.textContent = 'Open live camera feed';
-    row.append(a);
-    wrapper.append(row);
+    a.setAttribute('aria-label', 'Open live camera feed in a new tab');
+    a.innerHTML = '<span>Open live camera feed</span><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i>';
+    overlay.append(a);
   }
+  if (pan) {
+    const panLabel = document.createElement('span');
+    panLabel.className = 'results-panel__camera-pan';
+    panLabel.textContent = `Pan ${pan}`;
+    overlay.append(panLabel);
+  }
+  if (overlay.children.length) preview.append(overlay);
+  wrapper.append(preview);
   if (!cameraCoverageAvailable(metrics)) {
     wrapper.append(selfLine('Coverage unavailable', 'results-panel__lead'));
     return wrapper;
