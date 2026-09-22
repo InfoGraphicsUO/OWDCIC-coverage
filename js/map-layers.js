@@ -17,7 +17,7 @@ import {
 } from './geojson-transform.js';
 import { initLegend } from './legend.js?v=20260922tooltip1';
 import { initFilterPanel } from './filter-panel.js?v=20260922sort1';
-import { initResultsPanel } from './results-panel.js?v=20260922landtitle1';
+import { initResultsPanel } from './results-panel.js?v=20260922camera-layout1';
 import { hideMapLoading } from './loading.js';
 import {
   MAP_HOME_EVENT,
