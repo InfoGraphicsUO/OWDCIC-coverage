@@ -13,7 +13,7 @@
     color: #20252b;
     background: rgba(255, 255, 255, 0.97);
     border: 1px solid rgba(31, 41, 51, 0.12);
-    border-radius: 12px;
+    border-radius: var(--ui-radius-lg);
     box-shadow:
         0 12px 32px rgba(20, 28, 38, 0.16),
         0 2px 8px rgba(20, 28, 38, 0.08);
@@ -97,7 +97,7 @@
     background: transparent;
     border: 0;
     border-radius: 50%;
-    font: 21px/1 system-ui, sans-serif;
+    font: 21px/1 "Merriweather", "Segoe UI", sans-serif;
     cursor: pointer;
     transition: color 120ms ease, background-color 120ms ease;
 }
@@ -113,7 +113,7 @@
 }
 
 .cam-popup {
-    font: 13px/1.4 system-ui, sans-serif;
+    font: 13px/1.4 "Merriweather", "Segoe UI", sans-serif;
 }
 
 .cam-popup strong {
@@ -138,7 +138,7 @@
     object-fit: contain;
     margin: 8px 0;
     background: #e9edf0;
-    border-radius: 4px;
+    border-radius: var(--ui-radius-sm);
 }
 
 .cam-popup a {

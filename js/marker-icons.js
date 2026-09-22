@@ -50,6 +50,14 @@ export function watchMarkerIconDensity(map) {
   });
 }
 
+export async function restoreMarkerIcons(map) {
+  await Promise.all(
+    [...registeredIcons].map(([id, { url, size }]) =>
+      rasterizeInto(map, id, url, size)
+    )
+  );
+}
+
 async function rasterizeInto(map, id, url, size) {
   const pixelRatio = markerPixelRatio();
   const image = await rasterizeSvg(await loadSvgSource(url), size, pixelRatio);

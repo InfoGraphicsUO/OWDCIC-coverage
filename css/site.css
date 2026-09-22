@@ -5,6 +5,9 @@
     --banner-height: 82px;
     --panel-background: rgba(255, 255, 255, 0.94);
     --panel-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    --ui-radius: 10px;
+    --ui-radius-sm: 6px;
+    --ui-radius-lg: 14px;
 }
 
 html,
@@ -16,13 +19,20 @@ body {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    font-family: "Montserrat", "Segoe UI", sans-serif;
+    font-family: "Merriweather", "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
 }
 
 .site-banner {
     position: absolute;
     inset: 0 0 auto 0;
-    z-index: 2;
+    z-index: 1000;
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -31,7 +41,7 @@ body {
     color: #fff;
     background: var(--ohaz-grey);
     border-bottom: 5px solid var(--ohaz-yellow);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.6);
 }
 
 .site-banner__logo {
