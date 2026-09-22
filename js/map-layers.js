@@ -25,7 +25,7 @@ import {
   mapReady,
   motionDuration,
   onBasemapChange,
-} from './map.js?v=20260922simple1';
+} from './map.js?v=20260922basemap-current-preview1';
 import {
   registerMarkerIcon,
   registerMarkerIconSizes,

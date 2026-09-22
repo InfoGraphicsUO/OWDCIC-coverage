@@ -18,14 +18,14 @@
         <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
         
         <link rel="stylesheet" href="css/site.css?v=20260922ui1">
-        <link rel="stylesheet" href="css/map.css?v=20260922clearance1">
+        <link rel="stylesheet" href="css/map.css?v=20260922basemap-button-border1">
         <link rel="stylesheet" href="css/legend.css?v=20260922tooltip3">
         <link rel="stylesheet" href="css/filter-panel.css?v=20260922fade1">
         <link rel="stylesheet" href="css/results-panel.css?v=20260922ui2">
         <link rel="stylesheet" href="css/popups.css?v=20260922ui1">
         <link rel="stylesheet" href="css/loading.css">
 
-        <script type="module" src="js/map-layers.js?v=20260922simple1"></script>
+        <script type="module" src="js/map-layers.js?v=20260922basemap-current-preview1"></script>
     </head>
     <body>
         <header class="site-banner">
@@ -50,21 +50,21 @@
                                 <label class="basemap-picker__option">
                                     <input type="radio" name="basemap" value="outdoors" checked>
                                     <span class="basemap-picker__row">
-                                        <span class="basemap-picker__preview" aria-hidden="true"></span>
+                                        <span class="basemap-picker__preview basemap-picker__preview--outdoors" aria-hidden="true"></span>
                                         <span class="basemap-picker__label">Default</span>
                                     </span>
                                 </label>
                                 <label class="basemap-picker__option">
                                     <input type="radio" name="basemap" value="satellite">
                                     <span class="basemap-picker__row">
-                                        <span class="basemap-picker__preview" aria-hidden="true"></span>
+                                        <span class="basemap-picker__preview basemap-picker__preview--satellite" aria-hidden="true"></span>
                                         <span class="basemap-picker__label">Satellite</span>
                                     </span>
                                 </label>
                                 <label class="basemap-picker__option">
                                     <input type="radio" name="basemap" value="simple">
                                     <span class="basemap-picker__row">
-                                        <span class="basemap-picker__preview" aria-hidden="true"></span>
+                                        <span class="basemap-picker__preview basemap-picker__preview--simple" aria-hidden="true"></span>
                                         <span class="basemap-picker__label">Simple</span>
                                     </span>
                                 </label>
@@ -83,7 +83,7 @@
                             <span class="control-rail__icon" aria-hidden="true"><i class="fa-solid fa-layer-group"></i></span>
                             <span>Layers</span>
                         </button>
-                        <button id="control-tab-basemap" class="control-rail__button" type="button" role="tab" data-control-tab="basemap" aria-controls="basemap-menu" aria-selected="false" tabindex="-1">
+                        <button id="control-tab-basemap" class="control-rail__button" type="button" role="tab" data-control-tab="basemap" data-basemap="outdoors" aria-controls="basemap-menu" aria-selected="false" tabindex="-1">
                             <span>Basemap</span>
                         </button>
                     </nav>
