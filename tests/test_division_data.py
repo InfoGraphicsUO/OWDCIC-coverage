@@ -86,7 +86,7 @@ class DivisionDataTests(unittest.TestCase):
             data["features"][1]["bbox"], [-118.0, 45.0, -115.0, 46.0]
         )
         self.assertEqual(data["features"][0]["properties"]["shortName"], "Baker")
-        self.assertEqual(data["features"][0]["properties"]["label"], "OR • Baker")
+        self.assertEqual(data["features"][0]["properties"]["label"], "Baker")
 
     def test_sorts_counties_by_state_and_name(self):
         data = MODULE.normalize_counties(
@@ -108,7 +108,7 @@ class DivisionDataTests(unittest.TestCase):
 
         self.assertEqual(
             [feature["properties"]["label"] for feature in data["features"]],
-            ["OR • Alpha", "OR • Zed", "WA • Adams"],
+            ["Alpha", "Zed", "Adams"],
         )
 
     def test_arcgis_multiple_outer_rings_becomes_multipolygon(self):

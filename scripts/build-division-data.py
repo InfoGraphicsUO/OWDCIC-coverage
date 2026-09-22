@@ -116,7 +116,7 @@ def _normalize_feature(raw_feature: Any) -> dict[str, Any]:
             "stateName": state_name,
             "name": name,
             "shortName": short_name,
-            "label": f"{state} • {short_name}",
+            "label": short_name,
             "labelPoint": [longitude, latitude],
         },
     }
@@ -289,7 +289,7 @@ def validate_counties(geojson: dict[str, Any], *, expected_count: int = EXPECTED
         expected_short_name = properties["name"].removesuffix(" County")
         if properties.get("shortName") != expected_short_name:
             raise ValueError("county shortName is malformed")
-        if properties.get("label") != f"{state} • {expected_short_name}":
+        if properties.get("label") != expected_short_name:
             raise ValueError("county label is malformed")
 
         geometry = feature.get("geometry")

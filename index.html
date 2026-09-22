@@ -9,20 +9,23 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="icon" href="img/OHAZ-logo.png" type="image/png">
 
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;500;600;700&display=swap" rel="stylesheet">
 
         <!-- mapboxgl global must exist before js/map.js initializes the map -->
         <link href="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.css" rel="stylesheet">
         <script defer src="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.js"></script>
         <script defer src="https://kit.fontawesome.com/be4ea184d4.js" crossorigin="anonymous"></script>
+        <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
         
-        <link rel="stylesheet" href="css/site.css">
-        <link rel="stylesheet" href="css/map.css">
-        <link rel="stylesheet" href="css/legend.css">
-        <link rel="stylesheet" href="css/popups.css">
+        <link rel="stylesheet" href="css/site.css?v=20260922ui1">
+        <link rel="stylesheet" href="css/map.css?v=20260922clearance1">
+        <link rel="stylesheet" href="css/legend.css?v=20260922tooltip3">
+        <link rel="stylesheet" href="css/filter-panel.css?v=20260922fade1">
+        <link rel="stylesheet" href="css/results-panel.css?v=20260922ui1">
+        <link rel="stylesheet" href="css/popups.css?v=20260922ui1">
         <link rel="stylesheet" href="css/loading.css">
 
-        <script type="module" src="js/map-layers.js"></script>
+        <script type="module" src="js/map-layers.js?v=20260922simple1"></script>
     </head>
     <body>
         <header class="site-banner">
@@ -32,23 +35,74 @@
         <main aria-busy="true">
             <div id="map" role="region" aria-label="Oregon and Washington wildfire camera map"></div>
             <div class="map-panels">
+                <aside id="control-sidebar" class="control-shell" aria-label="Map controls">
+                    <div class="control-shell__body">
+                        <section id="filter-menu" class="control-menu control-menu--filter is-open" role="tabpanel" aria-labelledby="control-tab-filter">
+                            <div id="filter-panel" class="filter-panel"></div>
+                        </section>
+                        <section id="layers-menu" class="control-menu" role="tabpanel" aria-labelledby="control-tab-layers" hidden>
+                            <h2 class="control-menu__title">Layers</h2>
+                            <aside id="legend" class="legend" aria-label="Map layers"></aside>
+                        </section>
+                        <section id="basemap-menu" class="control-menu" role="tabpanel" aria-labelledby="control-tab-basemap" hidden>
+                            <h2 class="control-menu__title">Basemap</h2>
+                            <div id="basemap-picker" class="basemap-picker" role="radiogroup" aria-label="Basemap">
+                                <label class="basemap-picker__option">
+                                    <input type="radio" name="basemap" value="outdoors" checked>
+                                    <span class="basemap-picker__row">
+                                        <span class="basemap-picker__preview" aria-hidden="true"></span>
+                                        <span class="basemap-picker__label">Default</span>
+                                    </span>
+                                </label>
+                                <label class="basemap-picker__option">
+                                    <input type="radio" name="basemap" value="satellite">
+                                    <span class="basemap-picker__row">
+                                        <span class="basemap-picker__preview" aria-hidden="true"></span>
+                                        <span class="basemap-picker__label">Satellite</span>
+                                    </span>
+                                </label>
+                                <label class="basemap-picker__option">
+                                    <input type="radio" name="basemap" value="simple">
+                                    <span class="basemap-picker__row">
+                                        <span class="basemap-picker__preview" aria-hidden="true"></span>
+                                        <span class="basemap-picker__label">Simple</span>
+                                    </span>
+                                </label>
+                            </div>
+                        </section>
+                        <button id="filter-clear" class="control-shell__clear" type="button" disabled>
+                            Clear filter
+                        </button>
+                    </div>
+                    <nav class="control-rail" role="tablist" aria-label="Control menus" aria-orientation="vertical">
+                        <button id="control-tab-filter" class="control-rail__button is-active" type="button" role="tab" data-control-tab="filter" aria-controls="filter-menu" aria-selected="true" tabindex="0">
+                            <span class="control-rail__icon" aria-hidden="true"><i class="fa-solid fa-filter"></i></span>
+                            <span>Filters</span>
+                        </button>
+                        <button id="control-tab-layers" class="control-rail__button" type="button" role="tab" data-control-tab="layers" aria-controls="layers-menu" aria-selected="false" tabindex="-1">
+                            <span class="control-rail__icon" aria-hidden="true"><i class="fa-solid fa-layer-group"></i></span>
+                            <span>Layers</span>
+                        </button>
+                        <button id="control-tab-basemap" class="control-rail__button" type="button" role="tab" data-control-tab="basemap" aria-controls="basemap-menu" aria-selected="false" tabindex="-1">
+                            <span>Basemap</span>
+                        </button>
+                    </nav>
+                    <button class="control-shell__collapse" type="button" aria-label="Collapse map controls" aria-expanded="true">
+                        <span aria-hidden="true"></span>
+                    </button>
+                </aside>
+                <aside id="results-panel" class="results-panel" hidden aria-label="Selection results" aria-hidden="true">
+                    <div class="results-panel__handle" data-results-handle aria-hidden="true"></div>
+                    <div class="results-panel__header">
+                        <h2 data-results-title>Select an area or camera</h2>
+                    </div>
+                    <div class="results-panel__content" data-results-content></div>
+                    <div class="results-panel__footer" data-results-footer>
+                        <button class="results-panel__export" data-results-export type="button" aria-label="Export map, legend, and coverage results as PNG">Export as…</button>
+                        <p class="results-panel__status" data-results-status role="status" aria-live="polite"></p>
+                    </div>
+                </aside>
                 <output id="zoom-viewer" class="zoom-viewer" aria-label="Current map zoom">zoom: 5.4</output>
-                <aside id="legend" class="legend" aria-label="Map layers"></aside>
-                <div
-                    id="basemap-picker"
-                    class="basemap-picker"
-                    role="radiogroup"
-                    aria-label="Basemap"
-                >
-                    <label class="basemap-picker__option">
-                        <input type="radio" name="basemap" value="outdoors" checked>
-                        <span>Default</span>
-                    </label>
-                    <label class="basemap-picker__option">
-                        <input type="radio" name="basemap" value="satellite">
-                        <span>Satellite</span>
-                    </label>
-                </div>
             </div>
         </main>
         <div id="map-loading" class="map-loading" role="status" aria-live="polite">

@@ -1,0 +1,215 @@
+.filter-panel {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    height: 100%;
+    padding: 0 0 8px;
+    color: var(--control-chrome-text, #fff);
+}
+
+.filter-panel__header {
+    display: flex;
+    grid-area: 1 / 1;
+    align-items: center;
+    gap: 8px;
+    min-height: 56px;
+    padding: 0px 16px 0px;
+}
+
+.filter-panel__title {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    color: inherit;
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+.filter-panel__back {
+    display: none;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-radius: var(--ui-radius-sm);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.filter-panel__back.is-visible { display: inline-flex; }
+.filter-panel__back:hover { background: rgba(255, 255, 255, .1); }
+
+.filter-panel__status {
+    grid-area: 2 / 1;
+    min-height: 0;
+    margin: 0 16px 8px;
+    color: var(--control-chrome-muted, rgba(255, 255, 255, .72));
+    font-size: 13px;
+}
+
+.filter-panel__status:empty { display: none; }
+.filter-panel__status.is-error { color: #ffb4b4; }
+
+.filter-panel__view {
+    display: flex;
+    grid-area: 3 / 1;
+    min-height: 0;
+    flex-direction: column;
+}
+
+.filter-panel__view[hidden] { display: none; }
+
+.filter-panel__view.is-entering {
+    animation: sidebar-menu-in 180ms ease-out both;
+}
+
+.filter-panel__view.is-leaving {
+    animation: sidebar-menu-out 180ms ease-in both;
+    pointer-events: none;
+}
+
+.filter-panel__search {
+    display: block;
+    margin: 0 16px 10px;
+}
+
+.filter-panel__search input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 11px 12px;
+    color: #222;
+    background: #fff;
+    border: 1px solid rgba(255, 255, 255, .35);
+    border-radius: var(--ui-radius-sm);
+    font: inherit;
+}
+
+.filter-panel__search input:focus-visible,
+.filter-panel__item:focus-visible,
+.filter-panel__back:focus-visible {
+    outline: 2px solid var(--ohaz-yellow);
+    outline-offset: 2px;
+}
+
+.filter-panel__list {
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
+    border-top: 1px solid var(--control-chrome-border, rgba(255, 255, 255, .18));
+    overscroll-behavior: contain;
+}
+
+.filter-panel__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 16px;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--control-chrome-border, rgba(255, 255, 255, .18));
+    cursor: pointer;
+    text-align: left;
+    font: 600 16px/1.3 "Merriweather", "Segoe UI", sans-serif;
+}
+
+.filter-panel__item:hover { background: rgba(255, 255, 255, .08); }
+.filter-panel__item:focus-visible { background: rgba(255, 255, 255, .08); }
+
+.filter-panel__item[aria-selected="true"] {
+    background: rgba(248, 225, 9, .14);
+    box-shadow: inset 3px 0 0 var(--ohaz-yellow);
+}
+
+.filter-panel__item--step::after {
+    content: "→";
+    color: var(--control-chrome-muted, rgba(255, 255, 255, .72));
+    font-weight: 400;
+}
+
+.filter-panel__item--step[aria-selected="true"]::after { color: inherit; }
+
+.filter-panel__item-meta {
+    display: block;
+    margin-top: 3px;
+    color: var(--control-chrome-muted, rgba(255, 255, 255, .72));
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.filter-panel__item:has(.filter-panel__item-meta) {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.filter-panel__item-label {
+    display: block;
+    min-width: 0;
+}
+
+.filter-panel__group {
+    border-bottom: 1px solid var(--control-chrome-border, rgba(255, 255, 255, .18));
+}
+
+.filter-panel__group-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 16px;
+    color: inherit;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    text-align: left;
+    font: 600 16px/1.3 "Merriweather", "Segoe UI", sans-serif;
+}
+
+.filter-panel__group-toggle:hover,
+.filter-panel__group-toggle:focus-visible {
+    background: rgba(255, 255, 255, .08);
+    outline: 2px solid var(--ohaz-yellow);
+    outline-offset: -2px;
+}
+
+.filter-panel__group-toggle::after {
+    content: "›";
+    color: var(--control-chrome-muted, rgba(255, 255, 255, .72));
+    font-size: 18px;
+    font-weight: 400;
+    transform: rotate(0deg);
+    transition: transform 150ms ease-in-out;
+}
+
+.filter-panel__group-toggle[aria-expanded="true"]::after {
+    transform: rotate(90deg);
+}
+
+.filter-panel__group-items .filter-panel__item {
+    padding-left: 28px;
+    font-weight: 500;
+}
+
+.filter-panel__group-items[hidden] {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .filter-panel__view.is-entering,
+    .filter-panel__view.is-leaving,
+    .filter-panel__group-toggle::after {
+        animation: none;
+        transition: none;
+    }
+}

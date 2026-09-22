@@ -15,39 +15,48 @@ import {
   camerasToGeoJSON,
   filterGeoJSONByBounds,
 } from './geojson-transform.js';
-import { initDivisionFilter, initLegend } from './legend.js';
+import { initLegend } from './legend.js?v=20260922tooltip1';
+import { initFilterPanel } from './filter-panel.js?v=20260922sort1';
+import { initResultsPanel } from './results-panel.js?v=20260922landtitle1';
 import { hideMapLoading } from './loading.js';
-import { MAP_HOME_EVENT, mapReady, onBasemapChange } from './map.js';
+import {
+  MAP_HOME_EVENT,
+  mapPanelPadding,
+  mapReady,
+  motionDuration,
+  onBasemapChange,
+} from './map.js?v=20260922simple1';
 import {
   registerMarkerIcon,
   registerMarkerIconSizes,
   sizedIconId,
   watchMarkerIconDensity,
-} from './marker-icons.js';
+} from './marker-icons.js?v=20260922simple1';
 import {
   addRegionFocusLayers,
   loadRegionFocusData,
-} from './states-highlight.js';
+} from './states-highlight.js?v=20260922simple1';
 import {
   hideCameraPreview,
-  hideDivisionPopup,
-  showCameraPopup,
   showCameraPreview,
   showDigitizedCameraPopup,
-  showDivisionPopup,
   showFirePopup,
   showLookoutPopup,
   showPrescribedPopup,
 } from './popups.js';
 
+const LABEL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+// stable ids let UI controls refer to layers without inspecting the style
 const FIRE_ICON_ID = 'fire-marker';
 const CAMERA_ICON_ID = 'camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
 const DIGITIZED_CAMERA_GROUP_LABEL = 'Digitized Camera Sources';
-const DIGITIZED_CAMERA_UNLOCK_SEQUENCE = Object.freeze(['1', '2', '3', '4']); // press these numbers to show digitized camera layer
+const DIGITIZED_CAMERA_UNLOCK_SEQUENCE = Object.freeze(['1', '2', '3', '4']); // key sequence reveals digitized camera layer
+// all four keys must arrive within this many milliseconds
 const DIGITIZED_CAMERA_UNLOCK_TIMEOUT_MS = 2_000;
-const BOUNDARY_COLOR = '#1769aa';
-const BOUNDARY_FILL_COLOR = '#397b9d';
+const BOUNDARY_COLOR = '#494949';
+const BOUNDARY_FILL_COLOR = '#929292';
 const SELECTED_BOUNDARY_COLOR = '#f8e109';
 const VIEWSHED_LEGEND_LABEL = 'Camera viewsheds';
 const VIEWSHED_FILL_COLOR = Object.freeze({
@@ -69,7 +78,7 @@ const DIGITIZED_CAMERA_COLORS = Object.freeze({
   joint: '#f8e109',
 });
 const NO_VIEWSHED_SELECTED = '__none__';
-// dissolved base avoids stacked opacity while individual features keep selection ids
+// dissolved coverage avoids stacked opacity; individual features keep selection ids
 const VIEWSHED_INDIVIDUAL_SOURCE = Object.freeze({
   source: LAYER_IDS.viewshedsSource,
   'source-layer': DATA_URLS.cameraViewshedsSourceLayer,
@@ -83,22 +92,58 @@ const VIEWSHED_LAYER_IDS = Object.freeze([
   LAYER_IDS.viewshedsHighlightFill,
 ]);
 const NO_DIVISION_SELECTED = '__none__';
-const DIVISION_TYPES = Object.freeze([
-  Object.freeze({
-    value: 'county',
-    label: 'County',
-    sourceId: LAYER_IDS.countyBoundariesSource,
-    fillLayerId: LAYER_IDS.countyBoundaryFill,
-    hoverLayerId: LAYER_IDS.countyBoundaryHover,
-    layerId: LAYER_IDS.countyBoundaries,
-    labelLayerId: LAYER_IDS.countyBoundaryLabels,
-    selectedLayerId: LAYER_IDS.countyBoundarySelected,
-    dataUrl: DATA_URLS.countyDivisions,
-  }),
+const FILTER_TYPES = Object.freeze([
+  ['state', 'State'],
+  ['county', 'County'],
+  ['house', 'State House'],
+  ['us-house', 'US House'],
+  ['senate', 'State Senate'],
+  ['utility', 'Utility provider'],
+  ['national-forest', 'National Forest'],
+  ['national-park', 'National Park'],
+  ['federal-land', 'Federal land'],
+  ['tribal-land', 'Tribal land'],
+  ['camera', 'Camera'],
 ]);
+// keep this order aligned with the filter menu; camera is the only non-polygon type
+// cameras use point selection; every other type builds polygon layers
+const DIVISION_TYPES = Object.freeze(FILTER_TYPES
+  .filter(([value]) => value !== 'camera')
+  .map(([value, label]) => {
+    const prefix = `filter-${value}`;
+    return Object.freeze({
+      value,
+      label,
+      sourceId: `${prefix}-source`,
+      labelSourceId: `${prefix}-label-source`,
+      fillLayerId: `${prefix}-fill`,
+      hoverLayerId: `${prefix}-hover`,
+      layerId: `${prefix}-line`,
+      labelLayerId: `${prefix}-labels`,
+      selectedLayerId: `${prefix}-selected`,
+      dataUrl: `data/divisions/${value}.geojson`,
+    });
+  }));
+// cache in-flight requests separately from parsed features used for selection
 const divisionLoads = new Map();
 const divisionFeatures = new Map();
+let activeMap;
+let activeFilterType = null;
+let cameraFeatures = [];
+let resolveCameraFeatures;
+// camera options wait for the provider data while division sources wait for map setup
+const cameraFeaturesReady = new Promise((resolve) => {
+  resolveCameraFeatures = resolve;
+});
+let resolveFilterSources;
+const filterSourcesReady = new Promise((resolve) => {
+  resolveFilterSources = resolve;
+});
+let cameraMetricsLoad;
+// incremented whenever another selection or clear action takes ownership of results
+let cameraResultRequest = 0;
 let digitizedCameraLoad;
+let digitizedCameraLayersLoad;
 
 const DIGITIZED_CAMERA_OPERATORS = Object.freeze([
   Object.freeze({
@@ -143,15 +188,16 @@ const DIGITIZED_CAMERA_OPERATORS = Object.freeze([
     markerShapes: ['square'],
   }),
 ]);
+// operator metadata drives both symbol filters and grouped legend rows
 const DIGITIZED_CAMERA_LAYER_IDS = Object.freeze(
   DIGITIZED_CAMERA_OPERATORS.map(({ layerId }) => layerId)
 );
 
-// marker sizes in CSS pixels
+// marker sizes use CSS pixels
 const CAMERA_MARKER_SIZE = 20;
 const PRESCRIBED_MARKER_SIZE = 18;
 
-// acreage drives which fire image is used; each entry is [minimum acres, size]
+// each [minimum acres, size] pair selects a prerendered fire marker
 const FIRE_MARKER_SIZES = [
   [0, 14],
   [1, 16],
@@ -161,25 +207,35 @@ const FIRE_MARKER_SIZES = [
   [10_000, 28],
 ];
 
-// render layer names and defaults without waiting for Mapbox or data providers
+// render control shells before Mapbox and providers finish loading
 const legendControl = initLegend(legendItems());
-const divisionFilterControl = initDivisionFilter({
-  types: DIVISION_TYPES.map(({ value, label }) => ({ value, label })),
-  loadOptions: loadDivisionOptions,
-  onTypeSelected: showDivisionType,
-  onDivisionSelected: selectDivision,
-  onClear: clearDivisionFilter,
+const resultsControl = initResultsPanel({
+  getMap: () => activeMap,
+  getMapCanvas: () => activeMap?.getCanvas(),
+  getLegendItems: () => [...document.querySelectorAll('#legend .legend-row')]
+    .filter((row) => row.querySelector('input[type="checkbox"]')?.checked)
+    .filter((row) => !row.hidden && !row.closest('.legend-group[hidden]'))
+    .map((row) => row.querySelector('.legend-label')?.textContent?.trim())
+    .filter(Boolean),
+});
+const filterControl = initFilterPanel({
+  types: FILTER_TYPES.map(([value, label]) => ({ value, label })),
+  loadOptions: loadFilterOptions,
+  onTypeSelected: typeSelected,
+  onSelection: optionSelected,
+  onClear: clearFilter,
 });
 
-// startup waits for the base style before registering application layers
+// wait for the base style before registering application layers
 mapReady
   .then(waitForMapLoad)
   .then(loadMapLayers)
   .catch((error) => console.error('Failed to initialize map:', error))
   .finally(hideMapLoading);
 
-// resolves immediately for cached styles or waits for the first full load
+// cached styles are ready now; otherwise wait for the first load event
 function waitForMapLoad(map) {
+  // an already-loaded style can proceed without waiting for another event
   if (map.loaded()) return map;
 
   return new Promise((resolve) => {
@@ -187,39 +243,46 @@ function waitForMapLoad(map) {
   });
 }
 
-// registers empty layers while providers run then hydrates each source as ready
+// register empty layers while providers run, then hydrate each source as ready
 async function loadMapLayers(map) {
-  // overlap network requests with source and marker setup
+  activeMap = map;
+  const canvas = map.getCanvas();
+  // keyboard users need a focusable canvas for map shortcuts
+  if (canvas && canvas.tabIndex < 0) canvas.tabIndex = 0;
+  // start requests before source and marker setup finishes
   const data = loadLayerData();
 
+  // install empty sources and interaction layers before provider requests settle
   addRegionFocusLayers(map);
   addContextLayers(map);
   addBoundaryLayers(map);
-  divisionFilterControl.connect(map);
-  map.on(MAP_HOME_EVENT, () => divisionFilterControl.reset());
+  // filter options can load only after their map sources exist
+  resolveFilterSources();
+  // home fires before its camera animation starts
+  map.on(MAP_HOME_EVENT, home);
+  bindApplicationSourceErrors(map);
   addViewshedLayers(map);
   addPerimeterLayers(map);
   addLookoutLayer(map);
   await Promise.all([
     addFireLayer(map),
     addCameraLayer(map),
-    addDigitizedCameraLayers(map),
   ]);
 
-  // added last so prescribed burns draw above the other markers
+  // symbol ordering depends on marker images and layers already being installed
+  // prescribed burns draw above the other markers
   await addPrescribedLayer(map);
 
   orderDivisionLayers(map);
 
-  // rebuilds every registered marker image when display density changes
+  // rebuild marker images when display density changes
   watchMarkerIconDensity(map);
 
-  // Mapbox visibility can now follow the legend that was rendered at startup
+  // Mapbox visibility can now follow the startup legend
   legendControl.connect(map);
   bindDigitizedCameraUnlock(map);
 
-  // The map is usable now; slow or unavailable data providers hydrate their
-  // sources in the background and should not hold the full-screen overlay.
+  // slow providers hydrate in the background after the map becomes usable
   hideMapLoading();
 
   await Promise.all([
@@ -230,20 +293,24 @@ async function loadMapLayers(map) {
       'Cameras (ALERTWest)',
       Promise.all([data.cameras, data.viewshedManifest]),
       ([cameras, viewshedManifest]) => {
+        // selection ids must be attached before features reach either UI
+        cameraFeatures = attachViewshedIds(cameras, viewshedManifest).features;
         setSourceData(
           map,
           LAYER_IDS.cameras,
-          attachViewshedIds(cameras, viewshedManifest)
+          { type: 'FeatureCollection', features: cameraFeatures }
         );
+        resolveCameraFeatures(cameraFeatures);
       }
     ),
     hydrateLegendLayer(
       VIEWSHED_LEGEND_LABEL,
       data.viewshedManifest,
       (viewshedManifest) => {
+        // describe the manifest count and provider radius cap beside its legend row
         legendControl.updateInfo(
           VIEWSHED_LEGEND_LABEL,
-          `Contains ${viewshedEntries(viewshedManifest).length} camera viewsheds from ALERTWest`
+          `Contains ${viewshedEntries(viewshedManifest).length} camera viewsheds from ALERTWest, capped at a 12mi maximum radius`
         );
       }
     ),
@@ -251,7 +318,7 @@ async function loadMapLayers(map) {
       'Fires (NIFC)',
       Promise.all([data.fires, data.perimeters]),
       ([fires, perimeters]) => {
-        // copy provider acreage into the local field used by marker sizing
+        // marker sizing reads acreage from this local field
         setSourceData(
           map,
           LAYER_IDS.fires,
@@ -289,6 +356,7 @@ async function loadMapLayers(map) {
 
 async function hydrateLegendLayer(label, dataPromise, applyData) {
   try {
+    // keep data failures visible to the caller while always ending the spinner
     applyData(await dataPromise);
   } finally {
     legendControl.setLoading(label, false);
@@ -298,6 +366,7 @@ async function hydrateLegendLayer(label, dataPromise, applyData) {
 function addContextLayers(map) {
   const beforeId = LAYER_IDS.outsideRegionFill;
 
+  // overlays start hidden so the legend controls the first visible map
   map.addSource(LAYER_IDS.burnProbabilitySource, {
     type: 'raster',
     tiles: [DATA_URLS.burnProbabilityTiles],
@@ -381,10 +450,8 @@ function addContextLayers(map) {
   }, beforeId);
 }
 
-/**
- * QWRA tiles are pre-classed ColorBrewer YlOrRd, not raw probability values.
- * Blue channel below ~0.196 is red through dark brown (>= 0.002154); paler classes hide.
- */
+// QWRA tiles encode pre-classed colors rather than raw probability values
+// blue below ~0.196 maps red through dark brown classes (>= 0.002154)
 function burnProbabilityPaint() {
   return {
     'raster-opacity': 0.72,
@@ -393,6 +460,7 @@ function burnProbabilityPaint() {
     'raster-color-range': [0, 1],
     'raster-color': [
       'step',
+      // byte classes are normalized to the raster-value range from 0 to 1
       ['raster-value'],
       'rgb(89, 25, 0)',
       13 / 255, 'rgb(128, 0, 38)',
@@ -406,7 +474,12 @@ function burnProbabilityPaint() {
 
 function addBoundaryLayers(map) {
   for (const division of DIVISION_TYPES) {
+    // label points stay separate so text placement does not depend on polygon shape
     map.addSource(division.sourceId, {
+      type: 'geojson',
+      data: emptyFeatureCollection(),
+    });
+    map.addSource(division.labelSourceId, {
       type: 'geojson',
       data: emptyFeatureCollection(),
     });
@@ -422,6 +495,7 @@ function addBoundaryLayers(map) {
       },
     });
 
+    // hover is a separate translucent layer so the base fill stays neutral
     map.addLayer({
       id: division.hoverLayerId,
       type: 'fill',
@@ -434,6 +508,7 @@ function addBoundaryLayers(map) {
       },
     });
 
+    // outlines use zoom-based widths to stay visible at both regional and local scales
     map.addLayer({
       id: division.layerId,
       type: 'line',
@@ -454,13 +529,14 @@ function addBoundaryLayers(map) {
       },
     });
 
+    // labels consume the precomputed point source registered when options load
     map.addLayer({
       id: division.labelLayerId,
       type: 'symbol',
-      source: division.sourceId,
+      source: division.labelSourceId,
       layout: {
         visibility: 'none',
-        'text-field': ['get', 'shortName'],
+        'text-field': ['coalesce', ['get', 'shortName'], ['get', 'name']],
         'text-size': [
           'interpolate',
           ['linear'],
@@ -482,6 +558,7 @@ function addBoundaryLayers(map) {
       },
     });
 
+    // selected outline uses its own filter so hover can remain transient
     map.addLayer({
       id: division.selectedLayerId,
       type: 'line',
@@ -507,22 +584,207 @@ function addBoundaryLayers(map) {
   }
 }
 
+async function loadFilterOptions(typeValue) {
+  await filterSourcesReady;
+  if (typeValue === 'camera') {
+    // camera choices depend on the provider hydration, not just map setup
+    const features = await cameraFeaturesReady;
+    // numeric collation keeps labels like Camera 2 ahead of Camera 10
+    return features.map((feature) => ({
+      value: cameraOptionId(feature),
+      label: feature.properties?.name || 'Camera',
+    })).sort((a, b) => LABEL_COLLATOR.compare(a.label, b.label));
+  }
+
+  return loadDivisionOptions(activeMap, typeValue);
+}
+
 async function loadDivisionOptions(map, typeValue) {
   const division = divisionType(typeValue);
   if (!division) throw new Error(`Unknown division type: ${typeValue}`);
 
   const data = await loadDivisionData(division);
+  // keep full geometry for hit testing and selection, labels use compact points
   setSourceData(map, division.sourceId, data);
+  // precomputed label points keep text placement independent of polygon geometry
+  setSourceData(map, division.labelSourceId, {
+    type: 'FeatureCollection',
+    features: data.features.flatMap((feature) => {
+      const coordinates = feature.properties?.labelPoint;
+      // malformed or missing label points should not block the polygon options
+      if (!Array.isArray(coordinates) || coordinates.length !== 2 ||
+          !coordinates.every(Number.isFinite)) return [];
+      return [{
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates },
+        properties: {
+          name: feature.properties.name,
+          shortName: feature.properties.shortName,
+        },
+      }];
+    }),
+  });
 
   return data.features.map((feature) => ({
     value: feature.properties.divisionId,
-    label: feature.properties.label,
-  }));
+    label: typeValue === 'utility'
+      ? `${feature.properties.label}`
+      : feature.properties.label,
+    state: feature.properties.state,
+  })).sort((a, b) => LABEL_COLLATOR.compare(a.label, b.label));
+}
+
+function cameraOptionId(feature) {
+  const properties = feature.properties || {};
+  // some camera feeds lack ids, so use name and coordinates as a fallback
+  return String(properties.id ?? properties.viewshed_id ??
+    `${properties.name}|${feature.geometry?.coordinates?.join(',')}`);
+}
+
+function cameraFeatureById(cameraId) {
+  // normalize ids because menu values and provider properties may differ in type
+  return cameraFeatures.find((item) => cameraOptionId(item) === String(cameraId));
+}
+
+function polygonFilterIsActive() {
+  return Boolean(activeFilterType && activeFilterType !== 'camera');
+}
+
+// list category change resets map selection and stale camera requests
+function typeSelected(type) {
+  // invalidate pending camera metrics before the old result panel is cleared
+  cameraResultRequest += 1;
+  activeFilterType = type || null;
+  if (activeMap) {
+    clearDivisionFilter(activeMap);
+    if (type && type !== 'camera') showDivisionType(activeMap, type);
+    selectCameraViewshed(activeMap, null);
+  }
+  resultsControl.clear();
+}
+
+// list picks and map polygon clicks use the same selection path
+function optionSelected(type, id) {
+  if (!activeMap || !id) return;
+  activeFilterType = type;
+  if (type === 'camera') {
+    const feature = cameraFeatureById(id);
+    if (!feature) {
+      console.warn(`Camera ${id} is not available`);
+      return;
+    }
+    showCameraResult(activeMap, feature);
+    return;
+  }
+
+  // area results replace any camera request still waiting on coverage metrics
+  // a new area selection drops any camera viewshed highlight
+  cameraResultRequest += 1;
+  selectCameraViewshed(activeMap, null);
+  selectDivision(activeMap, type, id);
+}
+
+async function polygonClicked(type, id) {
+  if (!type || !id) return;
+  // use the filter panel path when its options are ready so both controls stay in sync
+  const synced = await filterControl.select(type, id);
+  // map selection still works before its option list finishes loading
+  if (!synced) optionSelected(type, id);
+}
+
+async function cameraClicked(cameraId, mapFeature) {
+  if (!activeMap || cameraId == null || cameraId === '') return;
+
+  // prefer the canonical loaded feature but accept the rendered feature during startup
+  const feature = cameraFeatureById(cameraId) || mapFeature;
+  if (!feature) return;
+
+  hideCameraPreview(activeMap);
+  selectCameraViewshed(activeMap, feature.properties?.viewshed_id);
+
+  // keep polygon details in the result panel while highlighting the camera
+  if (polygonFilterIsActive()) return;
+
+  if (activeFilterType === 'camera') {
+    // selecting the matching row preserves the filter panel's active choice
+    const synced = await filterControl.select('camera', cameraOptionId(feature));
+    if (!synced) showCameraResult(activeMap, feature);
+    return;
+  }
+
+  showCameraResult(activeMap, feature);
+}
+
+function cameraHovered(cameraId, event) {
+  if (!activeMap) return;
+  if (!cameraId) {
+    hideCameraPreview(activeMap);
+    return;
+  }
+  if (event) showCameraPreview(activeMap, event);
+}
+
+function clearFilter() {
+  // prevent a late metrics response from refilling the cleared panel
+  cameraResultRequest += 1;
+  activeFilterType = null;
+  if (activeMap) {
+    clearDivisionFilter(activeMap);
+    selectCameraViewshed(activeMap, null);
+    hideCameraPreview(activeMap);
+  }
+  filterControl.setClearEnabled?.(false);
+  resultsControl.clear();
+}
+
+function home() {
+  // map home fires before the camera animation begins
+  filterControl.reset();
+}
+
+function enableClearForResult() {
+  // camera-only results have no active type, so the menu would leave Clear off
+  filterControl.setClearEnabled?.(true);
+}
+
+async function showCameraResult(map, feature) {
+  // each selection owns a token; only its latest response may update the panel
+  const request = ++cameraResultRequest;
+  const properties = feature.properties || {};
+  selectCameraViewshed(map, properties.viewshed_id);
+  enableClearForResult();
+  resultsControl.showLoading(properties.name || 'Camera');
+
+  // share one metrics request across camera picks
+  cameraMetricsLoad ??= fetch('data/camera-coverage.json')
+    .then((response) => {
+      // reject HTTP errors before attempting JSON parsing
+      if (!response.ok) throw new Error(`Camera coverage HTTP ${response.status}`);
+      return response.json();
+    })
+    .catch((error) => {
+      cameraMetricsLoad = null;
+      console.error('Failed to load camera coverage:', error);
+      return {};
+    });
+  const metricsById = await cameraMetricsLoad;
+  // a newer pick owns the panel if this request finished late
+  if (request !== cameraResultRequest) return;
+
+  const viewshedId = properties.viewshed_id;
+  const metrics = viewshedId
+    // accept both the wrapped and legacy id-keyed data shapes
+    ? metricsById.viewsheds?.[viewshedId] ?? metricsById[viewshedId] ?? null
+    : null;
+  resultsControl.showCamera(properties, metrics, feature);
+  collapseControlsOnNarrowScreen();
+  fitMapToCamera(map, feature);
 }
 
 function showDivisionType(map, typeValue) {
   const selected = divisionType(typeValue);
 
+  // clear hidden categories too so switching back cannot reveal stale highlights
   for (const division of DIVISION_TYPES) {
     const visible = division === selected;
     for (const layerId of divisionLayerIds(division)) {
@@ -531,11 +793,11 @@ function showDivisionType(map, typeValue) {
     setDivisionLayerFilter(map, division, NO_DIVISION_SELECTED);
     setDivisionHoverFilter(map, division, NO_DIVISION_SELECTED);
   }
-  hideDivisionPopup(map);
 }
 
 function loadDivisionData(division) {
   if (!divisionLoads.has(division.value)) {
+    // share one request per category across menu and map interactions
     const load = fetch(division.dataUrl)
       .then((response) => {
         if (!response.ok) {
@@ -548,6 +810,7 @@ function loadDivisionData(division) {
           throw new Error(`${division.label} data is not a FeatureCollection`);
         }
 
+        // retain source features for result details and later bounds fitting
         const features = new Map(
           data.features.map((feature) => [feature.properties?.divisionId, feature])
         );
@@ -555,6 +818,7 @@ function loadDivisionData(division) {
         return data;
       })
       .catch((error) => {
+        // let a later selection retry after network or parse failure
         divisionLoads.delete(division.value);
         console.error(`Failed to load ${division.label} divisions:`, error);
         throw error;
@@ -577,36 +841,24 @@ function selectDivision(map, typeValue, divisionId) {
   );
 
   if (!divisionId) {
-    hideDivisionPopup(map);
+    resultsControl.clear();
     return;
   }
 
   const feature = divisionFeatures.get(typeValue)?.get(divisionId);
   if (!feature) {
     console.warn(`Division ${divisionId} is not available`);
-    hideDivisionPopup(map);
+    resultsControl.clear();
     return;
   }
 
-  const [west, south, east, north] = feature.bbox;
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  map.fitBounds(
-    [
-      [west, south],
-      [east, north],
-    ],
-    {
-      duration: reducedMotion ? 0 : 800,
-      maxZoom: 10,
-      padding: divisionFitPadding(map),
-    }
-  );
-
-  showDivisionPopup(map, feature.properties);
+  resultsControl.showPolygon(typeValue, feature);
+  collapseControlsOnNarrowScreen();
+  fitMapToBounds(map, featureBounds(feature), { maxZoom: 10, duration: 800 });
 }
 
 function clearDivisionFilter(map) {
+  // hide every category and clear both hover and selected expressions
   for (const division of DIVISION_TYPES) {
     for (const layerId of divisionLayerIds(division)) {
       setLayerVisible(map, layerId, false);
@@ -615,7 +867,12 @@ function clearDivisionFilter(map) {
     setDivisionHoverFilter(map, division, NO_DIVISION_SELECTED);
   }
   map.getCanvas().style.cursor = '';
-  hideDivisionPopup(map);
+}
+
+function collapseControlsOnNarrowScreen() {
+  // collapsing frees map width after the result panel opens on phones
+  if (!window.matchMedia('(max-width: 900px)').matches) return;
+  document.getElementById('control-sidebar')?._controlShellApi?.collapse();
 }
 
 function divisionType(value) {
@@ -623,6 +880,7 @@ function divisionType(value) {
 }
 
 function setLayerVisible(map, layerId, visible) {
+  // optional layers may not exist yet during startup
   if (map.getLayer(layerId)) {
     map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
   }
@@ -641,10 +899,12 @@ function setDivisionHoverFilter(map, division, divisionId) {
 }
 
 function divisionFilterExpression(divisionId) {
+  // hover fill and selected outline share the same stable property
   return ['==', ['get', 'divisionId'], divisionId];
 }
 
 function divisionLayerIds(division) {
+  // visibility is shared by the fill, hover, outline, label, and selection layers
   return [
     division.fillLayerId,
     division.hoverLayerId,
@@ -657,6 +917,7 @@ function divisionLayerIds(division) {
 function bindDivisionInteractions(map, division) {
   map.on('mousemove', division.fillLayerId, (event) => {
     const divisionId = event.features?.[0]?.properties?.divisionId;
+    // empty space inside a polygon can still return no feature during transitions
     if (!divisionId) return;
 
     map.getCanvas().style.cursor = 'pointer';
@@ -669,14 +930,16 @@ function bindDivisionInteractions(map, division) {
   });
 
   map.on('click', division.fillLayerId, (event) => {
+    // markers above the polygon keep priority for clicks
     if (hasInteractiveFeatureAtPoint(map, event.point)) return;
 
     const divisionId = event.features?.[0]?.properties?.divisionId;
-    if (divisionId) divisionFilterControl.select(division.value, divisionId);
+    if (divisionId) polygonClicked(division.value, divisionId);
   });
 }
 
 function hasInteractiveFeatureAtPoint(map, point) {
+  // only query layers already installed during asynchronous setup
   const layerIds = [
     LAYER_IDS.cameras,
     ...DIGITIZED_CAMERA_LAYER_IDS,
@@ -701,6 +964,7 @@ function orderDivisionLayers(map) {
     LAYER_IDS.prescribed,
   ].find((layerId) => map.getLayer(layerId));
 
+  // boundaries stay below point markers while selected outlines sit above data
   for (const division of DIVISION_TYPES) {
     if (firstPointLayer) {
       for (const layerId of [
@@ -718,27 +982,103 @@ function orderDivisionLayers(map) {
   }
 }
 
-function divisionFitPadding(map) {
-  const container = map.getContainer();
-  if (container.clientWidth > 620) {
-    return { top: 48, right: 48, bottom: 48, left: 320 };
-  }
+function fitMapToCamera(map, feature) {
+  // GeoJSON points store longitude before latitude
+  const coordinates = feature?.geometry?.coordinates;
+  if (!Array.isArray(coordinates) || coordinates.length < 2) return;
+  // reject malformed values before they reach Mapbox camera methods
+  if (![coordinates[0], coordinates[1]].every(Number.isFinite)) return;
 
-  const panel = document.querySelector('.map-panels');
-  const panelBottom = panel
-    ? panel.getBoundingClientRect().bottom - container.getBoundingClientRect().top
-    : 0;
-
-  // leave enough clear map below the stacked mobile panel for the label popup
-  const top = Math.min(
-    Math.max(36, panelBottom + 18),
-    Math.max(36, container.clientHeight - 220)
-  );
-  return { top, right: 24, bottom: 36, left: 24 };
+  afterPanelLayout(() => {
+    map.easeTo({
+      center: coordinates,
+      // zoom in enough to inspect the marker without zooming out from a closer view
+      zoom: Math.max(map.getZoom(), 8),
+      duration: motionDuration(650),
+      padding: mapPanelPadding(map),
+    });
+  });
 }
 
-// starts every provider together and keeps results aligned by layer
+function fitMapToBounds(map, bounds, { maxZoom = 10, duration = 800 } = {}) {
+  if (!bounds) return;
+
+  afterPanelLayout(() => {
+    map.fitBounds(bounds, {
+      duration: motionDuration(duration),
+      maxZoom,
+      padding: mapPanelPadding(map),
+    });
+  });
+}
+
+function afterPanelLayout(callback) {
+  // two frames cover the panel update and its resulting responsive layout pass
+  requestAnimationFrame(() => requestAnimationFrame(callback));
+}
+
+function featureBounds(feature) {
+  const bbox = feature?.bbox;
+  if (
+    Array.isArray(bbox) &&
+    bbox.length === 4 &&
+    bbox.every((value) => Number.isFinite(Number(value)))
+  ) {
+    // GeoJSON bbox order is west, south, east, north
+    const [west, south, east, north] = bbox.map(Number);
+    return [[west, south], [east, north]];
+  }
+
+  // derive bounds when the feature has no usable bbox
+  const coords = [];
+  // handle Polygon and MultiPolygon nesting without assuming a fixed depth
+  collectCoordinates(feature?.geometry?.coordinates, coords);
+  if (!coords.length) return null;
+
+  // reduce every coordinate to the outermost longitude and latitude
+  let west = Infinity;
+  let south = Infinity;
+  let east = -Infinity;
+  let north = -Infinity;
+  for (const [lng, lat] of coords) {
+    // invalid pairs should not poison the running extrema
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
+    if (lng < west) west = lng;
+    if (lat < south) south = lat;
+    if (lng > east) east = lng;
+    if (lat > north) north = lat;
+  }
+  if (!Number.isFinite(west) || !Number.isFinite(south)) return null;
+  return [[west, south], [east, north]];
+}
+
+function collectCoordinates(node, out) {
+  if (!Array.isArray(node) || node.length === 0) return;
+  // a numeric first item marks a coordinate pair; deeper arrays hold rings or polygons
+  if (typeof node[0] === 'number') {
+    out.push(node);
+    return;
+  }
+  for (const child of node) collectCoordinates(child, out);
+}
+
+function bindApplicationSourceErrors(map) {
+  // vector tile failures arrive as map errors rather than fetch rejections
+  map.on('error', (event) => {
+    const sourceId = event.sourceId;
+    // vector tiles fail asynchronously, so there is no fetch promise to catch
+    if (sourceId === LAYER_IDS.viewshedsSource) {
+      legendControl.setError(
+        VIEWSHED_LEGEND_LABEL,
+        'Camera viewshed tiles did not load'
+      );
+    }
+  });
+}
+
+// group provider requests so every layer can hydrate from its own result
 function loadLayerData() {
+  // launch the requests now before returning the bundle to map setup
   return {
     cameras: safelyLoadLegend(
       'ALERTWest cameras',
@@ -747,6 +1087,7 @@ function loadLayerData() {
     ),
 
     fires: safelyLoadLegend('NIFC fires', 'Fires (NIFC)', () =>
+      // limit the service response to the two states covered by the map
       fetchArcGISGeoJSON(DATA_URLS.nifcFires, {
         where: "POOState IN ('US-OR','US-WA')",
         outFields: [
@@ -779,7 +1120,8 @@ function loadLayerData() {
             'attr_POOState',
             'attr_IncidentTypeCategory',
           ].join(','),
-          // WGS84 degree precision and simplification keep polygons compact
+          // precision and offset use geographic-coordinate degrees for these results
+          // simplify on the service so large perimeters stay compact in transit
           geometryPrecision: '3',
           maxAllowableOffset: '0.01',
         },
@@ -791,15 +1133,16 @@ function loadLayerData() {
       'Watch Duty prescribed fires',
       'Prescribed fires (Watch Duty)',
       async () => {
+        // envelope query reduces transfer; local bounds check trims edge spillover
         const geojson = await fetchArcGISGeoJSON(DATA_URLS.prescribedFires, {
           outFields: 'name,prescribed_date_start,watchduty_url,acreage',
-          // server-side envelope avoids downloading records outside the region
+          // filter at the service to avoid downloading records outside the region
           geometry: REGION_DATA_BOUNDS.flat().join(','),
           geometryType: 'esriGeometryEnvelope',
           spatialRel: 'esriSpatialRelIntersects',
         });
 
-        // enforce the same inclusive bounds on whatever the service returns
+        // apply the same inclusive bounds to returned features
         return filterGeoJSONByBounds(geojson, REGION_DATA_BOUNDS);
       }
     ),
@@ -825,6 +1168,7 @@ function loadLayerData() {
           orderByFields: 'objectid',
           geometry: REGION_DATA_BOUNDS.flat().join(','),
           geometryType: 'esriGeometryEnvelope',
+          // bounds are longitude and latitude, so tell ArcGIS their input CRS
           inSR: '4326',
           spatialRel: 'esriSpatialRelIntersects',
           geometryPrecision: '4',
@@ -845,7 +1189,7 @@ function loadLayerData() {
   };
 }
 
-// keeps unpublished camera locations out of the normal UI and startup requests
+// keep digitized camera locations out of the normal UI and startup requests
 function bindDigitizedCameraUnlock(map) {
   let sequenceIndex = 0;
   let sequenceStartedAt = 0;
@@ -856,6 +1200,7 @@ function bindDigitizedCameraUnlock(map) {
   };
 
   const handleKeyDown = (event) => {
+    // do not steal keystrokes from typing, IME composition, or key repeat
     if (
       event.repeat ||
       event.isComposing ||
@@ -870,6 +1215,7 @@ function bindDigitizedCameraUnlock(map) {
     }
 
     const now = performance.now();
+    // the timeout is measured from the first key in the sequence
     if (
       sequenceStartedAt &&
       now - sequenceStartedAt > DIGITIZED_CAMERA_UNLOCK_TIMEOUT_MS
@@ -879,6 +1225,7 @@ function bindDigitizedCameraUnlock(map) {
 
     const expectedKey = DIGITIZED_CAMERA_UNLOCK_SEQUENCE[sequenceIndex];
     if (event.key !== expectedKey) {
+      // a mismatched key can immediately start a fresh sequence
       if (event.key === DIGITIZED_CAMERA_UNLOCK_SEQUENCE[0]) {
         sequenceIndex = 1;
         sequenceStartedAt = now;
@@ -892,16 +1239,30 @@ function bindDigitizedCameraUnlock(map) {
     sequenceIndex += 1;
     if (sequenceIndex !== DIGITIZED_CAMERA_UNLOCK_SEQUENCE.length) return;
 
+    // unlock once per page load so later key presses cannot repeat the request
     document.removeEventListener('keydown', handleKeyDown);
-    legendControl.setHidden(DIGITIZED_CAMERA_GROUP_LABEL, false);
-    loadDigitizedCameraSources(map);
+    unlockDigitizedCameraSources(map);
   };
 
   document.addEventListener('keydown', handleKeyDown);
 }
 
+async function unlockDigitizedCameraSources(map) {
+  try {
+    // install icons and hidden layers before exposing their legend controls
+    await ensureDigitizedCameraLayers(map);
+    // reconnect so new hidden layers follow the provider checkboxes
+    legendControl.connect(map);
+    legendControl.setHidden(DIGITIZED_CAMERA_GROUP_LABEL, false);
+    await loadDigitizedCameraSources(map);
+  } catch (error) {
+    console.error('Unable to unlock digitized camera sources:', error);
+  }
+}
+
 function isEditableKeyboardTarget(target) {
   if (!(target instanceof Element)) return false;
+  // contenteditable=false descendants remain eligible for the shortcut
   return Boolean(
     target.closest(
       'input, select, textarea, [contenteditable]:not([contenteditable="false"])'
@@ -909,7 +1270,7 @@ function isEditableKeyboardTarget(target) {
   );
 }
 
-// promise prevents repeat fetches if this is called again in the future
+// share the load promise so repeated unlocks do not refetch the data
 function loadDigitizedCameraSources(map) {
   digitizedCameraLoad ??= hydrateLegendLayer(
     DIGITIZED_CAMERA_GROUP_LABEL,
@@ -934,6 +1295,11 @@ function loadDigitizedCameraSources(map) {
   return digitizedCameraLoad;
 }
 
+function ensureDigitizedCameraLayers(map) {
+  digitizedCameraLayersLoad ??= addDigitizedCameraLayers(map);
+  return digitizedCameraLayersLoad;
+}
+
 function safelyLoadLegend(label, legendLabel, loader, fallback) {
   return safelyLoad(label, loader, fallback, (error) => {
     legendControl.setError(
@@ -943,7 +1309,7 @@ function safelyLoadLegend(label, legendLabel, loader, fallback) {
   });
 }
 
-// turns one provider failure into an empty layer without blocking the rest
+// one provider failure becomes an empty layer without blocking the others
 async function safelyLoad(
   label,
   loader,
@@ -953,6 +1319,7 @@ async function safelyLoad(
   try {
     return await loader();
   } catch (error) {
+    // return usable empty data so one provider cannot block unrelated layers
     console.error(`Failed to load ${label}:`, error);
     onError?.(error);
     return fallback;
@@ -966,17 +1333,18 @@ function shortErrorMessage(error) {
 
 async function fetchJson(url, label) {
   const response = await fetch(url);
+  // include a useful response code while keeping parse errors intact
   if (!response.ok) throw new Error(`${label} HTTP ${response.status}`);
   return response.json();
 }
 
-// adapts ALERTWest records to the GeoJSON contract used by map sources
+// adapt ALERTWest records to the GeoJSON contract used by map sources
 async function loadAlertWestCameras() {
   return camerasToGeoJSON(await fetchJson(CAMERA_API, 'Camera API'));
 }
 
 async function addCameraLayer(map) {
-  // symbol layers can only reference images already registered on the map
+  // register the image before adding a symbol layer that references it
   await registerMarkerIcon(map, {
     id: CAMERA_ICON_ID,
     url: MARKER_ICON_URLS.camera,
@@ -991,18 +1359,24 @@ async function addCameraLayer(map) {
     layout: markerLayout(CAMERA_ICON_ID),
   });
 
-  map.on('click', LAYER_IDS.cameras, (event) => {
-    selectCameraViewshed(map, event.features?.[0]?.properties?.viewshed_id);
+  // hover previews use the map event; clicks open details and select its viewshed
+  bindLayerInteractions(map, LAYER_IDS.cameras, null, {
+    show: (hoveredMap, event) => {
+      const feature = event.features?.[0];
+      cameraHovered(feature ? cameraOptionId(feature) : null, event);
+    },
+    hide: () => cameraHovered(null),
   });
-
-  bindLayerInteractions(map, LAYER_IDS.cameras, showCameraPopup, {
-    show: showCameraPreview,
-    hide: hideCameraPreview,
+  map.on('click', LAYER_IDS.cameras, (event) => {
+    const feature = event.features?.[0];
+    if (!feature) return;
+    cameraClicked(cameraOptionId(feature), feature);
   });
 }
 
 async function addDigitizedCameraLayers(map) {
   const icons = new Map();
+  // deduplicate shared joint-site artwork before parallel icon registration
   for (const operator of DIGITIZED_CAMERA_OPERATORS) {
     icons.set(operator.operationalIconId, operator.operationalIconUrl);
     icons.set(operator.plannedIconId, operator.plannedIconUrl);
@@ -1018,6 +1392,7 @@ async function addDigitizedCameraLayers(map) {
     )
   );
 
+  // all provider sublayers share one GeoJSON source and split by operator
   addGeoJSONSource(map, LAYER_IDS.digitizedCamerasSource);
 
   for (const operator of DIGITIZED_CAMERA_OPERATORS) {
@@ -1030,6 +1405,7 @@ async function addDigitizedCameraLayers(map) {
         ...markerLayout([
           'match',
           ['get', 'status'],
+          // only the exact planned status uses the planned marker
           'Planned',
           operator.plannedIconId,
           operator.operationalIconId,
@@ -1050,7 +1426,7 @@ function addViewshedLayers(map) {
     maxzoom: 12,
   });
 
-  // dissolved coverage layer so overlapping cameras do not stack opacity
+  // dissolved coverage avoids stacked opacity; individual source keeps camera ids
   map.addLayer({
     id: LAYER_IDS.viewshedsFill,
     type: 'fill',
@@ -1077,6 +1453,7 @@ function addViewshedLayers(map) {
 
 function applyViewshedSymbology(map, basemap) {
   const satellite = basemap === 'satellite';
+  // satellite imagery needs a light viewshed fill for contrast
   const fillColor =
     VIEWSHED_FILL_COLOR[basemap] ?? VIEWSHED_FILL_COLOR.outdoors;
 
@@ -1087,6 +1464,8 @@ function applyViewshedSymbology(map, basemap) {
 }
 
 function selectCameraViewshed(map, viewshedId) {
+  // the sentinel produces an empty match while no camera is selected
+  if (!map.getLayer(LAYER_IDS.viewshedsHighlightFill)) return;
   map.setFilter(
     LAYER_IDS.viewshedsHighlightFill,
     viewshedFilter(viewshedId || NO_VIEWSHED_SELECTED)
@@ -1098,7 +1477,7 @@ function viewshedFilter(viewshedId) {
 }
 
 async function addFireLayer(map) {
-  // symbol layers can only reference images already registered on the map
+  // register the image before adding a symbol layer that references it
   await registerMarkerIconSizes(map, {
     id: FIRE_ICON_ID,
     url: MARKER_ICON_URLS.fire,
@@ -1117,15 +1496,15 @@ async function addFireLayer(map) {
 }
 
 /**
- * picks a prerendered fire image by acreage
- * swapping images instead of scaling one keeps every size pixel aligned
+ * pick a prerendered fire image by acreage
+ * swapping images keeps each size pixel aligned
  */
 function fireIconExpression() {
   const [[, smallestSize], ...largerSizes] = FIRE_MARKER_SIZES;
 
   return [
     'step',
-    // missing or nonpositive acreage falls back to the smallest marker
+    // missing or nonpositive acreage uses the smallest marker
     ['max', ['coalesce', ['to-number', ['get', 'acres']], 0], 0],
     sizedIconId(FIRE_ICON_ID, smallestSize),
     ...largerSizes.flatMap(([acres, size]) => [
@@ -1138,7 +1517,7 @@ function fireIconExpression() {
 function addPerimeterLayers(map) {
   addGeoJSONSource(map, LAYER_IDS.perimetersSource);
 
-  // fill goes first so the sharper outline renders above it
+  // draw the fill first so the sharper outline stays on top
   map.addLayer({
     id: LAYER_IDS.perimetersFill,
     type: 'fill',
@@ -1163,7 +1542,7 @@ function addPerimeterLayers(map) {
 }
 
 async function addPrescribedLayer(map) {
-  // symbol layers can only reference images already registered on the map
+  // register the image before adding a symbol layer that references it
   await registerMarkerIcon(map, {
     id: PRESCRIBED_ICON_ID,
     url: MARKER_ICON_URLS.prescribed,
@@ -1201,15 +1580,16 @@ function addLookoutLayer(map) {
 function markerLayout(iconImage) {
   return {
     'icon-image': iconImage,
-    // icon atlas already matches physical pixels so Mapbox must not rescale it
+    // atlas images already use physical pixels, so keep Mapbox at scale 1
     'icon-size': 1,
     'icon-allow-overlap': true,
     'icon-ignore-placement': true,
   };
 }
 
-// sources exist before requests finish so layer registration can proceed
+// create sources before requests finish so layers can register right away
 function addGeoJSONSource(map, sourceId, options = {}) {
+  // empty collections let style layers exist before their provider completes
   map.addSource(sourceId, {
     type: 'geojson',
     data: emptyFeatureCollection(),
@@ -1217,7 +1597,7 @@ function addGeoJSONSource(map, sourceId, options = {}) {
   });
 }
 
-// ignores a late response when its source was removed during loading
+// ignore late data when its source was removed during loading
 function setSourceData(map, sourceId, data) {
   const source = map.getSource(sourceId);
   if (!source) {
@@ -1229,8 +1609,8 @@ function setSourceData(map, sourceId, data) {
 }
 
 /**
- * shares pointer affordance and popup dispatch across interactive layers
- * a preview pair adds the hover popup that a click then expands
+ * share pointer affordance and popup dispatch across interactive layers
+ * previews add a hover popup that clicks can expand
  */
 function bindLayerInteractions(map, layerId, showPopup, preview) {
   map.on('mouseenter', layerId, () => {
@@ -1242,16 +1622,18 @@ function bindLayerInteractions(map, layerId, showPopup, preview) {
     preview?.hide(map);
   });
 
-  // mousemove also catches moving between two markers that sit side by side
+  // mousemove catches transitions between markers placed side by side
   if (preview) {
     map.on('mousemove', layerId, (event) => preview.show(map, event));
   }
 
-  map.on('click', layerId, (event) => showPopup(map, event));
+  // layers without a full popup still retain pointer feedback and previews
+  if (showPopup) map.on('click', layerId, (event) => showPopup(map, event));
 }
 
-// maps each legend row to every Mapbox layer controlled by its checkbox
+// map each legend row to the Mapbox layers controlled by its checkbox
 function legendItems() {
+  // keep loading and hidden defaults aligned with startup source visibility
   return [
     {
       label: 'Cameras (ALERTWest)',
@@ -1355,5 +1737,6 @@ function legendItems() {
 }
 
 function viewshedEntries(manifest) {
+  // tolerate a missing or malformed manifest while the layer error is reported
   return Array.isArray(manifest?.viewsheds) ? manifest.viewsheds : [];
 }

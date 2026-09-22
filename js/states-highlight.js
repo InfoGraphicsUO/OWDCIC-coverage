@@ -93,7 +93,7 @@ export function addRegionFocusLayers(map) {
 }
 
 // creates a seamless bitmap pattern without muting the basemap between lines
-function registerOutsideHatch(map) {
+export function registerOutsideHatch(map) {
   if (map.hasImage(OUTSIDE_HATCH_IMAGE_ID)) return;
 
   const data = new Uint8Array(HATCH_SIZE * HATCH_SIZE * 4);
