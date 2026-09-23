@@ -374,8 +374,14 @@
     border-top: 1px solid #444;
 }
 
+.results-export-modal__buttons {
+    display: flex;
+    gap: 8px;
+}
+
 .results-export-modal__download {
-    width: 100%;
+    flex: 1 1 0;
+    min-width: 0;
     border: 1px solid var(--ohaz-yellow, #f8e109);
     padding: 10px 12px;
     color: var(--ohaz-grey, #2f2e2e);
