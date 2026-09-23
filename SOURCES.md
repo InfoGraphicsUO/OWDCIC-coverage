@@ -1,11 +1,11 @@
 # Project Sources
 
-This inventory covers source references in the map configuration, source-building scripts, generated data metadata, and the source files kept in `data/`.
+This will function as a source repository so I can keep track of what sources I'm using to provide data
 
 ## Camera and lookout records
 
 - **Live AlertWest cameras and feed metadata:** [AlertWest fire camera API](https://api.cdn.prod.alertwest.com/api/firecams/v0/cameras); camera-console links use [AlertWest Live](https://alertwest.live/cam-console/).
-- **Camera site coordinates and observer heights:** project table [Site Installation Dates (Site, Coordinates, & Elevation).csv](<data/Site Installation Dates(Site, Coordinates, & Elevation).csv>); mapped derivative [sites.geojson](data/sites.geojson).
+- **Camera site coordinates and observer heights:** project table [Site Installation Dates (Site, Coordinates, & Elevation).csv](data/Site Installation Dates(Site, Coordinates, & Elevation).csv); mapped derivative [sites.geojson](data/sites.geojson).
 - **Digitized camera inventory:** [digitized-camera-sources.xlsx](data/digitized-camera-sources.xlsx), [digitized-camera-sources.csv](data/digitized-camera-sources.csv), and [digitized-camera-sources.geojson](data/digitized-camera-sources.geojson). The CSV records **Oregon Wildfire Detection Network Map - PDF** as its map source; related Oregon Department of Forestry material: [Smoke Detection Cameras / Board of Forestry packet](https://www.oregon.gov/odf/board/bof/20240605-bof-packet.pdf). Row-level point-source references include `ODF_sites`, `PGE_WF_Cameras`, `standing-lookouts`, and `usfs_communications_sites`.
 - **Standing fire lookouts:** [standing-lookouts.csv](data/standing-lookouts.csv) and [standing-lookouts.geojson](data/standing-lookouts.geojson); source references in the records are labeled `NHLR/FFLOS`. Related lists: [Forest Fire Lookout Association — Oregon](https://firelookout.org/lookouts/us/or/) and [Washington](https://firelookout.org/lookouts/us/wa/).
 
@@ -25,8 +25,7 @@ This inventory covers source references in the map configuration, source-buildin
 - **Bureau of Land Management ownership tiles:** [BLM National Surface Management Agency tiles](https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_Cached_BLM_Only/MapServer/tile/{z}/{y}/{x}).
 - **Utility service areas:** [Oregon Natural Gas and Electric Utility Incentive Layer, layer 0](https://services.arcgis.com/uUvqNMGPm7axC2dD/arcgis/rest/services/Oregon_Natural_Gas_and_Electric_Utility_Incentive_Layer_Update_13Dec2024_v01/FeatureServer/0); [Washington Ecology CPR service, layer 0](https://gis.ecology.wa.gov/serverext/rest/services/CPR/CPR/MapServer/0). The local utility dataset metadata notes Washington coverage as unavailable.
 - **Oregon Department of Forestry protection districts:** [District Boundaries, layer 1](https://services.arcgis.com/uUvqNMGPm7axC2dD/arcgis/rest/services/District_Boundaries/FeatureServer/1).
-- **Local division GeoJSON products:** [county.geojson](data/divisions/county.geojson), [counties.geojson](data/divisions/counties.geojson), [federal-land.geojson](data/divisions/federal-land.geojson), [house.geojson](data/divisions/house.geojson), [national-forest.geojson](data/divisions/national-forest.geojson), [national-park.geojson](data/divisions/national-park.geojson), [senate.geojson](data/divisions/senate.geojson), [state.geojson](data/divisions/state.geojson), [tribal-land.geojson](data/divisions/tribal-land.geojson), [utility.geojson](data/divisions/utility.geojson), and [us-house.geojson](data/divisions/us-house.geojson).
-- [or-wa-boundary.geojson](data/or-wa-boundary.geojson) is a local regional boundary file; its file contains no upstream source metadata.
+- **Local boundary files:** [data/divisions/](data/divisions/) contains the state, county, state House, state Senate, U.S. House, utility, national forest, national park, federal land, and tribal land GeoJSON products. [or-wa-boundary.geojson](data/or-wa-boundary.geojson) is also used as a local regional boundary; its file contains no upstream source metadata.
 
 ## Ownership, hydrography, and coverage metrics
 
@@ -45,7 +44,7 @@ This inventory covers source references in the map configuration, source-buildin
 
 - **Mapbox basemap styles:** [Outdoors](https://api.mapbox.com/styles/v1/infographics/cmspb7yx9000s01px89hr8i1a) and [Simple](https://api.mapbox.com/styles/v1/infographics/cmud7fy6n000a01rghxd37aiz); the satellite basemap is `mapbox://mapbox.satellite`.
 - **Mapbox terrain elevation tiles:** `mapbox://mapbox.mapbox-terrain-dem-v1`.
-- **Annual burn probability:** [Pacific Northwest QWRA burn-probability tiles](https://tiles.arcgis.com/tiles/CD5mKowwN6nIaqd8/arcgis/rest/services/project_wre_bp_tile_package/MapServer/tile/{z}/{y}/{x}); the map labels the layer “OR Burn probability (QWRA)” and identifies the vintage as 2023.
-- **QGIS project basemap:** [OpenStreetMap raster tiles](https://tile.openstreetmap.org/{z}/{x}/{y}.png), referenced by the QGIS project builder.
-- **Map attribution:** [University of Oregon InfoGraphics Lab](https://infographics.uoregon.edu/) and [OHAZ](https://ohaz.uoregon.edu/).
-- **Browser libraries and fonts:** [Mapbox GL JS 3.28.1](https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.js) and [CSS](https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.css), [Plotly 2.35.2](https://cdn.plot.ly/plotly-2.35.2.min.js), [Font Awesome kit](https://kit.fontawesome.com/be4ea184d4.js), and [Google Fonts — Merriweather](https://fonts.googleapis.com/css2?family=Merriweather:wght@400;500;600;700&display=swap).
+- **Annual burn probability:** [Pacific Northwest QWRA burn-probability tiles](https://tiles.arcgis.com/tiles/CD5mKowwN6nIaqd8/arcgis/rest/services/project_wre_bp_tile_package/MapServer/tile/{z}/{y}/{x})
+- **QGIS project basemap:** [OpenStreetMap raster tiles](https://tile.openstreetmap.org/{z}/{x}/{y}.png)
+- **Browser libraries and fonts:** [Mapbox GL JS/CSS 3.28.1](https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.js), [Plotly 2.35.2](https://cdn.plot.ly/plotly-2.35.2.min.js), [Font Awesome kit](https://kit.fontawesome.com/be4ea184d4.js), and [Google Fonts — Merriweather](https://fonts.googleapis.com/css2?family=Merriweather:wght@400;500;600;700&display=swap).
+
