@@ -25,7 +25,7 @@ const LAND_MIX_FALLBACK_COLORS = ['#3b7d4f', '#f6d94a', '#3c6b03', '#8154BD', '#
 const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
 
 /**
- * connects selection updates to the results panel and its PNG export
+ * connects selection updates to the results panel and its export downloads
  * accepts plain feature properties so callers need no data-source details
  * keeps chart and dialog state local to this panel instance
  */
@@ -116,6 +116,8 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
       status.textContent = 'Select a result before exporting.';
       return;
     }
+    const selection = current;
+    const exportTitle = title.textContent;
     // hold the panel busy until the preview is ready or export fails
     exportButton.disabled = true;
     element.setAttribute('aria-busy', 'true');
@@ -123,39 +125,57 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
     try {
       // wait for the current chart before asking Plotly for its image
       await chartReady.catch(() => {});
+      if (current !== selection) return;
       const image = await composeExport({
         // resolve live map and legend state only when the user asks to export
         mapCanvas: await resolveCanvas(getMapCanvas),
         map: typeof getMap === 'function' ? getMap() : null,
         legendItems: await resolveLegendRowsForExport(getLegendItems),
-        title: title.textContent,
-        current,
+        title: exportTitle,
+        current: selection,
         chart,
       });
+      if (current !== selection) return;
       status.textContent = '';
+      const downloadName = `owdcic-${slugify(exportTitle)}.png`;
+      const pdfDownloadName = `owdcic-${slugify(exportTitle)}.pdf`;
       exportModal = createExportModal({
         previewSrc: image,
-        downloadName: `owdcic-${slugify(title.textContent)}.png`,
+        downloadName,
         onDownload: () => {
           // use the rendered preview so download and preview always match
           const anchor = document.createElement('a');
-          anchor.download = `owdcic-${slugify(title.textContent)}.png`;
+          anchor.download = downloadName;
           anchor.href = image;
           anchor.click();
           if (exportModal?.status) exportModal.status.textContent = 'PNG downloaded.';
         },
+        onDownloadPdf: async () => {
+          // convert the same preview image so PDF and PNG contain identical results
+          const modal = exportModal;
+          const pdf = await createPdfFromImage(image);
+          if (!modal?.overlay.isConnected || current !== selection) return false;
+          const url = URL.createObjectURL(pdf);
+          const anchor = document.createElement('a');
+          anchor.download = pdfDownloadName;
+          anchor.href = url;
+          anchor.click();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+          return true;
+        },
         onClose: () => {
           // return keyboard focus to the control that opened the dialog
           exportModal = null;
-          exportButton.disabled = false;
+          exportButton.disabled = !current;
           element.removeAttribute('aria-busy');
           exportButton.focus();
         },
       });
     } catch (error) {
+      if (current !== selection) return;
       // keep the result available for a retry and expose failure in the panel status
-      status.textContent = 'PNG export failed. Try again after the map finishes loading.';
-      console.error('OWDCIC PNG export failed', error);
+      status.textContent = 'Export preview failed. Try again after the map finishes loading.';
+      console.error('OWDCIC export preview failed', error);
       exportButton.disabled = false;
       element.removeAttribute('aria-busy');
     }
@@ -251,10 +271,9 @@ function ensurePanelMarkup(element) {
     footer.className = 'results-panel__footer';
     footer.dataset.resultsFooter = '';
     const status = element.querySelector('[data-results-status]');
-    const button = element.querySelector('[data-results-export]');
-    if (button) {
-      button.remove();
-      footer.append(button);
+    if (exportButton) {
+      exportButton.remove();
+      footer.append(exportButton);
     }
     if (status) {
       status.remove();
@@ -284,7 +303,7 @@ function createPanel() {
 }
 
 // builds a focus-trapped preview dialog and restores focus when it closes
-function createExportModal({ previewSrc, downloadName, onDownload, onClose }) {
+function createExportModal({ previewSrc, downloadName, onDownload, onDownloadPdf, onClose }) {
   // remember the opener before moving focus into the modal
   const previousFocus = document.activeElement;
   const overlay = document.createElement('div');
@@ -330,12 +349,20 @@ function createExportModal({ previewSrc, downloadName, onDownload, onClose }) {
   downloadButton.className = 'results-export-modal__download';
   downloadButton.dataset.exportDownload = '';
   downloadButton.textContent = 'Download PNG';
+  const pdfDownloadButton = document.createElement('button');
+  pdfDownloadButton.type = 'button';
+  pdfDownloadButton.className = 'results-export-modal__download';
+  pdfDownloadButton.dataset.exportPdfDownload = '';
+  pdfDownloadButton.textContent = 'Download PDF';
   const status = document.createElement('p');
   status.className = 'results-export-modal__status';
   status.dataset.exportStatus = '';
   status.setAttribute('role', 'status');
   status.setAttribute('aria-live', 'polite');
-  actions.append(downloadButton, status);
+  const buttons = document.createElement('div');
+  buttons.className = 'results-export-modal__buttons';
+  buttons.append(downloadButton, pdfDownloadButton);
+  actions.append(buttons, status);
 
   dialog.append(header, previewWrap, actions);
   overlay.append(backdrop, dialog);
@@ -380,6 +407,23 @@ function createExportModal({ previewSrc, downloadName, onDownload, onClose }) {
   backdrop.addEventListener('click', close);
   downloadButton.addEventListener('click', () => {
     onDownload();
+  });
+  pdfDownloadButton.addEventListener('click', async () => {
+    downloadButton.disabled = true;
+    pdfDownloadButton.disabled = true;
+    status.textContent = 'Preparing PDF…';
+    try {
+      const downloaded = await onDownloadPdf();
+      if (overlay.isConnected) status.textContent = downloaded ? 'PDF downloaded.' : '';
+    } catch (error) {
+      if (overlay.isConnected) status.textContent = 'PDF export failed. Try again after the map finishes loading.';
+      console.error('OWDCIC PDF export failed', error);
+    } finally {
+      if (overlay.isConnected) {
+        downloadButton.disabled = false;
+        pdfDownloadButton.disabled = false;
+      }
+    }
   });
   document.addEventListener('keydown', onKeyDown);
   // defer focus until the dialog has been attached to the document
@@ -672,6 +716,63 @@ async function composeExport({ mapCanvas, map, legendItems, title, current, char
   drawExportAttribution(ctx, frameWidth, frameHeight);
   ctx.restore();
   return canvas.toDataURL('image/png');
+}
+
+async function createPdfFromImage(pngDataUrl) {
+  // preserve the composed PNG artwork while placing it on a printable letter page
+  const image = await loadImage(pngDataUrl);
+  const canvas = document.createElement('canvas');
+  canvas.width = image.naturalWidth || image.width;
+  canvas.height = image.naturalHeight || image.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('PDF image canvas unavailable');
+  ctx.drawImage(image, 0, 0);
+
+  // JPEG is embedded directly in the PDF so no PDF library or extra request is needed
+  const jpegData = canvas.toDataURL('image/jpeg', 0.98).split(',')[1];
+  const jpegBinary = atob(jpegData);
+  const jpegBytes = Uint8Array.from(jpegBinary, (character) => character.charCodeAt(0));
+  const pageWidth = 792;
+  const pageHeight = 612;
+  const scale = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
+  const imageWidth = canvas.width * scale;
+  const imageHeight = canvas.height * scale;
+  const imageX = (pageWidth - imageWidth) / 2;
+  const imageY = (pageHeight - imageHeight) / 2;
+  const encoder = new TextEncoder();
+  const encode = (text) => encoder.encode(text);
+  const joinBytes = (parts) => {
+    const length = parts.reduce((total, part) => total + part.length, 0);
+    const result = new Uint8Array(length);
+    let offset = 0;
+    for (const part of parts) {
+      result.set(part, offset);
+      offset += part.length;
+    }
+    return result;
+  };
+  const imageCommand = `q\n${imageWidth.toFixed(3)} 0 0 ${imageHeight.toFixed(3)} ${imageX.toFixed(3)} ${imageY.toFixed(3)} cm\n/Im0 Do\nQ\n`;
+  const objects = [
+    encode('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'),
+    encode('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n'),
+    encode(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`),
+    joinBytes([
+      encode(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`),
+      jpegBytes,
+      encode('\nendstream\nendobj\n'),
+    ]),
+    encode(`5 0 obj\n<< /Length ${encoder.encode(imageCommand).length} >>\nstream\n${imageCommand}endstream\nendobj\n`),
+  ];
+  const header = encode('%PDF-1.4\n');
+  const offsets = [0];
+  let byteOffset = header.length;
+  for (const object of objects) {
+    offsets.push(byteOffset);
+    byteOffset += object.length;
+  }
+  const xrefOffset = byteOffset;
+  const xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map((offset) => `${String(offset).padStart(10, '0')} 00000 n `).join('\n')}\ntrailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return new Blob([header, ...objects, encode(xref)], { type: 'application/pdf' });
 }
 
 function drawExportMap(ctx, image, width, height, mapCanvas, map, current) {
