@@ -10,7 +10,7 @@ const POLYGON_DONUT_TYPES = new Set([
 const LAND_MIX_COLORS = Object.freeze({
   'Tribal reservation/trust area': '#8154BD',
   'Tribal fee land': '#a881cf',
-  'National Park Service land': '#3c6b03',
+  'National Park Service land': '#9A8B70',
   'U.S. Forest Service land': '#3b7d4f',
   'Other federal land': '#f6d94a',
   'State land': '#348bb0',
