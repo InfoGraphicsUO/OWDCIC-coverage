@@ -138,6 +138,18 @@ export function initLegend(items) {
       visual.removeAttribute('role');
       visual.tabIndex = 0;
     },
+
+    clearError(label) {
+      // a later successful load should replace an earlier transient failure
+      const visual = findBinding(label)?.visual;
+      if (!visual?.classList.contains('legend-visual--error')) return;
+
+      visual.classList.remove('legend-visual--error');
+      visual.removeAttribute('data-tooltip');
+      visual.removeAttribute('aria-label');
+      visual.removeAttribute('role');
+      visual.removeAttribute('tabindex');
+    },
   };
 }
 

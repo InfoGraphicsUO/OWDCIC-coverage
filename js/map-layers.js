@@ -1090,17 +1090,50 @@ function collectCoordinates(node, out) {
   for (const child of node) collectCoordinates(child, out);
 }
 
+const VIEWSHED_TILE_RETRY_LIMIT = 1;
+
 function bindApplicationSourceErrors(map) {
+  let viewshedRetries = 0;
+  let retrying = false;
+
   // vector tile failures arrive as map errors rather than fetch rejections
   map.on('error', (event) => {
     const sourceId = event.sourceId;
     // vector tiles fail asynchronously, so there is no fetch promise to catch
     if (sourceId === LAYER_IDS.viewshedsSource) {
+      const tileId = event.tile?.tileID?.canonical;
+      console.warn(
+        'Camera viewshed tile failed:',
+        tileId ? `${tileId.z}/${tileId.x}/${tileId.y}` : 'source metadata',
+        event.error?.message
+      );
+
+      // mapbox keeps tiles in a CacheStorage bucket that survives hard reloads,
+      // and Firefox can hand back a truncated copy of large tiles from it, so
+      // flush that cache before refetching instead of rereading the bad copy
+      if (viewshedRetries < VIEWSHED_TILE_RETRY_LIMIT && !retrying) {
+        viewshedRetries += 1;
+        retrying = true;
+        mapboxgl.clearStorage(() => {
+          retrying = false;
+          map.getSource(sourceId)?.reload?.();
+        });
+        return;
+      }
+
       legendControl.setError(
         VIEWSHED_LEGEND_LABEL,
         'Camera viewshed tiles did not load'
       );
     }
+  });
+
+  // tiles that load after an earlier failure should clear the error icon
+  map.on('sourcedata', (event) => {
+    if (event.sourceId !== LAYER_IDS.viewshedsSource) return;
+    // errored tiles also count as settled, so require a tile that actually loaded
+    if (event.dataType !== 'source' || event.tile?.state !== 'loaded') return;
+    legendControl.clearError(VIEWSHED_LEGEND_LABEL);
   });
 }
 
