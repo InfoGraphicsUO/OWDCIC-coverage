@@ -16,7 +16,8 @@
           "PDX Tower"
         ],
         "cameraHeightFt": 377.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -32,7 +33,8 @@
         "name": "Glenada Ridge",
         "aliases": [],
         "cameraHeightFt": 215.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -48,7 +50,8 @@
         "name": "Smith Ridge",
         "aliases": [],
         "cameraHeightFt": 190.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -64,7 +67,8 @@
         "name": "Table Mountain",
         "aliases": [],
         "cameraHeightFt": 190.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -80,7 +84,8 @@
         "name": "Lenhart",
         "aliases": [],
         "cameraHeightFt": 183.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -96,7 +101,8 @@
         "name": "Dead Mountain",
         "aliases": [],
         "cameraHeightFt": 182.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -112,7 +118,8 @@
         "name": "Herman Peak",
         "aliases": [],
         "cameraHeightFt": 182.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -128,7 +135,8 @@
         "name": "Jordan Butte",
         "aliases": [],
         "cameraHeightFt": 182.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -144,7 +152,8 @@
         "name": "McCully Mountain",
         "aliases": [],
         "cameraHeightFt": 180.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -160,7 +169,8 @@
         "name": "Peterson Butte",
         "aliases": [],
         "cameraHeightFt": 170.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -176,7 +186,8 @@
         "name": "Applegate",
         "aliases": [],
         "cameraHeightFt": 163.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -194,7 +205,8 @@
           "Fish Rim"
         ],
         "cameraHeightFt": 161.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -212,7 +224,8 @@
           "Cave Junction"
         ],
         "cameraHeightFt": 150.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -228,7 +241,8 @@
         "name": "Crestview",
         "aliases": [],
         "cameraHeightFt": 150.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -246,7 +260,8 @@
           "Brightwood"
         ],
         "cameraHeightFt": 134.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -264,7 +279,8 @@
           "PrairieRidge"
         ],
         "cameraHeightFt": 130.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -280,7 +296,8 @@
         "name": "Powell Butte",
         "aliases": [],
         "cameraHeightFt": 128.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -296,7 +313,8 @@
         "name": "Cline Butte",
         "aliases": [],
         "cameraHeightFt": 127.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -312,7 +330,8 @@
         "name": "Juniper",
         "aliases": [],
         "cameraHeightFt": 122.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -328,7 +347,8 @@
         "name": "Buxton Mountain",
         "aliases": [],
         "cameraHeightFt": 120.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -344,7 +364,8 @@
         "name": "Grizzly Mtn",
         "aliases": [],
         "cameraHeightFt": 120.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -362,7 +383,8 @@
           "Timberline"
         ],
         "cameraHeightFt": 120.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -380,7 +402,8 @@
           "UOPLC"
         ],
         "cameraHeightFt": 118.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -396,7 +419,8 @@
         "name": "Halls Ridge",
         "aliases": [],
         "cameraHeightFt": 117.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -412,7 +436,8 @@
         "name": "King Mountain Lookout",
         "aliases": [],
         "cameraHeightFt": 114.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -430,7 +455,8 @@
           "Rogue Valley Manor"
         ],
         "cameraHeightFt": 110.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -448,7 +474,8 @@
           "Redmound"
         ],
         "cameraHeightFt": 106.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -466,7 +493,8 @@
           "Hamaker"
         ],
         "cameraHeightFt": 105.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -484,7 +512,8 @@
           "McClure FTS"
         ],
         "cameraHeightFt": 105.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -500,7 +529,8 @@
         "name": "Selah Butte",
         "aliases": [],
         "cameraHeightFt": 103.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -516,7 +546,8 @@
         "name": "Callahan Ridge",
         "aliases": [],
         "cameraHeightFt": 102.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -534,7 +565,8 @@
           "Buck"
         ],
         "cameraHeightFt": 100.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -550,7 +582,8 @@
         "name": "Tygh Ridge",
         "aliases": [],
         "cameraHeightFt": 100.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -566,7 +599,8 @@
         "name": "Roslyn Ridge FTS",
         "aliases": [],
         "cameraHeightFt": 100.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -582,7 +616,8 @@
         "name": "Britt Water Tank",
         "aliases": [],
         "cameraHeightFt": 95.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -598,7 +633,8 @@
         "name": "Shaniko Tangager",
         "aliases": [],
         "cameraHeightFt": 95.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -614,7 +650,8 @@
         "name": "Stacker Butte",
         "aliases": [],
         "cameraHeightFt": 82.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -630,7 +667,8 @@
         "name": "Bear Mountain",
         "aliases": [],
         "cameraHeightFt": 80.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -648,7 +686,8 @@
           "BEND-AW"
         ],
         "cameraHeightFt": 80.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -664,7 +703,8 @@
         "name": "Harness Mountain",
         "aliases": [],
         "cameraHeightFt": 80.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -682,7 +722,8 @@
           "Mary's Peak West"
         ],
         "cameraHeightFt": 80.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -698,7 +739,8 @@
         "name": "Pine Mountain",
         "aliases": [],
         "cameraHeightFt": 79.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -714,7 +756,8 @@
         "name": "Cinnamon Butte",
         "aliases": [],
         "cameraHeightFt": 78.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -730,7 +773,8 @@
         "name": "Quail Prairie Mtn",
         "aliases": [],
         "cameraHeightFt": 78.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -748,7 +792,8 @@
           "Cottonwood"
         ],
         "cameraHeightFt": 68.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -766,7 +811,8 @@
           "Mahogany"
         ],
         "cameraHeightFt": 67.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -782,7 +828,8 @@
         "name": "Cooper Mountain",
         "aliases": [],
         "cameraHeightFt": 65.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -798,7 +845,8 @@
         "name": "Green Mtn Lookout",
         "aliases": [],
         "cameraHeightFt": 65.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -816,7 +864,8 @@
           "KBO Bosley Butte"
         ],
         "cameraHeightFt": 64.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -834,7 +883,8 @@
           "Big Lookout"
         ],
         "cameraHeightFt": 62.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -852,7 +902,8 @@
           "Deathball"
         ],
         "cameraHeightFt": 60.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -870,7 +921,8 @@
           "Rhinehart"
         ],
         "cameraHeightFt": 60.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -886,7 +938,8 @@
         "name": "Rattlesnake Ridge",
         "aliases": [],
         "cameraHeightFt": 52.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -902,7 +955,8 @@
         "name": "Henkle",
         "aliases": [],
         "cameraHeightFt": 52.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -918,7 +972,8 @@
         "name": "Chelan Butte FTS",
         "aliases": [],
         "cameraHeightFt": 50.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -934,7 +989,8 @@
         "name": "Ski Badger FTS",
         "aliases": [],
         "cameraHeightFt": 50.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -952,7 +1008,8 @@
           "Monument"
         ],
         "cameraHeightFt": 43.33,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -970,7 +1027,8 @@
           "Blue"
         ],
         "cameraHeightFt": 43.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -988,7 +1046,8 @@
           "Fiddler"
         ],
         "cameraHeightFt": 42.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1004,7 +1063,8 @@
         "name": "Hampton Butte",
         "aliases": [],
         "cameraHeightFt": 38.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1020,7 +1080,8 @@
         "name": "Acty Mountain",
         "aliases": [],
         "cameraHeightFt": 31.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1036,7 +1097,8 @@
         "name": "Eagle Point Water Reservoir #3",
         "aliases": [],
         "cameraHeightFt": 30.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1054,7 +1116,8 @@
           "Long"
         ],
         "cameraHeightFt": 30.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1072,7 +1135,8 @@
           "Baldy"
         ],
         "cameraHeightFt": 30.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1091,7 +1155,8 @@
           "Steens Mtn"
         ],
         "cameraHeightFt": 30.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1107,7 +1172,8 @@
         "name": "Willamette Pass",
         "aliases": [],
         "cameraHeightFt": 30.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1125,7 +1191,8 @@
           "Riddle"
         ],
         "cameraHeightFt": 27.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1143,7 +1210,8 @@
           "Bryant"
         ],
         "cameraHeightFt": 25.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1159,7 +1227,25 @@
         "name": "Central Point Water Reservioir",
         "aliases": [],
         "cameraHeightFt": 25.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.55408,
+          46.80684
+        ]
+      },
+      "properties": {
+        "name": "Wahatis Peak",
+        "aliases": [],
+        "cameraHeightFt": 102.0,
+        "alertWestLive": false,
+        "provider": "alertwest"
       }
     },
     {
@@ -1175,7 +1261,8 @@
         "name": "Warner Peak",
         "aliases": [],
         "cameraHeightFt": 24.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1193,7 +1280,8 @@
           "Wagontire"
         ],
         "cameraHeightFt": 23.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1209,7 +1297,8 @@
         "name": "Butler Butte",
         "aliases": [],
         "cameraHeightFt": 22.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1225,7 +1314,8 @@
         "name": "Jackass Mountain",
         "aliases": [],
         "cameraHeightFt": 17.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1241,7 +1331,8 @@
         "name": "Beaty's Butte",
         "aliases": [],
         "cameraHeightFt": 13.0,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     },
     {
@@ -1257,7 +1348,8 @@
         "name": "Phoenix Water Tank",
         "aliases": [],
         "cameraHeightFt": null,
-        "alertWestLive": true
+        "alertWestLive": true,
+        "provider": "alertwest"
       }
     }
   ]

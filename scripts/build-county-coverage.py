@@ -30,7 +30,7 @@ DEFAULT_COUNTIES = ROOT / "data" / "divisions" / "counties.geojson"
 DEFAULT_COVERAGE = (
     ROOT
     / "outputs"
-    / "gdal_viewsheds"
+    / "gdal_viewsheds_alertwest"
     / "mapbox"
     / "camera_viewsheds_web_epsg5070.gpkg"
 )

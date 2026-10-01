@@ -143,9 +143,9 @@ class ViewshedWindow(QMainWindow):
     def build_inputs(self) -> QGroupBox:
         group = QGroupBox("Inputs and outputs")
         form = QFormLayout(group)
-        self.sites = PathRow(PROJECT_ROOT / "data/sites.geojson", False)
+        self.sites = PathRow(PROJECT_ROOT / "data/alertwest-sites.geojson", False)
         self.dems = PathRow(PROJECT_ROOT / "data/dems", True)
-        self.output = PathRow(PROJECT_ROOT / "outputs/gdal_viewsheds", True)
+        self.output = PathRow(PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest", True)
         form.addRow("Camera sites", self.sites)
         form.addRow("DEM folder", self.dems)
         form.addRow("Output folder", self.output)

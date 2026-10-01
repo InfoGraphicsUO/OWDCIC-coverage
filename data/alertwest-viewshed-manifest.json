@@ -1,10 +1,10 @@
 {
   "schema_version": 3,
-  "generated_utc": "2026-09-16T21:20:45+00:00",
-  "config_hash": "78ef840ed2a66bd124d0e295ab6d3d09ad99ce838495c0ac14a1b20a4ea46225",
+  "generated_utc": "2026-10-01T23:02:11+00:00",
+  "config_hash": "80914f94fdfe6f4a3a88b9a58bd5b283e6b12ac3e445ed28f52f76a4069813d7",
   "web_processing": {
-    "resolution_m": 25.0,
-    "simplify_tolerance_m": 15.0,
+    "resolution_m": 50.0,
+    "simplify_tolerance_m": 25.0,
     "smooth_iterations": 3,
     "majority_filter": true,
     "minimum_patch_cells": 0,
@@ -15,15 +15,15 @@
   },
   "combined_exact_polygon": "camera_viewsheds_exact_epsg5070.gpkg",
   "web_products": {
-    "individual_geojson": "mapbox/camera-viewsheds.geojson",
-    "coverage_geojson": "mapbox/camera-viewshed-coverage.geojson",
+    "individual_geojson": "mapbox/alertwest-camera-viewsheds.geojson",
+    "coverage_geojson": "mapbox/alertwest-camera-viewsheds-coverage.geojson",
     "review_geopackage": "mapbox/camera_viewsheds_web_epsg5070.gpkg",
     "individual_layer": "camera_viewsheds",
     "coverage_layer": "camera_viewshed_coverage",
     "minzoom": 5,
     "maxzoom": 12,
     "status": "complete",
-    "mbtiles": "mapbox/camera-viewsheds-z5.mbtiles",
+    "mbtiles": "mapbox/alertwest-camera-viewsheds-z5.mbtiles",
     "error": null
   },
   "viewsheds": [
@@ -914,6 +914,18 @@
     },
     {
       "source_id": 70,
+      "viewshed_id": "wahatis-peak",
+      "site_name": "Wahatis Peak",
+      "aliases": [],
+      "longitude": -119.55408,
+      "latitude": 46.80684,
+      "height_ft": 102.0,
+      "status": "complete",
+      "web_geojson": "web/wahatis-peak.geojson",
+      "exact_polygon": "polygons_exact/wahatis_peak.gpkg"
+    },
+    {
+      "source_id": 71,
       "viewshed_id": "warner-peak",
       "site_name": "Warner Peak",
       "aliases": [],
@@ -925,7 +937,7 @@
       "exact_polygon": "polygons_exact/warner_peak.gpkg"
     },
     {
-      "source_id": 71,
+      "source_id": 72,
       "viewshed_id": "wagontire-mountain",
       "site_name": "Wagontire Mountain",
       "aliases": [
@@ -939,7 +951,7 @@
       "exact_polygon": "polygons_exact/wagontire_mountain.gpkg"
     },
     {
-      "source_id": 72,
+      "source_id": 73,
       "viewshed_id": "butler-butte",
       "site_name": "Butler Butte",
       "aliases": [],
@@ -951,7 +963,7 @@
       "exact_polygon": "polygons_exact/butler_butte.gpkg"
     },
     {
-      "source_id": 73,
+      "source_id": 74,
       "viewshed_id": "jackass-mountain",
       "site_name": "Jackass Mountain",
       "aliases": [],
@@ -963,7 +975,7 @@
       "exact_polygon": "polygons_exact/jackass_mountain.gpkg"
     },
     {
-      "source_id": 74,
+      "source_id": 75,
       "viewshed_id": "beaty-s-butte",
       "site_name": "Beaty's Butte",
       "aliases": [],
@@ -975,7 +987,7 @@
       "exact_polygon": "polygons_exact/beaty_s_butte.gpkg"
     },
     {
-      "source_id": 75,
+      "source_id": 76,
       "viewshed_id": "phoenix-water-tank",
       "site_name": "Phoenix Water Tank",
       "aliases": [],

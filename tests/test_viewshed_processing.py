@@ -301,12 +301,16 @@ class ManifestTests(unittest.TestCase):
             manifest_path = viewsheds.write_manifest(
                 [],
                 Path(directory),
+                "pano-camera-viewsheds",
                 config,
                 None,
                 None,
             )
 
             manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+        # manifests are named after their provider like the Mapbox uploads
+        self.assertEqual(manifest_path.name, "pano-viewshed-manifest.json")
 
         self.assertTrue(manifest["web_processing"]["majority_filter"])
         self.assertEqual(manifest["web_processing"]["smooth_iterations"], 1)
@@ -315,6 +319,21 @@ class ManifestTests(unittest.TestCase):
             manifest["web_processing"]["clip"]["boundary_sha256"],
             "boundary",
         )
+
+
+class ProductNameTests(unittest.TestCase):
+    def test_provider_comes_from_sites_file_name(self):
+        for sites, expected in (
+            ("data/alertwest-sites.geojson", "alertwest-camera-viewsheds"),
+            ("data/pano-sites.geojson", "pano-camera-viewsheds"),
+            ("data/sites.geojson", "camera-viewsheds"),
+        ):
+            args = SimpleNamespace(sites=Path(sites), product_name=None)
+            self.assertEqual(viewsheds.product_name(args), expected)
+
+    def test_explicit_name_wins(self):
+        args = SimpleNamespace(sites=Path("data/pano-sites.geojson"), product_name="Test Run")
+        self.assertEqual(viewsheds.product_name(args), "test-run")
 
 
 if __name__ == "__main__":

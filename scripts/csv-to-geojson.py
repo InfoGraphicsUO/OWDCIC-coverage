@@ -2,7 +2,11 @@
 """Convert a CSV with latitude/longitude columns to GeoJSON points.
 
     python scripts/csv-to-geojson.py data/standing-lookouts.csv
-    python scripts/csv-to-geojson.py data/sites.csv data/sites.geojson --sites
+    python scripts/csv-to-geojson.py data/sites.csv data/alertwest-sites.geojson --sites
+
+Sites mode writes ALERTWest sites to the main output and each provider section
+(e.g. PANO.AI) to its own file, moving sites onto matching digitized camera
+locations, which are more accurate than the sheet's coordinates.
 """
 
 from __future__ import annotations
@@ -16,14 +20,32 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 DEFAULT_INPUT = HERE.parent / "data" / "Site Installation Dates(Site, Coordinates, & Elevation).csv"
-DEFAULT_OUTPUT = HERE.parent / "data" / "sites.geojson"
+DEFAULT_OUTPUT = HERE.parent / "data" / "alertwest-sites.geojson"
+DEFAULT_DIGITIZED = HERE.parent / "data" / "digitized-camera-sources.geojson"
+DEFAULT_COUNTIES = HERE.parent / "data" / "divisions" / "county.geojson"
 
 AW_LIVE = re.compile(r"^AW\s*\(Live\)$", re.I)
 LAT_ALIASES = ["latitude", "lattitude", "lat"]
 LON_ALIASES = ["longitude", "long", "lon", "lng"]
 COORD_ALIASES = ["coordinates", "coord", "latlon", "lat/lon", "lat,long"]
 NAME_ALIASES = ["site name", "name", "site", "title"]
-HEIGHT_ALIASES = ["camera height (ft)", "camera height", "height", "elevation"]
+HEIGHT_ALIASES = ["camera height (ft)", "camera height (feet)", "camera height", "height", "elevation"]
+
+ALERTWEST = "alertwest"
+# a title row containing the marker starts that provider's table; a blank row ends it
+SECTION_PROVIDERS = {"PANO.AI": "pano"}
+PROVIDER_OUTPUTS = {"pano": HERE.parent / "data" / "pano-sites.geojson"}
+# prefixed so viewshed ids stay unique across provider tilesets
+PROVIDER_VIEWSHED_PREFIXES = {"pano": "pano-"}
+# digitized operators that count as the same camera for each provider
+DIGITIZED_OPERATORS = {
+    ALERTWEST: {"ALERTWest", "Joint Site"},
+    "pano": {"Pano AI", "Joint Site"},
+}
+# provider coordinates can be rounded to 0.01 degrees, roughly 1 km
+DIGITIZED_MATCH_RADIUS_M = 2000.0
+# rounded provider rows can borrow a same-named ALERTWest site's precise point
+SITE_SHEET_MATCH_RADIUS_M = 1000.0
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -35,7 +57,13 @@ def main(argv: list[str] | None = None) -> None:
 
     text = input_path.read_text(encoding="utf-8-sig")
     if use_sites_mode(text, force_sites=args.sites, force_generic=args.generic):
-        geojson = sites_csv_to_geojson(text)
+        digitized = load_digitized(Path(args.digitized)) if args.digitized else []
+        counties = load_counties(Path(args.counties)) if args.counties else []
+        by_provider = sites_csv_to_geojson(text, digitized, counties)
+        geojson = by_provider.pop(ALERTWEST)
+        for provider, provider_geojson in by_provider.items():
+            provider_output = PROVIDER_OUTPUTS.get(provider) or output_path.with_name(f"{provider}-sites.geojson")
+            write_geojson(provider_output, provider_geojson)
     else:
         geojson = csv_to_geojson(
             text,
@@ -44,8 +72,16 @@ def main(argv: list[str] | None = None) -> None:
             name_column=args.name,
         )
 
-    output_path.write_text(json.dumps(geojson, indent=2) + "\n", encoding="utf-8")
-    print(f"wrote {len(geojson['features'])} features to {output_path}")
+    write_geojson(output_path, geojson)
+
+
+def write_geojson(path: Path, geojson: dict) -> None:
+    path.write_text(json.dumps(geojson, indent=2) + "\n", encoding="utf-8")
+    moved = sum(
+        feature["properties"].get("locationSource", "sheet") != "sheet"
+        for feature in geojson["features"]
+    )
+    print(f"wrote {len(geojson['features'])} features to {path} ({moved} relocated)")
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -64,7 +100,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         nargs="?",
         type=Path,
         default=None,
-        help="GeoJSON path (default: alongside the CSV, or data/sites.geojson for the camera sheet)",
+        help="GeoJSON path (default: alongside the CSV, or data/alertwest-sites.geojson for the camera sheet)",
     )
     parser.add_argument("--lat", metavar="COLUMN", help="Latitude column name")
     parser.add_argument("--lon", metavar="COLUMN", help="Longitude column name")
@@ -73,6 +109,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--sites",
         action="store_true",
         help="Merge camera-site rows that share coordinates (height table + AW Live aliases)",
+    )
+    parser.add_argument(
+        "--digitized",
+        default=str(DEFAULT_DIGITIZED),
+        help="digitized camera GeoJSON used to correct site locations (sites mode; '' disables)",
+    )
+    parser.add_argument(
+        "--counties",
+        default=str(DEFAULT_COUNTIES),
+        help="county polygons used to label provider camera locations (sites mode; '' disables)",
     )
     parser.add_argument(
         "--generic",
@@ -165,29 +211,42 @@ def csv_to_geojson(
     return {"type": "FeatureCollection", "features": features}
 
 
-def sites_csv_to_geojson(text: str) -> dict:
-    """Camera sites sheet: two tables under one header (heights, then AW Live aliases)."""
+def sites_csv_to_geojson(
+    text: str,
+    digitized: list[dict] | None = None,
+    counties: list[dict] | None = None,
+) -> dict[str, dict]:
+    """Camera sites sheet: ALERTWest heights, provider tables, then AW Live aliases.
+
+    Returns one FeatureCollection per provider, keyed by provider id.
+    """
     rows = list(csv.reader(text.splitlines()))
     if not rows:
         raise ValueError("CSV is empty")
 
     col = sites_column_index(rows[0])
-    sites: dict[str, dict] = {}
+    sites: dict[str, dict[str, dict]] = {ALERTWEST: {}}
+    provider = ALERTWEST
 
     for row in rows[1:]:
+        if not any(value.strip() for value in row):
+            provider = ALERTWEST
+            continue
         if len(row) <= max(col.values()):
             continue
 
+        name = (row[col["name"]] or "").strip()
         latitude = to_finite_number(row[col["latitude"]])
         longitude = to_finite_number(row[col["longitude"]])
         if latitude is None or longitude is None:
+            provider = section_provider(name) or provider
             continue
 
-        name = (row[col["name"]] or "").strip()
         extra = (row[col["height"]] or "").strip()
         # 6 decimals merges the two tables when one lon is off by 1e-7
         key = f"{latitude:.6f},{longitude:.6f}"
-        site = sites.get(key) or {
+        provider_sites = sites.setdefault(provider, {})
+        site = provider_sites.get(key) or {
             "name": name or "Site",
             "aliases": [],
             "cameraHeightFt": None,
@@ -207,26 +266,183 @@ def sites_csv_to_geojson(text: str) -> dict:
             if height is not None:
                 site["cameraHeightFt"] = height
 
-        sites[key] = site
+        provider_sites[key] = site
 
-    features = [
-        {
-            "type": "Feature",
-            "geometry": {
-                "type": "Point",
-                "coordinates": [site["longitude"], site["latitude"]],
-            },
-            "properties": {
-                "name": site["name"],
-                "aliases": site["aliases"],
-                "cameraHeightFt": site["cameraHeightFt"],
-                "alertWestLive": site["alertWestLive"],
-            },
+    alertwest_sites = list(sites[ALERTWEST].values())
+    return {
+        provider: {
+            "type": "FeatureCollection",
+            "features": [
+                site_feature(site, provider, digitized or [], alertwest_sites, counties or [])
+                for site in provider_sites.values()
+            ],
         }
-        for site in sites.values()
-    ]
+        for provider, provider_sites in sites.items()
+    }
 
-    return {"type": "FeatureCollection", "features": features}
+
+def section_provider(title: str) -> str | None:
+    upper = title.upper()
+    return next((provider for marker, provider in SECTION_PROVIDERS.items() if marker in upper), None)
+
+
+def site_feature(
+    site: dict,
+    provider: str,
+    digitized: list[dict],
+    alertwest_sites: list[dict],
+    counties: list[dict],
+) -> dict:
+    reported = [site["longitude"], site["latitude"]]
+    properties: dict = {
+        "name": site["name"],
+        "aliases": site["aliases"],
+        "cameraHeightFt": site["cameraHeightFt"],
+    }
+    if provider == ALERTWEST:
+        properties["alertWestLive"] = site["alertWestLive"]
+    else:
+        properties["viewshedId"] = PROVIDER_VIEWSHED_PREFIXES.get(provider, f"{provider}-") + slugify(site["name"])
+    properties["provider"] = provider
+
+    coordinates = reported
+    match = match_digitized(site, provider, digitized)
+    if match:
+        coordinates = match["coordinates"]
+        properties["locationSource"] = "digitized"
+        properties["digitizedId"] = match["id"]
+    elif provider != ALERTWEST:
+        sheet_site = match_site_sheet(site, alertwest_sites)
+        if sheet_site:
+            coordinates = [sheet_site["longitude"], sheet_site["latitude"]]
+            properties["locationSource"] = "alertwest-site"
+    if coordinates is not reported:
+        properties["reportedCoordinates"] = reported
+    # provider sites become map markers, so they carry the locality ALERTWest's API provides
+    if provider != ALERTWEST:
+        county = county_at(coordinates, counties)
+        if county:
+            properties["county"] = county["name"]
+            properties["state"] = county["state"]
+
+    return {
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": coordinates},
+        "properties": properties,
+    }
+
+
+def load_counties(path: Path) -> list[dict]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    counties = []
+    for feature in payload.get("features", []):
+        properties = feature.get("properties") or {}
+        geometry = feature.get("geometry") or {}
+        polygons = {
+            "Polygon": [geometry.get("coordinates")],
+            "MultiPolygon": geometry.get("coordinates"),
+        }.get(geometry.get("type"))
+        if not polygons:
+            continue
+        counties.append(
+            {
+                # short names match the ALERTWest API's county field, e.g. "Chelan"
+                "name": properties.get("shortName") or properties.get("name"),
+                "state": properties.get("state"),
+                "polygons": polygons,
+            }
+        )
+    return counties
+
+
+def county_at(point: list[float], counties: list[dict]) -> dict | None:
+    longitude, latitude = point
+    for county in counties:
+        for rings in county["polygons"]:
+            # inside the outer ring and outside every hole
+            if ring_contains(rings[0], longitude, latitude) and not any(
+                ring_contains(hole, longitude, latitude) for hole in rings[1:]
+            ):
+                return county
+    return None
+
+
+def ring_contains(ring: list[list[float]], x: float, y: float) -> bool:
+    """even-odd ray casting test"""
+    inside = False
+    for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+        if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
+            inside = not inside
+    return inside
+
+
+def load_digitized(path: Path) -> list[dict]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    cameras = []
+    for feature in payload.get("features", []):
+        properties = feature.get("properties") or {}
+        coordinates = (feature.get("geometry") or {}).get("coordinates") or []
+        if len(coordinates) < 2:
+            continue
+        names = {
+            normalize_site_name(properties.get(field))
+            for field in ("name", "pointSourceName", "altPointSourceName")
+        } - {""}
+        cameras.append(
+            {
+                "id": properties.get("id"),
+                "operator": properties.get("operator"),
+                "names": names,
+                "coordinates": [float(coordinates[0]), float(coordinates[1])],
+            }
+        )
+    return cameras
+
+
+def match_digitized(site: dict, provider: str, digitized: list[dict]) -> dict | None:
+    """nearest same-named digitized camera from a compatible operator"""
+    operators = DIGITIZED_OPERATORS.get(provider, set())
+    names = site_names(site)
+    best = None
+    best_distance = DIGITIZED_MATCH_RADIUS_M
+    for camera in digitized:
+        if camera["operator"] not in operators or not names & camera["names"]:
+            continue
+        distance = distance_m(site["longitude"], site["latitude"], *camera["coordinates"])
+        if distance <= best_distance:
+            best, best_distance = camera, distance
+    return best
+
+
+def match_site_sheet(site: dict, alertwest_sites: list[dict]) -> dict | None:
+    names = site_names(site)
+    for other in alertwest_sites:
+        if not names & site_names(other):
+            continue
+        if distance_m(site["longitude"], site["latitude"], other["longitude"], other["latitude"]) <= SITE_SHEET_MATCH_RADIUS_M:
+            return other
+    return None
+
+
+def site_names(site: dict) -> set[str]:
+    return {normalize_site_name(name) for name in [site["name"], *site["aliases"]]} - {""}
+
+
+def normalize_site_name(value) -> str:
+    return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
+
+
+def slugify(value: str) -> str:
+    slug = "".join(character.lower() if character.isalnum() else "-" for character in value)
+    return "-".join(part for part in slug.split("-") if part)
+
+
+def distance_m(lon1: float, lat1: float, lon2: float, lat2: float) -> float:
+    # equirectangular is accurate to well under a meter at these distances
+    meters_per_degree = 111_320.0
+    dx = (lon1 - lon2) * meters_per_degree * math.cos(math.radians((lat1 + lat2) / 2))
+    dy = (lat1 - lat2) * meters_per_degree
+    return math.hypot(dx, dy)
 
 
 def row_coordinates(
