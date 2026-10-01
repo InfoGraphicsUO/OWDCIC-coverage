@@ -408,6 +408,14 @@ function bindControlShell() {
   return api;
 }
 
+// reads the fade length from CSS so the cleanup timer cannot drift from the animation
+function menuFadeDuration() {
+  const value = getComputedStyle(document.documentElement).getPropertyValue('--menu-fade-duration');
+  const ms = Number.parseFloat(value);
+  if (!Number.isFinite(ms)) return 110;
+  return value.trim().endsWith('ms') ? ms : ms * 1000;
+}
+
 function createPanelFade(panels) {
   // track outgoing panels separately so rapid view changes can finish cleanly
   let active = panels.find((panel) => !panel.hidden) ?? null;
@@ -460,7 +468,7 @@ function createPanelFade(panels) {
           if (leaving) hide(leaving);
           leaving = null;
           timer = null;
-        }, 180);
+        }, menuFadeDuration());
       }
     },
   };
