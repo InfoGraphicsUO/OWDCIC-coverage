@@ -3,10 +3,17 @@ export const CAMERA_API = 'https://api.cdn.prod.alertwest.com/api/firecams/v0/ca
 
 // hosted tilesets and provider endpoints used by the map layers
 export const DATA_URLS = Object.freeze({
-  cameraViewsheds: 'mapbox://infographics.s4u0rv', // latest camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.s4u0rv/
+  cameraViewsheds: 'mapbox://infographics.ibrv0q', // latest ALERTWest camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.ibrv0q/
   cameraViewshedsSourceLayer: 'camera_viewsheds',
   cameraViewshedsCoverageSourceLayer: 'camera_viewshed_coverage',
-  viewshedManifest: 'data/viewshed-manifest.json',
+  viewshedManifest: 'data/alertwest-viewshed-manifest.json',
+  // latest Pano AI camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.dgexly/
+  // an empty value shows the legend row as unpublished instead of requesting tiles
+  panoCameraViewsheds: 'mapbox://infographics.dgexly',
+  // every provider's coverage dissolved together, drawn when they share one fill color https://console.mapbox.com/studio/tilesets/infographics.4qzk4g/
+  // built by scripts/build-combined-viewshed-coverage.py; empty falls back to stacked provider fills
+  combinedCameraViewsheds: 'mapbox://infographics.4qzk4g',
+  panoCameraSites: 'data/pano-sites.geojson',
   digitizedCameraSources: 'data/digitized-camera-sources.geojson',
   standingLookouts: 'data/standing-lookouts.geojson',
   countyDivisions: 'data/divisions/counties.geojson',
@@ -33,9 +40,17 @@ export const DATA_URLS = Object.freeze({
 // QWRA classified tiles hide pale yellow–orange classes at or below this break
 export const BURN_PROBABILITY_MIN = 0.002154;
 
+// official camera providers share these colors across markers, legend rows, and viewsheds
+// the marker SVGs in img/ hardcode the same values, so update both together
+export const CAMERA_PROVIDER_COLORS = Object.freeze({
+  alertWest: '#f2b705',
+  pano: '#3898ec',
+});
+
 // marker artwork rasterized by js/marker-icons.js and shown in the legend
 export const MARKER_ICON_URLS = Object.freeze({
   camera: 'img/camera-marker.svg',
+  panoCamera: 'img/pano-camera-marker.svg',
   fire: 'img/fire-marker.svg',
   prescribed: 'img/prescribed-marker.svg',
 });
@@ -72,6 +87,7 @@ export const LAYER_IDS = Object.freeze({
   burnProbabilitySource: 'burn-probability-source',
   burnProbability: 'burn-probability',
   cameras: 'alertwest-cameras',
+  panoCameras: 'pano-cameras',
   digitizedCamerasSource: 'digitized-camera-sources',
   digitizedEnviroVision: 'digitized-cameras-envirovision',
   digitizedAlertWest: 'digitized-cameras-alertwest',
@@ -80,6 +96,11 @@ export const LAYER_IDS = Object.freeze({
   viewshedsSource: 'camera-viewsheds',
   viewshedsFill: 'camera-viewsheds-fill',
   viewshedsHighlightFill: 'camera-viewsheds-highlight-fill',
+  panoViewshedsSource: 'pano-camera-viewsheds',
+  panoViewshedsFill: 'pano-camera-viewsheds-fill',
+  panoViewshedsHighlightFill: 'pano-camera-viewsheds-highlight-fill',
+  combinedViewshedsSource: 'combined-camera-viewsheds',
+  combinedViewshedsFill: 'combined-camera-viewsheds-fill',
   fires: 'nifc-fires',
   perimetersSource: 'nifc-perimeters',
   perimetersFill: 'nifc-perimeters-fill',
@@ -91,8 +112,12 @@ export const LAYER_IDS = Object.freeze({
 
 // legend row labels are the public ids for toggling layers from code
 export const LEGEND_LAYERS = Object.freeze({
-  cameras: 'Cameras (ALERTWest)',
+  cameras: 'Cameras',
+  alertWestCameras: 'ALERTWest cameras',
+  panoCameras: 'Pano AI cameras',
   viewsheds: 'Camera viewsheds',
+  alertWestViewsheds: 'ALERTWest camera viewsheds',
+  panoViewsheds: 'Pano AI camera viewsheds',
   lookouts: 'Standing lookouts',
   nationalForests: 'National forests',
   blmLands: 'BLM lands',

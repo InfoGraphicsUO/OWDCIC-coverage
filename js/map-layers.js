@@ -2,6 +2,7 @@ import { fetchArcGISGeoJSON } from './arcgis-requests.js';
 import {
   BURN_PROBABILITY_MIN,
   CAMERA_API,
+  CAMERA_PROVIDER_COLORS,
   DATA_URLS,
   DIGITIZED_CAMERA_ICON_URLS,
   LAYER_IDS,
@@ -10,16 +11,17 @@ import {
   REGION_DATA_BOUNDS,
   emptyFeatureCollection,
   layerPresetForFilter,
-} from './config.js';
+} from './config.js?v=20261001combined2';
 import {
   addNumericProperty,
   attachViewshedIds,
   camerasToGeoJSON,
   filterGeoJSONByBounds,
-} from './geojson-transform.js';
-import { initLegend } from './legend.js?v=20260930preset1';
+  providerSitesToCameras,
+} from './geojson-transform.js?v=20261001county1';
+import { initLegend } from './legend.js?v=20261001combined1';
 import { initFilterPanel } from './filter-panel.js?v=20260922sort1';
-import { initResultsPanel } from './results-panel.js?v=20260922camera-layout1';
+import { initResultsPanel } from './results-panel.js?v=20261001modal1';
 import { hideMapLoading } from './loading.js';
 import {
   MAP_HOME_EVENT,
@@ -46,13 +48,15 @@ import {
   showFirePopup,
   showLookoutPopup,
   showPrescribedPopup,
-} from './popups.js';
+} from './popups.js?v=20261001county1';
+import { getSetting, initSettings, onSettingChange } from './settings.js';
 
 const LABEL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
 // stable ids let UI controls refer to layers without inspecting the style
 const FIRE_ICON_ID = 'fire-marker';
 const CAMERA_ICON_ID = 'camera-marker';
+const PANO_CAMERA_ICON_ID = 'pano-camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
 const DIGITIZED_CAMERA_GROUP_LABEL = 'Digitized Camera Sources';
 const DIGITIZED_CAMERA_UNLOCK_SEQUENCE = Object.freeze(['1', '2', '3', '4']); // key sequence reveals digitized camera layer
@@ -61,11 +65,14 @@ const DIGITIZED_CAMERA_UNLOCK_TIMEOUT_MS = 2_000;
 const BOUNDARY_COLOR = '#494949';
 const BOUNDARY_FILL_COLOR = '#929292';
 const SELECTED_BOUNDARY_COLOR = '#f8e109';
-const VIEWSHED_LEGEND_LABEL = LEGEND_LAYERS.viewsheds;
+const PANO_OPERATOR = 'Pano AI';
+// every provider shares this fill unless the viewer turns on per-provider colors
+// satellite imagery needs a light viewshed fill for contrast
 const VIEWSHED_FILL_COLOR = Object.freeze({
   outdoors: '#F28D05',
   satellite: '#F4F1EA',
 });
+const SEPARATE_VIEWSHED_COLORS_SETTING = 'separateViewshedColors';
 const VIEWSHED_HIGHLIGHT_COLOR = '#ffee00';
 const VIEWSHED_FILL_OPACITY = 0.5;
 const VIEWSHED_HIGHLIGHT_OPACITY = 0.55;
@@ -81,19 +88,47 @@ const DIGITIZED_CAMERA_COLORS = Object.freeze({
   joint: '#f8e109',
 });
 const NO_VIEWSHED_SELECTED = '__none__';
-// dissolved coverage avoids stacked opacity; individual features keep selection ids
-const VIEWSHED_INDIVIDUAL_SOURCE = Object.freeze({
-  source: LAYER_IDS.viewshedsSource,
-  'source-layer': DATA_URLS.cameraViewshedsSourceLayer,
-});
-const VIEWSHED_COVERAGE_SOURCE = Object.freeze({
-  source: LAYER_IDS.viewshedsSource,
-  'source-layer': DATA_URLS.cameraViewshedsCoverageSourceLayer,
-});
-const VIEWSHED_LAYER_IDS = Object.freeze([
-  LAYER_IDS.viewshedsFill,
-  LAYER_IDS.viewshedsHighlightFill,
+// each official provider is its own camera layer, viewshed tileset, and pair of legend rows
+// later providers only need another entry here plus their config ids
+const CAMERA_PROVIDERS = Object.freeze([
+  Object.freeze({
+    name: 'ALERTWest',
+    color: CAMERA_PROVIDER_COLORS.alertWest,
+    cameraLabel: LEGEND_LAYERS.alertWestCameras,
+    cameraLayerId: LAYER_IDS.cameras,
+    iconId: CAMERA_ICON_ID,
+    iconUrl: MARKER_ICON_URLS.camera,
+    viewshedLabel: LEGEND_LAYERS.alertWestViewsheds,
+    viewshedTileset: DATA_URLS.cameraViewsheds,
+    viewshedSourceId: LAYER_IDS.viewshedsSource,
+    viewshedFillLayerId: LAYER_IDS.viewshedsFill,
+    viewshedHighlightLayerId: LAYER_IDS.viewshedsHighlightFill,
+    // provider colors apply only with the per-provider viewshed setting
+    viewshedFillColor: VIEWSHED_FILL_COLOR,
+  }),
+  Object.freeze({
+    name: PANO_OPERATOR,
+    color: CAMERA_PROVIDER_COLORS.pano,
+    cameraLabel: LEGEND_LAYERS.panoCameras,
+    cameraLayerId: LAYER_IDS.panoCameras,
+    iconId: PANO_CAMERA_ICON_ID,
+    iconUrl: MARKER_ICON_URLS.panoCamera,
+    viewshedLabel: LEGEND_LAYERS.panoViewsheds,
+    viewshedTileset: DATA_URLS.panoCameraViewsheds,
+    viewshedSourceId: LAYER_IDS.panoViewshedsSource,
+    viewshedFillLayerId: LAYER_IDS.panoViewshedsFill,
+    viewshedHighlightLayerId: LAYER_IDS.panoViewshedsHighlightFill,
+    viewshedFillColor: Object.freeze({
+      outdoors: CAMERA_PROVIDER_COLORS.pano,
+      satellite: '#a9d4fb',
+    }),
+  }),
 ]);
+const CAMERA_LAYER_IDS = Object.freeze(
+  CAMERA_PROVIDERS.map(({ cameraLayerId }) => cameraLayerId)
+);
+// Pano markers on a shared ALERTWest site sit beside its marker instead of on top
+const SHARED_SITE_ICON_OFFSET = Object.freeze([14, 0]);
 const NO_DIVISION_SELECTED = '__none__';
 const FILTER_TYPES = Object.freeze([
   ['state', 'State'],
@@ -211,6 +246,7 @@ const FIRE_MARKER_SIZES = [
 ];
 
 // render control shells before Mapbox and providers finish loading
+initSettings();
 const legendControl = initLegend(legendItems());
 const resultsControl = initResultsPanel({
   getMap: () => activeMap,
@@ -269,7 +305,7 @@ async function loadMapLayers(map) {
   addLookoutLayer(map);
   await Promise.all([
     addFireLayer(map),
-    addCameraLayer(map),
+    addCameraLayers(map),
   ]);
 
   // symbol ordering depends on marker images and layers already being installed
@@ -292,28 +328,54 @@ async function loadMapLayers(map) {
     data.regionFocus.then((regionFocus) => {
       setSourceData(map, LAYER_IDS.regionFocusSource, regionFocus);
     }),
+    // the camera filter lists every provider, so it waits for both
+    Promise.all([
+      hydrateLegendLayer(
+        LEGEND_LAYERS.alertWestCameras,
+        Promise.all([data.cameras, data.viewshedManifest]),
+        ([cameras, viewshedManifest]) => {
+          // selection ids must be attached before features reach either UI
+          const features = attachViewshedIds(cameras, viewshedManifest).features;
+          setSourceData(map, LAYER_IDS.cameras, { type: 'FeatureCollection', features });
+          return features;
+        }
+      ),
+      hydrateLegendLayer(
+        LEGEND_LAYERS.panoCameras,
+        data.panoSites,
+        (panoSites) => {
+          // provider sites already carry their viewshed ids
+          const cameras = providerSitesToCameras(panoSites, PANO_OPERATOR);
+          setSourceData(map, LAYER_IDS.panoCameras, cameras);
+          return cameras.features;
+        }
+      ),
+    ]).then((providerFeatures) => {
+      // a failed provider contributes no cameras rather than blocking the filter
+      cameraFeatures = providerFeatures.flatMap((features) => features ?? []);
+      resolveCameraFeatures(cameraFeatures);
+    }),
     hydrateLegendLayer(
-      'Cameras (ALERTWest)',
-      Promise.all([data.cameras, data.viewshedManifest]),
-      ([cameras, viewshedManifest]) => {
-        // selection ids must be attached before features reach either UI
-        cameraFeatures = attachViewshedIds(cameras, viewshedManifest).features;
-        setSourceData(
-          map,
-          LAYER_IDS.cameras,
-          { type: 'FeatureCollection', features: cameraFeatures }
-        );
-        resolveCameraFeatures(cameraFeatures);
-      }
-    ),
-    hydrateLegendLayer(
-      VIEWSHED_LEGEND_LABEL,
+      LEGEND_LAYERS.alertWestViewsheds,
       data.viewshedManifest,
       (viewshedManifest) => {
         // describe the manifest count and provider radius cap beside its legend row
         legendControl.updateInfo(
-          VIEWSHED_LEGEND_LABEL,
-          `Contains ${viewshedEntries(viewshedManifest).length} camera viewsheds from ALERTWest, capped at a 12mi maximum radius`
+          LEGEND_LAYERS.alertWestViewsheds,
+          `Contains ${viewshedEntries(viewshedManifest).filter(({ status }) => status === 'complete').length} camera viewsheds from ALERTWest, capped at a 12mi maximum radius`
+        );
+      }
+    ),
+    hydrateLegendLayer(
+      LEGEND_LAYERS.panoViewsheds,
+      data.panoSites,
+      (panoSites) => {
+        // viewsheds are only modeled for sites with a camera height
+        const modeled = providerSitesToCameras(panoSites, PANO_OPERATOR).features
+          .filter((feature) => feature.properties.viewshed_id);
+        legendControl.updateInfo(
+          LEGEND_LAYERS.panoViewsheds,
+          `Contains ${modeled.length} camera viewsheds from Pano AI, capped at a 12mi maximum radius`
         );
       }
     ),
@@ -360,7 +422,7 @@ async function loadMapLayers(map) {
 async function hydrateLegendLayer(label, dataPromise, applyData) {
   try {
     // keep data failures visible to the caller while always ending the spinner
-    applyData(await dataPromise);
+    return applyData(await dataPromise);
   } finally {
     legendControl.setLoading(label, false);
   }
@@ -969,7 +1031,7 @@ function bindDivisionInteractions(map, division) {
 function hasInteractiveFeatureAtPoint(map, point) {
   // only query layers already installed during asynchronous setup
   const layerIds = [
-    LAYER_IDS.cameras,
+    ...CAMERA_LAYER_IDS,
     ...DIGITIZED_CAMERA_LAYER_IDS,
     LAYER_IDS.fires,
     LAYER_IDS.perimetersFill,
@@ -988,7 +1050,7 @@ function orderDivisionLayers(map) {
     LAYER_IDS.lookouts,
     LAYER_IDS.fires,
     ...DIGITIZED_CAMERA_LAYER_IDS,
-    LAYER_IDS.cameras,
+    ...CAMERA_LAYER_IDS,
     LAYER_IDS.prescribed,
   ].find((layerId) => map.getLayer(layerId));
 
@@ -1095,15 +1157,19 @@ const VIEWSHED_TILE_RETRY_LIMIT = 1;
 function bindApplicationSourceErrors(map) {
   let viewshedRetries = 0;
   let retrying = false;
+  const viewshedLabels = new Map(
+    CAMERA_PROVIDERS.map(({ viewshedSourceId, viewshedLabel }) => [viewshedSourceId, viewshedLabel])
+  );
 
   // vector tile failures arrive as map errors rather than fetch rejections
   map.on('error', (event) => {
     const sourceId = event.sourceId;
+    const label = viewshedLabels.get(sourceId);
     // vector tiles fail asynchronously, so there is no fetch promise to catch
-    if (sourceId === LAYER_IDS.viewshedsSource) {
+    if (label) {
       const tileId = event.tile?.tileID?.canonical;
       console.warn(
-        'Camera viewshed tile failed:',
+        `${label} tile failed:`,
         tileId ? `${tileId.z}/${tileId.x}/${tileId.y}` : 'source metadata',
         event.error?.message
       );
@@ -1116,24 +1182,25 @@ function bindApplicationSourceErrors(map) {
         retrying = true;
         mapboxgl.clearStorage(() => {
           retrying = false;
-          map.getSource(sourceId)?.reload?.();
+          // the flush emptied every source's cache, so refetch them all
+          for (const viewshedSourceId of viewshedLabels.keys()) {
+            map.getSource(viewshedSourceId)?.reload?.();
+          }
         });
         return;
       }
 
-      legendControl.setError(
-        VIEWSHED_LEGEND_LABEL,
-        'Camera viewshed tiles did not load'
-      );
+      legendControl.setError(label, 'Camera viewshed tiles did not load');
     }
   });
 
   // tiles that load after an earlier failure should clear the error icon
   map.on('sourcedata', (event) => {
-    if (event.sourceId !== LAYER_IDS.viewshedsSource) return;
+    const label = viewshedLabels.get(event.sourceId);
+    if (!label) return;
     // errored tiles also count as settled, so require a tile that actually loaded
     if (event.dataType !== 'source' || event.tile?.state !== 'loaded') return;
-    legendControl.clearError(VIEWSHED_LEGEND_LABEL);
+    legendControl.clearError(label);
   });
 }
 
@@ -1143,8 +1210,12 @@ function loadLayerData() {
   return {
     cameras: safelyLoadLegend(
       'ALERTWest cameras',
-      'Cameras (ALERTWest)',
+      LEGEND_LAYERS.alertWestCameras,
       loadAlertWestCameras
+    ),
+
+    panoSites: safelyLoadLegend('Pano AI cameras', LEGEND_LAYERS.panoCameras, () =>
+      fetchJson(DATA_URLS.panoCameraSites, 'Pano AI camera sites')
     ),
 
     fires: safelyLoadLegend('NIFC fires', 'Fires (NIFC)', () =>
@@ -1210,7 +1281,7 @@ function loadLayerData() {
 
     viewshedManifest: safelyLoadLegend(
       'viewshed manifest',
-      VIEWSHED_LEGEND_LABEL,
+      LEGEND_LAYERS.alertWestViewsheds,
       () => fetchJson(DATA_URLS.viewshedManifest, 'Viewshed manifest'),
       { viewsheds: [] }
     ),
@@ -1404,35 +1475,45 @@ async function loadAlertWestCameras() {
   return camerasToGeoJSON(await fetchJson(CAMERA_API, 'Camera API'));
 }
 
-async function addCameraLayer(map) {
-  // register the image before adding a symbol layer that references it
-  await registerMarkerIcon(map, {
-    id: CAMERA_ICON_ID,
-    url: MARKER_ICON_URLS.camera,
-    size: CAMERA_MARKER_SIZE,
-  });
+async function addCameraLayers(map) {
+  // register images before adding symbol layers that reference them
+  await Promise.all(
+    CAMERA_PROVIDERS.map(({ iconId, iconUrl }) =>
+      registerMarkerIcon(map, { id: iconId, url: iconUrl, size: CAMERA_MARKER_SIZE })
+    )
+  );
 
-  addGeoJSONSource(map, LAYER_IDS.cameras);
-  map.addLayer({
-    id: LAYER_IDS.cameras,
-    type: 'symbol',
-    source: LAYER_IDS.cameras,
-    layout: markerLayout(CAMERA_ICON_ID),
-  });
+  for (const { cameraLayerId, iconId } of CAMERA_PROVIDERS) {
+    addGeoJSONSource(map, cameraLayerId);
+    map.addLayer({
+      id: cameraLayerId,
+      type: 'symbol',
+      source: cameraLayerId,
+      layout: {
+        ...markerLayout(iconId),
+        'icon-offset': [
+          'case',
+          ['==', ['get', 'sharesAlertWestSite'], true],
+          ['literal', SHARED_SITE_ICON_OFFSET],
+          ['literal', [0, 0]],
+        ],
+      },
+    });
 
-  // hover previews use the map event; clicks open details and select its viewshed
-  bindLayerInteractions(map, LAYER_IDS.cameras, null, {
-    show: (hoveredMap, event) => {
+    // hover previews use the map event; clicks open details and select its viewshed
+    bindLayerInteractions(map, cameraLayerId, null, {
+      show: (hoveredMap, event) => {
+        const feature = event.features?.[0];
+        cameraHovered(feature ? cameraOptionId(feature) : null, event);
+      },
+      hide: () => cameraHovered(null),
+    });
+    map.on('click', cameraLayerId, (event) => {
       const feature = event.features?.[0];
-      cameraHovered(feature ? cameraOptionId(feature) : null, event);
-    },
-    hide: () => cameraHovered(null),
-  });
-  map.on('click', LAYER_IDS.cameras, (event) => {
-    const feature = event.features?.[0];
-    if (!feature) return;
-    cameraClicked(cameraOptionId(feature), feature);
-  });
+      if (!feature) return;
+      cameraClicked(cameraOptionId(feature), feature);
+    });
+  }
 }
 
 async function addDigitizedCameraLayers(map) {
@@ -1480,57 +1561,135 @@ async function addDigitizedCameraLayers(map) {
 }
 
 function addViewshedLayers(map) {
-  map.addSource(LAYER_IDS.viewshedsSource, {
-    type: 'vector',
-    url: DATA_URLS.cameraViewsheds,
-    minzoom: 5,
-    maxzoom: 12,
+  // providers without a published tileset keep their legend row as an error
+  const providers = CAMERA_PROVIDERS.filter(({ viewshedLabel, viewshedTileset }) => {
+    if (!viewshedTileset) {
+      legendControl.setError(viewshedLabel, 'Viewshed tileset has not been published yet');
+    }
+    return Boolean(viewshedTileset);
   });
 
-  // dissolved coverage avoids stacked opacity; individual source keeps camera ids
-  map.addLayer({
-    id: LAYER_IDS.viewshedsFill,
-    type: 'fill',
-    ...VIEWSHED_COVERAGE_SOURCE,
-    paint: {
-      'fill-color': VIEWSHED_FILL_COLOR.outdoors,
-      'fill-opacity': VIEWSHED_FILL_OPACITY,
-    },
-  });
+  // one dissolved fill avoids stacked opacity where shared-color providers overlap
+  if (DATA_URLS.combinedCameraViewsheds) {
+    map.addSource(LAYER_IDS.combinedViewshedsSource, {
+      type: 'vector',
+      url: DATA_URLS.combinedCameraViewsheds,
+      minzoom: 5,
+      maxzoom: 12,
+    });
+    map.addLayer({
+      id: LAYER_IDS.combinedViewshedsFill,
+      type: 'fill',
+      source: LAYER_IDS.combinedViewshedsSource,
+      'source-layer': DATA_URLS.cameraViewshedsCoverageSourceLayer,
+      // syncViewshedFills decides when this replaces the provider fills
+      layout: { visibility: 'none' },
+      paint: {
+        'fill-color': VIEWSHED_FILL_COLOR.outdoors,
+        'fill-opacity': VIEWSHED_FILL_OPACITY,
+      },
+    });
+  }
 
-  map.addLayer({
-    id: LAYER_IDS.viewshedsHighlightFill,
-    type: 'fill',
-    ...VIEWSHED_INDIVIDUAL_SOURCE,
-    filter: viewshedFilter(NO_VIEWSHED_SELECTED),
-    paint: {
-      'fill-color': VIEWSHED_HIGHLIGHT_COLOR,
-      'fill-opacity': VIEWSHED_HIGHLIGHT_OPACITY,
-    },
-  });
+  for (const provider of providers) {
+    map.addSource(provider.viewshedSourceId, {
+      type: 'vector',
+      url: provider.viewshedTileset,
+      minzoom: 5,
+      maxzoom: 12,
+    });
 
-  onBasemapChange((basemap) => applyViewshedSymbology(map, basemap));
+    // dissolved coverage avoids stacked opacity; individual features keep selection ids
+    map.addLayer({
+      id: provider.viewshedFillLayerId,
+      type: 'fill',
+      source: provider.viewshedSourceId,
+      'source-layer': DATA_URLS.cameraViewshedsCoverageSourceLayer,
+      paint: {
+        // the basemap and settings hooks below set the real color
+        'fill-color': VIEWSHED_FILL_COLOR.outdoors,
+        'fill-opacity': VIEWSHED_FILL_OPACITY,
+      },
+    });
+  }
+
+  // highlights draw above every provider fill so a selection is never covered
+  for (const provider of providers) {
+    map.addLayer({
+      id: provider.viewshedHighlightLayerId,
+      type: 'fill',
+      source: provider.viewshedSourceId,
+      'source-layer': DATA_URLS.cameraViewshedsSourceLayer,
+      filter: viewshedFilter(NO_VIEWSHED_SELECTED),
+      paint: {
+        'fill-color': VIEWSHED_HIGHLIGHT_COLOR,
+        'fill-opacity': VIEWSHED_HIGHLIGHT_OPACITY,
+      },
+    });
+  }
+
+  // both hooks call back immediately, so the first pass may precede the other's value
+  let basemap = 'outdoors';
+  onBasemapChange((selected) => {
+    basemap = selected;
+    applyViewshedSymbology(map, basemap);
+  });
+  onSettingChange(SEPARATE_VIEWSHED_COLORS_SETTING, () => {
+    applyViewshedSymbology(map, basemap);
+    syncViewshedFills(map);
+  });
+  legendControl.onChange(() => syncViewshedFills(map));
+}
+
+// shared-color providers draw through the combined fill so overlaps do not darken
+// the legend still owns each provider's highlight layer and its checkbox state
+function syncViewshedFills(map) {
+  const visibleProviders = CAMERA_PROVIDERS.filter(({ viewshedLabel, viewshedFillLayerId }) =>
+    legendControl.isChecked(viewshedLabel) && map.getLayer(viewshedFillLayerId));
+  const useCombined = Boolean(map.getLayer(LAYER_IDS.combinedViewshedsFill)) &&
+    !getSetting(SEPARATE_VIEWSHED_COLORS_SETTING) &&
+    visibleProviders.length > 1;
+
+  setLayerVisible(map, LAYER_IDS.combinedViewshedsFill, useCombined);
+  for (const provider of visibleProviders) {
+    setLayerVisible(map, provider.viewshedFillLayerId, !useCombined);
+  }
 }
 
 function applyViewshedSymbology(map, basemap) {
-  const satellite = basemap === 'satellite';
-  // satellite imagery needs a light viewshed fill for contrast
-  const fillColor =
-    VIEWSHED_FILL_COLOR[basemap] ?? VIEWSHED_FILL_COLOR.outdoors;
+  const darkOutline = basemap === 'satellite';
+  const sharedColor = basemapColor(VIEWSHED_FILL_COLOR, basemap);
+  legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, sharedColor, { darkOutline });
+  if (map.getLayer(LAYER_IDS.combinedViewshedsFill)) {
+    map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color', sharedColor);
+  }
 
-  map.setPaintProperty(LAYER_IDS.viewshedsFill, 'fill-color', fillColor);
-  legendControl.updateSwatchColor(VIEWSHED_LEGEND_LABEL, fillColor, {
-    darkOutline: satellite,
-  });
+  for (const provider of CAMERA_PROVIDERS) {
+    const fillColor = basemapColor(viewshedColors(provider), basemap);
+    if (map.getLayer(provider.viewshedFillLayerId)) {
+      map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', fillColor);
+    }
+    legendControl.updateSwatchColor(provider.viewshedLabel, fillColor, { darkOutline });
+  }
+}
+
+function viewshedColors({ viewshedFillColor }) {
+  return getSetting(SEPARATE_VIEWSHED_COLORS_SETTING) ? viewshedFillColor : VIEWSHED_FILL_COLOR;
+}
+
+function basemapColor(colors, basemap) {
+  return colors[basemap] ?? colors.outdoors;
 }
 
 function selectCameraViewshed(map, viewshedId) {
+  // provider viewshed ids are unique, so each highlight layer can share one filter
   // the sentinel produces an empty match while no camera is selected
-  if (!map.getLayer(LAYER_IDS.viewshedsHighlightFill)) return;
-  map.setFilter(
-    LAYER_IDS.viewshedsHighlightFill,
-    viewshedFilter(viewshedId || NO_VIEWSHED_SELECTED)
-  );
+  const filter = viewshedFilter(viewshedId || NO_VIEWSHED_SELECTED);
+  for (const { viewshedHighlightLayerId } of CAMERA_PROVIDERS) {
+    if (map.getLayer(viewshedHighlightLayerId)) {
+      map.setFilter(viewshedHighlightLayerId, filter);
+    }
+  }
 }
 
 function viewshedFilter(viewshedId) {
@@ -1698,9 +1857,14 @@ function legendItems() {
   return [
     {
       label: LEGEND_LAYERS.cameras,
-      iconUrl: MARKER_ICON_URLS.camera,
-      loading: true,
-      layerIds: [LAYER_IDS.cameras],
+      groupColors: CAMERA_PROVIDERS.map(({ color }) => color),
+      layerIds: CAMERA_LAYER_IDS,
+      children: CAMERA_PROVIDERS.map(({ cameraLabel, cameraLayerId, iconUrl }) => ({
+        label: cameraLabel,
+        iconUrl,
+        loading: true,
+        layerIds: [cameraLayerId],
+      })),
     },
     {
       label: DIGITIZED_CAMERA_GROUP_LABEL,
@@ -1722,12 +1886,18 @@ function legendItems() {
       })),
     },
     {
-      label: VIEWSHED_LEGEND_LABEL,
+      label: LEGEND_LAYERS.viewsheds,
       swatchColor: VIEWSHED_FILL_COLOR.outdoors,
       swatchBorder: false,
-      infoText: 'Loading camera viewshed count…',
-      loading: true,
-      layerIds: VIEWSHED_LAYER_IDS,
+      layerIds: CAMERA_PROVIDERS.flatMap(viewshedLayerIds),
+      children: CAMERA_PROVIDERS.map((provider) => ({
+        label: provider.viewshedLabel,
+        swatchColor: viewshedColors(provider).outdoors,
+        swatchBorder: false,
+        infoText: 'Loading camera viewshed count…',
+        loading: true,
+        layerIds: viewshedLayerIds(provider),
+      })),
     },
     {
       label: LEGEND_LAYERS.lookouts,
@@ -1795,6 +1965,10 @@ function legendItems() {
       layerIds: [LAYER_IDS.prescribed],
     },
   ];
+}
+
+function viewshedLayerIds({ viewshedFillLayerId, viewshedHighlightLayerId }) {
+  return [viewshedFillLayerId, viewshedHighlightLayerId];
 }
 
 function viewshedEntries(manifest) {
