@@ -44,9 +44,9 @@ from qgis_runtime import default_qgis_root, qgis_runtime
 # paths to default files and directories
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_QGIS_ROOT = default_qgis_root()
-DEFAULT_SITES = PROJECT_ROOT / "data/sites.geojson"
+DEFAULT_SITES = PROJECT_ROOT / "data/alertwest-sites.geojson"
 DEFAULT_DEMS = PROJECT_ROOT / "data/dems"
-DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds"
+DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest"
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 
@@ -159,6 +159,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="QGIS install root; defaults to auto-discovery or OWDCIC_QGIS_ROOT",
     )
     parser.add_argument("--sites", type=Path, default=DEFAULT_SITES)
+    parser.add_argument(
+        "--product-name",
+        help="prefix for Mapbox products and the manifest; defaults to the provider in "
+        "the sites file name (alertwest-sites.geojson -> alertwest-camera-viewsheds)",
+    )
     parser.add_argument("--dem-dir", type=Path, default=DEFAULT_DEMS)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument(
@@ -209,6 +214,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     if args.simplify_tolerance < 0 or args.smooth_iterations < 0 or args.min_web_patch_cells < 0:
         parser.error("simplification, smoothing, and patch thresholds cannot be negative")
     return args
+
+
+def product_name(args: argparse.Namespace) -> str:
+    """names uploads after their provider so tilesets are identifiable in Mapbox Studio"""
+    if args.product_name:
+        return slugify(args.product_name)
+    stem = args.sites.stem
+    provider = stem[: -len("-sites")] if stem.endswith("-sites") else ""
+    return f"{provider}-camera-viewsheds" if provider else "camera-viewsheds"
 
 
 def slugify(value: str) -> str:
@@ -267,7 +281,8 @@ def load_sites(path: Path) -> list[Site]:
         raw_height = properties.get("cameraHeightFt")
         site = Site(
             source_id=source_id,
-            viewshed_id=slugify(name),
+            # provider sites carry a prefixed id so tilesets never share one
+            viewshed_id=slugify(str(properties.get("viewshedId") or name)),
             name=name,
             longitude=longitude,
             latitude=latitude,
@@ -1293,7 +1308,9 @@ def validate_mbtiles(path: Path) -> None:
         raise RuntimeError(f"unexpected MBTiles zoom metadata: {zooms}")
 
 
-def rebuild_web_products(states: list[dict[str, Any]], output_dir: Path, emitter: ProgressEmitter) -> dict[str, Any] | None:
+def rebuild_web_products(
+    states: list[dict[str, Any]], output_dir: Path, name: str, emitter: ProgressEmitter
+) -> dict[str, Any] | None:
     """builds the review GeoPackage, Mapbox GeoJSON sources, and optional MBTiles"""
     inputs = [Path(state["outputs"]["web"]) for state in states if state["outputs"].get("web")]
     if not inputs:
@@ -1302,9 +1319,9 @@ def rebuild_web_products(states: list[dict[str, Any]], output_dir: Path, emitter
     mapbox_dir = output_dir / "mapbox"
     mapbox_dir.mkdir(parents=True, exist_ok=True)
     staging = mapbox_dir / "camera_viewsheds_web_epsg5070.gpkg"
-    individual_geojson = mapbox_dir / "camera-viewsheds.geojson"
-    coverage_geojson = mapbox_dir / "camera-viewshed-coverage.geojson"
-    mbtiles = mapbox_dir / "camera-viewsheds-z5.mbtiles"
+    individual_geojson = mapbox_dir / f"{name}.geojson"
+    coverage_geojson = mapbox_dir / f"{name}-coverage.geojson"
+    mbtiles = mapbox_dir / f"{name}-z5.mbtiles"
     for path in (staging, individual_geojson, coverage_geojson, mbtiles):
         safe_unlink(path)
 
@@ -1404,6 +1421,7 @@ def rebuild_web_products(states: list[dict[str, Any]], output_dir: Path, emitter
 def write_manifest(
     states: list[dict[str, Any]],
     output_dir: Path,
+    name: str,
     config: dict[str, Any],
     combined_exact: Path | None,
     web_products: dict[str, Any] | None,
@@ -1429,7 +1447,7 @@ def write_manifest(
             }
         )
     path_keys = {"individual_geojson", "coverage_geojson", "review_geopackage", "mbtiles"}
-    manifest = output_dir / "viewshed-manifest.json"
+    manifest = output_dir / f"{name.removesuffix('-camera-viewsheds')}-viewshed-manifest.json"
     write_json(
         manifest,
         {
@@ -1535,8 +1553,9 @@ def main() -> int:
             emitter.log(f"reusing combined exact polygon: {combined}")
         else:
             combined = rebuild_combined_exact(completed, args.output_dir, emitter)
-    web_products = rebuild_web_products(completed, args.output_dir, emitter)
-    manifest = write_manifest(completed, args.output_dir, config, combined, web_products)
+    name = product_name(args)
+    web_products = rebuild_web_products(completed, args.output_dir, name, emitter)
+    manifest = write_manifest(completed, args.output_dir, name, config, combined, web_products)
     write_json(args.output_dir / "failures.json", failures)
     emitter.progress(0, "complete", 1.0, f"manifest ready: {manifest}")
 

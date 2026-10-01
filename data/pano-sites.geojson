@@ -1,0 +1,603 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.795765,
+          45.580533
+        ]
+      },
+      "properties": {
+        "name": "Portland Willalatin Tank",
+        "aliases": [],
+        "cameraHeightFt": 44.0,
+        "viewshedId": "pano-portland-willalatin-tank",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-99",
+        "reportedCoordinates": [
+          -122.8,
+          45.58
+        ],
+        "county": "Multnomah",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.129526,
+          45.483574
+        ]
+      },
+      "properties": {
+        "name": "Portland Lookout Point",
+        "aliases": [],
+        "cameraHeightFt": 48.0,
+        "viewshedId": "pano-portland-lookout-point",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-114",
+        "reportedCoordinates": [
+          -122.13,
+          45.48
+        ],
+        "county": "Multnomah",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.050719,
+          45.389153
+        ]
+      },
+      "properties": {
+        "name": "Bald Peak",
+        "aliases": [],
+        "cameraHeightFt": 56.0,
+        "viewshedId": "pano-bald-peak",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-102",
+        "reportedCoordinates": [
+          -123.05,
+          45.39
+        ],
+        "county": "Yamhill",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.511625,
+          45.023444
+        ]
+      },
+      "properties": {
+        "name": "Doane Creek",
+        "aliases": [],
+        "cameraHeightFt": 50.0,
+        "viewshedId": "pano-doane-creek",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-105",
+        "reportedCoordinates": [
+          -123.51,
+          45.02
+        ],
+        "county": "Polk",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.309726,
+          45.2644
+        ]
+      },
+      "properties": {
+        "name": "High Heaven",
+        "aliases": [],
+        "cameraHeightFt": 50.0,
+        "viewshedId": "pano-high-heaven",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-103",
+        "reportedCoordinates": [
+          -123.31,
+          45.26
+        ],
+        "county": "Yamhill",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.168756,
+          45.484599
+        ]
+      },
+      "properties": {
+        "name": "High Compromise",
+        "aliases": [],
+        "cameraHeightFt": 87.99,
+        "viewshedId": "pano-high-compromise",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-100",
+        "reportedCoordinates": [
+          -123.17,
+          45.48
+        ],
+        "county": "Washington",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.04024,
+          45.690399
+        ]
+      },
+      "properties": {
+        "name": "Pumpkin Ridge",
+        "aliases": [],
+        "cameraHeightFt": 14.99,
+        "viewshedId": "pano-pumpkin-ridge",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-96",
+        "reportedCoordinates": [
+          -123.04,
+          45.69
+        ],
+        "county": "Washington",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.217564,
+          45.642175
+        ]
+      },
+      "properties": {
+        "name": "Hayward",
+        "aliases": [],
+        "cameraHeightFt": 14.01,
+        "viewshedId": "pano-hayward",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-98",
+        "reportedCoordinates": [
+          -123.22,
+          45.64
+        ],
+        "county": "Washington",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.143081,
+          44.984543
+        ]
+      },
+      "properties": {
+        "name": "West Salem",
+        "aliases": [],
+        "cameraHeightFt": 43.01,
+        "viewshedId": "pano-west-salem",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-106",
+        "reportedCoordinates": [
+          -123.14,
+          44.98
+        ],
+        "county": "Polk",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.145791,
+          45.098973
+        ]
+      },
+      "properties": {
+        "name": "Eola Hills",
+        "aliases": [],
+        "cameraHeightFt": 50.0,
+        "viewshedId": "pano-eola-hills",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-107",
+        "reportedCoordinates": [
+          -123.15,
+          45.1
+        ],
+        "county": "Yamhill",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.555232,
+          45.074828
+        ]
+      },
+      "properties": {
+        "name": "Sawtell",
+        "aliases": [],
+        "cameraHeightFt": 46.0,
+        "viewshedId": "pano-sawtell",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-111",
+        "reportedCoordinates": [
+          -122.56,
+          45.07
+        ],
+        "county": "Clackamas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.332967,
+          45.27077
+        ]
+      },
+      "properties": {
+        "name": "Day Hill",
+        "aliases": [],
+        "cameraHeightFt": 54.99,
+        "viewshedId": "pano-day-hill",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-115",
+        "reportedCoordinates": [
+          -122.33,
+          45.27
+        ],
+        "county": "Clackamas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.16713,
+          45.350261
+        ]
+      },
+      "properties": {
+        "name": "Lenhart",
+        "aliases": [],
+        "cameraHeightFt": 41.99,
+        "viewshedId": "pano-lenhart",
+        "provider": "pano",
+        "locationSource": "alertwest-site",
+        "reportedCoordinates": [
+          -122.17,
+          45.35
+        ],
+        "county": "Clackamas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.584376,
+          45.065384
+        ]
+      },
+      "properties": {
+        "name": "Spirit Mountain",
+        "aliases": [],
+        "cameraHeightFt": 69.0,
+        "viewshedId": "pano-spirit-mountain",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-104",
+        "reportedCoordinates": [
+          -123.58,
+          45.07
+        ],
+        "county": "Polk",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.766485,
+          45.002967
+        ]
+      },
+      "properties": {
+        "name": "Silverton",
+        "aliases": [],
+        "cameraHeightFt": 23.0,
+        "viewshedId": "pano-silverton",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-110",
+        "reportedCoordinates": [
+          -122.77,
+          45.0
+        ],
+        "county": "Marion",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.291695,
+          45.13104
+        ]
+      },
+      "properties": {
+        "name": "Goat Mountain",
+        "aliases": [],
+        "cameraHeightFt": 29.99,
+        "viewshedId": "pano-goat-mountain",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-113",
+        "reportedCoordinates": [
+          -122.29,
+          45.13
+        ],
+        "county": "Clackamas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.03987,
+          45.39741
+        ]
+      },
+      "properties": {
+        "name": "Brightwood",
+        "aliases": [],
+        "cameraHeightFt": 18.01,
+        "viewshedId": "pano-brightwood",
+        "provider": "pano",
+        "locationSource": "alertwest-site",
+        "reportedCoordinates": [
+          -122.04,
+          45.4
+        ],
+        "county": "Clackamas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.413153,
+          45.176571
+        ]
+      },
+      "properties": {
+        "name": "Colton",
+        "aliases": [],
+        "cameraHeightFt": 47.01,
+        "viewshedId": "pano-colton",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-112",
+        "reportedCoordinates": [
+          -122.41,
+          45.18
+        ],
+        "county": "Clackamas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.99026,
+          45.048228
+        ]
+      },
+      "properties": {
+        "name": "Oak Grove Butte",
+        "aliases": [],
+        "cameraHeightFt": 47.01,
+        "viewshedId": "pano-oak-grove-butte",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-121",
+        "reportedCoordinates": [
+          -121.99,
+          45.05
+        ],
+        "county": "Clackamas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.098365,
+          45.645451
+        ]
+      },
+      "properties": {
+        "name": "Lodge Road",
+        "aliases": [],
+        "cameraHeightFt": 54.99,
+        "viewshedId": "pano-lodge-road",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-97",
+        "reportedCoordinates": [
+          -123.1,
+          45.65
+        ],
+        "county": "Washington",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.119159,
+          45.10668
+        ]
+      },
+      "properties": {
+        "name": "Whale Head",
+        "aliases": [],
+        "cameraHeightFt": 50.0,
+        "viewshedId": "pano-whale-head",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-40",
+        "reportedCoordinates": [
+          -122.12,
+          45.11
+        ],
+        "county": "Clackamas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.182624,
+          45.18619
+        ]
+      },
+      "properties": {
+        "name": "Memaloose",
+        "aliases": [],
+        "cameraHeightFt": 50.0,
+        "viewshedId": "pano-memaloose",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-41",
+        "reportedCoordinates": [
+          -122.18,
+          45.19
+        ],
+        "county": "Clackamas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.954985,
+          45.782595
+        ]
+      },
+      "properties": {
+        "name": "Bald Hill",
+        "aliases": [],
+        "cameraHeightFt": 18.01,
+        "viewshedId": "pano-bald-hill",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-101",
+        "reportedCoordinates": [
+          -122.96,
+          45.78
+        ],
+        "county": "Columbia",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.362626,
+          45.67713
+        ]
+      },
+      "properties": {
+        "name": "Portland Round Top",
+        "aliases": [],
+        "cameraHeightFt": 36.52,
+        "viewshedId": "pano-portland-round-top",
+        "provider": "pano",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-95",
+        "reportedCoordinates": [
+          -123.36,
+          45.68
+        ],
+        "county": "Washington",
+        "state": "OR"
+      }
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { attachViewshedIds } from '../js/geojson-transform.js';
 
-const manifest = JSON.parse(readFileSync(new URL('../data/viewshed-manifest.json', import.meta.url), 'utf8'));
+const manifest = JSON.parse(readFileSync(new URL('../data/alertwest-viewshed-manifest.json', import.meta.url), 'utf8'));
 const entry = (id) => manifest.viewsheds.find((item) => item.viewshed_id === id);
 
 const camera = (id, name, lon, lat) => ({
