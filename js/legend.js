@@ -18,6 +18,11 @@ export function initLegend(items) {
   // one delegated tooltip controller handles buttons added with each row
   const infoTooltip = createLegendTooltip(legend);
   let activeMap;
+  // map code that derives layers from several rows listens for any toggle
+  const changeListeners = new Set();
+  const notifyChange = () => {
+    for (const listener of changeListeners) listener();
+  };
 
   const title = document.createElement('h2');
   title.className = 'legend-title';
@@ -28,7 +33,7 @@ export function initLegend(items) {
   for (const item of items) {
     if (Array.isArray(item.children) && item.children.length > 0) {
       // groups contribute their parent and each child to the same update lookup
-      const group = createLegendGroup(item, () => activeMap);
+      const group = createLegendGroup(item, () => activeMap, notifyChange);
       bindings.push(group.parent, ...group.children);
       groupBindings.push(group);
       group.element.hidden = item.hidden === true;
@@ -38,7 +43,7 @@ export function initLegend(items) {
       continue;
     }
 
-    const binding = createLegendRow(item, () => activeMap);
+    const binding = createLegendRow(item, () => activeMap, undefined, notifyChange);
     bindings.push(binding);
     binding.row.hidden = item.hidden === true;
     topLevelBindings.push({ item, element: binding.row });
@@ -58,6 +63,17 @@ export function initLegend(items) {
         setLayersVisible(map, item.layerIds, checkbox.checked);
       }
       for (const group of groupBindings) group.syncParent();
+      notifyChange();
+    },
+
+    // listener runs after every checkbox or programmatic visibility change
+    onChange(listener) {
+      changeListeners.add(listener);
+      return () => changeListeners.delete(listener);
+    },
+
+    isChecked(label) {
+      return findBinding(label)?.checkbox.checked === true;
     },
 
     // programmatic toggle shares the checkbox handler so UI and map stay in sync
@@ -256,7 +272,7 @@ function createLegendTooltip(legend) {
   };
 }
 
-function createLegendGroup(item, getMap) {
+function createLegendGroup(item, getMap, notifyChange) {
   // group rows keep provider toggles under one parent
   const element = document.createElement('section');
   element.className = 'legend-group';
@@ -272,7 +288,7 @@ function createLegendGroup(item, getMap) {
       if (map) setLayersVisible(map, child.item.layerIds, checked);
     }
     syncParent();
-  });
+  }, notifyChange);
   
   parent.row.classList.add('legend-group__parent');
   element.append(parent.row);
@@ -308,7 +324,7 @@ function createLegendGroup(item, getMap) {
       // a child toggle changes only its own map layers, then recomputes the parent state
       if (map) setLayersVisible(map, childItem.layerIds, checked);
       syncParent();
-    });
+    }, notifyChange);
     child.row.classList.add('legend-group__child');
     childContainer.append(child.row);
     return child;
@@ -332,7 +348,7 @@ function createLegendGroup(item, getMap) {
   return { element, parent, children, syncParent };
 }
 
-function createLegendRow(item, getMap, onToggle) {
+function createLegendRow(item, getMap, onToggle, notifyChange) {
   const row = document.createElement('div');
   row.className = 'legend-row';
 
@@ -348,6 +364,7 @@ function createLegendRow(item, getMap, onToggle) {
     } else if (map) {
       setLayersVisible(map, item.layerIds, checkbox.checked);
     }
+    notifyChange?.();
   };
   checkbox.addEventListener('change', applyToggle);
   // programmatic toggles reuse the manual path because set checked fires no change event

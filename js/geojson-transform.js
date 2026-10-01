@@ -42,6 +42,36 @@ export function camerasToGeoJSON(cameras) {
   return { type: 'FeatureCollection', features };
 }
 
+// converts a provider sites file into camera points already linked to their viewsheds
+export function providerSitesToCameras(sites, operator) {
+  const features = [];
+
+  for (const feature of getFeatures(sites)) {
+    const point = featurePoint(feature);
+    if (!point) continue;
+
+    const properties = feature.properties || {};
+    // sites without a height were never modeled, so they have no viewshed
+    const modeled = toFiniteNumber(properties.cameraHeightFt) != null;
+
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: point },
+      properties: {
+        name: properties.name || 'Camera',
+        operator,
+        county: properties.county ?? null,
+        state: properties.state ?? null,
+        viewshed_id: (modeled && stringValue(properties.viewshedId)) || null,
+        // placed on an ALERTWest site, so its marker would otherwise hide that camera
+        sharesAlertWestSite: properties.locationSource === 'alertwest-site',
+      },
+    });
+  }
+
+  return { type: 'FeatureCollection', features };
+}
+
 // live cameras sit within this distance of the viewshed site they were modeled from
 export const VIEWSHED_MATCH_RADIUS_M = 250;
 
