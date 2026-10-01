@@ -323,6 +323,13 @@ assert.match(textOf(content), /Pan 42°/);
 
 content = show('showCamera', { name: 'Missing metrics cam', id: 99 }, null);
 assert.match(textOf(content), /Coverage unavailable/);
+assert.match(textOf(content), /no viewshed has been generated/);
+
+// cameras with a viewshed get distinct wording from cameras without one
+content = show('showCamera', { name: 'Phoenix', id: 98, viewshed_id: 'phoenix-water-tank' }, { coverageAvailable: false, status: 'skipped_missing_height', landMix: [] });
+assert.match(textOf(content), /camera height is missing/);
+content = show('showCamera', { name: 'Broken', id: 97, viewshed_id: 'x' }, null);
+assert.match(textOf(content), /viewshed exists but/);
 assert.doesNotMatch(textOf(content), /\b0%/);
 
 content = show('showCamera', { name: 'Covered cam', id: 1 }, { coverageAvailable: true, landAreaSqKm: 12.5, landMix });

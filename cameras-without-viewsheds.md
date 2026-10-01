@@ -33,3 +33,7 @@ Camera ID 23608 - **Axis-MountDefiance2**: not present in sites data sheet
 Camera ID 23681 - **Axis-jimcreekbutte**: not present in sites data sheet
 
 Camera ID 24215 - **Axis-wahatispeak**: not present in sites data sheet
+
+--
+
+Note: the web map joins live AlertWest cameras to viewsheds by AlertWest site id, then by location (nearest viewshed site within 250 m, js/geojson-transform.js), then by name. Camera ID 16489 (Axis-Phoenix) joins to its viewshed site but is skipped for missing height, so the panel says so explicitly.

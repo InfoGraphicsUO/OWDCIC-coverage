@@ -42,11 +42,17 @@ export function camerasToGeoJSON(cameras) {
   return { type: 'FeatureCollection', features };
 }
 
+// live cameras sit within this distance of the viewshed site they were modeled from
+export const VIEWSHED_MATCH_RADIUS_M = 250;
+
 // links live camera points to viewshed ids from manifest
+// join order: explicit AlertWest site id, then nearest viewshed site within
+// VIEWSHED_MATCH_RADIUS_M, then normalized name or alias
 export function attachViewshedIds(cameras, manifest) {
   const cameraFeatures = getFeatures(cameras);
   const idLookup = new Map();
   const nameLookup = new Map();
+  const sites = [];
 
   for (const entry of getManifestEntries(manifest)) {
     const viewshedId = stringValue(entry.viewshed_id);
@@ -60,6 +66,12 @@ export function attachViewshedIds(cameras, manifest) {
       const normalized = normalizeSiteName(name);
       if (normalized) nameLookup.set(normalized, viewshedId);
     }
+
+    const longitude = toFiniteNumber(entry.longitude);
+    const latitude = toFiniteNumber(entry.latitude);
+    if (longitude != null && latitude != null) {
+      sites.push({ viewshedId, longitude, latitude });
+    }
   }
 
   return {
@@ -70,6 +82,7 @@ export function attachViewshedIds(cameras, manifest) {
       const cameraName = normalizeSiteName(properties.name);
       const viewshedId =
         (cameraId && idLookup.get(cameraId)) ||
+        nearestViewshedId(featurePoint(feature), sites) ||
         (cameraName && nameLookup.get(cameraName)) ||
         null;
 
@@ -79,6 +92,32 @@ export function attachViewshedIds(cameras, manifest) {
       };
     }),
   };
+}
+
+// nearest viewshed site inside the match radius, or null
+function nearestViewshedId(point, sites) {
+  if (!point) return null;
+  const [longitude, latitude] = point.map(toFiniteNumber);
+  if (longitude == null || latitude == null) return null;
+
+  let best = null;
+  let bestDistance = VIEWSHED_MATCH_RADIUS_M;
+  for (const site of sites) {
+    const distance = approxDistanceMeters(longitude, latitude, site.longitude, site.latitude);
+    if (distance <= bestDistance) {
+      best = site.viewshedId;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
+// equirectangular approximation is accurate to well under a meter at this scale
+function approxDistanceMeters(lon1, lat1, lon2, lat2) {
+  const metersPerDegree = 111320;
+  const dx = (lon1 - lon2) * metersPerDegree * Math.cos(((lat1 + lat2) / 2) * Math.PI / 180);
+  const dy = (lat1 - lat2) * metersPerDegree;
+  return Math.hypot(dx, dy);
 }
 
 function getManifestEntries(manifest) {

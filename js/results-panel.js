@@ -536,7 +536,7 @@ function renderCamera(properties, metrics) {
   if (overlay.children.length) preview.append(overlay);
   wrapper.append(preview);
   if (!cameraCoverageAvailable(metrics)) {
-    wrapper.append(selfLine('Coverage unavailable', 'results-panel__lead'));
+    wrapper.append(selfLine(cameraUnavailableMessage(properties, metrics), 'results-panel__lead'));
     return wrapper;
   }
   const area = finite(metrics.landAreaSqKm);
@@ -1206,7 +1206,7 @@ function exportSummary({ kind, type, properties, metrics }) {
     if (pan) lines.push(`Pan ${pan}`);
     if (!cameraCoverageAvailable(metrics)) {
       // keep the export state aligned with the interactive panel
-      lines.push('Coverage unavailable');
+      lines.push(cameraUnavailableMessage(properties, metrics));
       return lines;
     }
     const area = finite(metrics?.landAreaSqKm);
@@ -1250,6 +1250,17 @@ function usableLandMix(landMix) {
   return Array.isArray(landMix)
     ? landMix.filter((item) => finite(item?.percentage) != null && finite(item.percentage) > 0)
     : [];
+}
+
+// separates cameras that have no viewshed from viewsheds whose coverage failed
+function cameraUnavailableMessage(properties, metrics) {
+  if (!metrics && !properties?.viewshed_id) {
+    return 'Coverage unavailable: no viewshed has been generated for this camera.';
+  }
+  if (metrics?.status === 'skipped_missing_height') {
+    return 'Coverage unavailable: viewshed not generated because the camera height is missing.';
+  }
+  return 'Coverage unavailable: a viewshed exists but its land coverage could not be calculated.';
 }
 
 function cameraCoverageAvailable(metrics) {
