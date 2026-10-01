@@ -16,6 +16,7 @@ const DEFAULT_VIEW = Object.freeze({
 
 const SATELLITE_ID = 'mapbox-satellite-basemap';
 const DEFAULT_BASEMAP = 'outdoors';
+const BASEMAP_IDS = Object.freeze(['outdoors', 'satellite', 'simple']);
 const BASEMAP_STYLE_IDS = Object.freeze({
   outdoors: MAPBOX_STYLE,
   simple: SIMPLE_MAPBOX_STYLE,
@@ -28,6 +29,9 @@ let activeBaseLayerIds = new Set();
 let activeBaseSourceIds = new Set();
 let basemapRequest = 0;
 let basemapStylePending = false;
+// set once the picker is bound so programmatic changes follow the picker path
+let basemapPicker;
+let basemapMap;
 
 export const MAP_HOME_EVENT = 'apphome';
 const NARROW_LAYOUT_QUERY = '(max-width: 900px)';
@@ -46,6 +50,22 @@ export function onBasemapChange(listener) {
   basemapChangeListeners.push(listener);
   // apply the current mode now so late layers get matching colors immediately
   listener(selectedBasemap());
+}
+
+// switch basemap through the picker so the radio, style, and listeners stay in sync
+// resolves false for unknown ids; waits for the map and picker when called early
+export async function setBasemap(basemap) {
+  if (!BASEMAP_IDS.includes(basemap)) return false;
+  await mapReady;
+  // the picker binds on map load, which can follow the ready promise
+  if (!basemapPicker && !(await waitForBasemapPicker())) return false;
+  if (basemap === activeBasemap && !basemapStylePending) return true;
+
+  const input = basemapPicker.querySelector(`input[name="basemap"][value="${basemap}"]`);
+  if (!input || input.disabled) return false;
+  input.checked = true;
+  await changeBasemap(basemapMap, basemapPicker, basemap);
+  return true;
 }
 
 // returns zero for reduced motion, otherwise keeps the duration in ms
@@ -96,6 +116,16 @@ export function mapPanelPadding(map) {
     // the narrow layout gives the sidebar a tighter width budget
     left: Math.max(24, Math.min(shellWidth + 16, container.clientWidth * 0.35)),
   };
+}
+
+// resolves true once initBasemapPicker has run, false if the map never loads
+function waitForBasemapPicker() {
+  return new Promise((resolve) => {
+    mapReady.then((map) => {
+      if (basemapPicker) return resolve(true);
+      map.once('load', () => resolve(Boolean(basemapPicker)));
+    });
+  });
 }
 
 function selectedBasemap() {
@@ -270,6 +300,8 @@ function initBasemapPicker(map) {
   const picker = document.getElementById('basemap-picker');
   if (!picker) throw new Error('Basemap picker #basemap-picker is missing');
 
+  basemapPicker = picker;
+  basemapMap = map;
   // reset browser-restored input state to match the style loaded at startup
   resetBasemapPicker();
   updateBasemapPreview(selectedBasemap());
@@ -280,7 +312,7 @@ function initBasemapPicker(map) {
     const input = event.target;
     // ignore bubbled events from unrelated inputs or unavailable basemaps
     if (!(input instanceof HTMLInputElement) || input.name !== 'basemap') return;
-    if (input.disabled || !['outdoors', 'satellite', 'simple'].includes(input.value)) return;
+    if (input.disabled || !BASEMAP_IDS.includes(input.value)) return;
 
     void changeBasemap(map, picker, input.value);
   });

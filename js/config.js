@@ -89,6 +89,33 @@ export const LAYER_IDS = Object.freeze({
   lookouts: 'standing-lookouts',
 });
 
+// legend row labels are the public ids for toggling layers from code
+export const LEGEND_LAYERS = Object.freeze({
+  cameras: 'Cameras (ALERTWest)',
+  viewsheds: 'Camera viewsheds',
+  lookouts: 'Standing lookouts',
+  nationalForests: 'National forests',
+  blmLands: 'BLM lands',
+  odfProtection: 'ODF protection districts',
+  burnProbability: 'OR Burn probability (QWRA)',
+  fires: 'Fires (NIFC)',
+  prescribed: 'Prescribed fires (Watch Duty)',
+});
+
+// filter type -> context to show when that type is picked
+// basemap: 'outdoors' | 'satellite' | 'simple', omit to keep the current basemap
+// layersOn / layersOff: LEGEND_LAYERS values; omit or leave empty to leave layers alone
+// filter types without an entry keep the current layers and basemap
+export const FILTER_LAYER_PRESETS = Object.freeze({
+  'national-forest': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.nationalForests]) }),
+  'federal-land': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.blmLands]) }),
+});
+
+// returns the preset for a filter type, or null when it has none
+export function layerPresetForFilter(filterType, presets = FILTER_LAYER_PRESETS) {
+  return Object.hasOwn(presets, filterType) ? presets[filterType] : null;
+}
+
 export const REGION_DATA_BOUNDS = Object.freeze([
   Object.freeze([-124.85, 41.99]),
   Object.freeze([-116.4, 49.01]),
