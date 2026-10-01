@@ -68,11 +68,11 @@
 .filter-panel__view[hidden] { display: none; }
 
 .filter-panel__view.is-entering {
-    animation: sidebar-menu-in 180ms ease-out both;
+    animation: sidebar-menu-in var(--menu-fade-duration) ease-out both;
 }
 
 .filter-panel__view.is-leaving {
-    animation: sidebar-menu-out 180ms ease-in both;
+    animation: sidebar-menu-out var(--menu-fade-duration) ease-in both;
     pointer-events: none;
 }
 

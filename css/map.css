@@ -7,6 +7,10 @@
     --control-chrome-text: #fff;
     --control-chrome-border: rgba(255, 255, 255, .18);
     --control-chrome-muted: rgba(255, 255, 255, .72);
+    /* shared motion so every element that follows the sidebar moves in lockstep */
+    --sidebar-duration: 340ms;
+    --sidebar-ease: cubic-bezier(.32, .72, 0, 1);
+    --menu-fade-duration: 110ms;
 }
 
 #map {
@@ -35,7 +39,7 @@
     bottom: 0;
     width: calc(var(--sidebar-width) + var(--panel-gap) + var(--rail-width));
     color: var(--control-chrome-text);
-    transition: width 200ms ease-in-out;
+    transition: width var(--sidebar-duration) var(--sidebar-ease);
 }
 
 .control-shell__body {
@@ -52,7 +56,8 @@
     color: var(--control-chrome-text);
     background: var(--control-chrome-bg);
     border-right: 1px solid var(--control-chrome-border);
-    transition: transform 200ms ease-in-out;
+    transition: transform var(--sidebar-duration) var(--sidebar-ease);
+    will-change: transform;
 }
 
 .control-rail {
@@ -65,7 +70,8 @@
     width: var(--rail-width);
     padding: var(--panel-gap) 0;
     gap: var(--panel-gap);
-    transition: left 200ms ease-in-out;
+    transition: transform var(--sidebar-duration) var(--sidebar-ease);
+    will-change: transform;
 }
 
 .control-rail__button {
@@ -159,9 +165,9 @@
 .control-menu[hidden] { display: none; }
 .control-menu--filter { overflow: hidden; }
 
-.control-menu.is-entering { animation: sidebar-menu-in 180ms ease-out both; }
+.control-menu.is-entering { animation: sidebar-menu-in var(--menu-fade-duration) ease-out both; }
 .control-menu.is-leaving {
-    animation: sidebar-menu-out 180ms ease-in both;
+    animation: sidebar-menu-out var(--menu-fade-duration) ease-in both;
     pointer-events: none;
 }
 
@@ -227,8 +233,11 @@
     border-radius: 0 var(--ui-radius-sm) var(--ui-radius-sm) 0;
     cursor: pointer;
     font-size: 0;
-    transform: translateY(-50%);
-    transition: left 200ms ease-in-out;
+    transform: translate(0, -50%);
+    transition:
+        transform var(--sidebar-duration) var(--sidebar-ease),
+        top var(--sidebar-duration) var(--sidebar-ease);
+    will-change: transform;
 }
 
 .control-shell__collapse span {
@@ -254,11 +263,11 @@
 }
 
 .control-shell.is-collapsed .control-rail {
-    left: var(--panel-gap);
+    transform: translateX(calc(-1 * var(--sidebar-width)));
 }
 
 .control-shell.is-collapsed .control-shell__collapse {
-    left: 0;
+    transform: translate(calc(-1 * var(--sidebar-width)), -50%);
 }
 
 .control-shell.is-collapsed .control-shell__collapse span {
@@ -469,16 +478,25 @@
     outline-offset: -2px;
 }
 
+/* the corners sit at their collapsed position and translate with the sidebar body */
+.mapboxgl-ctrl-top-left,
+.mapboxgl-ctrl-bottom-left {
+    transform: translateX(var(--sidebar-width));
+    transition: transform var(--sidebar-duration) var(--sidebar-ease);
+    will-change: transform;
+}
+
+body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-top-left,
+body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
+    transform: translateX(0);
+}
+
 .mapboxgl-ctrl-top-left {
     top: var(--panel-gap);
-    left: calc(var(--sidebar-width) + var(--rail-width) + var(--panel-gap) * 2);
+    left: calc(var(--rail-width) + var(--panel-gap) * 2);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-}
-
-body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-top-left {
-    left: calc(var(--rail-width) + var(--panel-gap) * 2);
 }
 
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl {
@@ -517,16 +535,12 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-top-left {
 }
 
 .mapboxgl-ctrl-bottom-left {
-    left: calc(var(--sidebar-width) + var(--panel-gap)) !important;
+    left: var(--panel-gap) !important;
     bottom: 0 !important;
 }
 
 .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl {
     margin-left: 0;
-}
-
-body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
-    left: var(--panel-gap) !important;
 }
 
 .mapboxgl-ctrl-bottom-right {
@@ -559,11 +573,12 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     .control-shell__collapse {
         top: var(--panel-gap);
         left: calc(var(--sidebar-width) - var(--collapse-tab-width));
-        transform: none;
+        transform: translate(0, 0);
     }
     .zoom-viewer { top: 4px; right: 4px; bottom: auto; }
     .control-shell.is-collapsed .control-shell__collapse {
         top: calc(3 * 72px + 4 * var(--panel-gap));
+        transform: translate(calc(var(--collapse-tab-width) - var(--sidebar-width)), 0);
     }
 }
 
@@ -582,7 +597,9 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     .control-shell,
     .control-shell__body,
     .control-rail,
-    .control-shell__collapse {
+    .control-shell__collapse,
+    .mapboxgl-ctrl-top-left,
+    .mapboxgl-ctrl-bottom-left {
         transition: none;
     }
 
