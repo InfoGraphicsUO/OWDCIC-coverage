@@ -1277,13 +1277,13 @@ function finite(value) {
 
 function formatNumber(value) {
   // number formatting is for already validated display values
-  return numberFormat.format(Number(value) || 0);
+  return numberFormat.format(Math.round(Number(value) || 0));
 }
 
 function formatPercent(value) {
   // clamp displayed percentages so malformed source values cannot exceed 0–100%
   const number = Number(value);
-  return numberFormat.format(Math.max(0, Math.min(100, Number.isFinite(number) ? number : 0)));
+  return numberFormat.format(Math.round(Math.max(0, Math.min(100, Number.isFinite(number) ? number : 0))));
 }
 
 function formatPan(value) {
