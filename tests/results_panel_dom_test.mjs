@@ -255,7 +255,7 @@ const api = initResultsPanel({
     },
   }),
   getMapCanvas: () => canvas,
-  getLegendItems: () => ['Cameras (ALERTWest)', 'Camera viewsheds'],
+  getLegendItems: () => ['ALERTWest cameras', 'ALERTWest camera viewsheds'],
 });
 
 const landMix = [
