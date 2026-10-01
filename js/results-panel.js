@@ -1,3 +1,5 @@
+import { openModal } from './modal.js';
+
 // square-kilometer to square-mile conversion for displayed area values
 const SQMI_PER_SQKM = 0.3861021585;
 const UTILITY_QUALIFIER = 'Approximate service area boundary';
@@ -106,7 +108,8 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
   function showCamera(properties = {}, metrics = null, feature = null) {
     // camera location comes from geometry while descriptive fields stay in properties
     current = { kind: 'camera', properties, metrics, geometry: feature?.geometry };
-    const location = [properties.county, properties.state].filter(Boolean).join(', ');
+    // provider cameras without a locality show their operator instead
+    const location = [properties.county, properties.state].filter(Boolean).join(', ') || properties.operator || '';
     presentResult(properties.name || 'Camera', renderCamera(properties, metrics), location);
   }
 
@@ -302,36 +305,17 @@ function createPanel() {
   return panel;
 }
 
-// builds a focus-trapped preview dialog and restores focus when it closes
+// builds the export preview inside the shared modal shell
 function createExportModal({ previewSrc, downloadName, onDownload, onDownloadPdf, onClose }) {
-  // remember the opener before moving focus into the modal
-  const previousFocus = document.activeElement;
-  const overlay = document.createElement('div');
-  overlay.className = 'results-export-modal';
-
-  const backdrop = document.createElement('div');
-  backdrop.className = 'results-export-modal__backdrop';
+  const { overlay, backdrop, dialog, closeButton, close } = openModal({
+    id: 'results-export',
+    title: 'Export preview',
+    closeLabel: 'Close export preview',
+    className: 'results-export-modal',
+    onClose,
+  });
   backdrop.dataset.exportBackdrop = '';
-
-  const dialog = document.createElement('div');
-  dialog.className = 'results-export-modal__dialog';
-  dialog.setAttribute('role', 'dialog');
-  dialog.setAttribute('aria-modal', 'true');
-  dialog.setAttribute('aria-labelledby', 'results-export-title');
-  dialog.tabIndex = -1;
-
-  const header = document.createElement('div');
-  header.className = 'results-export-modal__header';
-  const heading = document.createElement('h2');
-  heading.id = 'results-export-title';
-  heading.textContent = 'Export preview';
-  const closeButton = document.createElement('button');
-  closeButton.type = 'button';
-  closeButton.className = 'results-export-modal__close';
   closeButton.dataset.exportClose = '';
-  closeButton.setAttribute('aria-label', 'Close export preview');
-  closeButton.textContent = '×';
-  header.append(heading, closeButton);
 
   const previewWrap = document.createElement('div');
   previewWrap.className = 'results-export-modal__preview-wrap';
@@ -343,68 +327,29 @@ function createExportModal({ previewSrc, downloadName, onDownload, onDownloadPdf
   previewWrap.append(preview);
 
   const actions = document.createElement('div');
-  actions.className = 'results-export-modal__actions';
+  actions.className = 'modal__footer';
   const downloadButton = document.createElement('button');
   downloadButton.type = 'button';
-  downloadButton.className = 'results-export-modal__download';
+  downloadButton.className = 'modal__button';
   downloadButton.dataset.exportDownload = '';
   downloadButton.textContent = 'Download PNG';
   const pdfDownloadButton = document.createElement('button');
   pdfDownloadButton.type = 'button';
-  pdfDownloadButton.className = 'results-export-modal__download';
+  pdfDownloadButton.className = 'modal__button';
   pdfDownloadButton.dataset.exportPdfDownload = '';
   pdfDownloadButton.textContent = 'Download PDF';
   const status = document.createElement('p');
-  status.className = 'results-export-modal__status';
+  status.className = 'modal__status';
   status.dataset.exportStatus = '';
   status.setAttribute('role', 'status');
   status.setAttribute('aria-live', 'polite');
   const buttons = document.createElement('div');
-  buttons.className = 'results-export-modal__buttons';
+  buttons.className = 'modal__buttons';
   buttons.append(downloadButton, pdfDownloadButton);
   actions.append(buttons, status);
 
-  dialog.append(header, previewWrap, actions);
-  overlay.append(backdrop, dialog);
-  document.body.append(overlay);
+  dialog.append(previewWrap, actions);
 
-  // exclude hidden controls so Tab only cycles through targets users can reach
-  const focusables = () => [...dialog.querySelectorAll(
-    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
-  )].filter((node) => node.offsetParent !== null || node === dialog);
-
-  function close() {
-    // remove the document key handler before returning to the page
-    document.removeEventListener('keydown', onKeyDown);
-    overlay.remove();
-    if (previousFocus && typeof previousFocus.focus === 'function') previousFocus.focus();
-    onClose();
-  }
-
-  function onKeyDown(event) {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      close();
-      return;
-    }
-    if (event.key !== 'Tab') return;
-    // cycle keyboard focus within the modal
-    const items = focusables();
-    if (!items.length) return;
-    const first = items[0];
-    const last = items[items.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
-  // button, backdrop, and Escape all share the same teardown and focus restore
-  closeButton.addEventListener('click', close);
-  backdrop.addEventListener('click', close);
   downloadButton.addEventListener('click', () => {
     onDownload();
   });
@@ -425,9 +370,6 @@ function createExportModal({ previewSrc, downloadName, onDownload, onDownloadPdf
       }
     }
   });
-  document.addEventListener('keydown', onKeyDown);
-  // defer focus until the dialog has been attached to the document
-  requestAnimationFrame(() => dialog.focus());
 
   return { close, status, overlay };
 }
@@ -648,8 +590,10 @@ const EXPORT_LEGEND_TEXT_OFFSET = EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_SWAT
 const EXPORT_PANEL_FILL = 'rgba(47, 46, 46, 0.9)';
 // fallback visuals for integrations that provide labels without DOM swatches
 const EXPORT_LEGEND_VISUALS = Object.freeze({
-  'Cameras (ALERTWest)': { type: 'icon', src: 'img/camera-marker.svg' },
-  'Camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
+  'ALERTWest cameras': { type: 'icon', src: 'img/camera-marker.svg' },
+  'Pano AI cameras': { type: 'icon', src: 'img/pano-camera-marker.svg' },
+  'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
+  'Pano AI camera viewsheds': { type: 'swatch', style: 'fill', color: '#3898ec' },
   'Standing lookouts': { type: 'swatch', style: 'circle', color: '#8154BD' },
   'National forests': { type: 'swatch', style: 'outline', color: '#3b7d4f' },
   'BLM lands': { type: 'swatch', style: 'fill', color: '#f6d94a' },

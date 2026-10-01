@@ -7,6 +7,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 JS = (ROOT / 'js/results-panel.js').read_text()
 CSS = (ROOT / 'css/results-panel.css').read_text()
+# the export dialog is built on the shared modal shell
+MODAL_JS = (ROOT / 'js/modal.js').read_text()
+MODAL_CSS = (ROOT / 'css/modal.css').read_text()
 
 
 def donut_types():
@@ -40,10 +43,12 @@ class ResultsPanelContractTests(unittest.TestCase):
     def test_export_modal_and_self_explanatory_copy(self):
         self.assertIn('Export as…', JS)
         self.assertIn('createExportModal', JS)
-        self.assertIn("setAttribute('role', 'dialog')", JS)
-        self.assertIn("setAttribute('aria-modal', 'true')", JS)
+        self.assertIn('openModal', JS)
+        self.assertIn("setAttribute('role', 'dialog')", MODAL_JS)
+        self.assertIn("setAttribute('aria-modal', 'true')", MODAL_JS)
         self.assertIn('results-export-modal', CSS)
-        self.assertIn('backdrop-filter: blur', CSS)
+        self.assertIn('backdrop-filter: blur', MODAL_CSS)
+        self.assertIn('prefers-reduced-motion', MODAL_CSS)
         self.assertIn('prefers-reduced-motion', CSS)
         self.assertIn('results-panel__footer', CSS)
         self.assertIn('LAND_MIX_COLORS', JS)
@@ -61,7 +66,7 @@ class ResultsPanelContractTests(unittest.TestCase):
         self.assertIn('resolveLegendRowsForExport', JS)
         self.assertIn('drawStatsOverlay', JS)
         self.assertIn("ctx.fillText('Legend'", JS)
-        self.assertIn("'Camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' }", JS)
+        self.assertIn("'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' }", JS)
         self.assertIn('MAP_ATTRIBUTION', JS)
         self.assertIn('exportLandMixRows', JS)
         self.assertIn('Plotly?.toImage', JS)

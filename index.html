@@ -17,20 +17,24 @@
         <script defer src="https://kit.fontawesome.com/be4ea184d4.js" crossorigin="anonymous"></script>
         <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
         
-        <link rel="stylesheet" href="css/site.css?v=20260922ui1">
+        <link rel="stylesheet" href="css/site.css?v=20261001settings1">
         <link rel="stylesheet" href="css/map.css?v=20260922basemap-button-border1">
         <link rel="stylesheet" href="css/legend.css?v=20260922tooltip3">
         <link rel="stylesheet" href="css/filter-panel.css?v=20260922fade1">
-        <link rel="stylesheet" href="css/results-panel.css?v=20260922ui2">
+        <link rel="stylesheet" href="css/results-panel.css?v=20261001modal1">
+        <link rel="stylesheet" href="css/modal.css?v=20261001modal1">
         <link rel="stylesheet" href="css/popups.css?v=20260922ui1">
         <link rel="stylesheet" href="css/loading.css">
 
-        <script type="module" src="js/map-layers.js?v=20260930preset1"></script>
+        <script type="module" src="js/map-layers.js?v=20261001combined2"></script>
     </head>
     <body>
         <header class="site-banner">
             <img class="site-banner__logo" src="img/OHAZ-logo.png" alt="OHAZ">
             <h1 class="site-banner__title">OWDCIC Camera Coverage Map</h1>
+            <button id="settings-button" class="site-banner__settings" type="button" aria-label="Settings" aria-haspopup="dialog" aria-expanded="false">
+                <i class="fa-solid fa-gear" aria-hidden="true"></i>
+            </button>
         </header>
         <main aria-busy="true">
             <div id="map" role="region" aria-label="Oregon and Washington wildfire camera map"></div>

@@ -59,6 +59,71 @@ textarea {
     letter-spacing: 0.01em;
 }
 
+.site-banner__settings {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    margin-left: auto;
+    padding: 0;
+    color: #fff;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--ui-radius-sm);
+    font-size: 22px;
+    cursor: pointer;
+    transition: color 120ms ease, border-color 120ms ease;
+}
+
+.site-banner__settings:hover,
+.site-banner__settings:focus-visible,
+.site-banner__settings[aria-expanded="true"] {
+    color: var(--ohaz-yellow);
+    border-color: #555;
+}
+
+.site-banner__settings:focus-visible {
+    outline: 2px solid var(--ohaz-yellow);
+    outline-offset: 2px;
+}
+
+.settings-modal__row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.settings-modal__row + .settings-modal__row {
+    margin-top: 12px;
+}
+
+.settings-modal__row input {
+    width: 18px;
+    height: 18px;
+    margin: 1px 0 0;
+    accent-color: var(--ohaz-yellow);
+    flex: 0 0 auto;
+}
+
+.settings-modal__label {
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.settings-modal__description {
+    margin: 4px 0 0;
+    color: #c8c8c8;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-banner__settings {
+        transition: none;
+    }
+}
+
 @media (max-width: 520px) {
     :root {
         --banner-height: 70px;
