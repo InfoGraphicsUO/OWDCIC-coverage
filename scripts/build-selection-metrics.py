@@ -25,7 +25,13 @@ from shapely.validation import explain_validity
 
 ROOT = Path(__file__).resolve().parents[1]
 DIVISIONS = ROOT / 'data/divisions'
-VIEWSHEDS = ROOT / 'outputs/gdal_viewsheds/mapbox/camera_viewsheds_web_epsg5070.gpkg'
+# every official provider's web viewsheds; area coverage counts all of them together
+VIEWSHEDS = (
+    ROOT / 'outputs/gdal_viewsheds_alertwest/mapbox/camera_viewsheds_web_epsg5070.gpkg',
+    ROOT / 'outputs/gdal_viewsheds_pano/mapbox/camera_viewsheds_web_epsg5070.gpkg',
+)
+# guards against a missing provider: 75 ALERTWest + 24 Pano AI viewsheds
+EXPECTED_INDIVIDUAL_VIEWSHEDS = 99
 MASK = ROOT / 'data/pacific-northwest-land-mask.geojson'
 HYDRO_CACHE = ROOT / 'outputs/source-cache/census-areal-hydro-2025.geojsonl'
 PADUS_FEE_CACHE = ROOT / 'outputs/source-cache/padus-4.1-or-wa-fee-5070.geojsonl'
@@ -200,6 +206,20 @@ def load_hydro(path: Path):
     return union_all(water)
 
 
+def load_all_viewsheds(paths):
+    """merges providers into one dissolved coverage and one id -> viewshed lookup"""
+    coverages = []
+    individual = {}
+    for path in paths:
+        _, coverage, provider_viewsheds = load_viewsheds(path)
+        duplicates = individual.keys() & provider_viewsheds.keys()
+        if duplicates:
+            raise ValueError(f'viewshed IDs repeat across providers: {sorted(duplicates)}')
+        coverages.append(coverage)
+        individual.update(provider_viewsheds)
+    return union_all(coverages), individual
+
+
 def load_viewsheds(path: Path):
     dataset = ogr.Open(str(path))
     if dataset is None:
@@ -353,9 +373,7 @@ def coverage_metrics(selection, dissolved_coverage):
 
 
 def run(args):
-    viewshed_dataset, coverage, individual = load_viewsheds(args.viewsheds)
-    if viewshed_dataset is None:
-        raise FileNotFoundError(args.viewsheds)
+    coverage, individual = load_all_viewsheds(args.viewsheds)
     print('loaded viewsheds:', len(individual), flush=True)
     mask = json.loads(args.mask.read_text())['features'][0]['geometry']
     coastal_land = project(mask)
@@ -396,7 +414,9 @@ def run(args):
                         'Other/unclassified includes unmapped private land and source gaps.')
     inputs = {'coastalMaskSha256': digest(args.mask),
               'hydroSha256': digest(args.hydro_cache),
-              'viewshedsSha256': digest(args.viewsheds),
+              'viewshedsSha256': {
+                  path.parent.parent.name: digest(path) for path in args.viewsheds
+              },
               'padusFeeSha256': digest(args.padus_fee_cache)}
     kinds = tuple(args.only) if args.only else TYPES
     for kind in kinds:
@@ -447,7 +467,7 @@ def run(args):
             'schemaVersion': 1, 'metricsStatus': 'complete',
             'landFootprint': 'regional coastal mask minus Census areal hydrography',
             'hydroVintage': '2025-01-01', 'areaCrs': 'EPSG:5070',
-            'overlapHandling': 'displayed dissolved camera viewshed coverage',
+            'overlapHandling': 'dissolved camera viewshed coverage across all providers',
             'designationPriority': [label for label, _ in designation],
             'designationSources': designation_sources,
             'designationNote': designation_note,
@@ -509,16 +529,15 @@ def run(args):
             'missing coverage is never stored as 0%.')
     CAMERA_OUT.write_text(json.dumps(camera_data, ensure_ascii=False,
                                      allow_nan=False, separators=(',', ':')) + '\n')
-    if len(viewsheds) != 75:
-        raise RuntimeError(f'expected 75 camera IDs, found {len(viewsheds)}')
-    if len(individual) != 74:
-        raise RuntimeError(f'expected 74 individual viewsheds, found {len(individual)}')
+    if len(individual) != EXPECTED_INDIVIDUAL_VIEWSHEDS:
+        raise RuntimeError(
+            f'expected {EXPECTED_INDIVIDUAL_VIEWSHEDS} individual viewsheds, found {len(individual)}')
     print('camera viewsheds:', len(individual), 'unavailable:', unavailable, flush=True)
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--viewsheds', type=Path, default=VIEWSHEDS)
+    parser.add_argument('--viewsheds', type=Path, nargs='+', default=list(VIEWSHEDS))
     parser.add_argument('--mask', type=Path, default=MASK)
     parser.add_argument('--hydro-cache', type=Path, default=HYDRO_CACHE)
     parser.add_argument('--padus-fee-cache', type=Path, default=PADUS_FEE_CACHE)
