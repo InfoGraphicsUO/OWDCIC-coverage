@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""convert the ArcGIS StatewideNetwork point shapefile to web-map GeoJSON"""
+"""convert the ArcGIS StatewideNetwork point shapefile to web-map GeoJSON, CSV, and XLSX"""
 
 from __future__ import annotations
 
 import argparse
+import csv
 import json
+import zipfile
+from xml.sax.saxutils import escape
 import math
 import struct
 from collections import Counter
@@ -25,6 +28,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("source", type=Path, help="StatewideNetwork.shp input")
     parser.add_argument("output", type=Path, help="GeoJSON output path")
+    parser.add_argument(
+        "--tabular",
+        action="store_true",
+        help="also write .csv and .xlsx next to the GeoJSON output",
+    )
     return parser.parse_args()
 
 
@@ -198,6 +206,8 @@ def build_feature(index: int, point: tuple[float, float], row: dict[str, str]) -
         "digitizedBy": row.get("Digit_by") or None,
         "digitizedDate": iso_date(row.get("Digit_date", "")),
         "siteType": row.get("Type") or None,
+        "altPointSource": row.get("AltPtSrc") or None,
+        "altPointSourceName": row.get("AltSrcName") or None,
         "cameraHeightFeet": camera_height,
         "notes": row.get("Notes") or None,
     }
@@ -210,6 +220,103 @@ def build_feature(index: int, point: tuple[float, float], row: dict[str, str]) -
         },
         "properties": properties,
     }
+
+
+CSV_FIELDS = [
+    "id",
+    "name",
+    "operator",
+    "status",
+    "pointSource",
+    "pointSourceName",
+    "altPointSource",
+    "altPointSourceName",
+    "mapSource",
+    "digitizedBy",
+    "digitizedDate",
+    "siteType",
+    "cameraHeightFeet",
+    "notes",
+    "longitude",
+    "latitude",
+]
+
+
+def feature_rows(features: list[dict]) -> list[list]:
+    rows = []
+    for feature in features:
+        longitude, latitude = feature["geometry"]["coordinates"]
+        values = {
+            **feature["properties"],
+            "longitude": longitude,
+            "latitude": latitude,
+        }
+        rows.append([values.get(field) for field in CSV_FIELDS])
+    return rows
+
+
+def write_csv(path: Path, features: list[dict]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.writer(stream)
+        writer.writerow(CSV_FIELDS)
+        for row in feature_rows(features):
+            writer.writerow(["" if value is None else value for value in row])
+
+
+def column_letter(index: int) -> str:
+    letters = ""
+    index += 1
+    while index:
+        index, remainder = divmod(index - 1, 26)
+        letters = chr(65 + remainder) + letters
+    return letters
+
+
+def write_xlsx(path: Path, features: list[dict]) -> None:
+    # minimal dependency-free workbook: one sheet, inline strings, numeric cells
+    all_rows = [CSV_FIELDS, *feature_rows(features)]
+    sheet_rows = []
+    for row_index, row in enumerate(all_rows, start=1):
+        cells = []
+        for column_index, value in enumerate(row):
+            if value is None or value == "":
+                continue
+            ref = f"{column_letter(column_index)}{row_index}"
+            if isinstance(value, (int, float)):
+                cells.append(f'<c r="{ref}"><v>{value}</v></c>')
+            else:
+                cells.append(
+                    f'<c r="{ref}" t="inlineStr"><is><t>{escape(str(value))}</t></is></c>'
+                )
+        sheet_rows.append(f'<row r="{row_index}">{"".join(cells)}</row>')
+
+    ns = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+    rel = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    package = "http://schemas.openxmlformats.org/package/2006/relationships"
+    head = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
+    parts = {
+        "[Content_Types].xml": head
+        + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        '<Default Extension="xml" ContentType="application/xml"/>'
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        "</Types>",
+        "_rels/.rels": head
+        + f'<Relationships xmlns="{package}"><Relationship Id="rId1" '
+        f'Type="{rel}/officeDocument" Target="xl/workbook.xml"/></Relationships>',
+        "xl/workbook.xml": head
+        + f'<workbook xmlns="{ns}" xmlns:r="{rel}"><sheets>'
+        '<sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>',
+        "xl/_rels/workbook.xml.rels": head
+        + f'<Relationships xmlns="{package}"><Relationship Id="rId1" '
+        f'Type="{rel}/worksheet" Target="worksheets/sheet1.xml"/></Relationships>',
+        "xl/worksheets/sheet1.xml": head
+        + f'<worksheet xmlns="{ns}"><sheetData>{"".join(sheet_rows)}</sheetData></worksheet>',
+    }
+    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
+        for name, content in parts.items():
+            archive.writestr(name, content)
 
 
 def main() -> None:
@@ -234,6 +341,10 @@ def main() -> None:
         json.dumps(feature_collection, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+
+    if args.tabular:
+        write_csv(args.output.with_suffix(".csv"), features)
+        write_xlsx(args.output.with_suffix(".xlsx"), features)
 
     operators = Counter(feature["properties"]["operator"] for feature in features)
     statuses = Counter(feature["properties"]["status"] for feature in features)
