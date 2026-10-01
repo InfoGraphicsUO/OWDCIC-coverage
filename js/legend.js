@@ -60,6 +60,15 @@ export function initLegend(items) {
       for (const group of groupBindings) group.syncParent();
     },
 
+    // programmatic toggle shares the checkbox handler so UI and map stay in sync
+    // returns false when no row has this label
+    setVisible(label, visible) {
+      const binding = findBinding(label);
+      if (!binding) return false;
+      binding.setChecked(visible);
+      return true;
+    },
+
     setHidden(label, hidden) {
       const binding = topLevelBindings.find(({ item }) => item.label === label);
       if (!binding) return;
@@ -319,7 +328,7 @@ function createLegendRow(item, getMap, onToggle) {
   checkbox.type = 'checkbox';
   checkbox.id = `legend-${item.label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   checkbox.checked = item.visible !== false;
-  checkbox.addEventListener('change', () => {
+  const applyToggle = () => {
     // map setup is deferred, so store checkbox state in the DOM until connect applies it
     const map = getMap();
     if (onToggle) {
@@ -327,7 +336,15 @@ function createLegendRow(item, getMap, onToggle) {
     } else if (map) {
       setLayersVisible(map, item.layerIds, checkbox.checked);
     }
-  });
+  };
+  checkbox.addEventListener('change', applyToggle);
+  // programmatic toggles reuse the manual path because set checked fires no change event
+  const setChecked = (checked) => {
+    checkbox.checked = checked;
+    // a programmatic set clears any partial-group state left on the box
+    checkbox.indeterminate = false;
+    applyToggle();
+  };
 
   // camera markers take precedence over generic swatches, then fall back to a remote icon
   const swatch = item.swatchColor ? createLegendSwatch(item) : null;
@@ -359,7 +376,7 @@ function createLegendRow(item, getMap, onToggle) {
 
   row.append(labelText);
   if (infoButton) row.append(infoButton);
-  return { checkbox, infoButton, item, row, swatch, visual };
+  return { checkbox, infoButton, item, row, setChecked, swatch, visual };
 }
 
 function createCameraLegendIcon(item) {

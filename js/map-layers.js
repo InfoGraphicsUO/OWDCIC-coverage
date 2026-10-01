@@ -5,9 +5,11 @@ import {
   DATA_URLS,
   DIGITIZED_CAMERA_ICON_URLS,
   LAYER_IDS,
+  LEGEND_LAYERS,
   MARKER_ICON_URLS,
   REGION_DATA_BOUNDS,
   emptyFeatureCollection,
+  layerPresetForFilter,
 } from './config.js';
 import {
   addNumericProperty,
@@ -15,7 +17,7 @@ import {
   camerasToGeoJSON,
   filterGeoJSONByBounds,
 } from './geojson-transform.js';
-import { initLegend } from './legend.js?v=20260922tooltip1';
+import { initLegend } from './legend.js?v=20260930preset1';
 import { initFilterPanel } from './filter-panel.js?v=20260922sort1';
 import { initResultsPanel } from './results-panel.js?v=20260922camera-layout1';
 import { hideMapLoading } from './loading.js';
@@ -25,7 +27,8 @@ import {
   mapReady,
   motionDuration,
   onBasemapChange,
-} from './map.js?v=20260922basemap-current-preview1';
+  setBasemap,
+} from './map.js?v=20260930preset1';
 import {
   registerMarkerIcon,
   registerMarkerIconSizes,
@@ -58,7 +61,7 @@ const DIGITIZED_CAMERA_UNLOCK_TIMEOUT_MS = 2_000;
 const BOUNDARY_COLOR = '#494949';
 const BOUNDARY_FILL_COLOR = '#929292';
 const SELECTED_BOUNDARY_COLOR = '#f8e109';
-const VIEWSHED_LEGEND_LABEL = 'Camera viewsheds';
+const VIEWSHED_LEGEND_LABEL = LEGEND_LAYERS.viewsheds;
 const VIEWSHED_FILL_COLOR = Object.freeze({
   outdoors: '#F28D05',
   satellite: '#F4F1EA',
@@ -650,11 +653,36 @@ function polygonFilterIsActive() {
   return Boolean(activeFilterType && activeFilterType !== 'camera');
 }
 
+// show or hide one legend layer by label through the checkbox path
+// returns false for unknown labels; safe before the map connects
+function setLayerVisibility(label, visible) {
+  const found = legendControl.setVisible(label, visible);
+  if (!found) console.warn(`Unknown legend layer: ${label}`);
+  return found;
+}
+
+// apply the configured basemap and layer toggles for a filter type
+// types without a preset leave the current view untouched
+function applyLayerPresetForFilter(filterType) {
+  const preset = layerPresetForFilter(filterType);
+  if (!preset) return;
+
+  // off runs first so a label listed in both ends up visible
+  for (const label of preset.layersOff ?? []) setLayerVisibility(label, false);
+  for (const label of preset.layersOn ?? []) setLayerVisibility(label, true);
+  if (preset.basemap) {
+    setBasemap(preset.basemap).catch((error) => {
+      console.error('Failed to apply preset basemap:', error);
+    });
+  }
+}
+
 // list category change resets map selection and stale camera requests
 function typeSelected(type) {
   // invalidate pending camera metrics before the old result panel is cleared
   cameraResultRequest += 1;
   activeFilterType = type || null;
+  if (type) applyLayerPresetForFilter(type);
   if (activeMap) {
     clearDivisionFilter(activeMap);
     if (type && type !== 'camera') showDivisionType(activeMap, type);
@@ -1636,7 +1664,7 @@ function legendItems() {
   // keep loading and hidden defaults aligned with startup source visibility
   return [
     {
-      label: 'Cameras (ALERTWest)',
+      label: LEGEND_LAYERS.cameras,
       iconUrl: MARKER_ICON_URLS.camera,
       loading: true,
       layerIds: [LAYER_IDS.cameras],
@@ -1669,7 +1697,7 @@ function legendItems() {
       layerIds: VIEWSHED_LAYER_IDS,
     },
     {
-      label: 'Standing lookouts',
+      label: LEGEND_LAYERS.lookouts,
       swatchColor: LOOKOUT_COLOR,
       swatchShape: 'circle',
       visible: false,
@@ -1678,7 +1706,7 @@ function legendItems() {
       layerIds: [LAYER_IDS.lookouts],
     },
     {
-      label: 'National forests',
+      label: LEGEND_LAYERS.nationalForests,
       swatchColor: NATIONAL_FOREST_COLOR,
       visible: false,
       loading: true,
@@ -1689,14 +1717,14 @@ function legendItems() {
       ],
     },
     {
-      label: 'BLM lands',
+      label: LEGEND_LAYERS.blmLands,
       swatchColor: BLM_LAND_COLOR,
       swatchBorder: false,
       visible: false,
       layerIds: [LAYER_IDS.blmLands],
     },
     {
-      label: 'ODF protection districts',
+      label: LEGEND_LAYERS.odfProtection,
       swatchColor: ODF_PROTECTION_COLOR,
       visible: false,
       infoText: 'Forest protection districts from the Oregon Department of Forestry',
@@ -1707,7 +1735,7 @@ function legendItems() {
       ],
     },
     {
-      label: 'OR Burn probability (QWRA)',
+      label: LEGEND_LAYERS.burnProbability,
       swatchColor: BURN_PROBABILITY_COLOR,
       swatchBorder: false,
       swatchClass: 'legend-swatch--burn-probability',
@@ -1716,7 +1744,7 @@ function legendItems() {
       layerIds: [LAYER_IDS.burnProbability],
     },
     {
-      label: 'Fires (NIFC)',
+      label: LEGEND_LAYERS.fires,
       iconUrl: MARKER_ICON_URLS.fire,
       visible: false,
       loading: true,
@@ -1727,7 +1755,7 @@ function legendItems() {
       ],
     },
     {
-      label: 'Prescribed fires (Watch Duty)',
+      label: LEGEND_LAYERS.prescribed,
       iconUrl: MARKER_ICON_URLS.prescribed,
       visible: false,
       loading: true,
