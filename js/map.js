@@ -1,5 +1,5 @@
-import { restoreMarkerIcons } from './marker-icons.js?v=20260922simple1';
-import { registerOutsideHatch } from './states-highlight.js?v=20260922simple1';
+import { restoreMarkerIcons } from './marker-icons.js';
+import { registerOutsideHatch } from './states-highlight.js';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiaW5mb2dyYXBoaWNzIiwiYSI6ImNqaTR0eHhnODBjeTUzdmx0N3U2dWU5NW8ifQ.fVbTCmIrqILIzv5QGtVJ2Q';

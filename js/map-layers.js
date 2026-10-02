@@ -11,17 +11,17 @@ import {
   REGION_DATA_BOUNDS,
   emptyFeatureCollection,
   layerPresetForFilter,
-} from './config.js?v=20261001combined2';
+} from './config.js';
 import {
   addNumericProperty,
   attachViewshedIds,
   camerasToGeoJSON,
   filterGeoJSONByBounds,
   providerSitesToCameras,
-} from './geojson-transform.js?v=20261001county1';
-import { initLegend } from './legend.js?v=20261001combined1';
-import { initFilterPanel } from './filter-panel.js?v=20260922sort1';
-import { initResultsPanel } from './results-panel.js?v=20261002header1';
+} from './geojson-transform.js';
+import { initLegend } from './legend.js';
+import { initFilterPanel } from './filter-panel.js';
+import { initResultsPanel } from './results-panel.js';
 import { hideMapLoading } from './loading.js';
 import {
   MAP_HOME_EVENT,
@@ -30,17 +30,17 @@ import {
   motionDuration,
   onBasemapChange,
   setBasemap,
-} from './map.js?v=20260930preset1';
+} from './map.js';
 import {
   registerMarkerIcon,
   registerMarkerIconSizes,
   sizedIconId,
   watchMarkerIconDensity,
-} from './marker-icons.js?v=20260922simple1';
+} from './marker-icons.js';
 import {
   addRegionFocusLayers,
   loadRegionFocusData,
-} from './states-highlight.js?v=20260922simple1';
+} from './states-highlight.js';
 import {
   hideCameraPreview,
   showCameraPreview,
@@ -48,7 +48,7 @@ import {
   showFirePopup,
   showLookoutPopup,
   showPrescribedPopup,
-} from './popups.js?v=20261001county1';
+} from './popups.js';
 import { getSetting, initSettings, onSettingChange } from './settings.js';
 
 const LABEL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
