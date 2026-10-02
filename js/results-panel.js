@@ -33,10 +33,7 @@ const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }
  * keeps chart and dialog state local to this panel instance
  */
 export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) {
-  // reuse server markup when present and make the panel usable on standalone pages
-  const element = document.querySelector('#results-panel') || createPanel();
-  if (!element.parentElement) document.body.append(element);
-  ensurePanelMarkup(element);
+  const element = document.querySelector('#results-panel');
   const title = element.querySelector('[data-results-title]');
   const subtitle = element.querySelector('[data-results-subtitle]');
   const content = element.querySelector('[data-results-content]');
@@ -232,78 +229,6 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
     exportModal.close();
     exportModal = null;
   }
-}
-
-function ensurePanelMarkup(element) {
-  // treat the four data slots as one contract so partial legacy markup is rebuilt
-  const complete = element.querySelector('[data-results-title]')
-    && element.querySelector('[data-results-content]')
-    && element.querySelector('[data-results-export]')
-    && element.querySelector('[data-results-status]');
-  if (!complete) {
-    // replace partial legacy markup with the panel's expected control slots
-    const scaffold = createPanel();
-    element.replaceChildren(...scaffold.childNodes);
-  }
-  if (!element.querySelector('[data-results-handle]')) {
-    // decorative handle is hidden from assistive tech and only used for panel styling
-    const handle = document.createElement('div');
-    handle.className = 'results-panel__handle';
-    handle.dataset.resultsHandle = '';
-    handle.setAttribute('aria-hidden', 'true');
-    element.prepend(handle);
-  }
-  if (!element.querySelector('[data-results-subtitle]')) {
-    // older page markup gets the camera locality slot without rebuilding the panel
-    const subtitle = document.createElement('p');
-    subtitle.className = 'results-panel__subtitle';
-    subtitle.dataset.resultsSubtitle = '';
-    const title = element.querySelector('[data-results-title]');
-    title?.parentElement?.append(subtitle);
-  }
-  const exportButton = element.querySelector('[data-results-export]');
-  if (exportButton) {
-    // normalize older markup and supply a useful accessible name when absent
-    exportButton.textContent = 'Export as…';
-    if (!exportButton.getAttribute('aria-label')) {
-      exportButton.setAttribute('aria-label', 'Export map, legend, and coverage results as PNG');
-    }
-  }
-  if (!element.querySelector('[data-results-footer]')) {
-    // keep export and status controls together for existing page markup
-    const footer = document.createElement('div');
-    footer.className = 'results-panel__footer';
-    footer.dataset.resultsFooter = '';
-    const status = element.querySelector('[data-results-status]');
-    if (exportButton) {
-      exportButton.remove();
-      footer.append(exportButton);
-    }
-    if (status) {
-      status.remove();
-      footer.append(status);
-    }
-    element.append(footer);
-  }
-}
-
-function createPanel() {
-  const panel = document.createElement('aside');
-  panel.id = 'results-panel';
-  panel.className = 'results-panel';
-  panel.setAttribute('aria-label', 'Selection results');
-  panel.innerHTML = `
-    <div class="results-panel__handle" data-results-handle aria-hidden="true"></div>
-    <div class="results-panel__header">
-      <h2 data-results-title>Select an area or camera</h2>
-      <p class="results-panel__subtitle" data-results-subtitle></p>
-    </div>
-    <div class="results-panel__content" data-results-content></div>
-    <div class="results-panel__footer" data-results-footer>
-      <button class="results-panel__export" data-results-export type="button" aria-label="Export map, legend, and coverage results as PNG">Export as…</button>
-      <p class="results-panel__status" data-results-status role="status" aria-live="polite"></p>
-    </div>`;
-  return panel;
 }
 
 // builds the export preview inside the shared modal shell

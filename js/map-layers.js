@@ -21,7 +21,7 @@ import {
 } from './geojson-transform.js?v=20261001county1';
 import { initLegend } from './legend.js?v=20261001combined1';
 import { initFilterPanel } from './filter-panel.js?v=20260922sort1';
-import { initResultsPanel } from './results-panel.js?v=20261001modal1';
+import { initResultsPanel } from './results-panel.js?v=20261002header1';
 import { hideMapLoading } from './loading.js';
 import {
   MAP_HOME_EVENT,
