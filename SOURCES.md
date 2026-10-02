@@ -10,11 +10,15 @@ This will function as a source repository so I can keep track of what sources I'
 - **Digitized camera inventory:** [digitized-camera-sources.xlsx](data/digitized-camera-sources.xlsx), [digitized-camera-sources.csv](data/digitized-camera-sources.csv), and [digitized-camera-sources.geojson](data/digitized-camera-sources.geojson). The CSV records **Oregon Wildfire Detection Network Map - PDF** as its map source; related Oregon Department of Forestry material: [Smoke Detection Cameras / Board of Forestry packet](https://www.oregon.gov/odf/board/bof/20240605-bof-packet.pdf). Row-level point-source references include `ODF_sites`, `PGE_WF_Cameras`, `standing-lookouts`, and `usfs_communications_sites`.
 - **Standing fire lookouts:** [standing-lookouts.csv](data/standing-lookouts.csv) and [standing-lookouts.geojson](data/standing-lookouts.geojson); source references in the records are labeled `NHLR/FFLOS`. Related lists: [Forest Fire Lookout Association — Oregon](https://firelookout.org/lookouts/us/or/) and [Washington](https://firelookout.org/lookouts/us/wa/).
 
+
+
 ## Active fires and prescribed fires
 
 - **Incident locations:** [Wildland Fire Interagency Geospatial Services (WFIGS), Current Incident Locations](https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Incident_Locations_Current/FeatureServer/0).
 - **Interagency fire perimeters:** [WFIGS, Current Interagency Perimeters](https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Interagency_Perimeters_Current/FeatureServer/0).
 - **Prescribed fires:** [Watch Duty Prescribed Fires](https://services5.arcgis.com/VNhSlpl1umSknM3q/arcgis/rest/services/Watch_Duty_Prescribed_Fires/FeatureServer/0).
+
+
 
 ## Administrative, tribal, and public-land boundaries
 
@@ -28,6 +32,8 @@ This will function as a source repository so I can keep track of what sources I'
 - **Oregon Department of Forestry protection districts:** [District Boundaries, layer 1](https://services.arcgis.com/uUvqNMGPm7axC2dD/arcgis/rest/services/District_Boundaries/FeatureServer/1).
 - **Local boundary files:** [data/divisions/](data/divisions/) contains the state, county, state House, state Senate, U.S. House, utility, national forest, national park, federal land, and tribal land GeoJSON products. [or-wa-boundary.geojson](data/or-wa-boundary.geojson) is also used as a local regional boundary; its file contains no upstream source metadata.
 
+
+
 ## Ownership, hydrography, and coverage metrics
 
 - **PAD-US fee ownership:** [Fee Managers PAD-US](https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Fee_Managers_PADUS/FeatureServer/0) and [Federal Fee Managers Authoritative PAD-US](https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Federal_Fee_Managers_Authoritative_PADUS/FeatureServer/0).
@@ -35,11 +41,15 @@ This will function as a source repository so I can keep track of what sources I'
 - **Land outline used in regional processing:** [Esri World Countries (Generalized), layer 0](https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0). The local [Pacific Northwest land mask](data/pacific-northwest-land-mask.geojson) records this service as its source.
 - **Local coverage summary:** [camera-coverage.json](data/camera-coverage.json) records source endpoints and input hashes for its ownership and viewshed coverage data.
 
+
+
 ## Elevation and camera viewsheds
 
 - **Terrain elevation:** USGS 3D Elevation Program (3DEP), 1/3 arc-second GeoTIFF products from The National Map. The selected tiles and direct download URLs are exhaustively listed in [or-wa-dems-latest.csv](data/or-wa-dems-latest.csv) and [or-wa-dems-latest-urls.txt](data/or-wa-dems-latest-urls.txt) (80 tiles in the current list).
 - **Viewshed products:** the map loads the hosted [ALERTWest camera viewsheds tileset](https://console.mapbox.com/studio/tilesets/infographics.ibrv0q/) (`mapbox://infographics.ibrv0q`) and [Pano AI camera viewsheds tileset](https://console.mapbox.com/studio/tilesets/infographics.dgexly/) (`mapbox://infographics.dgexly`). A [combined coverage tileset](https://console.mapbox.com/studio/tilesets/infographics.4qzk4g/) (`mapbox://infographics.4qzk4g`), every provider's coverage dissolved by `scripts/build-combined-viewshed-coverage.py`, draws shared-color viewsheds without overlapping fills. The local [ALERTWest](data/alertwest-viewshed-manifest.json) and [Pano AI](data/pano-viewshed-manifest.json) viewshed manifests catalog the generated camera viewshed products; each provider has its own tileset.
 - **Regional clipping geometry:** [Pacific Northwest land mask](data/pacific-northwest-land-mask.geojson), sourced from the Esri World Countries service listed above.
+
+
 
 ## Map styles, tiles, and web resources
 
@@ -48,3 +58,4 @@ This will function as a source repository so I can keep track of what sources I'
 - **Annual burn probability:** [Pacific Northwest QWRA burn-probability tiles](https://tiles.arcgis.com/tiles/CD5mKowwN6nIaqd8/arcgis/rest/services/project_wre_bp_tile_package/MapServer/tile/{z}/{y}/{x})
 - **QGIS project basemap:** [OpenStreetMap raster tiles](https://tile.openstreetmap.org/{z}/{x}/{y}.png)
 - **Browser libraries and fonts:** [Mapbox GL JS/CSS 3.28.1](https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.js), [Plotly 2.35.2](https://cdn.plot.ly/plotly-2.35.2.min.js), [Font Awesome kit](https://kit.fontawesome.com/be4ea184d4.js), and [Google Fonts — Merriweather](https://fonts.googleapis.com/css2?family=Merriweather:wght@400;500;600;700&display=swap).
+
