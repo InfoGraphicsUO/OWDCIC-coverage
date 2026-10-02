@@ -1,4 +1,5 @@
 import { openModal } from './modal.js';
+import { PGE_WILDFIREWATCH_URL } from './config.js';
 
 // square-kilometer to square-mile conversion for displayed area values
 const SQMI_PER_SQKM = 0.3861021585;
@@ -428,6 +429,7 @@ function renderPolygon(type, properties) {
 function renderCamera(properties, metrics) {
   const wrapper = document.createElement('div');
   wrapper.className = 'results-panel__body results-panel__camera';
+  const isPano = properties.operator === 'Pano AI' || properties.provider === 'pano';
   const imageUrl = safeHttpsUrl(properties.image);
   const preview = document.createElement('div');
   preview.className = 'results-panel__camera-preview';
@@ -435,7 +437,7 @@ function renderCamera(properties, metrics) {
   preview.setAttribute('aria-label', 'Camera preview');
   const unavailable = document.createElement('span');
   unavailable.className = 'results-panel__camera-placeholder';
-  unavailable.textContent = 'Camera preview unavailable';
+  unavailable.textContent = isPano ? 'Camera view available on PGE Wildfire Watch' : 'Camera preview unavailable';
   if (imageUrl) {
     // remove failed remote thumbnails instead of showing a broken image
     const image = document.createElement('img');
@@ -455,9 +457,9 @@ function renderCamera(properties, metrics) {
   const pan = formatPan(properties.pan);
   const overlay = document.createElement('div');
   overlay.className = 'results-panel__camera-overlay';
-  const fallbackFeed = properties.id == null ? '' : `https://alertwest.live/cam-console/${encodeURIComponent(String(properties.id))}`;
-  // allow only AlertWest hosts, including generated camera-console links
-  const feed = safeAlertWestUrl(properties.feed || properties.url || properties.link || fallbackFeed);
+  const fallbackFeed = isPano ? PGE_WILDFIREWATCH_URL : properties.id == null ? '' : `https://alertwest.live/cam-console/${encodeURIComponent(String(properties.id))}`;
+  const feed = safeCameraFeedUrl(properties.feed || properties.url || properties.link || fallbackFeed, isPano);
+  const feedLabel = isPano ? 'Open PGE Wildfire Watch' : 'Open live camera feed';
   if (feed) {
     // links open separately and cannot reach the parent window through window.opener
     const a = document.createElement('a');
@@ -465,8 +467,8 @@ function renderCamera(properties, metrics) {
     a.href = feed;
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
-    a.setAttribute('aria-label', 'Open live camera feed in a new tab');
-    a.innerHTML = '<span>Open live camera feed</span><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i>';
+    a.setAttribute('aria-label', `${feedLabel} in a new tab`);
+    a.innerHTML = `<span>${feedLabel}</span><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i>`;
     overlay.append(a);
   }
   if (pan) {
@@ -1262,11 +1264,13 @@ function safeHttpsUrl(value) {
   }
 }
 
-function safeAlertWestUrl(value) {
-  // feed links may use the live site or its legacy .com hosts
+function safeCameraFeedUrl(value, isPano) {
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' && (url.hostname === 'alertwest.live' || url.hostname === 'alertwest.com' || url.hostname.endsWith('.alertwest.com'))
+    const allowedHost = isPano
+      ? url.hostname === new URL(PGE_WILDFIREWATCH_URL).hostname
+      : url.hostname === 'alertwest.live' || url.hostname === 'alertwest.com' || url.hostname.endsWith('.alertwest.com');
+    return url.protocol === 'https:' && allowedHost
       ? url.href
       : '';
   } catch (_) {
