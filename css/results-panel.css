@@ -34,12 +34,22 @@
 .results-panel__header {
     display: flex;
     flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 16px 18px 14px;
+    border-bottom: 4px solid var(--ohaz-yellow, #f8e109);
+}
+
+/* title and subtitle wrap together, leaving the header row free for actions */
+.results-panel__heading {
+    display: flex;
+    flex-direction: row;
     align-items: baseline;
     justify-content: flex-start;
     flex-wrap: wrap;
     gap: 4px 10px;
-    padding: 16px 18px 14px;
-    border-bottom: 4px solid var(--ohaz-yellow, #f8e109);
+    min-width: 0;
 }
 
 .results-panel__header h2 {
