@@ -101,6 +101,23 @@
 //   'Tribal land': 'all',
 //     // 66 options, see data/divisions/tribal-land.geojson
 //
+//   'ODF protection district': 'all',
+//     // or pick from:
+//     // [
+//     //   'Central Oregon District',
+//     //   'Coos FPA',
+//     //   'Douglas FPA',
+//     //   'Klamath-Lake District',
+//     //   'North Cascade District',
+//     //   'Northeast Oregon District',
+//     //   'Northwest Oregon District',
+//     //   'South Cascade District',
+//     //   'Southwest Oregon District',
+//     //   'Walker Range FPA',
+//     //   'West Oregon District',
+//     //   'Western Lane District',
+//     // ],
+//
 //   'Camera': 'all',
 //     // cameras come from the live provider feeds, so this group is all or nothing
 //
@@ -114,7 +131,6 @@
 //   'Standing lookouts',
 //   'National forests',
 //   'BLM lands',
-//   'ODF protection districts',
 //   'OR Burn probability (QWRA)',
 //   'Fires (NIFC)',
 //   'Prescribed fires (Watch Duty)',
@@ -134,6 +150,7 @@ export const VISIBLE_FILTERS = {
   'National Park': 'all',
   'Federal land': 'all',
   'Tribal land': 'all',
+  'ODF protection district': 'all',
   'Camera': 'all',
 };
 
@@ -143,7 +160,6 @@ export const VISIBLE_LAYERS = [
   'Standing lookouts',
   'National forests',
   'BLM lands',
-  'ODF protection districts',
   'OR Burn probability (QWRA)',
   'Fires (NIFC)',
   'Prescribed fires (Watch Duty)',

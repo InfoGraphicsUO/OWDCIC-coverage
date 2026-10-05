@@ -84,7 +84,6 @@ const VIEWSHED_HIGHLIGHT_OPACITY = 0.55;
 const LOOKOUT_COLOR = '#8154BD';
 const NATIONAL_FOREST_COLOR = '#3b7d4f';
 const BLM_LAND_COLOR = '#f6d94a';
-const ODF_PROTECTION_COLOR = '#008fb3';
 const BURN_PROBABILITY_COLOR = '#d7191c';
 const DIGITIZED_CAMERA_COLORS = Object.freeze({
   enviroVision: '#6eaa00',
@@ -413,13 +412,6 @@ async function loadMapLayers(map) {
         setSourceData(map, LAYER_IDS.nationalForestsSource, nationalForests);
       }
     ),
-    hydrateLegendLayer(
-      'ODF protection districts',
-      data.odfProtectionDistricts,
-      (odfProtectionDistricts) => {
-        setSourceData(map, LAYER_IDS.odfProtectionSource, odfProtectionDistricts);
-      }
-    ),
   ]);
 }
 
@@ -485,36 +477,6 @@ function addContextLayers(map) {
     paint: {
       'line-color': NATIONAL_FOREST_COLOR,
       'line-width': 1.25,
-    },
-  }, beforeId);
-
-  addGeoJSONSource(map, LAYER_IDS.odfProtectionSource);
-  map.addLayer({
-    id: LAYER_IDS.odfProtectionFill,
-    type: 'fill',
-    source: LAYER_IDS.odfProtectionSource,
-    layout: { visibility: 'none' },
-    paint: {
-      'fill-color': ODF_PROTECTION_COLOR,
-      'fill-opacity': 0.10,
-    },
-  }, beforeId);
-  map.addLayer({
-    id: LAYER_IDS.odfProtectionLine,
-    type: 'line',
-    source: LAYER_IDS.odfProtectionSource,
-    layout: { visibility: 'none' },
-    paint: {
-      'line-color': ODF_PROTECTION_COLOR,
-      'line-dasharray': [3, 2],
-      'line-opacity': 0.95,
-      'line-width': [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        5, 1.25,
-        10, 2.5,
-      ],
     },
   }, beforeId);
 }
@@ -1326,17 +1288,6 @@ function loadLayerData() {
           maxAllowableOffset: '0.005',
         })
     ),
-
-    odfProtectionDistricts: safelyLoadLegend(
-      'ODF protection districts',
-      'ODF protection districts',
-      () =>
-        fetchArcGISGeoJSON(DATA_URLS.odfProtectionDistricts, {
-          outFields: 'ODF_FPD',
-          geometryPrecision: '4',
-          maxAllowableOffset: '0.001',
-        })
-    ),
   };
 }
 
@@ -1949,17 +1900,6 @@ function legendItems() {
       swatchBorder: false,
       visible: false,
       layerIds: [LAYER_IDS.blmLands],
-    },
-    {
-      label: LEGEND_LAYERS.odfProtection,
-      swatchColor: ODF_PROTECTION_COLOR,
-      visible: false,
-      infoText: 'Forest protection districts from the Oregon Department of Forestry',
-      loading: true,
-      layerIds: [
-        LAYER_IDS.odfProtectionFill,
-        LAYER_IDS.odfProtectionLine,
-      ],
     },
     {
       label: LEGEND_LAYERS.burnProbability,

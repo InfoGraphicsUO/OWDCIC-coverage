@@ -30,7 +30,7 @@ This will function as a source repository so I can keep track of what sources I'
 - **Bureau of Land Management ownership tiles:** [BLM National Surface Management Agency tiles](https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_Cached_BLM_Only/MapServer/tile/{z}/{y}/{x}).
 - **Utility service areas:** [Oregon Natural Gas and Electric Utility Incentive Layer, layer 0](https://services.arcgis.com/uUvqNMGPm7axC2dD/arcgis/rest/services/Oregon_Natural_Gas_and_Electric_Utility_Incentive_Layer_Update_13Dec2024_v01/FeatureServer/0); [Washington Ecology CPR service, layer 0](https://gis.ecology.wa.gov/serverext/rest/services/CPR/CPR/MapServer/0). The local utility dataset metadata notes Washington coverage as unavailable.
 - **Oregon Department of Forestry protection districts:** [District Boundaries, layer 1](https://services.arcgis.com/uUvqNMGPm7axC2dD/arcgis/rest/services/District_Boundaries/FeatureServer/1).
-- **Local boundary files:** [data/divisions/](data/divisions/) contains the state, county, state House, state Senate, U.S. House, utility, national forest, national park, federal land, and tribal land GeoJSON products. [or-wa-boundary.geojson](data/or-wa-boundary.geojson) is also used as a local regional boundary; its file contains no upstream source metadata.
+- **Local boundary files:** [data/divisions/](data/divisions/) contains the state, county, state House, state Senate, U.S. House, utility, national forest, national park, federal land, tribal land, and ODF protection district GeoJSON products. [or-wa-boundary.geojson](data/or-wa-boundary.geojson) is also used as a local regional boundary; its file contains no upstream source metadata.
 
 
 

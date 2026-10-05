@@ -26,7 +26,8 @@ def donut_types():
 class ResultsPanelContractTests(unittest.TestCase):
     def test_donuts_are_limited_to_districts_and_utility(self):
         types = donut_types()
-        self.assertEqual(types, {'house', 'us-house', 'senate', 'utility'})
+        self.assertEqual(types, {'house', 'us-house', 'senate', 'utility',
+                                 'odf-protection-district'})
         for excluded in ('state', 'county', 'national-forest', 'national-park',
                          'federal-land', 'tribal-land'):
             self.assertNotIn(excluded, types)
