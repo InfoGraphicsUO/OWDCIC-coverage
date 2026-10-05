@@ -289,6 +289,9 @@ assert.ok(content.querySelector('[data-results-chart]'), 'US House should get a 
 content = show('showPolygon', 'senate', { properties: { name: 'State Senate District 1', cameraViewshedCoveragePct: 6.4, landMix } });
 assert.ok(content.querySelector('[data-results-chart]'), 'senate should get a donut host');
 
+content = show('showPolygon', 'odf-protection-district', { properties: { name: 'Central Oregon District', cameraViewshedCoveragePct: 9.1, landMix } });
+assert.ok(content.querySelector('[data-results-chart]'), 'ODF protection district should get a donut host');
+
 content = show('showPolygon', 'state', { properties: { name: 'Oregon', cameraViewshedCoveragePct: 8.93, cameraViewshedAreaSqKm: 22121, landAreaSqKm: 247715, landMix } });
 assert.match(textOf(content), /8\.9% covered by fire-spotting cameras/);
 assert.equal(content.querySelector('[data-results-chart]'), null, 'state must not get a donut');

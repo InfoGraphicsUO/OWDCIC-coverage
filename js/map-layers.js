@@ -10,8 +10,13 @@ import {
   MARKER_ICON_URLS,
   REGION_DATA_BOUNDS,
   emptyFeatureCollection,
+  filterOptionIsVisible,
   layerPresetForFilter,
+  unmatchedFilterOptions,
+  visibleFilterTypes,
+  visibleLegendItems,
 } from './config.js';
+import { VISIBLE_FILTERS, VISIBLE_LAYERS } from './visible-content.js';
 import {
   addNumericProperty,
   attachViewshedIds,
@@ -79,7 +84,6 @@ const VIEWSHED_HIGHLIGHT_OPACITY = 0.55;
 const LOOKOUT_COLOR = '#8154BD';
 const NATIONAL_FOREST_COLOR = '#3b7d4f';
 const BLM_LAND_COLOR = '#f6d94a';
-const ODF_PROTECTION_COLOR = '#008fb3';
 const BURN_PROBABILITY_COLOR = '#d7191c';
 const DIGITIZED_CAMERA_COLORS = Object.freeze({
   enviroVision: '#6eaa00',
@@ -130,28 +134,20 @@ const CAMERA_LAYER_IDS = Object.freeze(
 // Pano markers on a shared ALERTWest site sit beside its marker instead of on top
 const SHARED_SITE_ICON_OFFSET = Object.freeze([14, 0]);
 const NO_DIVISION_SELECTED = '__none__';
-const FILTER_TYPES = Object.freeze([
-  ['state', 'State'],
-  ['county', 'County'],
-  ['house', 'State House'],
-  ['us-house', 'US House'],
-  ['senate', 'State Senate'],
-  ['utility', 'Utility provider'],
-  ['national-forest', 'National Forest'],
-  ['national-park', 'National Park'],
-  ['federal-land', 'Federal land'],
-  ['tribal-land', 'Tribal land'],
-  ['camera', 'Camera'],
-]);
-// keep this order aligned with the filter menu; camera is the only non-polygon type
+// only the groups listed in js/visible-content.js reach the filter menu and the map
+const FILTER_TYPES = Object.freeze(visibleFilterTypes(VISIBLE_FILTERS));
+if (FILTER_TYPES.some(({ value, options }) => value === 'camera' && options)) {
+  console.warn('The Camera filter group cannot list single options; showing all');
+}
 // cameras use point selection; every other type builds polygon layers
 const DIVISION_TYPES = Object.freeze(FILTER_TYPES
-  .filter(([value]) => value !== 'camera')
-  .map(([value, label]) => {
+  .filter(({ value }) => value !== 'camera')
+  .map(({ value, label, options }) => {
     const prefix = `filter-${value}`;
     return Object.freeze({
       value,
       label,
+      options,
       sourceId: `${prefix}-source`,
       labelSourceId: `${prefix}-label-source`,
       fillLayerId: `${prefix}-fill`,
@@ -247,7 +243,10 @@ const FIRE_MARKER_SIZES = [
 
 // render control shells before Mapbox and providers finish loading
 initSettings();
-const legendControl = initLegend(legendItems());
+// rows left out of js/visible-content.js are kept aside so their layers stay off
+const legendRows = visibleLegendItems(legendItems(), VISIBLE_LAYERS);
+const REMOVED_LAYER_LABELS = new Set(legendRows.removed.map(({ label }) => label));
+const legendControl = initLegend(legendRows.visible);
 const resultsControl = initResultsPanel({
   getMap: () => activeMap,
   getMapCanvas: () => activeMap?.getCanvas(),
@@ -260,7 +259,7 @@ const resultsControl = initResultsPanel({
   onClose: () => filterControl.clearSelection(),
 });
 const filterControl = initFilterPanel({
-  types: FILTER_TYPES.map(([value, label]) => ({ value, label })),
+  types: FILTER_TYPES.map(({ value, label }) => ({ value, label })),
   loadOptions: loadFilterOptions,
   onTypeSelected: typeSelected,
   onSelection: optionSelected,
@@ -321,6 +320,10 @@ async function loadMapLayers(map) {
 
   // Mapbox visibility can now follow the startup legend
   legendControl.connect(map);
+  // removed layers have no checkbox to follow, so switch them off here
+  for (const { layerIds } of legendRows.removed) {
+    for (const layerId of layerIds) setLayerVisible(map, layerId, false);
+  }
   bindDigitizedCameraUnlock(map);
 
   // slow providers hydrate in the background after the map becomes usable
@@ -411,13 +414,6 @@ async function loadMapLayers(map) {
         setSourceData(map, LAYER_IDS.nationalForestsSource, nationalForests);
       }
     ),
-    hydrateLegendLayer(
-      'ODF protection districts',
-      data.odfProtectionDistricts,
-      (odfProtectionDistricts) => {
-        setSourceData(map, LAYER_IDS.odfProtectionSource, odfProtectionDistricts);
-      }
-    ),
   ]);
 }
 
@@ -483,36 +479,6 @@ function addContextLayers(map) {
     paint: {
       'line-color': NATIONAL_FOREST_COLOR,
       'line-width': 1.25,
-    },
-  }, beforeId);
-
-  addGeoJSONSource(map, LAYER_IDS.odfProtectionSource);
-  map.addLayer({
-    id: LAYER_IDS.odfProtectionFill,
-    type: 'fill',
-    source: LAYER_IDS.odfProtectionSource,
-    layout: { visibility: 'none' },
-    paint: {
-      'fill-color': ODF_PROTECTION_COLOR,
-      'fill-opacity': 0.10,
-    },
-  }, beforeId);
-  map.addLayer({
-    id: LAYER_IDS.odfProtectionLine,
-    type: 'line',
-    source: LAYER_IDS.odfProtectionSource,
-    layout: { visibility: 'none' },
-    paint: {
-      'line-color': ODF_PROTECTION_COLOR,
-      'line-dasharray': [3, 2],
-      'line-opacity': 0.95,
-      'line-width': [
-        'interpolate',
-        ['linear'],
-        ['zoom'],
-        5, 1.25,
-        10, 2.5,
-      ],
     },
   }, beforeId);
 }
@@ -720,9 +686,16 @@ function polygonFilterIsActive() {
 // show or hide one legend layer by label through the checkbox path
 // returns false for unknown labels; safe before the map connects
 function setLayerVisibility(label, visible) {
+  // presets may name a layer that js/visible-content.js currently leaves out
+  if (layerIsRemoved(label)) return false;
   const found = legendControl.setVisible(label, visible);
   if (!found) console.warn(`Unknown legend layer: ${label}`);
   return found;
+}
+
+function layerIsRemoved(label) {
+  return legendRows.removed.some((item) =>
+    item.label === label || item.children?.some((child) => child.label === label));
 }
 
 // apply the configured basemap and layer toggles for a filter type
@@ -902,12 +875,20 @@ function loadDivisionData(division) {
           throw new Error(`${division.label} data is not a FeatureCollection`);
         }
 
+        const unmatched = unmatchedFilterOptions(division, data.features);
+        if (unmatched.length) {
+          console.warn(`VISIBLE_FILTERS lists unknown ${division.label} options:`, unmatched);
+        }
+        // options left out of js/visible-content.js are dropped before the menu, map, and selection see them
+        const visible = data.features.filter((feature) =>
+          filterOptionIsVisible(division, feature.properties));
+
         // retain source features for result details and later bounds fitting
         const features = new Map(
-          data.features.map((feature) => [feature.properties?.divisionId, feature])
+          visible.map((feature) => [feature.properties?.divisionId, feature])
         );
         divisionFeatures.set(division.value, features);
-        return data;
+        return { ...data, features: visible };
       })
       .catch((error) => {
         // let a later selection retry after network or parse failure
@@ -1309,17 +1290,6 @@ function loadLayerData() {
           maxAllowableOffset: '0.005',
         })
     ),
-
-    odfProtectionDistricts: safelyLoadLegend(
-      'ODF protection districts',
-      'ODF protection districts',
-      () =>
-        fetchArcGISGeoJSON(DATA_URLS.odfProtectionDistricts, {
-          outFields: 'ODF_FPD',
-          geometryPrecision: '4',
-          maxAllowableOffset: '0.001',
-        })
-    ),
   };
 }
 
@@ -1435,6 +1405,11 @@ function ensureDigitizedCameraLayers(map) {
 }
 
 function safelyLoadLegend(label, legendLabel, loader, fallback) {
+  // a removed layer resolves empty without requesting its data
+  // camera loaders pass child row labels, so they always run for the filters and results
+  if (REMOVED_LAYER_LABELS.has(legendLabel)) {
+    return Promise.resolve(fallback ?? emptyFeatureCollection());
+  }
   return safelyLoad(label, loader, fallback, (error) => {
     legendControl.setError(
       legendLabel,
@@ -1927,17 +1902,6 @@ function legendItems() {
       swatchBorder: false,
       visible: false,
       layerIds: [LAYER_IDS.blmLands],
-    },
-    {
-      label: LEGEND_LAYERS.odfProtection,
-      swatchColor: ODF_PROTECTION_COLOR,
-      visible: false,
-      infoText: 'Forest protection districts from the Oregon Department of Forestry',
-      loading: true,
-      layerIds: [
-        LAYER_IDS.odfProtectionFill,
-        LAYER_IDS.odfProtectionLine,
-      ],
     },
     {
       label: LEGEND_LAYERS.burnProbability,

@@ -32,8 +32,6 @@ export const DATA_URLS = Object.freeze({
     'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_BasicOwnership_02/MapServer/0',
   blmLandTiles:
     'https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_Cached_BLM_Only/MapServer/tile/{z}/{y}/{x}',
-  odfProtectionDistricts:
-    'https://services.arcgis.com/uUvqNMGPm7axC2dD/arcgis/rest/services/District_Boundaries/FeatureServer/1',
   burnProbabilityTiles:
     'https://tiles.arcgis.com/tiles/CD5mKowwN6nIaqd8/arcgis/rest/services/project_wre_bp_tile_package/MapServer/tile/{z}/{y}/{x}',
 });
@@ -82,9 +80,6 @@ export const LAYER_IDS = Object.freeze({
   nationalForestsLine: 'national-forests-line',
   blmLandsSource: 'blm-lands-source',
   blmLands: 'blm-lands',
-  odfProtectionSource: 'odf-protection-source',
-  odfProtectionFill: 'odf-protection-fill',
-  odfProtectionLine: 'odf-protection-line',
   burnProbabilitySource: 'burn-probability-source',
   burnProbability: 'burn-probability',
   cameras: 'alertwest-cameras',
@@ -122,11 +117,28 @@ export const LEGEND_LAYERS = Object.freeze({
   lookouts: 'Standing lookouts',
   nationalForests: 'National forests',
   blmLands: 'BLM lands',
-  odfProtection: 'ODF protection districts',
   burnProbability: 'OR Burn probability (QWRA)',
   fires: 'Fires (NIFC)',
   prescribed: 'Prescribed fires (Watch Duty)',
 });
+
+// every filter group the code can build, as [type id, label shown in the panel]
+// js/visible-content.js picks which of these the site shows and in what order
+// camera is the only non-polygon type; the others load data/divisions/<type id>.geojson
+export const FILTER_TYPES = Object.freeze([
+  ['state', 'State'],
+  ['county', 'County'],
+  ['house', 'State House'],
+  ['us-house', 'US House'],
+  ['senate', 'State Senate'],
+  ['utility', 'Utility provider'],
+  ['national-forest', 'National Forest'],
+  ['national-park', 'National Park'],
+  ['federal-land', 'Federal land'],
+  ['tribal-land', 'Tribal land'],
+  ['odf-protection-district', 'ODF protection district'],
+  ['camera', 'Camera'],
+]);
 
 // filter type -> context to show when that type is picked
 // basemap: 'outdoors' | 'satellite' | 'simple', omit to keep the current basemap
@@ -140,6 +152,68 @@ export const FILTER_LAYER_PRESETS = Object.freeze({
 // returns the preset for a filter type, or null when it has none
 export function layerPresetForFilter(filterType, presets = FILTER_LAYER_PRESETS) {
   return Object.hasOwn(presets, filterType) ? presets[filterType] : null;
+}
+
+// names in the editable lists ignore case and stray spaces
+function normalizeName(name) {
+  return `${name}`.trim().toLowerCase();
+}
+
+// resolves the editable filter list against every type the code can build
+// returns the listed types in list order as { value, label, options }
+// options is null when every option shows, otherwise a Set of normalized names
+export function visibleFilterTypes(visibleFilters, types = FILTER_TYPES, warn = console.warn) {
+  const visible = [];
+  for (const [name, options] of Object.entries(visibleFilters)) {
+    const type = types.find(([value, label]) =>
+      normalizeName(label) === normalizeName(name) || value === name);
+    if (!type) {
+      warn(`Unknown filter group in VISIBLE_FILTERS: ${name}`);
+      continue;
+    }
+    if (options !== 'all' && !Array.isArray(options)) {
+      warn(`VISIBLE_FILTERS['${name}'] must be 'all' or a list of options; showing all`);
+    }
+    visible.push({
+      value: type[0],
+      label: type[1],
+      options: Array.isArray(options) ? new Set(options.map(normalizeName)) : null,
+    });
+  }
+  return visible;
+}
+
+// an option can be listed by its panel label, its full name, or its divisionId
+export function filterOptionIsVisible(type, properties) {
+  if (!type.options) return true;
+  return [properties?.label, properties?.name, properties?.divisionId]
+    .some((name) => name != null && type.options.has(normalizeName(name)));
+}
+
+// listed option names that match no feature, so typos can be reported
+export function unmatchedFilterOptions(type, features) {
+  if (!type.options) return [];
+  const known = new Set(features.flatMap(({ properties }) =>
+    [properties?.label, properties?.name, properties?.divisionId]
+      .filter((name) => name != null)
+      .map(normalizeName)));
+  return [...type.options].filter((name) => !known.has(name));
+}
+
+// splits legend rows into the listed ones, in list order, and the ones left out
+// rows that start hidden are revealed by code rather than listed, so they always stay
+export function visibleLegendItems(items, visibleLayers, warn = console.warn) {
+  const listed = [];
+  for (const name of visibleLayers) {
+    const item = items.find(({ label, hidden }) =>
+      !hidden && normalizeName(label) === normalizeName(name));
+    if (!item) warn(`Unknown map layer in VISIBLE_LAYERS: ${name}`);
+    else if (!listed.includes(item)) listed.push(item);
+  }
+  return {
+    visible: [...listed, ...items.filter(({ hidden }) => hidden)],
+    removed: items.filter((item) => !item.hidden && !listed.includes(item)),
+  };
 }
 
 export const REGION_DATA_BOUNDS = Object.freeze([
