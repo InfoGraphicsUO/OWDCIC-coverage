@@ -452,7 +452,7 @@ function appendLandStats(container, landMix) {
     swatch.style.backgroundColor = landMixColor(label, index);
     swatch.setAttribute('aria-hidden', 'true');
     const text = document.createElement('span');
-    text.textContent = `${formatPercent(item.percentage)}% ${label}`;
+    text.textContent = `${formatLandShare(item.percentage)}% ${label}`;
     p.append(swatch, text);
     container.append(p);
   });
@@ -761,7 +761,7 @@ function layoutStatsPanel({ ctx, width, title, qualifier, leadLine, bodyLines, l
   ctx.font = `${bodySize}px ${EXPORT_FONT}`;
   // wrap land labels with the same width used when drawing the stats panel
   const landLines = landMixRows.map((row) =>
-    wrapExportLines([`${formatPercent(row.percentage)}% ${row.label}`], 38));
+    wrapExportLines([`${formatLandShare(row.percentage)}% ${row.label}`], 38));
   // compute card height from the exact rows the draw pass will paint
   let contentHeight = padY + titleLines.length * (titleSize + 4) + 8;
   if (qualifier) contentHeight += qualifierSize + 10;
@@ -1168,6 +1168,12 @@ function formatPercent(value) {
   // clamp displayed percentages so malformed source values cannot exceed 0–100%
   const number = Number(value);
   return numberFormat.format(Math.round(Math.max(0, Math.min(100, Number.isFinite(number) ? number : 0))));
+}
+
+function formatLandShare(value) {
+  // small slices still show on the donut, so label them <1 instead of rounding to 0 or 1
+  const number = Number(value);
+  return number > 0 && number < 1 ? '<1' : formatPercent(number);
 }
 
 function formatPan(value) {
