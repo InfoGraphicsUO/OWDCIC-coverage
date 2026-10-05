@@ -39,11 +39,12 @@ CAMERA_OUT = ROOT / 'data/camera-coverage.json'
 HYDRO_URL = 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Hydro/MapServer/1'
 ENVELOPE = '-124.8,41.8,-116.3,49.1'
 TYPES = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
-         'national-forest', 'national-park', 'federal-land', 'tribal-land')
+         'national-forest', 'national-park', 'federal-land', 'tribal-land',
+         'odf-protection-district')
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
     'utility': 3, 'national-forest': 23, 'national-park': 14,
-    'federal-land': 7, 'tribal-land': 66,
+    'federal-land': 7, 'tribal-land': 66, 'odf-protection-district': 12,
 }
 TO_5070 = Transformer.from_crs(4326, 5070, always_xy=True).transform
 UNAVAILABLE_COVERAGE = 'Coverage unavailable'
