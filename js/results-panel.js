@@ -7,7 +7,7 @@ const UTILITY_QUALIFIER = 'Approximate service area boundary';
 const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | UO InfoGraphics Lab | OHAZ';
 // only these polygon selections include mapped land shares
 const POLYGON_DONUT_TYPES = new Set([
-  'house', 'us-house', 'senate', 'utility',
+  'house', 'us-house', 'senate', 'utility', 'odf-protection-district',
 ]);
 // shared category colors keep chart slices and text swatches in sync
 const LAND_MIX_COLORS = Object.freeze({
@@ -524,7 +524,6 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'Standing lookouts': { type: 'swatch', style: 'circle', color: '#8154BD' },
   'National forests': { type: 'swatch', style: 'outline', color: '#3b7d4f' },
   'BLM lands': { type: 'swatch', style: 'fill', color: '#f6d94a' },
-  'ODF protection districts': { type: 'swatch', style: 'outline', color: '#008fb3' },
   'OR Burn probability (QWRA)': { type: 'swatch', style: 'burn-probability' },
   'Fires (NIFC)': { type: 'icon', src: 'img/fire-marker.svg' },
   'Prescribed fires (Watch Duty)': { type: 'icon', src: 'img/prescribed-marker.svg' },

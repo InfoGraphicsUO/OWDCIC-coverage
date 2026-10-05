@@ -32,8 +32,6 @@ export const DATA_URLS = Object.freeze({
     'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_BasicOwnership_02/MapServer/0',
   blmLandTiles:
     'https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_Cached_BLM_Only/MapServer/tile/{z}/{y}/{x}',
-  odfProtectionDistricts:
-    'https://services.arcgis.com/uUvqNMGPm7axC2dD/arcgis/rest/services/District_Boundaries/FeatureServer/1',
   burnProbabilityTiles:
     'https://tiles.arcgis.com/tiles/CD5mKowwN6nIaqd8/arcgis/rest/services/project_wre_bp_tile_package/MapServer/tile/{z}/{y}/{x}',
 });
@@ -82,9 +80,6 @@ export const LAYER_IDS = Object.freeze({
   nationalForestsLine: 'national-forests-line',
   blmLandsSource: 'blm-lands-source',
   blmLands: 'blm-lands',
-  odfProtectionSource: 'odf-protection-source',
-  odfProtectionFill: 'odf-protection-fill',
-  odfProtectionLine: 'odf-protection-line',
   burnProbabilitySource: 'burn-probability-source',
   burnProbability: 'burn-probability',
   cameras: 'alertwest-cameras',
@@ -122,7 +117,6 @@ export const LEGEND_LAYERS = Object.freeze({
   lookouts: 'Standing lookouts',
   nationalForests: 'National forests',
   blmLands: 'BLM lands',
-  odfProtection: 'ODF protection districts',
   burnProbability: 'OR Burn probability (QWRA)',
   fires: 'Fires (NIFC)',
   prescribed: 'Prescribed fires (Watch Duty)',
@@ -142,6 +136,7 @@ export const FILTER_TYPES = Object.freeze([
   ['national-park', 'National Park'],
   ['federal-land', 'Federal land'],
   ['tribal-land', 'Tribal land'],
+  ['odf-protection-district', 'ODF protection district'],
   ['camera', 'Camera'],
 ]);
 
