@@ -32,7 +32,7 @@ const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }
  * accepts plain feature properties so callers need no data-source details
  * keeps chart and dialog state local to this panel instance
  */
-export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) {
+export function initResultsPanel({ getMapCanvas, getMap, getLegendItems, onClose = () => {} } = {}) {
   const element = document.querySelector('#results-panel');
   const title = element.querySelector('[data-results-title]');
   const subtitle = element.querySelector('[data-results-subtitle]');
@@ -183,6 +183,8 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems } = {}) 
   }
 
   exportButton.addEventListener('click', openExportModal);
+  // the caller owns clearing so the filter panel and map reset together
+  element.querySelector('[data-results-close]').addEventListener('click', () => onClose());
   clear();
   return { showPolygon, showCamera, showLoading, showError, clear, element };
 
