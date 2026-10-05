@@ -442,7 +442,7 @@ function landMixSection(landMix, chartLabel) {
 }
 
 function appendLandStats(container, landMix) {
-  // filter invalid and zero shares before assigning colors by visible row order
+  // filter invalid and sub-1% shares before assigning colors by visible row order
   usableLandMix(landMix).forEach((item, index) => {
     const label = item.label || item.type || 'Other/unclassified';
     const p = document.createElement('p');
@@ -452,7 +452,7 @@ function appendLandStats(container, landMix) {
     swatch.style.backgroundColor = landMixColor(label, index);
     swatch.setAttribute('aria-hidden', 'true');
     const text = document.createElement('span');
-    text.textContent = `${formatLandShare(item.percentage)}% ${label}`;
+    text.textContent = `${formatPercent(item.percentage)}% ${label}`;
     p.append(swatch, text);
     container.append(p);
   });
@@ -760,7 +760,7 @@ function layoutStatsPanel({ ctx, width, title, qualifier, leadLine, bodyLines, l
   ctx.font = `${bodySize}px ${EXPORT_FONT}`;
   // wrap land labels with the same width used when drawing the stats panel
   const landLines = landMixRows.map((row) =>
-    wrapExportLines([`${formatLandShare(row.percentage)}% ${row.label}`], 38));
+    wrapExportLines([`${formatPercent(row.percentage)}% ${row.label}`], 38));
   // compute card height from the exact rows the draw pass will paint
   let contentHeight = padY + titleLines.length * (titleSize + 4) + 8;
   if (qualifier) contentHeight += qualifierSize + 10;
@@ -1113,14 +1113,16 @@ function exportLandMixRows({ kind, type, properties, metrics }) {
 }
 
 function polygonShowsDonut(type, properties) {
-  // only supported polygon kinds with at least one positive share get chart space
+  // only supported polygon kinds with at least one share of 1% or more get chart space
   return POLYGON_DONUT_TYPES.has(type) && usableLandMix(properties.landMix).length > 0;
 }
 
 function usableLandMix(landMix) {
-  // discard absent, nonnumeric, zero, and negative shares before charting or export
+  // discard absent, nonnumeric, and sub-1% shares, then order largest first for charting and export
   return Array.isArray(landMix)
-    ? landMix.filter((item) => finite(item?.percentage) != null && finite(item.percentage) > 0)
+    ? landMix
+      .filter((item) => finite(item?.percentage) != null && finite(item.percentage) >= 1)
+      .sort((a, b) => finite(b.percentage) - finite(a.percentage))
     : [];
 }
 
@@ -1167,12 +1169,6 @@ function formatPercent(value) {
   // clamp displayed percentages so malformed source values cannot exceed 0–100%
   const number = Number(value);
   return numberFormat.format(Math.round(Math.max(0, Math.min(100, Number.isFinite(number) ? number : 0))));
-}
-
-function formatLandShare(value) {
-  // small slices still show on the donut, so label them <1 instead of rounding to 0 or 1
-  const number = Number(value);
-  return number > 0 && number < 1 ? '<1' : formatPercent(number);
 }
 
 function formatPan(value) {
