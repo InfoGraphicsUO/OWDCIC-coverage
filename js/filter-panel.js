@@ -308,9 +308,21 @@ export function initFilterPanel({
     return true;
   };
 
+  const clearSelection = async () => {
+    // without a chosen type there is nothing to stay in, so clear everything
+    if (!activeType) return reset();
+    // drop only the picked option and keep the user in the current type
+    activeId = null;
+    showOptionView({ animate: false });
+    renderOptions();
+    // the type callback restores the map and results to an unselected type
+    await onTypeSelected(activeType.value);
+  };
+
   return {
     select,
     reset,
+    clearSelection,
     currentType: () => activeType?.value ?? null,
     setClearEnabled(enabled) {
       clearButton.disabled = !enabled;

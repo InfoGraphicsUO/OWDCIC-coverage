@@ -60,6 +60,13 @@
     line-height: 1.25;
 }
 
+/* match the title's line height so the close icon centers on its first line */
+.results-panel__header .modal__close {
+    padding: 0 8px;
+    font-size: 28px;
+    line-height: 22.5px;
+}
+
 .results-panel__subtitle {
     margin: 0;
     color: #c8c8c8;
