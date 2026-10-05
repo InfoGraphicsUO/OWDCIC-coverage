@@ -10,8 +10,12 @@ import {
   MARKER_ICON_URLS,
   REGION_DATA_BOUNDS,
   emptyFeatureCollection,
+  filterOptionIsVisible,
   layerPresetForFilter,
+  unmatchedFilterOptions,
+  visibleFilterTypes,
 } from './config.js';
+import { VISIBLE_FILTERS } from './visible-content.js';
 import {
   addNumericProperty,
   attachViewshedIds,
@@ -130,28 +134,20 @@ const CAMERA_LAYER_IDS = Object.freeze(
 // Pano markers on a shared ALERTWest site sit beside its marker instead of on top
 const SHARED_SITE_ICON_OFFSET = Object.freeze([14, 0]);
 const NO_DIVISION_SELECTED = '__none__';
-const FILTER_TYPES = Object.freeze([
-  ['state', 'State'],
-  ['county', 'County'],
-  ['house', 'State House'],
-  ['us-house', 'US House'],
-  ['senate', 'State Senate'],
-  ['utility', 'Utility provider'],
-  ['national-forest', 'National Forest'],
-  ['national-park', 'National Park'],
-  ['federal-land', 'Federal land'],
-  ['tribal-land', 'Tribal land'],
-  ['camera', 'Camera'],
-]);
-// keep this order aligned with the filter menu; camera is the only non-polygon type
+// only the groups listed in js/visible-content.js reach the filter menu and the map
+const FILTER_TYPES = Object.freeze(visibleFilterTypes(VISIBLE_FILTERS));
+if (FILTER_TYPES.some(({ value, options }) => value === 'camera' && options)) {
+  console.warn('The Camera filter group cannot list single options; showing all');
+}
 // cameras use point selection; every other type builds polygon layers
 const DIVISION_TYPES = Object.freeze(FILTER_TYPES
-  .filter(([value]) => value !== 'camera')
-  .map(([value, label]) => {
+  .filter(({ value }) => value !== 'camera')
+  .map(({ value, label, options }) => {
     const prefix = `filter-${value}`;
     return Object.freeze({
       value,
       label,
+      options,
       sourceId: `${prefix}-source`,
       labelSourceId: `${prefix}-label-source`,
       fillLayerId: `${prefix}-fill`,
@@ -258,7 +254,7 @@ const resultsControl = initResultsPanel({
     .filter(Boolean),
 });
 const filterControl = initFilterPanel({
-  types: FILTER_TYPES.map(([value, label]) => ({ value, label })),
+  types: FILTER_TYPES.map(({ value, label }) => ({ value, label })),
   loadOptions: loadFilterOptions,
   onTypeSelected: typeSelected,
   onSelection: optionSelected,
@@ -900,12 +896,20 @@ function loadDivisionData(division) {
           throw new Error(`${division.label} data is not a FeatureCollection`);
         }
 
+        const unmatched = unmatchedFilterOptions(division, data.features);
+        if (unmatched.length) {
+          console.warn(`VISIBLE_FILTERS lists unknown ${division.label} options:`, unmatched);
+        }
+        // options left out of js/visible-content.js are dropped before the menu, map, and selection see them
+        const visible = data.features.filter((feature) =>
+          filterOptionIsVisible(division, feature.properties));
+
         // retain source features for result details and later bounds fitting
         const features = new Map(
-          data.features.map((feature) => [feature.properties?.divisionId, feature])
+          visible.map((feature) => [feature.properties?.divisionId, feature])
         );
         divisionFeatures.set(division.value, features);
-        return data;
+        return { ...data, features: visible };
       })
       .catch((error) => {
         // let a later selection retry after network or parse failure
