@@ -452,7 +452,7 @@ function appendLandStats(container, landMix) {
     swatch.style.backgroundColor = landMixColor(label, index);
     swatch.setAttribute('aria-hidden', 'true');
     const text = document.createElement('span');
-    text.textContent = `${formatPercent(item.percentage)}% of area is ${label}`;
+    text.textContent = `${formatPercent(item.percentage)}% ${label}`;
     p.append(swatch, text);
     container.append(p);
   });
@@ -761,7 +761,7 @@ function layoutStatsPanel({ ctx, width, title, qualifier, leadLine, bodyLines, l
   ctx.font = `${bodySize}px ${EXPORT_FONT}`;
   // wrap land labels with the same width used when drawing the stats panel
   const landLines = landMixRows.map((row) =>
-    wrapExportLines([`${formatPercent(row.percentage)}% of area is ${row.label}`], 38));
+    wrapExportLines([`${formatPercent(row.percentage)}% ${row.label}`], 38));
   // compute card height from the exact rows the draw pass will paint
   let contentHeight = padY + titleLines.length * (titleSize + 4) + 8;
   if (qualifier) contentHeight += qualifierSize + 10;
