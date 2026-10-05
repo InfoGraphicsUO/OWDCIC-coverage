@@ -205,6 +205,22 @@ export function unmatchedFilterOptions(type, features) {
   return [...type.options].filter((name) => !known.has(name));
 }
 
+// splits legend rows into the listed ones, in list order, and the ones left out
+// rows that start hidden are revealed by code rather than listed, so they always stay
+export function visibleLegendItems(items, visibleLayers, warn = console.warn) {
+  const listed = [];
+  for (const name of visibleLayers) {
+    const item = items.find(({ label, hidden }) =>
+      !hidden && normalizeName(label) === normalizeName(name));
+    if (!item) warn(`Unknown map layer in VISIBLE_LAYERS: ${name}`);
+    else if (!listed.includes(item)) listed.push(item);
+  }
+  return {
+    visible: [...listed, ...items.filter(({ hidden }) => hidden)],
+    removed: items.filter((item) => !item.hidden && !listed.includes(item)),
+  };
+}
+
 export const REGION_DATA_BOUNDS = Object.freeze([
   Object.freeze([-124.85, 41.99]),
   Object.freeze([-116.4, 49.01]),

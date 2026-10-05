@@ -1,9 +1,9 @@
-// the list at the bottom of this file decides which filters the site shows
-// edit it, save, and reload the page; nothing else needs to change
+// the two lists at the bottom of this file decide which filters and map layers the site shows
+// edit them, save, and reload the page; nothing else needs to change
 // anything left out is only switched off, the code that builds it stays in place
 
 // ---------------------------------------------------------------------------
-// EVERYTHING AVAILABLE (reference only, copy lines from here into the list below)
+// EVERYTHING AVAILABLE (reference only, copy lines from here into the lists below)
 // ---------------------------------------------------------------------------
 //
 // FILTER GROUPS
@@ -104,6 +104,21 @@
 //   'Camera': 'all',
 //     // cameras come from the live provider feeds, so this group is all or nothing
 //
+// MAP LAYERS
+//   layers appear in the legend in the order they are listed
+//   a layer left out has no legend row, is never drawn, and does not request its data
+//   (camera and viewshed data still load because the filters and results use them)
+//
+//   'Cameras',
+//   'Camera viewsheds',
+//   'Standing lookouts',
+//   'National forests',
+//   'BLM lands',
+//   'ODF protection districts',
+//   'OR Burn probability (QWRA)',
+//   'Fires (NIFC)',
+//   'Prescribed fires (Watch Duty)',
+//
 // ---------------------------------------------------------------------------
 // WHAT THE SITE SHOWS
 // ---------------------------------------------------------------------------
@@ -121,3 +136,15 @@ export const VISIBLE_FILTERS = {
   'Tribal land': 'all',
   'Camera': 'all',
 };
+
+export const VISIBLE_LAYERS = [
+  'Cameras',
+  'Camera viewsheds',
+  'Standing lookouts',
+  'National forests',
+  'BLM lands',
+  'ODF protection districts',
+  'OR Burn probability (QWRA)',
+  'Fires (NIFC)',
+  'Prescribed fires (Watch Duty)',
+];

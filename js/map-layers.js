@@ -14,8 +14,9 @@ import {
   layerPresetForFilter,
   unmatchedFilterOptions,
   visibleFilterTypes,
+  visibleLegendItems,
 } from './config.js';
-import { VISIBLE_FILTERS } from './visible-content.js';
+import { VISIBLE_FILTERS, VISIBLE_LAYERS } from './visible-content.js';
 import {
   addNumericProperty,
   attachViewshedIds,
@@ -243,7 +244,10 @@ const FIRE_MARKER_SIZES = [
 
 // render control shells before Mapbox and providers finish loading
 initSettings();
-const legendControl = initLegend(legendItems());
+// rows left out of js/visible-content.js are kept aside so their layers stay off
+const legendRows = visibleLegendItems(legendItems(), VISIBLE_LAYERS);
+const REMOVED_LAYER_LABELS = new Set(legendRows.removed.map(({ label }) => label));
+const legendControl = initLegend(legendRows.visible);
 const resultsControl = initResultsPanel({
   getMap: () => activeMap,
   getMapCanvas: () => activeMap?.getCanvas(),
@@ -315,6 +319,10 @@ async function loadMapLayers(map) {
 
   // Mapbox visibility can now follow the startup legend
   legendControl.connect(map);
+  // removed layers have no checkbox to follow, so switch them off here
+  for (const { layerIds } of legendRows.removed) {
+    for (const layerId of layerIds) setLayerVisible(map, layerId, false);
+  }
   bindDigitizedCameraUnlock(map);
 
   // slow providers hydrate in the background after the map becomes usable
@@ -714,9 +722,16 @@ function polygonFilterIsActive() {
 // show or hide one legend layer by label through the checkbox path
 // returns false for unknown labels; safe before the map connects
 function setLayerVisibility(label, visible) {
+  // presets may name a layer that js/visible-content.js currently leaves out
+  if (layerIsRemoved(label)) return false;
   const found = legendControl.setVisible(label, visible);
   if (!found) console.warn(`Unknown legend layer: ${label}`);
   return found;
+}
+
+function layerIsRemoved(label) {
+  return legendRows.removed.some((item) =>
+    item.label === label || item.children?.some((child) => child.label === label));
 }
 
 // apply the configured basemap and layer toggles for a filter type
@@ -1437,6 +1452,11 @@ function ensureDigitizedCameraLayers(map) {
 }
 
 function safelyLoadLegend(label, legendLabel, loader, fallback) {
+  // a removed layer resolves empty without requesting its data
+  // camera loaders pass child row labels, so they always run for the filters and results
+  if (REMOVED_LAYER_LABELS.has(legendLabel)) {
+    return Promise.resolve(fallback ?? emptyFeatureCollection());
+  }
   return safelyLoad(label, loader, fallback, (error) => {
     legendControl.setError(
       legendLabel,
