@@ -304,9 +304,10 @@
 }
 
 /* export preview layout; the shared shell lives in css/modal.css */
-.results-export-modal__dialog {
-    width: min(960px, 100%);
-    max-height: min(92vh, 900px);
+/* both classes so this beats the 440px .modal__dialog width loaded later in modal.css */
+.modal__dialog.results-export-modal__dialog {
+    width: min(1200px, 90vw);
+    max-height: 90vh;
 }
 
 .results-export-modal__preview-wrap {
