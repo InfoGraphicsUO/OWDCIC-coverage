@@ -1,10 +1,17 @@
 import { openModal } from './modal.js';
-import { PGE_WILDFIREWATCH_URL } from './config.js';
+import { LEGEND_LAYERS, PGE_WILDFIREWATCH_URL } from './config.js';
+import { attachInfoTooltip } from './info-tooltip.js';
+import { getSetting } from './settings.js';
+
+const LAND_MIX_TITLE = 'Mapped land status';
+const LAND_MIX_INFO = 'Tribal areas follow reservation and trust boundaries. Other named types use mapped ownership parcels. Unclassified includes unmapped private land.';
 
 // square-kilometer to square-mile conversion for displayed area values
 const SQMI_PER_SQKM = 0.3861021585;
 const UTILITY_QUALIFIER = 'Approximate service area boundary';
 const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | UO InfoGraphics Lab | OHAZ';
+// Mapbox satellite imagery carries its own provider credit
+const SATELLITE_MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | Maxar | UO InfoGraphics Lab | OHAZ';
 // only these polygon selections include mapped land shares
 const POLYGON_DONUT_TYPES = new Set([
   'house', 'us-house', 'senate', 'utility', 'odf-protection-district',
@@ -32,13 +39,14 @@ const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }
  * accepts plain feature properties so callers need no data-source details
  * keeps chart and dialog state local to this panel instance
  */
-export function initResultsPanel({ getMapCanvas, getMap, getLegendItems, onClose = () => {} } = {}) {
+export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendItems, onClose = () => {} } = {}) {
   const element = document.querySelector('#results-panel');
   const title = element.querySelector('[data-results-title]');
   const subtitle = element.querySelector('[data-results-subtitle]');
   const content = element.querySelector('[data-results-content]');
   const exportButton = element.querySelector('[data-results-export]');
   const status = element.querySelector('[data-results-status]');
+  const infoTooltip = attachInfoTooltip(content);
   let chart = null;
   let chartReady = Promise.resolve();
   // stale plot promises must not restore a chart after the selection changes
@@ -54,7 +62,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems, onClose
     // keep an empty panel out of both visual and accessibility navigation
     title.textContent = 'Select an area or camera';
     subtitle.textContent = '';
-    content.replaceChildren(emptyState());
+    replaceContent(emptyState());
     status.textContent = '';
     exportButton.disabled = true;
     element.classList.remove('results-panel--has-result', 'results-panel--loading');
@@ -74,7 +82,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems, onClose
     element.setAttribute('aria-busy', 'true');
     title.textContent = label;
     subtitle.textContent = '';
-    content.replaceChildren(messageState('Loading coverage statistics…', 'results-panel__loading'));
+    replaceContent(messageState('Loading coverage statistics…', 'results-panel__loading'));
     status.textContent = '';
     exportButton.disabled = true;
   }
@@ -91,7 +99,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems, onClose
     element.removeAttribute('aria-busy');
     title.textContent = 'Coverage unavailable';
     subtitle.textContent = '';
-    content.replaceChildren(messageState(message || 'Coverage statistics could not be loaded.', 'results-panel__error'));
+    replaceContent(messageState(message || 'Coverage statistics could not be loaded.', 'results-panel__error'));
     status.textContent = message || 'Coverage statistics could not be loaded.';
     exportButton.disabled = true;
   }
@@ -131,6 +139,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems, onClose
         // resolve live map and legend state only when the user asks to export
         mapCanvas: await resolveCanvas(getMapCanvas),
         map: typeof getMap === 'function' ? getMap() : null,
+        basemap: typeof getBasemap === 'function' ? getBasemap() : null,
         legendItems: await resolveLegendRowsForExport(getLegendItems),
         title: exportTitle,
         current: selection,
@@ -188,6 +197,12 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems, onClose
   clear();
   return { showPolygon, showCamera, showLoading, showError, clear, element };
 
+  function replaceContent(node) {
+    // a removed trigger fires no pointerout, so its tooltip would stay on screen
+    if (infoTooltip.isFor(content)) infoTooltip.hide();
+    content.replaceChildren(node);
+  }
+
   function presentResult(heading, body, detail = '') {
     // each result owns at most one chart and one export dialog
     destroyChart();
@@ -199,7 +214,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems, onClose
     element.removeAttribute('aria-busy');
     title.textContent = heading;
     subtitle.textContent = detail;
-    content.replaceChildren(body);
+    replaceContent(body);
     const chartHost = content.querySelector('[data-results-chart]');
     // a Plotly promise may settle after a newer selection has replaced this host
     const generation = chartGeneration;
@@ -342,10 +357,10 @@ function renderPolygon(type, properties) {
   // area totals need valid source values; missing coverage must stay unavailable, not zero
   if (coverage != null && covered != null && total != null) {
     wrapper.append(selfLine(
-      `${formatNumber(covered * SQMI_PER_SQKM)} sq mi of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(total * SQMI_PER_SQKM)} sq mi`,
+      `${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(total * SQMI_PER_SQKM)} mi²`,
     ));
   } else if (total != null) {
-    wrapper.append(selfLine(`${formatNumber(total * SQMI_PER_SQKM)} sq mi total area`));
+    wrapper.append(selfLine(`${formatNumber(total * SQMI_PER_SQKM)} mi² total area`));
   }
   if (polygonShowsDonut(type, properties)) {
     wrapper.append(landMixSection(properties.landMix, 'Mapped land status breakdown'));
@@ -412,7 +427,7 @@ function renderCamera(properties, metrics) {
   }
   const area = finite(metrics.landAreaSqKm);
   if (area != null) {
-    wrapper.append(selfLine(`${formatNumber(area * SQMI_PER_SQKM)} sq mi camera viewshed`, 'results-panel__lead'));
+    wrapper.append(selfLine(`${formatNumber(area * SQMI_PER_SQKM)} mi² camera viewshed`, 'results-panel__lead'));
   }
   if (Array.isArray(metrics.landMix) && metrics.landMix.length > 0) {
     wrapper.append(landMixSection(metrics.landMix, 'Viewshed mapped land status breakdown'));
@@ -424,6 +439,18 @@ function landMixSection(landMix, chartLabel) {
   const section = document.createElement('section');
   section.className = 'results-panel__land-mix';
   section.setAttribute('aria-label', chartLabel);
+  const heading = document.createElement('div');
+  heading.className = 'results-panel__land-mix-heading';
+  const title = document.createElement('h3');
+  title.className = 'results-panel__land-mix-title';
+  title.textContent = LAND_MIX_TITLE;
+  const infoButton = document.createElement('button');
+  infoButton.type = 'button';
+  infoButton.className = 'info-button results-panel__land-info';
+  infoButton.dataset.tooltip = LAND_MIX_INFO;
+  infoButton.setAttribute('aria-label', LAND_MIX_INFO);
+  infoButton.innerHTML = '<i class="fa-regular fa-circle-info" aria-hidden="true"></i>';
+  heading.append(title, infoButton);
   const chart = document.createElement('div');
   chart.className = 'results-panel__chart';
   chart.dataset.resultsChart = '';
@@ -436,8 +463,8 @@ function landMixSection(landMix, chartLabel) {
   appendLandStats(stats, landMix);
   const note = document.createElement('p');
   note.className = 'results-panel__land-note';
-  note.textContent = 'Tribal areas follow reservation and trust boundaries. Other named types use mapped ownership parcels. Unclassified includes unmapped private land.';
-  section.append(chart, stats, note);
+  note.textContent = 'Entries under 1% are not shown.';
+  section.append(heading, chart, stats, note);
   return section;
 }
 
@@ -487,17 +514,11 @@ function renderDonut(host, landMix) {
     marker: { colors: rows.map((row, i) => landMixColor(row.label || row.type || 'Other/unclassified', i)) },
     sort: false,
   }], {
-    margin: { t: 36, r: 4, b: 4, l: 4 },
+    margin: { t: 8, r: 4, b: 4, l: 4 },
     showlegend: false,
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: { color: '#fff', family: 'Merriweather, sans-serif' },
-    title: {
-      text: 'Mapped land status',
-      x: 0.5,
-      xanchor: 'center',
-      font: { color: '#fff', family: 'Merriweather, sans-serif', size: 15 },
-    },
   }, {
     displayModeBar: false,
     responsive: true,
@@ -521,6 +542,7 @@ const EXPORT_PANEL_FILL = 'rgba(47, 46, 46, 0.9)';
 const EXPORT_LEGEND_VISUALS = Object.freeze({
   'ALERTWest cameras': { type: 'icon', src: 'img/camera-marker.svg' },
   'Pano AI cameras': { type: 'icon', src: 'img/pano-camera-marker.svg' },
+  'Camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
   'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
   'Pano AI camera viewsheds': { type: 'swatch', style: 'fill', color: '#3898ec' },
   'Standing lookouts': { type: 'swatch', style: 'circle', color: '#8154BD' },
@@ -530,8 +552,14 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'Fires (NIFC)': { type: 'icon', src: 'img/fire-marker.svg' },
   'Prescribed fires (Watch Duty)': { type: 'icon', src: 'img/prescribed-marker.svg' },
 });
+// the export names viewsheds without repeating "camera" on every row
+const EXPORT_SHARED_VIEWSHED_LABEL = 'Viewsheds';
+const EXPORT_PROVIDER_VIEWSHED_LABELS = Object.freeze({
+  [LEGEND_LAYERS.alertWestViewsheds]: 'ALERTWest viewsheds',
+  [LEGEND_LAYERS.panoViewsheds]: 'Pano AI viewsheds',
+});
 
-async function composeExport({ mapCanvas, map, legendItems, title, current, chart }) {
+async function composeExport({ mapCanvas, map, basemap, legendItems, title, current, chart }) {
   // fail early before creating a blank or misleading preview
   if (!mapCanvas || typeof mapCanvas.toDataURL !== 'function' || mapCanvas.width < 2 || mapCanvas.height < 2) {
     throw new Error('Map canvas unavailable');
@@ -541,7 +569,21 @@ async function composeExport({ mapCanvas, map, legendItems, title, current, char
   if (chart && typeof window.Plotly?.toImage === 'function') {
     try {
       // rasterize Plotly separately so the canvas export does not depend on SVG internals
-      chartImage = await loadImage(await window.Plotly.toImage(chart, { format: 'png', width: 500, height: 300, scale: 2 }));
+      // the panel titles the chart in HTML, so the raster needs its own title
+      const figure = chart.data ? {
+        data: chart.data,
+        layout: {
+          ...chart.layout,
+          margin: { ...chart.layout?.margin, t: 36 },
+          title: {
+            text: LAND_MIX_TITLE,
+            x: 0.5,
+            xanchor: 'center',
+            font: { color: '#fff', family: 'Merriweather, sans-serif', size: 15 },
+          },
+        },
+      } : chart;
+      chartImage = await loadImage(await window.Plotly.toImage(figure, { format: 'png', width: 500, height: 300, scale: 2 }));
     } catch (_) { /* text rows still carry the land shares when rasterization fails */ }
   }
   // preserve the map aspect ratio while enforcing a readable minimum export width
@@ -585,7 +627,7 @@ async function composeExport({ mapCanvas, map, legendItems, title, current, char
 
   drawLegendOverlay(ctx, legendX, legendY, legendLayout);
   drawStatsOverlay(ctx, statsX, statsY, statsLayout, chartImage);
-  drawExportAttribution(ctx, frameWidth, frameHeight);
+  drawExportAttribution(ctx, frameWidth, frameHeight, basemap);
   ctx.restore();
   return canvas.toDataURL('image/png');
 }
@@ -1001,15 +1043,16 @@ function drawStatsOverlay(ctx, x, y, layout, chartImage) {
   }
 }
 
-function drawExportAttribution(ctx, width, height) {
+function drawExportAttribution(ctx, width, height, basemap) {
+  const attribution = basemap === 'satellite' ? SATELLITE_MAP_ATTRIBUTION : MAP_ATTRIBUTION;
   // dark stroke keeps the small attribution readable over light map tiles
   ctx.font = `11px ${EXPORT_FONT}`;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
   ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
   ctx.lineWidth = 3;
   ctx.lineJoin = 'round';
-  ctx.strokeText(MAP_ATTRIBUTION, EXPORT_MARGIN, height - EXPORT_MARGIN);
-  ctx.fillText(MAP_ATTRIBUTION, EXPORT_MARGIN, height - EXPORT_MARGIN);
+  ctx.strokeText(attribution, EXPORT_MARGIN, height - EXPORT_MARGIN);
+  ctx.fillText(attribution, EXPORT_MARGIN, height - EXPORT_MARGIN);
 }
 
 function drawExportTitle(ctx) {
@@ -1082,7 +1125,7 @@ function exportSummary({ kind, type, properties, metrics }) {
       return lines;
     }
     const area = finite(metrics?.landAreaSqKm);
-    if (area != null) lines.push(`${formatNumber(area * SQMI_PER_SQKM)} sq mi camera viewshed`);
+    if (area != null) lines.push(`${formatNumber(area * SQMI_PER_SQKM)} mi² camera viewshed`);
     return lines;
   }
   const coverage = coverageFor(properties);
@@ -1093,9 +1136,9 @@ function exportSummary({ kind, type, properties, metrics }) {
   if (type === 'utility') lines.push(UTILITY_QUALIFIER);
   lines.push(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire-spotting cameras`);
   if (coverage != null && covered != null && selected != null) {
-    lines.push(`${formatNumber(covered * SQMI_PER_SQKM)} sq mi of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(selected * SQMI_PER_SQKM)} sq mi`);
+    lines.push(`${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(selected * SQMI_PER_SQKM)} mi²`);
   } else if (selected != null) {
-    lines.push(`${formatNumber(selected * SQMI_PER_SQKM)} sq mi total area`);
+    lines.push(`${formatNumber(selected * SQMI_PER_SQKM)} mi² total area`);
   }
   return lines;
 }
@@ -1209,8 +1252,53 @@ function safeCameraFeedUrl(value, isPano) {
 async function resolveLegendRowsForExport(getLegendItems) {
   // current DOM state wins so hidden and unchecked layers stay out of the image
   const domRows = readLegendRowsFromDom();
-  if (domRows.length) return domRows;
-  return normalizeLegendRows(typeof getLegendItems === 'function' ? getLegendItems() : []);
+  const rows = domRows.length
+    ? domRows
+    : normalizeLegendRows(typeof getLegendItems === 'function' ? getLegendItems() : []);
+  return condenseCameraLegendRows(rows, {
+    separateViewshedColors: Boolean(getSetting('separateViewshedColors')),
+  });
+}
+
+// the map legend nests provider rows under group checkboxes; the export lists each symbol once
+export function condenseCameraLegendRows(rows, { separateViewshedColors = false } = {}) {
+  const labels = new Set(rows.map(({ label }) => label));
+  const hasProviderCameras = labels.has(LEGEND_LAYERS.alertWestCameras) ||
+    labels.has(LEGEND_LAYERS.panoCameras);
+  const providerViewsheds = rows.filter(({ label }) => label in EXPORT_PROVIDER_VIEWSHED_LABELS);
+
+  const condensed = [];
+  let sharedViewshedsAdded = false;
+  for (const row of rows) {
+    // provider rows already carry the camera symbology
+    if (row.label === LEGEND_LAYERS.cameras && hasProviderCameras) continue;
+
+    const isViewshedGroup = row.label === LEGEND_LAYERS.viewsheds;
+    const isProviderViewshed = row.label in EXPORT_PROVIDER_VIEWSHED_LABELS;
+    if (!isViewshedGroup && !isProviderViewshed) {
+      condensed.push(row);
+      continue;
+    }
+
+    if (separateViewshedColors) {
+      // each provider keeps its own color, so the group row adds nothing
+      if (isProviderViewshed) {
+        condensed.push({ ...row, label: EXPORT_PROVIDER_VIEWSHED_LABELS[row.label] });
+      } else if (!providerViewsheds.length) {
+        condensed.push({ ...row, label: EXPORT_SHARED_VIEWSHED_LABEL });
+      }
+      continue;
+    }
+
+    // matching colors need a single row, drawn with the swatch the map is using
+    if (sharedViewshedsAdded) continue;
+    sharedViewshedsAdded = true;
+    condensed.push({
+      label: EXPORT_SHARED_VIEWSHED_LABEL,
+      visual: providerViewsheds[0]?.visual || row.visual,
+    });
+  }
+  return condensed;
 }
 
 function readLegendRowsFromDom() {

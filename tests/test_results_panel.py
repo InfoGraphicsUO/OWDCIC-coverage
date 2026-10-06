@@ -10,6 +10,8 @@ CSS = (ROOT / 'css/results-panel.css').read_text()
 # the export dialog is built on the shared modal shell
 MODAL_JS = (ROOT / 'js/modal.js').read_text()
 MODAL_CSS = (ROOT / 'css/modal.css').read_text()
+# the export button label lives in the static panel markup
+HTML = (ROOT / 'index.html').read_text()
 
 
 def donut_types():
@@ -42,7 +44,8 @@ class ResultsPanelContractTests(unittest.TestCase):
         )
 
     def test_export_modal_and_self_explanatory_copy(self):
-        self.assertIn('Export as…', JS)
+        self.assertIn('Export as…', HTML)
+        self.assertIn('data-results-export', HTML)
         self.assertIn('createExportModal', JS)
         self.assertIn('openModal', JS)
         self.assertIn("setAttribute('role', 'dialog')", MODAL_JS)
@@ -59,7 +62,7 @@ class ResultsPanelContractTests(unittest.TestCase):
     def test_utility_qualifier_is_exact_product_copy(self):
         self.assertIn("Approximate service area boundary", JS)
 
-    def test_png_export_covers_required_pieces_and_skips_pdf(self):
+    def test_png_and_pdf_export_cover_required_pieces(self):
         self.assertIn('composeExport', JS)
         self.assertIn('drawLegendOverlay', JS)
         self.assertIn('drawExportLegendSwatch', JS)
@@ -69,11 +72,15 @@ class ResultsPanelContractTests(unittest.TestCase):
         self.assertIn("ctx.fillText('Legend'", JS)
         self.assertIn("'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' }", JS)
         self.assertIn('MAP_ATTRIBUTION', JS)
+        self.assertIn("basemap === 'satellite' ? SATELLITE_MAP_ATTRIBUTION : MAP_ATTRIBUTION", JS)
         self.assertIn('exportLandMixRows', JS)
         self.assertIn('Plotly?.toImage', JS)
         self.assertNotIn('mapHeight + bottomHeight', JS)
-        self.assertNotRegex(JS.lower(), r'\bpdf\b')
-        self.assertNotRegex(CSS.lower(), r'\bpdf\b')
+        # the PDF is built from the same preview image as the PNG
+        self.assertIn('createPdfFromImage', JS)
+        self.assertIn("'Download PNG'", JS)
+        self.assertIn("'Download PDF'", JS)
+        self.assertIn("type: 'application/pdf'", JS)
 
     def test_results_panel_floats_with_content_height(self):
         self.assertIn('--results-float-gap', CSS)
