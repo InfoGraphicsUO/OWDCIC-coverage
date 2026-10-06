@@ -6,6 +6,8 @@ import { getSetting } from './settings.js';
 const SQMI_PER_SQKM = 0.3861021585;
 const UTILITY_QUALIFIER = 'Approximate service area boundary';
 const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | UO InfoGraphics Lab | OHAZ';
+// Mapbox satellite imagery carries its own provider credit
+const SATELLITE_MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | Maxar | UO InfoGraphics Lab | OHAZ';
 // only these polygon selections include mapped land shares
 const POLYGON_DONUT_TYPES = new Set([
   'house', 'us-house', 'senate', 'utility', 'odf-protection-district',
@@ -33,7 +35,7 @@ const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }
  * accepts plain feature properties so callers need no data-source details
  * keeps chart and dialog state local to this panel instance
  */
-export function initResultsPanel({ getMapCanvas, getMap, getLegendItems, onClose = () => {} } = {}) {
+export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendItems, onClose = () => {} } = {}) {
   const element = document.querySelector('#results-panel');
   const title = element.querySelector('[data-results-title]');
   const subtitle = element.querySelector('[data-results-subtitle]');
@@ -132,6 +134,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getLegendItems, onClose
         // resolve live map and legend state only when the user asks to export
         mapCanvas: await resolveCanvas(getMapCanvas),
         map: typeof getMap === 'function' ? getMap() : null,
+        basemap: typeof getBasemap === 'function' ? getBasemap() : null,
         legendItems: await resolveLegendRowsForExport(getLegendItems),
         title: exportTitle,
         current: selection,
@@ -539,7 +542,7 @@ const EXPORT_PROVIDER_VIEWSHED_LABELS = Object.freeze({
   [LEGEND_LAYERS.panoViewsheds]: 'Pano AI viewsheds',
 });
 
-async function composeExport({ mapCanvas, map, legendItems, title, current, chart }) {
+async function composeExport({ mapCanvas, map, basemap, legendItems, title, current, chart }) {
   // fail early before creating a blank or misleading preview
   if (!mapCanvas || typeof mapCanvas.toDataURL !== 'function' || mapCanvas.width < 2 || mapCanvas.height < 2) {
     throw new Error('Map canvas unavailable');
@@ -593,7 +596,7 @@ async function composeExport({ mapCanvas, map, legendItems, title, current, char
 
   drawLegendOverlay(ctx, legendX, legendY, legendLayout);
   drawStatsOverlay(ctx, statsX, statsY, statsLayout, chartImage);
-  drawExportAttribution(ctx, frameWidth, frameHeight);
+  drawExportAttribution(ctx, frameWidth, frameHeight, basemap);
   ctx.restore();
   return canvas.toDataURL('image/png');
 }
@@ -1009,15 +1012,16 @@ function drawStatsOverlay(ctx, x, y, layout, chartImage) {
   }
 }
 
-function drawExportAttribution(ctx, width, height) {
+function drawExportAttribution(ctx, width, height, basemap) {
+  const attribution = basemap === 'satellite' ? SATELLITE_MAP_ATTRIBUTION : MAP_ATTRIBUTION;
   // dark stroke keeps the small attribution readable over light map tiles
   ctx.font = `11px ${EXPORT_FONT}`;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
   ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
   ctx.lineWidth = 3;
   ctx.lineJoin = 'round';
-  ctx.strokeText(MAP_ATTRIBUTION, EXPORT_MARGIN, height - EXPORT_MARGIN);
-  ctx.fillText(MAP_ATTRIBUTION, EXPORT_MARGIN, height - EXPORT_MARGIN);
+  ctx.strokeText(attribution, EXPORT_MARGIN, height - EXPORT_MARGIN);
+  ctx.fillText(attribution, EXPORT_MARGIN, height - EXPORT_MARGIN);
 }
 
 function drawExportTitle(ctx) {
