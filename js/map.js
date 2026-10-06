@@ -52,6 +52,11 @@ export function onBasemapChange(listener) {
   listener(selectedBasemap());
 }
 
+// basemap currently drawn on the map, which lags the picker while a style loads
+export function getBasemap() {
+  return activeBasemap;
+}
+
 // switch basemap through the picker so the radio, style, and listeners stay in sync
 // resolves false for unknown ids; waits for the map and picker when called early
 export async function setBasemap(basemap) {
