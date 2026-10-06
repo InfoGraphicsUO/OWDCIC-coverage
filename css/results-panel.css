@@ -264,19 +264,25 @@
     min-width: 0;
     max-width: 100%;
     box-sizing: border-box;
-    padding: 8px 10px;
     color: #fff;
-    background: rgba(20, 20, 20, 0.82);
-    border-radius: var(--ui-radius-sm, 6px);
     font-size: 12px;
     line-height: 1.2;
     text-decoration: none;
+    /* text sits directly on the image, so a shadow keeps it readable */
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .results-panel__feed span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    /* room for the underline, which overflow: hidden would otherwise clip */
+    padding-bottom: 5px;
+    margin-bottom: -5px;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--ohaz-yellow, #f8e109);
+    text-underline-offset: 3px;
 }
 
 .results-panel__feed i {
@@ -286,12 +292,10 @@
 
 .results-panel__camera-pan {
     flex: 0 0 auto;
-    padding: 8px 10px;
     color: #fff;
-    background: rgba(20, 20, 20, 0.82);
-    border-radius: var(--ui-radius-sm, 6px);
     font-size: 12px;
     line-height: 1.2;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
 .results-panel__camera .results-panel__lead {
