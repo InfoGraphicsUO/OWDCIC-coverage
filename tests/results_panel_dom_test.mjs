@@ -298,7 +298,7 @@ function show(kind, ...args) {
 // polygon donut eligibility follows the allowed district and utility types
 let content = show('showPolygon', 'house', { properties: { name: 'State House District 1', cameraViewshedCoveragePct: 5.05, cameraViewshedAreaSqKm: 446.9, landAreaSqKm: 8850.7, landMix } });
 assert.match(textOf(content), /5\.1% covered by fire-spotting cameras/);
-assert.match(textOf(content), /sq mi of State House District 1 is covered by fire-spotting cameras, out of total/);
+assert.match(textOf(content), /mi² of State House District 1 is covered by fire-spotting cameras, out of total/);
 assert.doesNotMatch(textOf(content), /CAMERA COVERAGE|Covered area|Selected area/i);
 assert.ok(content.querySelector('[data-results-chart]'), 'house should get a donut host');
 assert.match(textOf(content), /40% of area is U\.S\. Forest Service land/);
