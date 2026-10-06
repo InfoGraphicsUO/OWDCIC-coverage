@@ -1,6 +1,10 @@
 import { openModal } from './modal.js';
 import { LEGEND_LAYERS, PGE_WILDFIREWATCH_URL } from './config.js';
+import { attachInfoTooltip } from './info-tooltip.js';
 import { getSetting } from './settings.js';
+
+const LAND_MIX_TITLE = 'Mapped land status';
+const LAND_MIX_INFO = 'Tribal areas follow reservation and trust boundaries. Other named types use mapped ownership parcels. Unclassified includes unmapped private land.';
 
 // square-kilometer to square-mile conversion for displayed area values
 const SQMI_PER_SQKM = 0.3861021585;
@@ -42,6 +46,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendIt
   const content = element.querySelector('[data-results-content]');
   const exportButton = element.querySelector('[data-results-export]');
   const status = element.querySelector('[data-results-status]');
+  const infoTooltip = attachInfoTooltip(content);
   let chart = null;
   let chartReady = Promise.resolve();
   // stale plot promises must not restore a chart after the selection changes
@@ -57,7 +62,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendIt
     // keep an empty panel out of both visual and accessibility navigation
     title.textContent = 'Select an area or camera';
     subtitle.textContent = '';
-    content.replaceChildren(emptyState());
+    replaceContent(emptyState());
     status.textContent = '';
     exportButton.disabled = true;
     element.classList.remove('results-panel--has-result', 'results-panel--loading');
@@ -77,7 +82,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendIt
     element.setAttribute('aria-busy', 'true');
     title.textContent = label;
     subtitle.textContent = '';
-    content.replaceChildren(messageState('Loading coverage statistics…', 'results-panel__loading'));
+    replaceContent(messageState('Loading coverage statistics…', 'results-panel__loading'));
     status.textContent = '';
     exportButton.disabled = true;
   }
@@ -94,7 +99,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendIt
     element.removeAttribute('aria-busy');
     title.textContent = 'Coverage unavailable';
     subtitle.textContent = '';
-    content.replaceChildren(messageState(message || 'Coverage statistics could not be loaded.', 'results-panel__error'));
+    replaceContent(messageState(message || 'Coverage statistics could not be loaded.', 'results-panel__error'));
     status.textContent = message || 'Coverage statistics could not be loaded.';
     exportButton.disabled = true;
   }
@@ -192,6 +197,12 @@ export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendIt
   clear();
   return { showPolygon, showCamera, showLoading, showError, clear, element };
 
+  function replaceContent(node) {
+    // a removed trigger fires no pointerout, so its tooltip would stay on screen
+    if (infoTooltip.isFor(content)) infoTooltip.hide();
+    content.replaceChildren(node);
+  }
+
   function presentResult(heading, body, detail = '') {
     // each result owns at most one chart and one export dialog
     destroyChart();
@@ -203,7 +214,7 @@ export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendIt
     element.removeAttribute('aria-busy');
     title.textContent = heading;
     subtitle.textContent = detail;
-    content.replaceChildren(body);
+    replaceContent(body);
     const chartHost = content.querySelector('[data-results-chart]');
     // a Plotly promise may settle after a newer selection has replaced this host
     const generation = chartGeneration;
@@ -428,6 +439,18 @@ function landMixSection(landMix, chartLabel) {
   const section = document.createElement('section');
   section.className = 'results-panel__land-mix';
   section.setAttribute('aria-label', chartLabel);
+  const heading = document.createElement('div');
+  heading.className = 'results-panel__land-mix-heading';
+  const title = document.createElement('h3');
+  title.className = 'results-panel__land-mix-title';
+  title.textContent = LAND_MIX_TITLE;
+  const infoButton = document.createElement('button');
+  infoButton.type = 'button';
+  infoButton.className = 'info-button results-panel__land-info';
+  infoButton.dataset.tooltip = LAND_MIX_INFO;
+  infoButton.setAttribute('aria-label', LAND_MIX_INFO);
+  infoButton.innerHTML = '<i class="fa-regular fa-circle-info" aria-hidden="true"></i>';
+  heading.append(title, infoButton);
   const chart = document.createElement('div');
   chart.className = 'results-panel__chart';
   chart.dataset.resultsChart = '';
@@ -440,8 +463,8 @@ function landMixSection(landMix, chartLabel) {
   appendLandStats(stats, landMix);
   const note = document.createElement('p');
   note.className = 'results-panel__land-note';
-  note.textContent = 'Tribal areas follow reservation and trust boundaries. Other named types use mapped ownership parcels. Unclassified includes unmapped private land.';
-  section.append(chart, stats, note);
+  note.textContent = 'Entries under 1% are not shown.';
+  section.append(heading, chart, stats, note);
   return section;
 }
 
@@ -491,17 +514,11 @@ function renderDonut(host, landMix) {
     marker: { colors: rows.map((row, i) => landMixColor(row.label || row.type || 'Other/unclassified', i)) },
     sort: false,
   }], {
-    margin: { t: 36, r: 4, b: 4, l: 4 },
+    margin: { t: 8, r: 4, b: 4, l: 4 },
     showlegend: false,
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: { color: '#fff', family: 'Merriweather, sans-serif' },
-    title: {
-      text: 'Mapped land status',
-      x: 0.5,
-      xanchor: 'center',
-      font: { color: '#fff', family: 'Merriweather, sans-serif', size: 15 },
-    },
   }, {
     displayModeBar: false,
     responsive: true,
@@ -552,7 +569,21 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   if (chart && typeof window.Plotly?.toImage === 'function') {
     try {
       // rasterize Plotly separately so the canvas export does not depend on SVG internals
-      chartImage = await loadImage(await window.Plotly.toImage(chart, { format: 'png', width: 500, height: 300, scale: 2 }));
+      // the panel titles the chart in HTML, so the raster needs its own title
+      const figure = chart.data ? {
+        data: chart.data,
+        layout: {
+          ...chart.layout,
+          margin: { ...chart.layout?.margin, t: 36 },
+          title: {
+            text: LAND_MIX_TITLE,
+            x: 0.5,
+            xanchor: 'center',
+            font: { color: '#fff', family: 'Merriweather, sans-serif', size: 15 },
+          },
+        },
+      } : chart;
+      chartImage = await loadImage(await window.Plotly.toImage(figure, { format: 'png', width: 500, height: 300, scale: 2 }));
     } catch (_) { /* text rows still carry the land shares when rasterization fails */ }
   }
   // preserve the map aspect ratio while enforcing a readable minimum export width
