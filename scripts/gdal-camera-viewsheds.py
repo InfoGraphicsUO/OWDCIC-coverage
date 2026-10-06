@@ -86,6 +86,8 @@ SITE_FIELDS = {
     "method": "string",
 }
 COVERAGE_FIELDS = {"coverage_id": "string"}
+# shapefile attribute names are limited to 10 characters
+SHAPEFILE_FIELD_NAMES = {"viewshed_id": "view_id", "cell_size_m": "cell_m"}
 
 
 @dataclass(frozen=True)
@@ -138,6 +140,7 @@ class RunConfig:
     analysis_hash: str
     web_hash: str
     config_hash: str
+    shapefiles_only: str | None = None  # "exact" or "web"
 
 
 class CancelledError(RuntimeError):
@@ -177,11 +180,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         dest="site_names",
         help="process only this camera; repeat for more than one",
     )
-    parser.add_argument("--radius-miles", type=float, default=20.0)
+    parser.add_argument("--radius-miles", type=float, default=12.0)
     parser.add_argument("--cell-size", type=float, default=10.0)
     parser.add_argument("--web-resolution", type=float, default=50.0)
     parser.add_argument("--simplify-tolerance", type=float, default=25.0)
-    parser.add_argument("--smooth-iterations", type=int, default=1)
+    parser.add_argument("--smooth-iterations", type=int, default=3)
     parser.add_argument("--web-clip-boundary", type=Path, default=DEFAULT_CLIP_BOUNDARY)
     parser.add_argument(
         "--web-clip",
@@ -203,6 +206,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help=f"cameras processed in parallel (default: {DEFAULT_JOBS})",
     )
     parser.add_argument("--skip-exact-polygons", action="store_true")
+    parser.add_argument(
+        "--shapefiles-only",
+        nargs="?",
+        const="exact",
+        choices=("exact", "web"),
+        help="write one EPSG:5070 shapefile per camera for ArcGIS and skip the combined "
+        "GeoPackage, Mapbox products, and manifest; 'exact' (default) keeps every 10 m "
+        "cell, 'web' applies the web generalization, smoothing, and clip settings",
+    )
     parser.add_argument("--keep-working-dems", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--fail-fast", action="store_true")
@@ -211,6 +223,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     for name in ("radius_miles", "cell_size", "web_resolution", "jobs"):
         if getattr(args, name) <= 0:
             parser.error(f"--{name.replace('_', '-')} must be positive")
+    if args.shapefiles_only == "exact" and args.skip_exact_polygons:
+        parser.error("--shapefiles-only exact needs the exact polygons")
     if args.simplify_tolerance < 0 or args.smooth_iterations < 0 or args.min_web_patch_cells < 0:
         parser.error("simplification, smoothing, and patch thresholds cannot be negative")
     return args
@@ -427,6 +441,7 @@ def output_paths(output_dir: Path, site: Site) -> dict[str, Path]:
         "raster": output_dir / "rasters_10m" / f"{site.stem}.tif",
         "exact": output_dir / "polygons_exact" / f"{site.stem}.gpkg",
         "web": output_dir / "web" / f"{site.viewshed_id}.geojson",
+        "shapefile": output_dir / "shapefiles" / f"{site.stem}.shp",
         "state": output_dir / "state" / f"{site.stem}.json",
     }
 
@@ -964,13 +979,93 @@ def build_exact_polygon(
     validate_vector(paths["exact"], SITE_LAYER, 1)
 
 
-def build_web_polygon(
+def build_shapefile(site: Site, config: RunConfig, reporter: SiteReporter) -> dict[str, Any]:
+    """writes one camera's exact polygon as a shapefile, reusing saved outputs when current
+
+    Leaves the state files alone so a later full run still resumes correctly.
+    """
+    paths = output_paths(config.output_dir, site)
+    if site.height_m is None:
+        reporter.stage("complete", f"skipped {site.name}: missing camera height")
+        return {"site": asdict(site), "status": "skipped_missing_height", "outputs": {"shapefile": None}}
+
+    analysis_reusable, exact_reusable, _ = reusable_stages(
+        read_json(paths["state"]), config.analysis_hash, config.web_hash, True
+    )
+    if config.overwrite:
+        analysis_reusable = exact_reusable = False
+    if config.shapefiles_only == "web":
+        exact_reusable = False
+
+    started = time.monotonic()
+    reporter.stage("preparing", f"preparing {site.name}")
+    canonical = spatial_reference(CANONICAL_CRS)
+    if exact_reusable:
+        _, features = read_features(paths["exact"], SITE_LAYER)
+        reporter.stage("exact_polygon", "reused exact polygon")
+    else:
+        if analysis_reusable:
+            reporter.stage("viewshed", "reused 10 m viewshed")
+        else:
+            if paths["work"].exists():
+                shutil.rmtree(paths["work"])
+            paths["work"].mkdir(parents=True)
+            observer = observer_coordinates(site)
+            build_dem(site, observer, paths, config, reporter)
+            reporter.stage("dem", "projected DEM ready")
+            build_viewshed(site, observer, paths, config, reporter)
+            reporter.stage("viewshed", "viewshed validated")
+        reporter.check_cancel()
+        if config.shapefiles_only == "web":
+            geometry, _ = generalize_viewshed(site, paths, config, reporter)
+            geometry = repair_polygon_parts(geometry)
+            reporter.stage("web_polygon", "web polygon ready")
+        else:
+            viewshed = load_viewshed(paths["raster"], config.cell_size_m)
+            geometry = polygonize_visible(
+                viewshed.visible,
+                viewshed.geotransform,
+                viewshed.projection,
+                reporter.callback("exact_polygon"),
+            )
+            if geometry.IsEmpty():
+                raise RuntimeError(f"exact polygon is empty for {site.name}")
+            geometry.Transform(transformation(spatial_reference(viewshed.projection), canonical))
+            reporter.stage("exact_polygon", "exact polygon ready")
+        features = [(as_multipolygon(geometry), site_attributes(site, config))]
+        if not config.keep_working_dems:
+            shutil.rmtree(paths["work"], ignore_errors=True)
+    reporter.check_cancel()
+
+    def short(name: str) -> str:
+        return SHAPEFILE_FIELD_NAMES.get(name, name)
+
+    if paths["shapefile"].exists():
+        ogr.GetDriverByName("ESRI Shapefile").DeleteDataSource(str(paths["shapefile"]))
+    write_features(
+        paths["shapefile"],
+        "ESRI Shapefile",
+        paths["shapefile"].stem,
+        canonical,
+        {short(name): kind for name, kind in SITE_FIELDS.items()},
+        [
+            (geometry, {short(name): value for name, value in attributes.items()})
+            for geometry, attributes in features
+        ],
+        ["ENCODING=UTF-8"],
+    )
+    validate_vector(paths["shapefile"], None, 1)
+    reporter.stage("complete", f"completed {site.name} in {format_duration(time.monotonic() - started)}")
+    return {"site": asdict(site), "status": "complete", "outputs": {"shapefile": str(paths["shapefile"])}}
+
+
+def generalize_viewshed(
     site: Site,
     paths: dict[str, Path],
     config: RunConfig,
     reporter: SiteReporter,
-) -> dict[str, Any]:
-    """generalizes the viewshed to a web-friendly, smoothed, clipped GeoJSON polygon"""
+) -> tuple[Any, dict[str, Any]]:
+    """returns the smoothed, clipped EPSG:5070 polygon and a summary of the mask filter"""
     callback = reporter.callback("web_polygon")
 
     # coarser grid removes pixel-sized boundary detail before vectorizing
@@ -1035,9 +1130,19 @@ def build_web_polygon(
     if geometry.IsEmpty():
         raise RuntimeError(f"web polygon is empty after generalization for {site.name}")
     callback(0.9, "", None)
+    return geometry, filter_summary
 
+
+def build_web_polygon(
+    site: Site,
+    paths: dict[str, Path],
+    config: RunConfig,
+    reporter: SiteReporter,
+) -> dict[str, Any]:
+    """generalizes the viewshed to a web-friendly, smoothed, clipped GeoJSON polygon"""
+    geometry, filter_summary = generalize_viewshed(site, paths, config, reporter)
     web_srs = spatial_reference(WEB_CRS)
-    geometry.Transform(transformation(canonical, web_srs))
+    geometry.Transform(transformation(spatial_reference(CANONICAL_CRS), web_srs))
     geometry = repair_polygon_parts(geometry)
     write_features(
         paths["web"],
@@ -1054,6 +1159,8 @@ def build_web_polygon(
 
 def process_site(site: Site, site_index: int, config: RunConfig, reporter: SiteReporter) -> dict[str, Any]:
     """runs or resumes every stage for one camera and returns its state document"""
+    if config.shapefiles_only:
+        return build_shapefile(site, config, reporter)
     paths = output_paths(config.output_dir, site)
     base_document = {
         "schema_version": SCHEMA_VERSION,
@@ -1490,7 +1597,7 @@ def main() -> int:
     args = parse_args()
     args.output_dir = args.output_dir.resolve()
     args.web_clip_boundary = args.web_clip_boundary.resolve()
-    if args.web_clip and not args.web_clip_boundary.is_file():
+    if args.web_clip and args.shapefiles_only != "exact" and not args.web_clip_boundary.is_file():
         raise FileNotFoundError(f"web clip boundary not found: {args.web_clip_boundary}")
     apply_qgis_environment(args.qgis_app)
     require_gdal()
@@ -1508,7 +1615,11 @@ def main() -> int:
     analysis_changed = previous_config.get("analysis_hash") != config["analysis_hash"]
     emitter.progress(0, "preparing", 0.0, f"loaded {len(selected)} cameras and {len(dem_files)} DEMs")
     source_vrt = build_vrt(args.output_dir, dem_files, emitter, args.overwrite or analysis_changed)
-    clip_wkb = load_clip_boundary(args.web_clip_boundary) if args.web_clip else None
+    clip_wkb = (
+        load_clip_boundary(args.web_clip_boundary)
+        if args.web_clip and args.shapefiles_only != "exact"
+        else None
+    )
 
     jobs = max(1, min(args.jobs, len(selected)))
     run_config = RunConfig(
@@ -1529,6 +1640,7 @@ def main() -> int:
         analysis_hash=config["analysis_hash"],
         web_hash=config["web_hash"],
         config_hash=config["config_hash"],
+        shapefiles_only=args.shapefiles_only,
     )
 
     completed, failures = run_sites(selected, run_config, jobs, args.fail_fast, emitter)
@@ -1536,6 +1648,14 @@ def main() -> int:
         emitter.log("cancelled by user")
         return 130
     completed.sort(key=lambda state: state["site"]["source_id"])
+
+    if args.shapefiles_only:
+        for failure in failures:
+            emitter.log(f"FAILED {failure['site_name']}: {failure['error']}")
+        written = [state["outputs"]["shapefile"] for state in completed if state["outputs"]["shapefile"]]
+        emitter.progress(0, "complete", 1.0, f"shapefiles ready: {args.output_dir / 'shapefiles'}")
+        emitter.log(f"wrote {len(written)}/{len(selected)} shapefiles; failures: {len(failures)}")
+        return 1 if failures else 0
 
     if not failures:
         write_json(args.output_dir / "analysis_config.json", config)
