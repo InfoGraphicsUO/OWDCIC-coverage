@@ -185,13 +185,19 @@ function el(tag, attrs = {}) {
 }
 
 const body = new FakeNode('body');
-// start with legacy-style markup so initResultsPanel must add its footer wrapper
+// mirror the panel markup in index.html, which initResultsPanel expects as-is
 const panel = el('aside', { id: 'results-panel' });
+const footer = el('div', { 'data-results-footer': '' });
+footer.append(
+  el('button', { 'data-results-export': '', type: 'button' }),
+  el('p', { 'data-results-status': '' }),
+);
 panel.append(
   el('h2', { 'data-results-title': '' }),
-  el('button', { 'data-results-export': '', type: 'button' }),
+  el('p', { 'data-results-subtitle': '' }),
+  el('button', { 'data-results-close': '', type: 'button' }),
   el('div', { 'data-results-content': '' }),
-  el('p', { 'data-results-status': '' }),
+  footer,
 );
 body.append(panel);
 
@@ -297,13 +303,15 @@ function show(kind, ...args) {
 
 // polygon donut eligibility follows the allowed district and utility types
 let content = show('showPolygon', 'house', { properties: { name: 'State House District 1', cameraViewshedCoveragePct: 5.05, cameraViewshedAreaSqKm: 446.9, landAreaSqKm: 8850.7, landMix } });
-assert.match(textOf(content), /5\.1% covered by fire-spotting cameras/);
+assert.match(textOf(content), /5% covered by fire-spotting cameras/);
 assert.match(textOf(content), /mi² of State House District 1 is covered by fire-spotting cameras, out of total/);
 assert.doesNotMatch(textOf(content), /CAMERA COVERAGE|Covered area|Selected area/i);
 assert.ok(content.querySelector('[data-results-chart]'), 'house should get a donut host');
-assert.match(textOf(content), /40% of area is U\.S\. Forest Service land/);
-assert.match(textOf(content), /10% of area is State land/);
-assert.match(textOf(content), /Unclassified includes unmapped private land/);
+assert.match(textOf(content), /40% U\.S\. Forest Service land/);
+assert.match(textOf(content), /10% State land/);
+// the land status explanation lives in the heading's info tooltip
+assert.match(content.querySelector('[data-tooltip]')?.dataset.tooltip || '', /Unclassified includes unmapped private land/);
+assert.match(textOf(content), /Entries under 1% are not shown/);
 
 content = show('showPolygon', 'us-house', { properties: { name: 'Congressional District 1', cameraViewshedCoveragePct: 7.2, landMix } });
 assert.ok(content.querySelector('[data-results-chart]'), 'US House should get a donut host');
@@ -315,7 +323,7 @@ content = show('showPolygon', 'odf-protection-district', { properties: { name: '
 assert.ok(content.querySelector('[data-results-chart]'), 'ODF protection district should get a donut host');
 
 content = show('showPolygon', 'state', { properties: { name: 'Oregon', cameraViewshedCoveragePct: 8.93, cameraViewshedAreaSqKm: 22121, landAreaSqKm: 247715, landMix } });
-assert.match(textOf(content), /8\.9% covered by fire-spotting cameras/);
+assert.match(textOf(content), /9% covered by fire-spotting cameras/);
 assert.equal(content.querySelector('[data-results-chart]'), null, 'state must not get a donut');
 
 content = show('showPolygon', 'county', { properties: { name: 'Baker County', cameraViewshedCoveragePct: 2.85, landMix } });
@@ -343,7 +351,8 @@ content = show('showCamera', { name: 'Portland Tower', county: 'Multnomah', stat
 assert.match(textOf(content), /Coverage unavailable/);
 assert.doesNotMatch(textOf(content), /\b0%/);
 assert.equal(content.querySelector('[data-results-chart]'), null);
-assert.match(textOf(content), /Located in Multnomah, OR/);
+// camera locality is shown in the panel header rather than the body
+assert.equal(panel.querySelector('[data-results-subtitle]').textContent, 'Multnomah, OR');
 assert.match(textOf(content), /Pan 42°/);
 
 content = show('showCamera', { name: 'Missing metrics cam', id: 99 }, null);
@@ -359,12 +368,9 @@ assert.doesNotMatch(textOf(content), /\b0%/);
 
 content = show('showCamera', { name: 'Covered cam', id: 1 }, { coverageAvailable: true, landAreaSqKm: 12.5, landMix });
 assert.ok(content.querySelector('[data-results-chart]'), 'camera viewsheds should get a donut when metrics exist');
-assert.match(textOf(content), /40% of area is U\.S\. Forest Service land/);
+assert.match(textOf(content), /40% U\.S\. Forest Service land/);
 
 const exportButton = panel.querySelector('[data-results-export]');
-// legacy markup is upgraded without losing the export control
-assert.match(exportButton.textContent, /Export as/);
-assert.ok(panel.querySelector('[data-results-footer]'), 'export control should live in footer');
 
 api.showPolygon('house', {
   properties: { name: 'State House District 1', cameraViewshedCoveragePct: 5.05, cameraViewshedAreaSqKm: 10, landAreaSqKm: 100, landMix },

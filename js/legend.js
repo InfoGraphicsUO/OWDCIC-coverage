@@ -1,3 +1,5 @@
+import { attachInfoTooltip } from './info-tooltip.js';
+
 /**
  * renders controls immediately, then connects them after Mapbox layers exist
  * one item may control several Mapbox layer IDs
@@ -16,7 +18,7 @@ export function initLegend(items) {
   const bindings = [];
   const topLevelBindings = [];
   // one delegated tooltip controller handles buttons added with each row
-  const infoTooltip = createLegendTooltip(legend);
+  const infoTooltip = attachInfoTooltip(legend);
   let activeMap;
   // map code that derives layers from several rows listens for any toggle
   const changeListeners = new Set();
@@ -169,109 +171,6 @@ export function initLegend(items) {
   };
 }
 
-function createLegendTooltip(legend) {
-  if (!document.body?.append) {
-    // keep legend updates safe in partial DOMs such as static render tests
-    return { hide() {}, isFor() { return false; }, refresh() {} };
-  }
-
-  const tooltip = document.createElement('div');
-  tooltip.className = 'legend-tooltip';
-  tooltip.id = 'legend-info-tooltip';
-  tooltip.setAttribute('role', 'tooltip');
-  tooltip.hidden = true;
-  // fixed positioning lets the tooltip escape clipped and scrolling legend containers
-  document.body.append(tooltip);
-
-  let activeButton = null;
-  // gap and viewport clearance are in CSS pixels because rects and fixed offsets use screen pixels
-  const gap = 8;
-  const margin = 8;
-
-  // events bubble from the icon too, so resolve the owning trigger from any descendant
-  const buttonFrom = (target) =>
-    target instanceof Element ? target.closest('.legend-info') : null;
-
-  const hide = () => {
-    // release the element reference so later resize events do no work
-    activeButton = null;
-    tooltip.hidden = true;
-  };
-
-  const refresh = (button) => {
-    // detached buttons have no useful viewport position
-    if (!button || !button.isConnected) return;
-    activeButton = button;
-    tooltip.textContent = button.dataset.tooltip || '';
-    tooltip.hidden = false;
-    // cap width before measuring so placement uses the final wrapped dimensions
-    tooltip.style.maxWidth = `${Math.max(64, Math.min(240, window.innerWidth - button.getBoundingClientRect().right - gap - margin))}px`;
-
-    const buttonRect = button.getBoundingClientRect();
-    const tooltipRect = tooltip.getBoundingClientRect();
-    // place beside the button and keep the top and right edges inside viewport margins
-    const left = Math.min(
-      buttonRect.right + gap,
-      window.innerWidth - tooltipRect.width - margin
-    );
-    const top = Math.max(
-      margin,
-      Math.min(
-        buttonRect.top + (buttonRect.height - tooltipRect.height) / 2,
-        window.innerHeight - tooltipRect.height - margin
-      )
-    );
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
-  };
-
-  // delegated pointer and focus handlers cover current and future legend rows
-  legend.addEventListener('pointerover', (event) => {
-    const button = buttonFrom(event.target);
-    if (button) refresh(button);
-  });
-  legend.addEventListener('pointerout', (event) => {
-    const button = buttonFrom(event.target);
-    // movement between the icon and button contents is still inside one trigger
-    if (!button || button.contains(event.relatedTarget)) return;
-    // retain the message while keyboard focus or the pointer still owns the trigger
-    if (!button.matches(':hover, :focus')) hide();
-  });
-  legend.addEventListener('focusin', (event) => {
-    const button = buttonFrom(event.target);
-    if (button) refresh(button);
-  });
-  legend.addEventListener('focusout', (event) => {
-    const button = buttonFrom(event.target);
-    if (!button || button.contains(event.relatedTarget)) return;
-    // a pointer hover can outlive keyboard focus
-    if (!button.matches(':hover')) hide();
-  });
-  // keep the fixed tooltip aligned if its trigger moves with the viewport or list scroll
-  window.addEventListener('resize', () => {
-    if (activeButton) refresh(activeButton);
-  });
-  legend.addEventListener('scroll', () => {
-    if (activeButton) refresh(activeButton);
-  });
-  document.addEventListener('keydown', (event) => {
-    // escape dismisses without changing focus
-    if (event.key === 'Escape' && activeButton) hide();
-  });
-
-  return {
-    hide,
-    isFor(element) {
-      // groups contain child triggers, so hiding a group also clears a child tooltip
-      return activeButton != null && element.contains(activeButton);
-    },
-    refresh(button) {
-      // update an open message in place without reopening an unrelated tooltip
-      if (button === activeButton) refresh(button);
-    },
-  };
-}
-
 function createLegendGroup(item, getMap, notifyChange) {
   // group rows keep provider toggles under one parent
   const element = document.createElement('section');
@@ -395,7 +294,7 @@ function createLegendRow(item, getMap, onToggle, notifyChange) {
   if (item.infoText !== undefined) {
     infoButton = document.createElement('button');
     infoButton.type = 'button';
-    infoButton.className = 'legend-info';
+    infoButton.className = 'info-button legend-info';
     // the button label supplies the provider note to assistive technology
     infoButton.innerHTML = '<i class="fa-regular fa-circle-info" aria-hidden="true"></i>';
     infoButton.dataset.tooltip = item.infoText;
