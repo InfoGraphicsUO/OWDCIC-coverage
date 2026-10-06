@@ -213,7 +213,8 @@
     display: grid;
     place-items: center;
     width: 100%;
-    aspect-ratio: 16 / 10;
+    /* camera frames are 16:9; matching them keeps the whole image visible */
+    aspect-ratio: 16 / 9;
     overflow: hidden;
     background: #1a1a1a;
     border: 1px solid #444;
@@ -226,7 +227,7 @@
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
 }
 
 .results-panel__camera-placeholder {
