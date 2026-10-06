@@ -346,10 +346,10 @@ function renderPolygon(type, properties) {
   // area totals need valid source values; missing coverage must stay unavailable, not zero
   if (coverage != null && covered != null && total != null) {
     wrapper.append(selfLine(
-      `${formatNumber(covered * SQMI_PER_SQKM)} sq mi of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(total * SQMI_PER_SQKM)} sq mi`,
+      `${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(total * SQMI_PER_SQKM)} mi²`,
     ));
   } else if (total != null) {
-    wrapper.append(selfLine(`${formatNumber(total * SQMI_PER_SQKM)} sq mi total area`));
+    wrapper.append(selfLine(`${formatNumber(total * SQMI_PER_SQKM)} mi² total area`));
   }
   if (polygonShowsDonut(type, properties)) {
     wrapper.append(landMixSection(properties.landMix, 'Mapped land status breakdown'));
@@ -416,7 +416,7 @@ function renderCamera(properties, metrics) {
   }
   const area = finite(metrics.landAreaSqKm);
   if (area != null) {
-    wrapper.append(selfLine(`${formatNumber(area * SQMI_PER_SQKM)} sq mi camera viewshed`, 'results-panel__lead'));
+    wrapper.append(selfLine(`${formatNumber(area * SQMI_PER_SQKM)} mi² camera viewshed`, 'results-panel__lead'));
   }
   if (Array.isArray(metrics.landMix) && metrics.landMix.length > 0) {
     wrapper.append(landMixSection(metrics.landMix, 'Viewshed mapped land status breakdown'));
@@ -1094,7 +1094,7 @@ function exportSummary({ kind, type, properties, metrics }) {
       return lines;
     }
     const area = finite(metrics?.landAreaSqKm);
-    if (area != null) lines.push(`${formatNumber(area * SQMI_PER_SQKM)} sq mi camera viewshed`);
+    if (area != null) lines.push(`${formatNumber(area * SQMI_PER_SQKM)} mi² camera viewshed`);
     return lines;
   }
   const coverage = coverageFor(properties);
@@ -1105,9 +1105,9 @@ function exportSummary({ kind, type, properties, metrics }) {
   if (type === 'utility') lines.push(UTILITY_QUALIFIER);
   lines.push(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire-spotting cameras`);
   if (coverage != null && covered != null && selected != null) {
-    lines.push(`${formatNumber(covered * SQMI_PER_SQKM)} sq mi of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(selected * SQMI_PER_SQKM)} sq mi`);
+    lines.push(`${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(selected * SQMI_PER_SQKM)} mi²`);
   } else if (selected != null) {
-    lines.push(`${formatNumber(selected * SQMI_PER_SQKM)} sq mi total area`);
+    lines.push(`${formatNumber(selected * SQMI_PER_SQKM)} mi² total area`);
   }
   return lines;
 }
