@@ -69,6 +69,7 @@ class ResultsPanelContractTests(unittest.TestCase):
         self.assertIn("ctx.fillText('Legend'", JS)
         self.assertIn("'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' }", JS)
         self.assertIn('MAP_ATTRIBUTION', JS)
+        self.assertIn("basemap === 'satellite' ? SATELLITE_MAP_ATTRIBUTION : MAP_ATTRIBUTION", JS)
         self.assertIn('exportLandMixRows', JS)
         self.assertIn('Plotly?.toImage', JS)
         self.assertNotIn('mapHeight + bottomHeight', JS)
