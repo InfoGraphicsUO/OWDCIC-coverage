@@ -30,6 +30,7 @@ import { initResultsPanel } from './results-panel.js';
 import { hideMapLoading } from './loading.js';
 import {
   MAP_HOME_EVENT,
+  getBasemap,
   mapPanelPadding,
   mapReady,
   motionDuration,
@@ -249,6 +250,7 @@ const REMOVED_LAYER_LABELS = new Set(legendRows.removed.map(({ label }) => label
 const legendControl = initLegend(legendRows.visible);
 const resultsControl = initResultsPanel({
   getMap: () => activeMap,
+  getBasemap,
   getMapCanvas: () => activeMap?.getCanvas(),
   getLegendItems: () => [...document.querySelectorAll('#legend .legend-row')]
     .filter((row) => row.querySelector('input[type="checkbox"]')?.checked)
