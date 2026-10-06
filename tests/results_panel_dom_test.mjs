@@ -231,7 +231,29 @@ FakeNode.prototype.click = function click() {
   originalClick.call(this);
 };
 
-const { initResultsPanel } = await import('../js/results-panel.js');
+const { initResultsPanel, condenseCameraLegendRows } = await import('../js/results-panel.js');
+
+// the export legend drops group rows and collapses viewsheds that share a color
+const mapLegendRows = [
+  'Cameras', 'ALERTWest cameras', 'Pano AI cameras',
+  'Camera viewsheds', 'ALERTWest camera viewsheds', 'Pano AI camera viewsheds',
+  'Standing lookouts',
+].map((label) => ({ label, visual: { type: 'swatch', style: 'fill', color: label } }));
+const sharedRows = condenseCameraLegendRows(mapLegendRows);
+assert.deepEqual(sharedRows.map(({ label }) => label),
+  ['ALERTWest cameras', 'Pano AI cameras', 'Viewsheds', 'Standing lookouts']);
+assert.equal(sharedRows[2].visual.color, 'ALERTWest camera viewsheds',
+  'shared viewshed row should reuse the provider swatch shown on the map');
+assert.deepEqual(
+  condenseCameraLegendRows(mapLegendRows, { separateViewshedColors: true }).map(({ label }) => label),
+  ['ALERTWest cameras', 'Pano AI cameras', 'ALERTWest viewsheds', 'Pano AI viewsheds', 'Standing lookouts']);
+// one provider switched off still follows the color setting
+const panoOnly = mapLegendRows.filter(({ label }) => !label.startsWith('ALERTWest'));
+assert.deepEqual(condenseCameraLegendRows(panoOnly).map(({ label }) => label),
+  ['Pano AI cameras', 'Viewsheds', 'Standing lookouts']);
+assert.deepEqual(
+  condenseCameraLegendRows(panoOnly, { separateViewshedColors: true }).map(({ label }) => label),
+  ['Pano AI cameras', 'Pano AI viewsheds', 'Standing lookouts']);
 
 // retain map and export canvas inputs so the crop math can be checked directly
 const canvas = new FakeNode('canvas');
