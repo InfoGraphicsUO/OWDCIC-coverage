@@ -45,7 +45,8 @@
 }
 
 .filter-panel__back.is-visible { display: inline-flex; }
-.filter-panel__back:hover { background: rgba(255, 255, 255, .1); }
+.filter-panel__back:hover,
+.filter-panel__back:focus-visible { color: var(--ohaz-yellow, #f8e109); }
 
 .filter-panel__status {
     grid-area: 2 / 1;
