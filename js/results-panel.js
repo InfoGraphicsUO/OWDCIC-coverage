@@ -1,5 +1,6 @@
 import { openModal } from './modal.js';
-import { PGE_WILDFIREWATCH_URL } from './config.js';
+import { LEGEND_LAYERS, PGE_WILDFIREWATCH_URL } from './config.js';
+import { getSetting } from './settings.js';
 
 // square-kilometer to square-mile conversion for displayed area values
 const SQMI_PER_SQKM = 0.3861021585;
@@ -521,6 +522,7 @@ const EXPORT_PANEL_FILL = 'rgba(47, 46, 46, 0.9)';
 const EXPORT_LEGEND_VISUALS = Object.freeze({
   'ALERTWest cameras': { type: 'icon', src: 'img/camera-marker.svg' },
   'Pano AI cameras': { type: 'icon', src: 'img/pano-camera-marker.svg' },
+  'Camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
   'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
   'Pano AI camera viewsheds': { type: 'swatch', style: 'fill', color: '#3898ec' },
   'Standing lookouts': { type: 'swatch', style: 'circle', color: '#8154BD' },
@@ -529,6 +531,12 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'OR Burn probability (QWRA)': { type: 'swatch', style: 'burn-probability' },
   'Fires (NIFC)': { type: 'icon', src: 'img/fire-marker.svg' },
   'Prescribed fires (Watch Duty)': { type: 'icon', src: 'img/prescribed-marker.svg' },
+});
+// the export names viewsheds without repeating "camera" on every row
+const EXPORT_SHARED_VIEWSHED_LABEL = 'Viewsheds';
+const EXPORT_PROVIDER_VIEWSHED_LABELS = Object.freeze({
+  [LEGEND_LAYERS.alertWestViewsheds]: 'ALERTWest viewsheds',
+  [LEGEND_LAYERS.panoViewsheds]: 'Pano AI viewsheds',
 });
 
 async function composeExport({ mapCanvas, map, legendItems, title, current, chart }) {
@@ -1209,8 +1217,53 @@ function safeCameraFeedUrl(value, isPano) {
 async function resolveLegendRowsForExport(getLegendItems) {
   // current DOM state wins so hidden and unchecked layers stay out of the image
   const domRows = readLegendRowsFromDom();
-  if (domRows.length) return domRows;
-  return normalizeLegendRows(typeof getLegendItems === 'function' ? getLegendItems() : []);
+  const rows = domRows.length
+    ? domRows
+    : normalizeLegendRows(typeof getLegendItems === 'function' ? getLegendItems() : []);
+  return condenseCameraLegendRows(rows, {
+    separateViewshedColors: Boolean(getSetting('separateViewshedColors')),
+  });
+}
+
+// the map legend nests provider rows under group checkboxes; the export lists each symbol once
+export function condenseCameraLegendRows(rows, { separateViewshedColors = false } = {}) {
+  const labels = new Set(rows.map(({ label }) => label));
+  const hasProviderCameras = labels.has(LEGEND_LAYERS.alertWestCameras) ||
+    labels.has(LEGEND_LAYERS.panoCameras);
+  const providerViewsheds = rows.filter(({ label }) => label in EXPORT_PROVIDER_VIEWSHED_LABELS);
+
+  const condensed = [];
+  let sharedViewshedsAdded = false;
+  for (const row of rows) {
+    // provider rows already carry the camera symbology
+    if (row.label === LEGEND_LAYERS.cameras && hasProviderCameras) continue;
+
+    const isViewshedGroup = row.label === LEGEND_LAYERS.viewsheds;
+    const isProviderViewshed = row.label in EXPORT_PROVIDER_VIEWSHED_LABELS;
+    if (!isViewshedGroup && !isProviderViewshed) {
+      condensed.push(row);
+      continue;
+    }
+
+    if (separateViewshedColors) {
+      // each provider keeps its own color, so the group row adds nothing
+      if (isProviderViewshed) {
+        condensed.push({ ...row, label: EXPORT_PROVIDER_VIEWSHED_LABELS[row.label] });
+      } else if (!providerViewsheds.length) {
+        condensed.push({ ...row, label: EXPORT_SHARED_VIEWSHED_LABEL });
+      }
+      continue;
+    }
+
+    // matching colors need a single row, drawn with the swatch the map is using
+    if (sharedViewshedsAdded) continue;
+    sharedViewshedsAdded = true;
+    condensed.push({
+      label: EXPORT_SHARED_VIEWSHED_LABEL,
+      visual: providerViewsheds[0]?.visual || row.visual,
+    });
+  }
+  return condensed;
 }
 
 function readLegendRowsFromDom() {
