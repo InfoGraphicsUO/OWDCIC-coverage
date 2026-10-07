@@ -602,7 +602,6 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   const frameHeight = height / overlayScale;
   ctx.save();
   ctx.scale(overlayScale, overlayScale);
-  drawExportTitle(ctx);
 
   // resolve legend visuals before layout so loaded icons and labels share one pass
   const legendRows = await preloadLegendVisuals((legendItems || []).filter((row) => row?.label));
@@ -756,7 +755,7 @@ function layoutLegendPanel({ ctx, width, rows }) {
   const padX = 16;
   const padY = 14;
   const padBottom = 30;
-  const titleHeight = 28;
+  const titleHeight = 18;
   const rowHeight = 26;
   // leave room for the empty-legend fallback label
   const contentHeight = titleHeight + Math.max(rows.length, 1) * rowHeight;
@@ -843,7 +842,7 @@ function drawLegendOverlay(ctx, x, y, layout) {
   let textY = y + layout.padY + 18;
   ctx.fillStyle = '#fff';
   ctx.font = `700 18px ${EXPORT_FONT}`;
-  ctx.fillText('Legend', x + layout.padX, textY);
+  ctx.fillText('OWDCIC Camera Coverage', x + layout.padX, textY);
   textY += layout.titleHeight - 8;
   ctx.font = `15px ${EXPORT_FONT}`;
   ctx.fillStyle = '#f0f0f0';
@@ -1053,18 +1052,6 @@ function drawExportAttribution(ctx, width, height, basemap) {
   ctx.lineJoin = 'round';
   ctx.strokeText(attribution, EXPORT_MARGIN, height - EXPORT_MARGIN);
   ctx.fillText(attribution, EXPORT_MARGIN, height - EXPORT_MARGIN);
-}
-
-function drawExportTitle(ctx) {
-  // outline the title for contrast across both bright and dark map regions
-  ctx.font = `700 20px ${EXPORT_FONT}`;
-  ctx.textBaseline = 'alphabetic';
-  ctx.lineJoin = 'round';
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
-  ctx.fillStyle = '#fff';
-  ctx.strokeText('OWDCIC Camera Coverage Map', EXPORT_MARGIN, EXPORT_MARGIN + 20);
-  ctx.fillText('OWDCIC Camera Coverage Map', EXPORT_MARGIN, EXPORT_MARGIN + 20);
 }
 
 function drawFloatingPanel(ctx, x, y, width, height, { fill, border, radius, shadow }) {
