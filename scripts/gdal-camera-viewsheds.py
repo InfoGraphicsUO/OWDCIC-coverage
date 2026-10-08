@@ -453,6 +453,33 @@ def upgrade_legacy_states(
     return upgraded
 
 
+def current_states(output_dir: Path, config: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
+    """returns every saved camera state matching the current settings, plus stale camera names
+
+    The output folder is the dataset: a run over a few new cameras still builds
+    the combined products and manifest from all of the cameras saved in it.
+    """
+    states: list[dict[str, Any]] = []
+    stale: list[str] = []
+    for path in sorted((output_dir / "state").glob("*.json")):
+        state = read_json(path)
+        if not state or "site" not in state:
+            continue
+        analysis_hash, web_hash = site_hashes(config["analysis_hash"], config["web_hash"], state["site"])
+        complete = state.get("status") == "complete"
+        outputs = [value for value in state.get("outputs", {}).values() if value]
+        if (
+            state.get("analysis_hash") != analysis_hash
+            or (complete and state.get("web_hash") != web_hash)
+            or not all(Path(value).is_file() for value in outputs)
+        ):
+            stale.append(state["site"]["name"])
+        else:
+            states.append(state)
+    states.sort(key=lambda state: (state["site"]["source_id"], state["site"]["viewshed_id"]))
+    return states, stale
+
+
 def reusable_stages(
     state: dict[str, Any] | None,
     analysis_hash: str,
@@ -1668,6 +1695,7 @@ def main() -> int:
         upgraded = upgrade_legacy_states(args.output_dir, legacy_sites_sha256, args, dem_files, config)
         if upgraded:
             emitter.log(f"kept {upgraded} viewsheds saved by an earlier version of this script")
+    saved_states, _ = current_states(args.output_dir, config)
     source_vrt = build_vrt(args.output_dir, dem_files, emitter, args.overwrite or analysis_changed)
     clip_wkb = (
         load_clip_boundary(args.web_clip_boundary)
@@ -1714,22 +1742,29 @@ def main() -> int:
     if not failures:
         write_json(args.output_dir / "analysis_config.json", config)
 
+    # merge this run into every camera already saved in the output folder
+    states, stale = current_states(args.output_dir, config)
+    if stale:
+        emitter.log(
+            f"left out {len(stale)} saved cameras made with other settings or inputs: "
+            f"{', '.join(sorted(stale))}"
+        )
     combined = None
-    if completed and not args.skip_exact_polygons:
-        expected_exact_count = sum(bool(state["outputs"].get("exact")) for state in completed)
+    if states and not args.skip_exact_polygons:
+        expected_exact_count = sum(bool(state["outputs"].get("exact")) for state in states)
         existing_combined = args.output_dir / "camera_viewsheds_exact_epsg5070.gpkg"
         if (
             not args.overwrite
-            and not analysis_changed
+            and states == saved_states
             and geopackage_feature_count(existing_combined, INDIVIDUAL_LAYER) == expected_exact_count
         ):
             combined = existing_combined
             emitter.log(f"reusing combined exact polygon: {combined}")
         else:
-            combined = rebuild_combined_exact(completed, args.output_dir, emitter)
+            combined = rebuild_combined_exact(states, args.output_dir, emitter)
     name = product_name(args)
-    web_products = rebuild_web_products(completed, args.output_dir, name, emitter)
-    manifest = write_manifest(completed, args.output_dir, name, config, combined, web_products)
+    web_products = rebuild_web_products(states, args.output_dir, name, emitter)
+    manifest = write_manifest(states, args.output_dir, name, config, combined, web_products)
     write_json(args.output_dir / "failures.json", failures)
     emitter.progress(0, "complete", 1.0, f"manifest ready: {manifest}")
 
@@ -1737,7 +1772,8 @@ def main() -> int:
     skipped_count = sum(str(item.get("status", "")).startswith("skipped") for item in completed)
     emitter.log(
         f"completed {complete_count}/{len(selected)} cameras; "
-        f"skipped: {skipped_count}; failures: {len(failures)}"
+        f"skipped: {skipped_count}; failures: {len(failures)}; "
+        f"dataset now holds {sum(state.get('status') == 'complete' for state in states)} viewsheds"
     )
     packaging_failed = bool(web_products and web_products.get("status") == "failed")
     return 1 if failures or packaging_failed else 0
