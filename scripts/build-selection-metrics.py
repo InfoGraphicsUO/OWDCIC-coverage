@@ -479,8 +479,6 @@ def run(args):
         rendered = json.dumps(data, ensure_ascii=False, allow_nan=False,
                               separators=(',', ':')) + '\n'
         path.write_text(rendered)
-        if kind == 'county':
-            (DIVISIONS / 'counties.geojson').write_text(rendered)
         print(kind, 'complete', len(retained), flush=True)
     camera_data = json.loads(CAMERA_OUT.read_text()) if CAMERA_OUT.exists() else {'viewsheds': {}}
     viewsheds = camera_data.setdefault('viewsheds', {})
