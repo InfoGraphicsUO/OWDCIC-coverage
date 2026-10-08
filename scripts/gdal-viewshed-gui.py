@@ -10,7 +10,7 @@ import sys
 import time
 
 try:
-    from qgis.PyQt.QtCore import QProcess, QTimer, QUrl
+    from qgis.PyQt.QtCore import QPoint, QProcess, Qt, QTimer, QUrl
     from qgis.PyQt.QtGui import QColor, QDesktopServices, QPalette
     from qgis.PyQt.QtWidgets import (
         QApplication,
@@ -31,11 +31,12 @@ try:
         QSpinBox,
         QScrollArea,
         QTabWidget,
+        QToolTip,
         QVBoxLayout,
         QWidget,
     )
 except ImportError:
-    from PyQt6.QtCore import QProcess, QTimer, QUrl
+    from PyQt6.QtCore import QPoint, QProcess, Qt, QTimer, QUrl
     from PyQt6.QtGui import QColor, QDesktopServices, QPalette
     from PyQt6.QtWidgets import (
         QApplication,
@@ -56,6 +57,7 @@ except ImportError:
         QSpinBox,
         QScrollArea,
         QTabWidget,
+        QToolTip,
         QVBoxLayout,
         QWidget,
     )
@@ -113,6 +115,10 @@ QPushButton#startButton { background: #ffda44; color: #191d21; border-color: #b7
 QPushButton#startButton:hover { background: #ffe576; }
 QPushButton:disabled, QPushButton#startButton:disabled { background: #282e34;
     color: #89949e; border-color: #454e57; }
+QPushButton#helpButton { padding: 0; border-radius: 10px; color: #b8c1c9; }
+QPushButton#helpButton:hover, QPushButton#helpButton:focus {
+    padding: 0; color: #ffda44; border: 1px solid #ffda44; }
+QToolTip { background: #343d45; color: #edf0f2; border: 1px solid #626e79; padding: 8px; }
 QCheckBox { color: #edf0f2; spacing: 8px; padding: 3px 0; }
 QTabWidget::pane { border: 1px solid #454e57; }
 QTabBar::tab { background: #242a30; color: #b8c1c9; padding: 10px 20px;
@@ -173,6 +179,58 @@ def reset_button(section: str, widgets: list[QWidget]) -> QPushButton:
     button.clicked.connect(reset)
     return button
 
+
+
+class HelpButton(QPushButton):
+    """shows the same short explanation on hover, keyboard focus, or click"""
+
+    def __init__(self, title: str, explanation: str) -> None:
+        super().__init__("?")
+        self.setObjectName("helpButton")
+        self.setFixedSize(20, 20)
+        self.setFocusPolicy(qt_enum(Qt, "FocusPolicy", "StrongFocus"))
+        self.setAccessibleName(f"Help for {title}")
+        self.setAccessibleDescription(explanation)
+        self.explanation = f"<qt>{explanation}</qt>"
+        self.setToolTip(self.explanation)
+        self.clicked.connect(self.show_help)
+
+    def show_help(self) -> None:
+        QToolTip.showText(self.mapToGlobal(QPoint(0, self.height() + 4)), self.explanation, self)
+
+    def enterEvent(self, event) -> None:  # noqa: N802
+        super().enterEvent(event)
+        self.show_help()
+
+    def focusInEvent(self, event) -> None:  # noqa: N802
+        super().focusInEvent(event)
+        self.show_help()
+
+    def focusOutEvent(self, event) -> None:  # noqa: N802
+        super().focusOutEvent(event)
+        QToolTip.hideText()
+
+
+def with_help(label: str | QCheckBox, control: QWidget, explanation: str) -> QWidget:
+    """keeps help beside its label without changing the setting or its reset behavior"""
+
+    row = QWidget()
+    layout = QHBoxLayout(row)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(6)
+    if isinstance(label, str):
+        title = label
+        widget = QLabel(label)
+        widget.setBuddy(control)
+    else:
+        title = label.text()
+        widget = label
+    control.setToolTip(explanation)
+    control.setAccessibleDescription(explanation)
+    layout.addWidget(widget)
+    layout.addWidget(HelpButton(title, explanation))
+    layout.addStretch(1)
+    return row
 
 
 class PathRow(QWidget):
@@ -277,8 +335,10 @@ class ViewshedWindow(QMainWindow):
         self.sites = PathRow(PROJECT_ROOT / "data/alertwest-sites.geojson", False)
         self.dems = PathRow(PROJECT_ROOT / "data/dems", True)
         self.output = PathRow(PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest", True)
-        form.addRow("Camera sites", self.sites)
-        form.addRow("DEM folder", self.dems)
+        form.addRow(with_help("Camera sites", self.sites,
+            "The GeoJSON file containing the camera locations to process."), self.sites)
+        form.addRow(with_help("DEM folder", self.dems,
+            "The folder containing terrain elevation files. These describe hills and valleys used to calculate visibility."), self.dems)
         form.addRow("Output folder", self.output)
         form.addRow(reset_button("Inputs and outputs", [self.sites.edit, self.dems.edit, self.output.edit]))
         return group
@@ -356,11 +416,16 @@ class ViewshedWindow(QMainWindow):
         self.keep_dems = QCheckBox("Keep per-camera working DEMs")
         self.overwrite = QCheckBox("Rebuild completed cameras instead of resuming")
 
-        form.addRow("Camera set", self.mode)
-        form.addRow("Outputs", self.products)
-        form.addRow("Maximum distance", self.radius)
-        form.addRow("Analysis cell size", self.cell_size)
-        form.addRow("Parallel cameras", self.jobs)
+        form.addRow(with_help("Camera set", self.mode,
+            "Choose a small test run or process every camera in the selected sites file."), self.mode)
+        form.addRow(with_help("Outputs", self.products,
+            "Full run creates combined coverage files and web map files. Shapefiles only creates a separate file for each camera; choose exact edges or smoother web edges."), self.products)
+        form.addRow(with_help("Maximum distance", self.radius,
+            "How far from each camera to check visibility. Larger distances cover more ground and take more time and memory."), self.radius)
+        form.addRow(with_help("Analysis cell size", self.cell_size,
+            "The size of each terrain square used in the calculation. Smaller squares keep more detail but use more time and memory; they cannot add detail missing from the elevation data."), self.cell_size)
+        form.addRow(with_help("Parallel cameras", self.jobs,
+            "How many cameras to process at once. More can finish sooner, but each needs roughly 1 GB of memory."), self.jobs)
 
         form.addRow(reset_button("Run settings", [
             self.mode, self.products, self.radius, self.cell_size, self.jobs,
@@ -372,12 +437,18 @@ class ViewshedWindow(QMainWindow):
         web_group = QGroupBox("Web polygon detail")
         web_form = QFormLayout(web_group)
         web_form.setSpacing(10)
-        web_form.addRow("Grid resolution", self.web_resolution)
-        web_form.addRow("Simplify tolerance", self.simplify)
-        web_form.addRow("Smoothing passes", self.smooth_iterations)
-        web_form.addRow("Minimum patch cells", self.patch_cells)
-        web_form.addRow(self.web_majority)
-        web_form.addRow(self.web_clip)
+        web_form.addRow(with_help("Grid resolution", self.web_resolution,
+            "The size of each square used for web coverage shapes. Larger values make simpler shapes but lose small details. Exact shapes are unchanged."), self.web_resolution)
+        web_form.addRow(with_help("Simplify tolerance", self.simplify,
+            "How much small edge detail to remove from web shapes, in meters. Higher values make simpler outlines; 0 skips this step."), self.simplify)
+        web_form.addRow(with_help("Smoothing passes", self.smooth_iterations,
+            "How many times to round off corners in web shapes. More passes make softer edges; 0 leaves the corners unchanged."), self.smooth_iterations)
+        web_form.addRow(with_help("Minimum patch cells", self.patch_cells,
+            "Removes small groups of grid squares from the web mask, including small gaps. Higher values remove larger patches; 0 keeps them all."), self.patch_cells)
+        web_form.addRow(with_help(self.web_majority, self.web_majority,
+            "Reduces isolated specks and tiny holes in web coverage. A square is visible when at least 5 of its 9 neighboring squares, including itself, are visible."))
+        web_form.addRow(with_help(self.web_clip, self.web_clip,
+            "Trims web coverage to the Pacific Northwest land boundary, removing coverage over the ocean. Exact shapes are unchanged."))
         web_form.addRow(reset_button("Web polygon detail", [
             self.web_resolution, self.simplify, self.smooth_iterations,
             self.patch_cells, self.web_majority, self.web_clip,
@@ -385,9 +456,12 @@ class ViewshedWindow(QMainWindow):
         advanced_layout.addWidget(web_group)
         files_group = QGroupBox("Files and repeat runs")
         files_layout = QVBoxLayout(files_group)
-        files_layout.addWidget(self.exact)
-        files_layout.addWidget(self.keep_dems)
-        files_layout.addWidget(self.overwrite)
+        files_layout.addWidget(with_help(self.exact, self.exact,
+            "Also saves shapes that follow the analysis grid without web smoothing. Uncheck to skip these files in a full run. Exact shapefile runs always create them."))
+        files_layout.addWidget(with_help(self.keep_dems, self.keep_dems,
+            "Keeps the temporary terrain files made for each camera so you can inspect them later. This uses extra disk space."))
+        files_layout.addWidget(with_help(self.overwrite, self.overwrite,
+            "Recalculates cameras that already have completed results. Leave unchecked to reuse completed work and resume an interrupted run."))
         files_layout.addWidget(reset_button("Files and repeat runs", [
             self.exact, self.keep_dems, self.overwrite,
         ]))
