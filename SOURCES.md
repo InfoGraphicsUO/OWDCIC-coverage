@@ -53,6 +53,21 @@ This will function as a source repository so I can keep track of what sources I'
 
 
 
+## Rebuilding local data
+
+The builders in [scripts/data-builders/](scripts/data-builders/) download from the sources above and overwrite the committed files. All but the digitized camera builder (its shapefile is not in the repo) were rerun on October 8, 2026 and reproduced the committed boundaries. None of them needs rerunning for new cameras or viewsheds, only when the upstream source changes. After rebuilding any file in `data/divisions/`, run `scripts/build-selection-metrics.py` to refill its area and coverage fields, which the builders write as null.
+
+- **`build-division-datasets.py`:** `state`, `county`, `house`, `senate`, `us-house`, and `national-forest` in `data/divisions/`, from Census TIGERweb and the Forest Service; `--only` limits the types. Rerun after redistricting or a new Congress (the layer ids and `CD119` field in the script change with them).
+- **`build-official-park-tribal-data.py`:** `national-park.geojson` and `tribal-land.geojson`, from the National Park Service and Census AIANNHA layers 2 and 3. Rerun when a park boundary or trust land changes.
+- **`build-odf-protection-districts.py`:** `odf-protection-district.geojson`. Rerun when ODF redraws a district.
+- **`build-utility-federal-land.py`:** `utility.geojson` and `federal-land.geojson`. Rerun for a new PAD-US release (refresh the fee cache with `scripts/fetch-padus-fee.py` at the same time), or to add a utility or a Washington service-area layer. Needs the QGIS Python.
+- **`build-viewshed-land-mask.py`:** [pacific-northwest-land-mask.geojson](data/pacific-northwest-land-mask.geojson). Rerun only if the regional bounds in the script change; every viewshed and metric then needs rebuilding too. Needs the QGIS Python.
+- **`build-digitized-camera-sources.py`:** the three `digitized-camera-sources` files, from the `StatewideNetwork` shapefile in the OHAZ network folder (not in this repo): `python3 scripts/data-builders/build-digitized-camera-sources.py <StatewideNetwork.shp> data/digitized-camera-sources.geojson --tabular`. Rerun whenever that shapefile gains or moves sites, then rerun `scripts/csv-to-geojson.py`.
+
+The DEM tile lists were filtered once from National Map CSV exports to the newest product per tile; that script and the exports are no longer in the repo.
+
+
+
 ## Map styles, tiles, and web resources
 
 - **Mapbox basemap styles:** [Outdoors](https://api.mapbox.com/styles/v1/infographics/cmspb7yx9000s01px89hr8i1a) and [Simple](https://api.mapbox.com/styles/v1/infographics/cmud7fy6n000a01rghxd37aiz); the satellite basemap is `mapbox://mapbox.satellite`.
