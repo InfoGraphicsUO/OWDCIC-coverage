@@ -159,9 +159,18 @@ class ViewshedWindow(QMainWindow):
         self.mode.addItem("3 cameras", "validation")
         self.mode.addItem("All cameras", "production")
 
+        self.products = QComboBox()
+        self.products.addItem("Full run (polygons, Mapbox products, manifest)", None)
+        self.products.addItem("Shapefiles only: exact 10 m polygons", "exact")
+        self.products.addItem("Shapefiles only: smoothed web polygons", "web")
+        self.products.setToolTip(
+            "shapefiles-only runs write one EPSG:5070 shapefile per camera for ArcGIS "
+            "and skip the combined GeoPackage, Mapbox products, and manifest"
+        )
+
         self.radius = QDoubleSpinBox()
         self.radius.setRange(0.1, 100.0)
-        self.radius.setValue(20.0)
+        self.radius.setValue(12.0)
         self.radius.setSuffix(" miles")
 
         self.cell_size = QDoubleSpinBox()
@@ -183,7 +192,7 @@ class ViewshedWindow(QMainWindow):
 
         self.smooth_iterations = QSpinBox()
         self.smooth_iterations.setRange(0, 3)
-        self.smooth_iterations.setValue(1)
+        self.smooth_iterations.setValue(3)
         self.smooth_iterations.setToolTip(
             "corner-cutting passes applied only to web polygons; 0 disables smoothing"
         )
@@ -214,6 +223,7 @@ class ViewshedWindow(QMainWindow):
         self.overwrite = QCheckBox("Rebuild completed cameras instead of resuming")
 
         form.addRow("Camera set", self.mode)
+        form.addRow("Outputs", self.products)
         form.addRow("Maximum distance", self.radius)
         form.addRow("Analysis cell size", self.cell_size)
         form.addRow("Web polygon grid", self.web_resolution)
@@ -297,7 +307,11 @@ class ViewshedWindow(QMainWindow):
             "--web-majority-filter" if self.web_majority.isChecked() else "--no-web-majority-filter"
         )
         arguments.append("--web-clip" if self.web_clip.isChecked() else "--no-web-clip")
-        if not self.exact.isChecked():
+        shapefiles = self.products.currentData()
+        if shapefiles:
+            arguments += ["--shapefiles-only", shapefiles]
+        # exact shapefiles are built from the exact polygons, so the checkbox cannot skip them
+        if not self.exact.isChecked() and shapefiles != "exact":
             arguments.append("--skip-exact-polygons")
         if self.keep_dems.isChecked():
             arguments.append("--keep-working-dems")
@@ -311,7 +325,8 @@ class ViewshedWindow(QMainWindow):
             problems.append(f"Sites file not found: {self.sites.path()}")
         if not self.dems.path().is_dir():
             problems.append(f"DEM folder not found: {self.dems.path()}")
-        if self.web_clip.isChecked() and not DEFAULT_CLIP_BOUNDARY.is_file():
+        clip_needed = self.web_clip.isChecked() and self.products.currentData() != "exact"
+        if clip_needed and not DEFAULT_CLIP_BOUNDARY.is_file():
             problems.append(f"Web clip boundary not found: {DEFAULT_CLIP_BOUNDARY}")
         if not self.qgis_runtime.root.is_dir():
             problems.append(f"QGIS not found: {self.qgis_runtime.root}")
@@ -375,7 +390,10 @@ class ViewshedWindow(QMainWindow):
         self.current.setValue(100 if exit_code == 0 else 0)
         if exit_code == 0:
             self.overall.setValue(1000)
-            self.status.setText("Run complete — outputs and manifest are ready")
+            if self.products.currentData():
+                self.status.setText("Run complete — shapefiles are in the output folder")
+            else:
+                self.status.setText("Run complete — outputs and manifest are ready")
         elif exit_code == 130:
             self.status.setText("Run cancelled — completed cameras remain resumable")
         else:
