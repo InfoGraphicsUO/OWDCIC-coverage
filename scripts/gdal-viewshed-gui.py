@@ -149,6 +149,32 @@ def apply_dark_theme(app: QApplication) -> None:
     app.setPalette(palette)
 
 
+def reset_button(section: str, widgets: list[QWidget]) -> QPushButton:
+    """captures the initial values so reset stays in sync with the defaults shown at launch"""
+
+    restore = []
+    for widget in widgets:
+        if isinstance(widget, QLineEdit):
+            restore.append((widget.setText, widget.text()))
+        elif isinstance(widget, QComboBox):
+            restore.append((widget.setCurrentIndex, widget.currentIndex()))
+        elif isinstance(widget, QCheckBox):
+            restore.append((widget.setChecked, widget.isChecked()))
+        else:
+            restore.append((widget.setValue, widget.value()))
+
+    def reset() -> None:
+        for setter, value in restore:
+            setter(value)
+
+    button = QPushButton("Reset to defaults")
+    button.setAccessibleName(f"Reset {section} to defaults")
+    button.setToolTip(f"Restore only {section.lower()} to the values used at launch.")
+    button.clicked.connect(reset)
+    return button
+
+
+
 class PathRow(QWidget):
     """line edit with a file or directory chooser"""
 
@@ -254,6 +280,7 @@ class ViewshedWindow(QMainWindow):
         form.addRow("Camera sites", self.sites)
         form.addRow("DEM folder", self.dems)
         form.addRow("Output folder", self.output)
+        form.addRow(reset_button("Inputs and outputs", [self.sites.edit, self.dems.edit, self.output.edit]))
         return group
 
     def build_options(self) -> QGroupBox:
@@ -335,6 +362,9 @@ class ViewshedWindow(QMainWindow):
         form.addRow("Analysis cell size", self.cell_size)
         form.addRow("Parallel cameras", self.jobs)
 
+        form.addRow(reset_button("Run settings", [
+            self.mode, self.products, self.radius, self.cell_size, self.jobs,
+        ]))
 
         # these are still the runner's defaults; the advanced tab just keeps setup compact
         self.advanced = QWidget()
@@ -348,12 +378,19 @@ class ViewshedWindow(QMainWindow):
         web_form.addRow("Minimum patch cells", self.patch_cells)
         web_form.addRow(self.web_majority)
         web_form.addRow(self.web_clip)
+        web_form.addRow(reset_button("Web polygon detail", [
+            self.web_resolution, self.simplify, self.smooth_iterations,
+            self.patch_cells, self.web_majority, self.web_clip,
+        ]))
         advanced_layout.addWidget(web_group)
         files_group = QGroupBox("Files and repeat runs")
         files_layout = QVBoxLayout(files_group)
         files_layout.addWidget(self.exact)
         files_layout.addWidget(self.keep_dems)
         files_layout.addWidget(self.overwrite)
+        files_layout.addWidget(reset_button("Files and repeat runs", [
+            self.exact, self.keep_dems, self.overwrite,
+        ]))
         advanced_layout.addWidget(files_group)
         advanced_layout.addStretch(1)
         return group
