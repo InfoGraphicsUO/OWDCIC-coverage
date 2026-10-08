@@ -10,8 +10,8 @@ import sys
 import time
 
 try:
-    from qgis.PyQt.QtCore import QProcess, QTimer, QUrl
-    from qgis.PyQt.QtGui import QDesktopServices
+    from qgis.PyQt.QtCore import QPoint, QProcess, Qt, QTimer, QUrl
+    from qgis.PyQt.QtGui import QColor, QDesktopServices, QPalette
     from qgis.PyQt.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -29,12 +29,15 @@ try:
         QProgressBar,
         QPushButton,
         QSpinBox,
+        QScrollArea,
+        QTabWidget,
+        QToolTip,
         QVBoxLayout,
         QWidget,
     )
 except ImportError:
-    from PyQt6.QtCore import QProcess, QTimer, QUrl
-    from PyQt6.QtGui import QDesktopServices
+    from PyQt6.QtCore import QPoint, QProcess, Qt, QTimer, QUrl
+    from PyQt6.QtGui import QColor, QDesktopServices, QPalette
     from PyQt6.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -52,6 +55,9 @@ except ImportError:
         QProgressBar,
         QPushButton,
         QSpinBox,
+        QScrollArea,
+        QTabWidget,
+        QToolTip,
         QVBoxLayout,
         QWidget,
     )
@@ -78,6 +84,153 @@ DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 PROGRESS_PREFIX = "@@PROGRESS@@"
+
+# keep the native controls, with dark gray surfaces and yellow accents
+WINDOW_STYLE = """
+QMainWindow, QScrollArea, QWidget#settingsPage { background: #191d21; color: #edf0f2; }
+QWidget { font-size: 13px; }
+QLabel { color: #edf0f2; }
+QLabel#title { font-size: 24px; font-weight: 600; }
+QLabel#subtitle, QLabel#elapsed { color: #abb5be; }
+QGroupBox { font-weight: 600; border: 1px solid #454e57; border-radius: 5px;
+    margin-top: 12px; padding: 16px 12px 12px; background: #242a30; color: #edf0f2; }
+QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; }
+QLineEdit, QComboBox, QAbstractSpinBox, QPlainTextEdit {
+    background: #242a30; color: #edf0f2; border: 1px solid #626e79;
+    border-radius: 3px; padding: 6px; selection-background-color: #ffe16a;
+    selection-color: #191d21; }
+QLineEdit:focus, QComboBox:focus, QAbstractSpinBox:focus, QPlainTextEdit:focus {
+    border: 1px solid #ffda44; }
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+    subcontrol-origin: border; subcontrol-position: top right; width: 20px; height: 16px; }
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    subcontrol-origin: border; subcontrol-position: bottom right; width: 20px; height: 16px; }
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow,
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow { width: 8px; height: 8px; }
+QPushButton { background: #242a30; color: #edf0f2; border: 1px solid #626e79;
+    border-radius: 4px; padding: 8px 14px; }
+QPushButton:hover { background: #343d45; border-color: #a3aeb8; }
+QPushButton:focus { border: 2px solid #ffda44; padding: 7px 13px; }
+QPushButton#startButton { background: #ffda44; color: #191d21; border-color: #b79a27; font-weight: 600; }
+QPushButton#startButton:hover { background: #ffe576; }
+QPushButton:disabled, QPushButton#startButton:disabled { background: #282e34;
+    color: #89949e; border-color: #454e57; }
+QPushButton#helpButton { padding: 0; border-radius: 10px; color: #b8c1c9; }
+QPushButton#helpButton:hover, QPushButton#helpButton:focus {
+    padding: 0; color: #ffda44; border: 1px solid #ffda44; }
+QToolTip { background: #343d45; color: #edf0f2; border: 1px solid #626e79; padding: 8px; }
+QCheckBox { color: #edf0f2; spacing: 8px; padding: 3px 0; }
+QTabWidget::pane { border: 1px solid #454e57; }
+QTabBar::tab { background: #242a30; color: #b8c1c9; padding: 10px 20px;
+    border-bottom: 3px solid transparent; }
+QTabBar::tab:selected { background: #242a30; color: #edf0f2; border-bottom-color: #e3b900; }
+QTabBar::tab:hover { background: #343d45; }
+QProgressBar { background: #343d45; color: #edf0f2; border: none;
+    border-radius: 3px; min-height: 20px; text-align: center; }
+QProgressBar::chunk { background: #806700; border-radius: 3px; }
+QPlainTextEdit { font-family: Consolas, monospace; font-size: 12px; }
+"""
+
+
+def apply_dark_theme(app: QApplication) -> None:
+    """covers native controls and popups that are not painted by the window stylesheet"""
+
+    app.setStyle("Fusion")
+    palette = QPalette()
+    for role, color in {
+        "Window": "#191d21", "WindowText": "#edf0f2",
+        "Base": "#242a30", "AlternateBase": "#303840",
+        "Text": "#edf0f2", "Button": "#242a30", "ButtonText": "#edf0f2",
+        "ToolTipBase": "#343d45", "ToolTipText": "#edf0f2",
+        "Highlight": "#ffda44", "HighlightedText": "#191d21",
+        "Light": "#626e79", "Mid": "#454e57", "Dark": "#14171a",
+        "PlaceholderText": "#abb5be",
+    }.items():
+        palette.setColor(qt_enum(QPalette, "ColorRole", role), QColor(color))
+    for role in ("WindowText", "Text", "ButtonText"):
+        palette.setColor(
+            qt_enum(QPalette, "ColorGroup", "Disabled"),
+            qt_enum(QPalette, "ColorRole", role), QColor("#89949e"),
+        )
+    app.setPalette(palette)
+
+
+def reset_button(section: str, widgets: list[QWidget]) -> QPushButton:
+    """captures the initial values so reset stays in sync with the defaults shown at launch"""
+
+    restore = []
+    for widget in widgets:
+        if isinstance(widget, QLineEdit):
+            restore.append((widget.setText, widget.text()))
+        elif isinstance(widget, QComboBox):
+            restore.append((widget.setCurrentIndex, widget.currentIndex()))
+        elif isinstance(widget, QCheckBox):
+            restore.append((widget.setChecked, widget.isChecked()))
+        else:
+            restore.append((widget.setValue, widget.value()))
+
+    def reset() -> None:
+        for setter, value in restore:
+            setter(value)
+
+    button = QPushButton("Reset to defaults")
+    button.setAccessibleName(f"Reset {section} to defaults")
+    button.setToolTip(f"Restore only {section.lower()} to the values used at launch.")
+    button.clicked.connect(reset)
+    return button
+
+
+
+class HelpButton(QPushButton):
+    """shows the same short explanation on hover, keyboard focus, or click"""
+
+    def __init__(self, title: str, explanation: str) -> None:
+        super().__init__("?")
+        self.setObjectName("helpButton")
+        self.setFixedSize(20, 20)
+        self.setFocusPolicy(qt_enum(Qt, "FocusPolicy", "StrongFocus"))
+        self.setAccessibleName(f"Help for {title}")
+        self.setAccessibleDescription(explanation)
+        self.explanation = f"<qt>{explanation}</qt>"
+        self.setToolTip(self.explanation)
+        self.clicked.connect(self.show_help)
+
+    def show_help(self) -> None:
+        QToolTip.showText(self.mapToGlobal(QPoint(0, self.height() + 4)), self.explanation, self)
+
+    def enterEvent(self, event) -> None:  # noqa: N802
+        super().enterEvent(event)
+        self.show_help()
+
+    def focusInEvent(self, event) -> None:  # noqa: N802
+        super().focusInEvent(event)
+        self.show_help()
+
+    def focusOutEvent(self, event) -> None:  # noqa: N802
+        super().focusOutEvent(event)
+        QToolTip.hideText()
+
+
+def with_help(label: str | QCheckBox, control: QWidget, explanation: str) -> QWidget:
+    """keeps help beside its label without changing the setting or its reset behavior"""
+
+    row = QWidget()
+    layout = QHBoxLayout(row)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(6)
+    if isinstance(label, str):
+        title = label
+        widget = QLabel(label)
+        widget.setBuddy(control)
+    else:
+        title = label.text()
+        widget = label
+    control.setToolTip(explanation)
+    control.setAccessibleDescription(explanation)
+    layout.addWidget(widget)
+    layout.addWidget(HelpButton(title, explanation))
+    layout.addStretch(1)
+    return row
 
 
 class PathRow(QWidget):
@@ -115,7 +268,9 @@ class ViewshedWindow(QMainWindow):
         super().__init__()
         self.qgis_runtime = qgis_runtime(DEFAULT_QGIS_ROOT)
         self.setWindowTitle("OWDCIC GDAL Camera Viewsheds")
-        self.resize(820, 720)
+        self.resize(920, 880)
+        self.setMinimumSize(720, 640)
+        self.setStyleSheet(WINDOW_STYLE)
         self.process = QProcess(self)
         self.process.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
         self.process.readyReadStandardOutput.connect(self.read_output)
@@ -128,32 +283,71 @@ class ViewshedWindow(QMainWindow):
 
         central = QWidget()
         root = QVBoxLayout(central)
-        root.addWidget(self.build_inputs())
-        root.addWidget(self.build_options())
+        root.setContentsMargins(24, 20, 24, 20)
+        root.setSpacing(12)
+        title = QLabel("Camera viewsheds")
+        title.setObjectName("title")
+        root.addWidget(title)
+        subtitle = QLabel("Build camera coverage from elevation data with GDAL.")
+        subtitle.setObjectName("subtitle")
+        root.addWidget(subtitle)
+
+        # scroll only the settings, so progress and the run controls stay within reach
+        self.settings = QTabWidget()
+        setup = QWidget()
+        setup_layout = QVBoxLayout(setup)
+        setup_layout.addWidget(self.build_inputs())
+        setup_layout.addStretch(1)
+        options = QWidget()
+        options_layout = QVBoxLayout(options)
+        options_layout.addWidget(self.build_options())
+        options_layout.addStretch(1)
+        for label, page in (
+            ("Inputs and outputs", setup),
+            ("Run settings", options),
+            ("Advanced options", self.advanced),
+        ):
+            page.setObjectName("settingsPage")
+            scroll = QScrollArea()
+            scroll.setWidgetResizable(True)
+            scroll.setFrameShape(qt_enum(QScrollArea, "Shape", "NoFrame"))
+            scroll.setWidget(page)
+            self.settings.addTab(scroll, label)
+        root.addWidget(self.settings, 3)
         root.addWidget(self.build_progress())
 
+        root.addWidget(QLabel("Run log"))
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
-        self.log.setPlaceholderText("Runner messages appear here")
+        self.log.setMinimumHeight(90)
+        self.log.setPlaceholderText("Start a run to see processing details and any warnings here.")
         root.addWidget(self.log, 1)
         root.addLayout(self.build_buttons())
         self.setCentralWidget(central)
+        self.output.edit.textChanged.connect(lambda: self.set_idle(self.process.state() == PROCESS_NOT_RUNNING))
         self.set_idle(True)
 
     def build_inputs(self) -> QGroupBox:
         group = QGroupBox("Inputs and outputs")
         form = QFormLayout(group)
+        form.setSpacing(10)
+        form.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
         self.sites = PathRow(PROJECT_ROOT / "data/alertwest-sites.geojson", False)
         self.dems = PathRow(PROJECT_ROOT / "data/dems", True)
         self.output = PathRow(PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest", True)
-        form.addRow("Camera sites", self.sites)
-        form.addRow("DEM folder", self.dems)
+        form.addRow(with_help("Camera sites", self.sites,
+            "The GeoJSON file containing the camera locations to process."), self.sites)
+        form.addRow(with_help("DEM folder", self.dems,
+            "The folder containing terrain elevation files. These describe hills and valleys used to calculate visibility."), self.dems)
         form.addRow("Output folder", self.output)
+        form.addRow(reset_button("Inputs and outputs", [self.sites.edit, self.dems.edit, self.output.edit]))
         return group
 
     def build_options(self) -> QGroupBox:
         group = QGroupBox("Run settings")
         form = QFormLayout(group)
+        form.setSpacing(10)
+        form.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
         self.mode = QComboBox()
         self.mode.addItem("1 camera (Portland)", "pilot")
         self.mode.addItem("3 cameras", "validation")
@@ -222,35 +416,74 @@ class ViewshedWindow(QMainWindow):
         self.keep_dems = QCheckBox("Keep per-camera working DEMs")
         self.overwrite = QCheckBox("Rebuild completed cameras instead of resuming")
 
-        form.addRow("Camera set", self.mode)
-        form.addRow("Outputs", self.products)
-        form.addRow("Maximum distance", self.radius)
-        form.addRow("Analysis cell size", self.cell_size)
-        form.addRow("Web polygon grid", self.web_resolution)
-        form.addRow("Web simplify tolerance", self.simplify)
-        form.addRow("Web smoothing passes", self.smooth_iterations)
-        form.addRow(self.web_majority)
-        form.addRow(self.web_clip)
-        form.addRow("Minimum web patch cells", self.patch_cells)
-        form.addRow("Parallel cameras", self.jobs)
-        form.addRow(self.exact)
-        form.addRow(self.keep_dems)
-        form.addRow(self.overwrite)
+        form.addRow(with_help("Camera set", self.mode,
+            "Choose a small test run or process every camera in the selected sites file."), self.mode)
+        form.addRow(with_help("Outputs", self.products,
+            "Full run creates combined coverage files and web map files. Shapefiles only creates a separate file for each camera; choose exact edges or smoother web edges."), self.products)
+        form.addRow(with_help("Maximum distance", self.radius,
+            "How far from each camera to check visibility. Larger distances cover more ground and take more time and memory."), self.radius)
+        form.addRow(with_help("Analysis cell size", self.cell_size,
+            "The size of each terrain square used in the calculation. Smaller squares keep more detail but use more time and memory; they cannot add detail missing from the elevation data."), self.cell_size)
+        form.addRow(with_help("Parallel cameras", self.jobs,
+            "How many cameras to process at once. More can finish sooner, but each needs roughly 1 GB of memory."), self.jobs)
+
+        form.addRow(reset_button("Run settings", [
+            self.mode, self.products, self.radius, self.cell_size, self.jobs,
+        ]))
+
+        # these are still the runner's defaults; the advanced tab just keeps setup compact
+        self.advanced = QWidget()
+        advanced_layout = QVBoxLayout(self.advanced)
+        web_group = QGroupBox("Web polygon detail")
+        web_form = QFormLayout(web_group)
+        web_form.setSpacing(10)
+        web_form.addRow(with_help("Grid resolution", self.web_resolution,
+            "The size of each square used for web coverage shapes. Larger values make simpler shapes but lose small details. Exact shapes are unchanged."), self.web_resolution)
+        web_form.addRow(with_help("Simplify tolerance", self.simplify,
+            "How much small edge detail to remove from web shapes, in meters. Higher values make simpler outlines; 0 skips this step."), self.simplify)
+        web_form.addRow(with_help("Smoothing passes", self.smooth_iterations,
+            "How many times to round off corners in web shapes. More passes make softer edges; 0 leaves the corners unchanged."), self.smooth_iterations)
+        web_form.addRow(with_help("Minimum patch cells", self.patch_cells,
+            "Removes small groups of grid squares from the web mask, including small gaps. Higher values remove larger patches; 0 keeps them all."), self.patch_cells)
+        web_form.addRow(with_help(self.web_majority, self.web_majority,
+            "Reduces isolated specks and tiny holes in web coverage. A square is visible when at least 5 of its 9 neighboring squares, including itself, are visible."))
+        web_form.addRow(with_help(self.web_clip, self.web_clip,
+            "Trims web coverage to the Pacific Northwest land boundary, removing coverage over the ocean. Exact shapes are unchanged."))
+        web_form.addRow(reset_button("Web polygon detail", [
+            self.web_resolution, self.simplify, self.smooth_iterations,
+            self.patch_cells, self.web_majority, self.web_clip,
+        ]))
+        advanced_layout.addWidget(web_group)
+        files_group = QGroupBox("Files and repeat runs")
+        files_layout = QVBoxLayout(files_group)
+        files_layout.addWidget(with_help(self.exact, self.exact,
+            "Also saves shapes that follow the analysis grid without web smoothing. Uncheck to skip these files in a full run. Exact shapefile runs always create them."))
+        files_layout.addWidget(with_help(self.keep_dems, self.keep_dems,
+            "Keeps the temporary terrain files made for each camera so you can inspect them later. This uses extra disk space."))
+        files_layout.addWidget(with_help(self.overwrite, self.overwrite,
+            "Recalculates cameras that already have completed results. Leave unchecked to reuse completed work and resume an interrupted run."))
+        files_layout.addWidget(reset_button("Files and repeat runs", [
+            self.exact, self.keep_dems, self.overwrite,
+        ]))
+        advanced_layout.addWidget(files_group)
+        advanced_layout.addStretch(1)
         return group
 
     def build_progress(self) -> QGroupBox:
         group = QGroupBox("Progress")
         layout = QVBoxLayout(group)
-        self.status = QLabel("Ready")
+        self.status = QLabel("Ready to start; choose inputs & check settings before starting a run!")
         self.status.setWordWrap(True)
         self.overall = QProgressBar()
         self.overall.setRange(0, 1000)
+        self.overall.setValue(0)
         self.overall.setFormat("Overall: %p%")
         self.current = QProgressBar()
         self.current.setRange(0, 100)
         self.current.setValue(0)
         self.current.setFormat("Current stage")
         self.elapsed = QLabel("Elapsed: 0s")
+        self.elapsed.setObjectName("elapsed")
         layout.addWidget(self.status)
         layout.addWidget(self.overall)
         layout.addWidget(self.current)
@@ -260,6 +493,7 @@ class ViewshedWindow(QMainWindow):
     def build_buttons(self) -> QHBoxLayout:
         layout = QHBoxLayout()
         self.start_button = QPushButton("Start run")
+        self.start_button.setObjectName("startButton")
         self.start_button.clicked.connect(self.start_run)
         self.cancel_button = QPushButton("Cancel")
         self.cancel_button.clicked.connect(self.cancel_run)
@@ -349,6 +583,10 @@ class ViewshedWindow(QMainWindow):
         self.process.start(sys.executable, self.runner_arguments())
         if not self.process.waitForStarted(5000):
             self.log.appendPlainText(self.process.errorString())
+            self.elapsed_timer.stop()
+            self.current.setRange(0, 100)
+            self.current.setValue(0)
+            self.status.setText("Could not start the runner — review the log.")
             self.set_idle(True)
 
     def read_output(self) -> None:
@@ -431,6 +669,7 @@ class ViewshedWindow(QMainWindow):
         self.elapsed.setText(f"Elapsed: {text}")
 
     def set_idle(self, idle: bool) -> None:
+        self.settings.setEnabled(idle)
         self.start_button.setEnabled(idle)
         self.cancel_button.setEnabled(not idle)
         self.open_output_button.setEnabled(idle and self.output.path().exists())
@@ -498,6 +737,7 @@ class ViewshedWindow(QMainWindow):
 
 def main() -> int:
     app = QApplication(sys.argv)
+    apply_dark_theme(app)
     app.setApplicationName("OWDCIC GDAL Viewsheds")
     window = ViewshedWindow()
     window.show()
