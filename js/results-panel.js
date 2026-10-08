@@ -9,6 +9,20 @@ const LAND_MIX_INFO = 'Tribal areas follow reservation and trust boundaries. Oth
 // square-kilometer to square-mile conversion for displayed area values
 const SQMI_PER_SQKM = 0.3861021585;
 const UTILITY_QUALIFIER = 'Approximate service area boundary';
+// names what the yellow selection outline traces for each filter group
+const BOUNDARY_QUALIFIERS = Object.freeze({
+  state: 'State boundary',
+  county: 'County boundary',
+  house: 'State House district boundary',
+  'us-house': 'US House district boundary',
+  senate: 'State Senate district boundary',
+  utility: UTILITY_QUALIFIER,
+  'national-forest': 'Administrative forest boundary; may include non-federal inholdings.',
+  'national-park': 'Park boundary; may include land outside NPS ownership.',
+  'federal-land': 'Federal land boundary',
+  'tribal-land': 'Tribal land boundary',
+  'odf-protection-district': 'ODF protection district boundary',
+});
 const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | UO InfoGraphics Lab | OHAZ';
 // Mapbox satellite imagery carries its own provider credit
 const SATELLITE_MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | Maxar | UO InfoGraphics Lab | OHAZ';
@@ -349,16 +363,10 @@ function renderPolygon(type, properties) {
   const name = properties.name || properties.label || 'selected area';
   wrapper.className = 'results-panel__body';
   // source-specific caveats keep approximate or administrative boundaries clear
-  if (type === 'utility') {
-    // utility outlines describe approximate service coverage
-    wrapper.append(selfLine(UTILITY_QUALIFIER, 'results-panel__qualifier'));
-  } else if (type === 'national-forest') {
-    wrapper.append(selfLine('Administrative forest boundary; may include non-federal inholdings.', 'results-panel__qualifier'));
-  } else if (type === 'national-park') {
-    wrapper.append(selfLine('Park boundary; may include land outside NPS ownership.', 'results-panel__qualifier'));
-  } else if (type === 'federal-land' && /Department of Defense|Other federal fee manager/.test(name)) {
-    wrapper.append(selfLine('This source boundary may include planning areas without federal fee ownership.', 'results-panel__qualifier'));
-  }
+  const qualifier = type === 'federal-land' && /Department of Defense|Other federal fee manager/.test(name)
+    ? 'This source boundary may include planning areas without federal fee ownership.'
+    : BOUNDARY_QUALIFIERS[type];
+  if (qualifier) wrapper.append(selfLine(qualifier, 'results-panel__qualifier'));
   wrapper.append(selfLine(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire-spotting cameras`, 'results-panel__lead'));
   // area totals need valid source values; missing coverage must stay unavailable, not zero
   if (coverage != null && covered != null && total != null) {
