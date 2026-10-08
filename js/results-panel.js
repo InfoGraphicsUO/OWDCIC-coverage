@@ -39,7 +39,9 @@ const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }
  * accepts plain feature properties so callers need no data-source details
  * keeps chart and dialog state local to this panel instance
  */
-export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendItems, onClose = () => {} } = {}) {
+export function initResultsPanel({
+  getMapCanvas, getMap, getBasemap, getLegendItems, getSelectionLegendItems, onClose = () => {},
+} = {}) {
   const element = document.querySelector('#results-panel');
   const title = element.querySelector('[data-results-title]');
   const subtitle = element.querySelector('[data-results-subtitle]');
@@ -140,7 +142,11 @@ export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendIt
         mapCanvas: await resolveCanvas(getMapCanvas),
         map: typeof getMap === 'function' ? getMap() : null,
         basemap: typeof getBasemap === 'function' ? getBasemap() : null,
-        legendItems: await resolveLegendRowsForExport(getLegendItems),
+        legendItems: [
+          ...await resolveLegendRowsForExport(getLegendItems),
+          // selection symbols have no layer row, so the map reports them for this export
+          ...normalizeLegendRows(typeof getSelectionLegendItems === 'function' ? getSelectionLegendItems(selection) : []),
+        ],
         title: exportTitle,
         current: selection,
         chart,
@@ -537,6 +543,9 @@ const EXPORT_FONT = 'Merriweather, "Segoe UI", sans-serif';
 const EXPORT_LEGEND_SWATCH_SIZE = 20;
 const EXPORT_LEGEND_SWATCH_GAP = 10;
 const EXPORT_LEGEND_TEXT_OFFSET = EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_SWATCH_GAP;
+// selection rows carry place and camera names, which can outgrow one legend line
+const EXPORT_LEGEND_LABEL_CHARS = 30;
+const EXPORT_LEGEND_LINE_HEIGHT = 18;
 const EXPORT_PANEL_FILL = 'rgba(47, 46, 46, 0.9)';
 // fallback visuals for integrations that provide labels without DOM swatches
 const EXPORT_LEGEND_VISUALS = Object.freeze({
@@ -757,8 +766,10 @@ function layoutLegendPanel({ ctx, width, rows }) {
   const padBottom = 30;
   const titleHeight = 18;
   const rowHeight = 26;
+  const labelLines = rows.map((row) => wrapExportLines([row.label], EXPORT_LEGEND_LABEL_CHARS));
+  const extraLines = labelLines.reduce((total, lines) => total + lines.length - 1, 0);
   // leave room for the empty-legend fallback label
-  const contentHeight = titleHeight + Math.max(rows.length, 1) * rowHeight;
+  const contentHeight = titleHeight + Math.max(rows.length, 1) * rowHeight + extraLines * EXPORT_LEGEND_LINE_HEIGHT;
   return {
     width,
     height: padY + contentHeight + padBottom,
@@ -768,6 +779,7 @@ function layoutLegendPanel({ ctx, width, rows }) {
     rowHeight,
     textOffset: EXPORT_LEGEND_TEXT_OFFSET,
     rows,
+    labelLines,
   };
 }
 
@@ -852,13 +864,17 @@ function drawLegendOverlay(ctx, x, y, layout) {
     return;
   }
   // draw each visible layer with the same visual parsed from the map legend
-  layout.rows.forEach((row) => {
+  layout.rows.forEach((row, index) => {
     textY += layout.rowHeight;
     const swatchX = x + layout.padX;
     const swatchY = textY - 17;
     drawLegendVisual(ctx, row.visual, swatchX, swatchY);
     ctx.fillStyle = '#f0f0f0';
-    ctx.fillText(row.label, swatchX + layout.textOffset, textY);
+    // the swatch stays beside the first line of a wrapped label
+    layout.labelLines[index].forEach((line, lineIndex) => {
+      if (lineIndex) textY += EXPORT_LEGEND_LINE_HEIGHT;
+      ctx.fillText(line, swatchX + layout.textOffset, textY);
+    });
   });
 }
 
@@ -914,6 +930,13 @@ function drawExportLegendSwatch(ctx, { style, color }, x, y) {
   if (style === 'fill') {
     ctx.fillStyle = color || '#777';
     ctx.fillRect(x, y, size, size);
+    return;
+  }
+  if (style === 'border') {
+    // a selected area is drawn as an outline with no fill
+    ctx.strokeStyle = color || '#777';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x + 1.5, y + 1.5, size - 3, size - 3);
     return;
   }
   ctx.fillStyle = colorToRgba(color || '#777', 0.24);

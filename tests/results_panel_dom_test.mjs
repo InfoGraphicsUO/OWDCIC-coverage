@@ -284,6 +284,11 @@ const api = initResultsPanel({
   }),
   getMapCanvas: () => canvas,
   getLegendItems: () => ['ALERTWest cameras', 'ALERTWest camera viewsheds'],
+  // the map names selection symbols that have no layer row
+  getSelectionLegendItems: (selection) => (selection.kind === 'polygon' ? [
+    { label: `${selection.properties.name} border`, visual: { type: 'swatch', style: 'border', color: '#f8e109' } },
+    { label: 'Confederated Tribes Lookout Camera viewshed', visual: { type: 'swatch', style: 'fill', color: '#ffee00' } },
+  ] : []),
 });
 
 const landMix = [
@@ -389,6 +394,14 @@ assert.deepEqual(projectedCoordinates[0], [10, 20], 'export should center its cr
 assert.ok(exportCanvas.drawImageCalls[0][3] < 400, 'export should crop the map for a closer view');
 assert.equal(exportCanvas.fills.filter((fill) => fill === 'rgba(47, 46, 46, 0.9)').length, 2,
   'legend and results should each use one translucent dark panel fill');
+// selection rows follow the layer rows, and long names wrap inside the legend card
+assert.ok(exportCanvas.drawnText.includes('State House District 1 border'),
+  'export legend should name the selected area border');
+assert.ok(exportCanvas.drawnText.includes('Confederated Tribes Lookout') &&
+  exportCanvas.drawnText.includes('Camera viewshed'),
+  'export legend should wrap a long highlighted viewshed label');
+assert.ok(exportCanvas.drawnText.indexOf('Viewsheds') < exportCanvas.drawnText.indexOf('State House District 1 border'),
+  'selection rows should follow the layer rows');
 // the preview is a modal dialog and its download reuses the exact composed PNG
 assert.equal(modal.querySelector('[role="dialog"]')?.getAttribute('aria-modal'), 'true');
 assert.ok(modal.querySelector('[data-export-preview]'), 'modal should include preview image');
