@@ -165,6 +165,8 @@ const divisionFeatures = new Map();
 let activeMap;
 let activeFilterType = null;
 let cameraFeatures = [];
+// names the camera whose viewshed is highlighted, for the export legend
+let highlightedCameraName = '';
 let resolveCameraFeatures;
 // camera options wait for the provider data while division sources wait for map setup
 const cameraFeaturesReady = new Promise((resolve) => {
@@ -257,6 +259,7 @@ const resultsControl = initResultsPanel({
     .filter((row) => !row.hidden && !row.closest('.legend-group[hidden]'))
     .map((row) => row.querySelector('.legend-label')?.textContent?.trim())
     .filter(Boolean),
+  getSelectionLegendItems: selectionLegendItems,
   // clears the picked option but keeps the filter panel on its current type
   onClose: () => filterControl.clearSelection(),
 });
@@ -767,7 +770,7 @@ async function cameraClicked(cameraId, mapFeature) {
   if (!feature) return;
 
   hideCameraPreview(activeMap);
-  selectCameraViewshed(activeMap, feature.properties?.viewshed_id);
+  selectCameraViewshed(activeMap, feature.properties?.viewshed_id, feature.properties?.name);
 
   // keep polygon details in the result panel while highlighting the camera
   if (polygonFilterIsActive()) return;
@@ -818,7 +821,7 @@ async function showCameraResult(map, feature) {
   // each selection owns a token; only its latest response may update the panel
   const request = ++cameraResultRequest;
   const properties = feature.properties || {};
-  selectCameraViewshed(map, properties.viewshed_id);
+  selectCameraViewshed(map, properties.viewshed_id, properties.name);
   enableClearForResult();
   resultsControl.showLoading(properties.name || 'Camera');
 
@@ -1664,7 +1667,8 @@ function basemapColor(colors, basemap) {
   return colors[basemap] ?? colors.outdoors;
 }
 
-function selectCameraViewshed(map, viewshedId) {
+function selectCameraViewshed(map, viewshedId, cameraName = '') {
+  highlightedCameraName = viewshedId ? cameraName || 'Camera' : '';
   // provider viewshed ids are unique, so each highlight layer can share one filter
   // the sentinel produces an empty match while no camera is selected
   const filter = viewshedFilter(viewshedId || NO_VIEWSHED_SELECTED);
@@ -1677,6 +1681,34 @@ function selectCameraViewshed(map, viewshedId) {
 
 function viewshedFilter(viewshedId) {
   return ['==', ['get', 'viewshed_id'], viewshedId];
+}
+
+// export legend rows for selection symbols, which have no layer row of their own
+function selectionLegendItems(selection) {
+  const items = [];
+  if (selection?.kind === 'polygon') {
+    const name = selection.properties?.name || selection.properties?.label || 'Selected area';
+    items.push({
+      // utility outlines are approximate service areas, so the label says so
+      label: selection.type === 'utility' ? `${name} approx. service boundary` : `${name} border`,
+      visual: { type: 'swatch', style: 'border', color: SELECTED_BOUNDARY_COLOR },
+    });
+  }
+  if (highlightedCameraName && highlightedViewshedIsRendered(activeMap)) {
+    items.push({
+      label: `${highlightedCameraName} viewshed`,
+      visual: { type: 'swatch', style: 'fill', color: VIEWSHED_HIGHLIGHT_COLOR },
+    });
+  }
+  return items;
+}
+
+function highlightedViewshedIsRendered(map) {
+  // an unchecked viewshed row or an off-screen camera leaves nothing to label
+  const layers = CAMERA_PROVIDERS
+    .map(({ viewshedHighlightLayerId }) => viewshedHighlightLayerId)
+    .filter((layerId) => map?.getLayer(layerId));
+  return layers.length > 0 && map.queryRenderedFeatures({ layers }).length > 0;
 }
 
 async function addFireLayer(map) {
