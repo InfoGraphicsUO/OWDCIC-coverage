@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-"""Build the selectable OR/WA division GeoJSON products.
+"""Build the Census and Forest Service OR/WA division GeoJSON products.
 
-All geometries come from the listed public ArcGIS services.  The builder keeps
+Parks and tribal lands, ODF districts, and utility and federal land have their
+own builders in this folder.  All geometries come from the listed public
+ArcGIS services.  The builder keeps
 the raw service response hash in each collection so a refresh is auditable.
 Area and viewshed metrics are intentionally nullable until the GDAL coverage
 step is run against the local EPSG:5070 product.
@@ -13,9 +15,10 @@ from pathlib import Path
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "data" / "divisions"
 ORWA = "(STATE IN ('41','53'))"
+STATES = {"41": ("OR", "Oregon"), "53": ("WA", "Washington")}
 CENSUS = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb"
 
 SOURCES = {
@@ -24,13 +27,14 @@ SOURCES = {
     "house": (f"{CENSUS}/Legislative/MapServer/2", ORWA, "GEOID,NAME,STATE,SLDL,INTPTLAT,INTPTLON", "house", "2026 State Legislative Districts - Lower"),
     "senate": (f"{CENSUS}/Legislative/MapServer/1", ORWA, "GEOID,NAME,STATE,SLDU,INTPTLAT,INTPTLON", "senate", "2026 State Legislative Districts - Upper"),
     "us-house": (f"{CENSUS}/Legislative/MapServer/4", ORWA, "GEOID,NAME,STATE,CD119,INTPTLAT,INTPTLON", "us-house", "119th Congressional Districts"),
-    "national-park": (f"{CENSUS}/Special_Land_Use_Areas/MapServer/0", "1=1", "LNDMRKNS,NAME,INTPTLAT,INTPTLON", "national-park", "National Park Service Areas"),
-    "tribal-land": (f"{CENSUS}/AIANNHA/MapServer/2", "1=1", "GEOID,NAME,INTPTLAT,INTPTLON", "tribal-land", "Federal American Indian Reservations"),
     "national-forest": ("https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_ForestSystemBoundaries_01/MapServer/0", "1=1", "adminforestid,forestname,region", "national-forest", "Administrative Forest Boundaries - National Extent"),
 }
 
-def fetch(url, where, fields):
-    params = {"where": where, "outFields": fields, "returnGeometry": "true", "outSR": "4326", "geometryPrecision": "5", "f": "json", "orderByFields": "OBJECTID"}
+# counties are generalized server-side because the map draws all 75 outlines at once
+COUNTY_PARAMS = {"maxAllowableOffset": "0.0005", "f": "geojson", "orderByFields": "GEOID"}
+
+def fetch(url, where, fields, extra=None):
+    params = {"where": where, "outFields": fields, "returnGeometry": "true", "outSR": "4326", "geometryPrecision": "5", "f": "json", "orderByFields": "OBJECTID", **(extra or {})}
     full = url.rstrip("/") + "/query?" + urlencode(params)
     with urlopen(full, timeout=120) as response:
         raw = response.read()
@@ -79,10 +83,10 @@ def normalize(payload, division_type, service_name, url, source_hash):
         if not geom or geom.get("type") not in ("Polygon", "MultiPolygon"): continue
         geoid = str(prop.get("GEOID") or prop.get("adminforestid") or raw.get("id") or len(features))
         name = str(prop.get("NAME") or prop.get("forestname") or "Unnamed")
-        state = prop.get("STATE")
+        state, state_name = STATES.get(prop.get("STATE"), (None, None))
         # USFS does not carry a state field; clip is applied by bbox against OR/WA.
         b = bbox(geom)
-        if division_type in {"national-forest", "national-park", "tribal-land"} and not (b[2] >= -124.8 and b[0] <= -116.4 and b[3] >= 41.9 and b[1] <= 49.1): continue
+        if division_type == "national-forest" and not (b[2] >= -124.8 and b[0] <= -116.4 and b[3] >= 41.9 and b[1] <= 49.1): continue
         did = f"{division_type}:{geoid}"
         lon, lat = number(prop.get("INTPTLON")), number(prop.get("INTPTLAT"))
         if lon is None: lon = (b[0] + b[2]) / 2
@@ -94,6 +98,9 @@ def normalize(payload, division_type, service_name, url, source_hash):
             "landAreaSqKm": None, "cameraViewshedAreaSqKm": None,
             "cameraViewshedCoveragePct": None, "landMix": []
         }})
+        if division_type == "county":
+            short = name.removesuffix(" County")
+            features[-1]["properties"].update({"geoid": geoid, "stateName": state_name, "shortName": short, "label": short})
     features.sort(key=lambda f: f["id"])
     return {"type":"FeatureCollection", "features":features, "metadata":{
         "schemaVersion": 1, "divisionType": division_type, "source": url,
@@ -108,7 +115,7 @@ def main():
     for kind in wanted:
         if kind not in SOURCES: raise SystemExit(f"unknown division type: {kind}")
         url, where, fields, dtype, layer = SOURCES[kind]
-        payload, query, digest = fetch(url, where, fields)
+        payload, query, digest = fetch(url, where, fields, COUNTY_PARAMS if kind == "county" else None)
         result = normalize(payload, dtype, layer, query, digest)
         (args.output / f"{kind}.geojson").write_text(json.dumps(result, ensure_ascii=False, separators=(",",":"))+"\n", encoding="utf-8")
         print(f"{kind}: {len(result['features'])} features")
