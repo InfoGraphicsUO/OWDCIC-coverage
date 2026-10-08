@@ -51,8 +51,8 @@ export function providerSitesToCameras(sites, operator) {
     if (!point) continue;
 
     const properties = feature.properties || {};
-    // sites without a height were never modeled, so they have no viewshed
-    const modeled = toFiniteNumber(properties.cameraHeightFt) != null;
+    // new sites may have heights before their modeled coverage is published
+    const modeled = properties.viewshedStatus !== 'pending' && toFiniteNumber(properties.cameraHeightFt) != null;
 
     features.push({
       type: 'Feature',
@@ -78,11 +78,19 @@ export const VIEWSHED_MATCH_RADIUS_M = 250;
 // links live camera points to viewshed ids from manifest
 // join order: explicit AlertWest site id, then nearest viewshed site within
 // VIEWSHED_MATCH_RADIUS_M, then normalized name or alias
-export function attachViewshedIds(cameras, manifest) {
+export function attachViewshedIds(cameras, manifest, siteLocations) {
   const cameraFeatures = getFeatures(cameras);
   const idLookup = new Map();
   const nameLookup = new Map();
   const sites = [];
+  const correctedLocations = new Map();
+  for (const site of getFeatures(siteLocations)) {
+    // only explicit camera ids establish a correction; nearby towers can differ
+    if (!featurePoint(site)) continue;
+    for (const id of arrayValues(site.properties?.alertwestSiteIds)) {
+      correctedLocations.set(String(id), site);
+    }
+  }
 
   for (const entry of getManifestEntries(manifest)) {
     const viewshedId = stringValue(entry.viewshed_id);
@@ -106,11 +114,13 @@ export function attachViewshedIds(cameras, manifest) {
 
   return {
     type: 'FeatureCollection',
-    features: cameraFeatures.map((feature) => {
+    features: cameraFeatures.map((original) => {
+      const correction = correctedLocations.get(String(original.properties?.id));
+      const feature = correction ? { ...original, geometry: correction.geometry } : original;
       const properties = feature.properties || {};
       const cameraId = stringValue(properties.id);
       const cameraName = normalizeSiteName(properties.name);
-      const viewshedId =
+      const viewshedId = correction?.properties?.viewshedStatus === 'pending' ? null :
         (cameraId && idLookup.get(cameraId)) ||
         nearestViewshedId(featurePoint(feature), sites) ||
         (cameraName && nameLookup.get(cameraName)) ||
