@@ -18,6 +18,14 @@ import {
 } from './config.js';
 import { VISIBLE_FILTERS, VISIBLE_LAYERS } from './visible-content.js';
 import {
+  anchorOptionSlugs,
+  anchorOptionValue,
+  anchorSlug,
+  anchorType,
+  formatAnchor,
+  parseAnchor,
+} from './anchor-links.js';
+import {
   addNumericProperty,
   attachViewshedIds,
   camerasToGeoJSON,
@@ -175,6 +183,11 @@ const filterSourcesReady = new Promise((resolve) => {
   resolveFilterSources = resolve;
 });
 let cameraMetricsLoad;
+// option slugs per filter type, filled as each type's options load
+const anchorSlugsByType = new Map();
+// the hash this page last wrote, so its own updates are not read back as navigation
+let currentAnchor = '';
+let anchorRequest = 0;
 // incremented whenever another selection or clear action takes ownership of results
 let cameraResultRequest = 0;
 let digitizedCameraLoad;
@@ -300,6 +313,11 @@ async function loadMapLayers(map) {
   addBoundaryLayers(map);
   // filter options can load only after their map sources exist
   resolveFilterSources();
+  // a link that names a filter opens it as soon as its options can load
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash !== currentAnchor) applyAnchor();
+  });
+  applyAnchor();
   // home fires before its camera animation starts
   map.on(MAP_HOME_EVENT, home);
   bindApplicationSourceErrors(map);
@@ -625,13 +643,73 @@ async function loadFilterOptions(typeValue) {
     // camera choices depend on the provider hydration, not just map setup
     const features = await cameraFeaturesReady;
     // numeric collation keeps labels like Camera 2 ahead of Camera 10
-    return features.map((feature) => ({
+    const cameraOptions = features.map((feature) => ({
       value: cameraOptionId(feature),
       label: feature.properties?.name || 'Camera',
     })).sort((a, b) => LABEL_COLLATOR.compare(a.label, b.label));
+    anchorSlugsByType.set(typeValue, anchorOptionSlugs(cameraOptions));
+    return cameraOptions;
   }
 
-  return loadDivisionOptions(activeMap, typeValue);
+  const options = await loadDivisionOptions(activeMap, typeValue);
+  anchorSlugsByType.set(typeValue, anchorOptionSlugs(options));
+  return options;
+}
+
+// open the filter named by the URL hash; unknown names leave the page as it is
+async function applyAnchor() {
+  const request = ++anchorRequest;
+  const anchor = parseAnchor(window.location.hash);
+  if (!anchor) {
+    // the hash was removed by hand or by browser history, so drop the filter it named
+    if (currentAnchor) await filterControl.reset();
+    return;
+  }
+
+  const type = anchorType(FILTER_TYPES, anchor.type);
+  if (!type) return;
+  if (!anchor.option) {
+    await filterControl.selectType(type.value);
+    return;
+  }
+
+  try {
+    await loadFilterOptions(type.value);
+  } catch (error) {
+    console.error('Unable to open anchor link:', error);
+    return;
+  }
+  // a newer link or selection owns the page if these options loaded late
+  if (request !== anchorRequest) return;
+  const id = anchorOptionValue(anchorSlugsByType.get(type.value), anchor.option);
+  // an option that no longer exists still lands on its filter type
+  if (id == null || !(await filterControl.select(type.value, id))) {
+    await filterControl.selectType(type.value);
+  }
+}
+
+// record the current filter in the URL hash without adding a history entry
+async function writeAnchor(type, id) {
+  const request = ++anchorRequest;
+  // filter types left out of js/visible-content.js have no link
+  const typeSlug = anchorSlug(FILTER_TYPES.find(({ value }) => value === type)?.label);
+  let optionSlug = null;
+  if (typeSlug && id != null) {
+    // a map click can pick an option before its filter list has ever loaded
+    if (!anchorSlugsByType.has(type)) await loadFilterOptions(type).catch(() => {});
+    if (request !== anchorRequest) return;
+    optionSlug = anchorSlugsByType.get(type)?.get(`${id}`) ?? null;
+  }
+  // a pick with no link of its own must not leave another selection's link behind
+  const linkable = id == null || optionSlug || activeFilterType === type;
+  setAnchor(linkable ? formatAnchor(typeSlug, optionSlug) : '');
+}
+
+function setAnchor(anchor) {
+  currentAnchor = anchor;
+  if (window.location.hash === anchor) return;
+  const { pathname, search } = window.location;
+  window.history.replaceState(null, '', anchor || `${pathname}${search}`);
 }
 
 async function loadDivisionOptions(map, typeValue) {
@@ -722,6 +800,8 @@ function typeSelected(type) {
   cameraResultRequest += 1;
   activeFilterType = type || null;
   if (type) applyLayerPresetForFilter(type);
+  // null is the brief gap while options load, so the link waits for the real type
+  if (type) writeAnchor(type);
   if (activeMap) {
     clearDivisionFilter(activeMap);
     if (type && type !== 'camera') showDivisionType(activeMap, type);
@@ -749,6 +829,7 @@ function optionSelected(type, id) {
   cameraResultRequest += 1;
   selectCameraViewshed(activeMap, null);
   selectDivision(activeMap, type, id);
+  writeAnchor(type, id);
 }
 
 async function polygonClicked(type, id) {
@@ -802,6 +883,7 @@ function clearFilter() {
   }
   filterControl.setClearEnabled?.(false);
   resultsControl.clear();
+  writeAnchor(null);
 }
 
 function home() {
@@ -821,6 +903,7 @@ async function showCameraResult(map, feature) {
   selectCameraViewshed(map, properties.viewshed_id);
   enableClearForResult();
   resultsControl.showLoading(properties.name || 'Camera');
+  writeAnchor('camera', cameraOptionId(feature));
 
   // share one metrics request across camera picks
   cameraMetricsLoad ??= fetch('data/camera-coverage.json')
