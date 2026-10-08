@@ -9,6 +9,20 @@ const LAND_MIX_INFO = 'Tribal areas follow reservation and trust boundaries. Oth
 // square-kilometer to square-mile conversion for displayed area values
 const SQMI_PER_SQKM = 0.3861021585;
 const UTILITY_QUALIFIER = 'Approximate service area boundary';
+// names what the yellow selection outline traces for each filter group
+const BOUNDARY_QUALIFIERS = Object.freeze({
+  state: 'State boundary',
+  county: 'County boundary',
+  house: 'State House district boundary',
+  'us-house': 'US House district boundary',
+  senate: 'State Senate district boundary',
+  utility: UTILITY_QUALIFIER,
+  'national-forest': 'Administrative forest boundary; may include non-federal inholdings.',
+  'national-park': 'Park boundary; may include land outside NPS ownership.',
+  'federal-land': 'Federal land boundary',
+  'tribal-land': 'Tribal land boundary',
+  'odf-protection-district': 'ODF protection district boundary',
+});
 const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | UO InfoGraphics Lab | OHAZ';
 // Mapbox satellite imagery carries its own provider credit
 const SATELLITE_MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | Maxar | UO InfoGraphics Lab | OHAZ';
@@ -39,7 +53,9 @@ const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }
  * accepts plain feature properties so callers need no data-source details
  * keeps chart and dialog state local to this panel instance
  */
-export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendItems, onClose = () => {} } = {}) {
+export function initResultsPanel({
+  getMapCanvas, getMap, getBasemap, getLegendItems, getSelectionLegendItems, onClose = () => {},
+} = {}) {
   const element = document.querySelector('#results-panel');
   const title = element.querySelector('[data-results-title]');
   const subtitle = element.querySelector('[data-results-subtitle]');
@@ -140,7 +156,11 @@ export function initResultsPanel({ getMapCanvas, getMap, getBasemap, getLegendIt
         mapCanvas: await resolveCanvas(getMapCanvas),
         map: typeof getMap === 'function' ? getMap() : null,
         basemap: typeof getBasemap === 'function' ? getBasemap() : null,
-        legendItems: await resolveLegendRowsForExport(getLegendItems),
+        legendItems: [
+          ...await resolveLegendRowsForExport(getLegendItems),
+          // selection symbols have no layer row, so the map reports them for this export
+          ...normalizeLegendRows(typeof getSelectionLegendItems === 'function' ? getSelectionLegendItems(selection) : []),
+        ],
         title: exportTitle,
         current: selection,
         chart,
@@ -343,16 +363,10 @@ function renderPolygon(type, properties) {
   const name = properties.name || properties.label || 'selected area';
   wrapper.className = 'results-panel__body';
   // source-specific caveats keep approximate or administrative boundaries clear
-  if (type === 'utility') {
-    // utility outlines describe approximate service coverage
-    wrapper.append(selfLine(UTILITY_QUALIFIER, 'results-panel__qualifier'));
-  } else if (type === 'national-forest') {
-    wrapper.append(selfLine('Administrative forest boundary; may include non-federal inholdings.', 'results-panel__qualifier'));
-  } else if (type === 'national-park') {
-    wrapper.append(selfLine('Park boundary; may include land outside NPS ownership.', 'results-panel__qualifier'));
-  } else if (type === 'federal-land' && /Department of Defense|Other federal fee manager/.test(name)) {
-    wrapper.append(selfLine('This source boundary may include planning areas without federal fee ownership.', 'results-panel__qualifier'));
-  }
+  const qualifier = type === 'federal-land' && /Department of Defense|Other federal fee manager/.test(name)
+    ? 'This source boundary may include planning areas without federal fee ownership.'
+    : BOUNDARY_QUALIFIERS[type];
+  if (qualifier) wrapper.append(selfLine(qualifier, 'results-panel__qualifier'));
   wrapper.append(selfLine(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire-spotting cameras`, 'results-panel__lead'));
   // area totals need valid source values; missing coverage must stay unavailable, not zero
   if (coverage != null && covered != null && total != null) {
@@ -537,6 +551,9 @@ const EXPORT_FONT = 'Merriweather, "Segoe UI", sans-serif';
 const EXPORT_LEGEND_SWATCH_SIZE = 20;
 const EXPORT_LEGEND_SWATCH_GAP = 10;
 const EXPORT_LEGEND_TEXT_OFFSET = EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_SWATCH_GAP;
+// selection rows carry place and camera names, which can outgrow one legend line
+const EXPORT_LEGEND_LABEL_CHARS = 30;
+const EXPORT_LEGEND_LINE_HEIGHT = 18;
 const EXPORT_PANEL_FILL = 'rgba(47, 46, 46, 0.9)';
 // fallback visuals for integrations that provide labels without DOM swatches
 const EXPORT_LEGEND_VISUALS = Object.freeze({
@@ -757,8 +774,10 @@ function layoutLegendPanel({ ctx, width, rows }) {
   const padBottom = 30;
   const titleHeight = 18;
   const rowHeight = 26;
+  const labelLines = rows.map((row) => wrapExportLines([row.label], EXPORT_LEGEND_LABEL_CHARS));
+  const extraLines = labelLines.reduce((total, lines) => total + lines.length - 1, 0);
   // leave room for the empty-legend fallback label
-  const contentHeight = titleHeight + Math.max(rows.length, 1) * rowHeight;
+  const contentHeight = titleHeight + Math.max(rows.length, 1) * rowHeight + extraLines * EXPORT_LEGEND_LINE_HEIGHT;
   return {
     width,
     height: padY + contentHeight + padBottom,
@@ -768,33 +787,25 @@ function layoutLegendPanel({ ctx, width, rows }) {
     rowHeight,
     textOffset: EXPORT_LEGEND_TEXT_OFFSET,
     rows,
+    labelLines,
   };
 }
 
 function exportStatsContent(current) {
-  const summaryLines = exportSummary(current);
-  let qualifier = null;
-  let lines = summaryLines;
-  // utility qualifier gets its own visual treatment above the coverage line
-  if (lines[0] === UTILITY_QUALIFIER) {
-    qualifier = lines[0];
-    lines = lines.slice(1);
-  }
+  const lines = exportSummary(current);
   return {
-    qualifier,
     leadLine: lines[0] || '',
     bodyLines: wrapExportLines(lines.slice(1), 38),
     landMixRows: exportLandMixRows(current),
   };
 }
 
-function layoutStatsPanel({ ctx, width, title, qualifier, leadLine, bodyLines, landMixRows, chartHeight }) {
+function layoutStatsPanel({ ctx, width, title, leadLine, bodyLines, landMixRows, chartHeight }) {
   const padX = 16;
   const padY = 16;
   const titleSize = 18;
   const leadSize = 16;
   const bodySize = 14;
-  const qualifierSize = 13;
   const lineGap = 4;
   ctx.font = `700 ${titleSize}px ${EXPORT_FONT}`;
   const titleLines = wrapExportLines([title], 30);
@@ -804,7 +815,6 @@ function layoutStatsPanel({ ctx, width, title, qualifier, leadLine, bodyLines, l
     wrapExportLines([`${formatPercent(row.percentage)}% ${row.label}`], 38));
   // compute card height from the exact rows the draw pass will paint
   let contentHeight = padY + titleLines.length * (titleSize + 4) + 8;
-  if (qualifier) contentHeight += qualifierSize + 10;
   if (leadLine) contentHeight += leadSize + lineGap;
   contentHeight += bodyLines.length * (bodySize + lineGap);
   if (chartHeight) contentHeight += chartHeight + 12;
@@ -819,7 +829,6 @@ function layoutStatsPanel({ ctx, width, title, qualifier, leadLine, bodyLines, l
     padX,
     padY,
     titleLines,
-    qualifier,
     leadLine,
     bodyLines,
     landMixRows,
@@ -828,7 +837,6 @@ function layoutStatsPanel({ ctx, width, title, qualifier, leadLine, bodyLines, l
     titleSize,
     leadSize,
     bodySize,
-    qualifierSize,
   };
 }
 
@@ -852,13 +860,17 @@ function drawLegendOverlay(ctx, x, y, layout) {
     return;
   }
   // draw each visible layer with the same visual parsed from the map legend
-  layout.rows.forEach((row) => {
+  layout.rows.forEach((row, index) => {
     textY += layout.rowHeight;
     const swatchX = x + layout.padX;
     const swatchY = textY - 17;
     drawLegendVisual(ctx, row.visual, swatchX, swatchY);
     ctx.fillStyle = '#f0f0f0';
-    ctx.fillText(row.label, swatchX + layout.textOffset, textY);
+    // the swatch stays beside the first line of a wrapped label
+    layout.labelLines[index].forEach((line, lineIndex) => {
+      if (lineIndex) textY += EXPORT_LEGEND_LINE_HEIGHT;
+      ctx.fillText(line, swatchX + layout.textOffset, textY);
+    });
   });
 }
 
@@ -914,6 +926,13 @@ function drawExportLegendSwatch(ctx, { style, color }, x, y) {
   if (style === 'fill') {
     ctx.fillStyle = color || '#777';
     ctx.fillRect(x, y, size, size);
+    return;
+  }
+  if (style === 'border') {
+    // a selected area is drawn as an outline with no fill
+    ctx.strokeStyle = color || '#777';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x + 1.5, y + 1.5, size - 3, size - 3);
     return;
   }
   ctx.fillStyle = colorToRgba(color || '#777', 0.24);
@@ -989,14 +1008,6 @@ function drawStatsOverlay(ctx, x, y, layout, chartImage) {
     textY += layout.titleSize + 4;
   });
   textY += 4;
-  if (layout.qualifier) {
-    // boundary caveat gets a slim marker so it stays distinct from the coverage lead
-    ctx.fillStyle = '#e0e0e0';
-    ctx.fillRect(x + layout.padX, textY - 10, 3, layout.qualifierSize + 6);
-    ctx.font = `${layout.qualifierSize}px ${EXPORT_FONT}`;
-    ctx.fillText(layout.qualifier, x + layout.padX + 10, textY);
-    textY += layout.qualifierSize + 10;
-  }
   if (layout.leadLine) {
     ctx.fillStyle = '#fff';
     ctx.font = `600 ${layout.leadSize}px ${EXPORT_FONT}`;
@@ -1119,8 +1130,8 @@ function exportSummary({ kind, type, properties, metrics }) {
   const covered = finite(properties.cameraViewshedAreaSqKm);
   const selected = finite(properties.landAreaSqKm);
   const name = properties?.name || properties?.label || 'selected area';
+  // the export legend names the approximate utility boundary instead of a line here
   const lines = [];
-  if (type === 'utility') lines.push(UTILITY_QUALIFIER);
   lines.push(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire-spotting cameras`);
   if (coverage != null && covered != null && selected != null) {
     lines.push(`${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(selected * SQMI_PER_SQKM)} mi²`);
