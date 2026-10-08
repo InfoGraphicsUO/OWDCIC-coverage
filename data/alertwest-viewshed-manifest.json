@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "generated_utc": "2026-10-01T23:02:11+00:00",
-  "config_hash": "80914f94fdfe6f4a3a88b9a58bd5b283e6b12ac3e445ed28f52f76a4069813d7",
+  "generated_utc": "2026-10-08T21:20:50+00:00",
+  "config_hash": "1fc319aaf4acf161f84b3f6c5c31c3614d1ef1b830b541849cb2953bc3242bc6",
   "web_processing": {
     "resolution_m": 50.0,
     "simplify_tolerance_m": 25.0,
@@ -993,10 +993,110 @@
       "aliases": [],
       "longitude": -122.80443,
       "latitude": 42.27574,
-      "height_ft": null,
-      "status": "skipped_missing_height",
-      "web_geojson": null,
-      "exact_polygon": null
+      "height_ft": 25.0,
+      "status": "complete",
+      "web_geojson": "web/phoenix-water-tank.geojson",
+      "exact_polygon": "polygons_exact/phoenix_water_tank.gpkg"
+    },
+    {
+      "source_id": 77,
+      "viewshed_id": "mt-defiance",
+      "site_name": "Mt Defiance",
+      "aliases": [
+        "Axis-MountDefiance",
+        "Axis-MountDefiance2"
+      ],
+      "longitude": -121.722655,
+      "latitude": 45.648648,
+      "height_ft": 95.0,
+      "status": "complete",
+      "web_geojson": "web/mt-defiance.geojson",
+      "exact_polygon": "polygons_exact/mt_defiance.gpkg"
+    },
+    {
+      "source_id": 78,
+      "viewshed_id": "halfway",
+      "site_name": "Halfway",
+      "aliases": [
+        "Axis-Halfway1",
+        "Axis-Halfway2"
+      ],
+      "longitude": -117.088277,
+      "latitude": 44.859994,
+      "height_ft": 56.75,
+      "status": "complete",
+      "web_geojson": "web/halfway.geojson",
+      "exact_polygon": "polygons_exact/halfway.gpkg"
+    },
+    {
+      "source_id": 79,
+      "viewshed_id": "jim-creek-butte",
+      "site_name": "Jim Creek Butte",
+      "aliases": [
+        "Axis-jimcreekbutte"
+      ],
+      "longitude": -116.93533,
+      "latitude": 45.93598,
+      "height_ft": 32.8,
+      "status": "complete",
+      "web_geojson": "web/jim-creek-butte.geojson",
+      "exact_polygon": "polygons_exact/jim_creek_butte.gpkg"
+    },
+    {
+      "source_id": 80,
+      "viewshed_id": "satus",
+      "site_name": "Satus",
+      "aliases": [
+        "Axis-SatusPeak"
+      ],
+      "longitude": -120.753469,
+      "latitude": 46.257481,
+      "height_ft": 32.8,
+      "status": "complete",
+      "web_geojson": "web/satus.geojson",
+      "exact_polygon": "polygons_exact/satus.gpkg"
+    },
+    {
+      "source_id": 81,
+      "viewshed_id": "elephant",
+      "site_name": "Elephant",
+      "aliases": [
+        "Axis-Elephant"
+      ],
+      "longitude": -120.335462,
+      "latitude": 46.522181,
+      "height_ft": 10.0,
+      "status": "complete",
+      "web_geojson": "web/elephant.geojson",
+      "exact_polygon": "polygons_exact/elephant.gpkg"
+    },
+    {
+      "source_id": 82,
+      "viewshed_id": "two-rivers",
+      "site_name": "Two Rivers",
+      "aliases": [
+        "Axis-TwoRivers"
+      ],
+      "longitude": -120.84488,
+      "latitude": 47.841117,
+      "height_ft": 130.0,
+      "status": "complete",
+      "web_geojson": "web/two-rivers.geojson",
+      "exact_polygon": "polygons_exact/two_rivers.gpkg"
+    },
+    {
+      "source_id": 83,
+      "viewshed_id": "round-mountain-chelan",
+      "site_name": "Round Mountain Chelan",
+      "aliases": [
+        "Axis-RoundMtnChelan"
+      ],
+      "longitude": -120.81022,
+      "latitude": 47.785531,
+      "height_ft": 80.0,
+      "status": "complete",
+      "web_geojson": "web/round-mountain-chelan.geojson",
+      "exact_polygon": "polygons_exact/round_mountain_chelan.gpkg"
     }
   ]
 }

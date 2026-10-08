@@ -1349,8 +1349,7 @@
         "aliases": [],
         "cameraHeightFt": 25.0,
         "alertWestLive": true,
-        "provider": "alertwest",
-        "viewshedStatus": "pending"
+        "provider": "alertwest"
       }
     },
     {
@@ -1378,8 +1377,7 @@
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-43",
         "source": "data/digitized-camera-sources.geojson",
-        "alertWestLive": false,
-        "viewshedStatus": "pending"
+        "alertWestLive": false
       }
     },
     {
@@ -1412,8 +1410,7 @@
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-53",
         "source": "data/digitized-camera-sources.geojson",
-        "alertWestLive": false,
-        "viewshedStatus": "pending"
+        "alertWestLive": false
       }
     },
     {
@@ -1439,8 +1436,7 @@
         ],
         "cameraHeightFt": 32.8,
         "viewshedId": "jim-creek-butte",
-        "alertWestLive": false,
-        "viewshedStatus": "pending"
+        "alertWestLive": false
       }
     },
     {
@@ -1466,8 +1462,7 @@
         ],
         "cameraHeightFt": 32.8,
         "viewshedId": "satus",
-        "alertWestLive": false,
-        "viewshedStatus": "pending"
+        "alertWestLive": false
       }
     },
     {
@@ -1493,8 +1488,7 @@
         ],
         "cameraHeightFt": 10.0,
         "viewshedId": "elephant",
-        "alertWestLive": false,
-        "viewshedStatus": "pending"
+        "alertWestLive": false
       }
     },
     {
@@ -1520,8 +1514,7 @@
         ],
         "cameraHeightFt": 130.0,
         "viewshedId": "two-rivers",
-        "alertWestLive": false,
-        "viewshedStatus": "pending"
+        "alertWestLive": false
       }
     },
     {
@@ -1547,8 +1540,7 @@
         ],
         "cameraHeightFt": 80.0,
         "viewshedId": "round-mountain-chelan",
-        "alertWestLive": false,
-        "viewshedStatus": "pending"
+        "alertWestLive": false
       }
     },
     {

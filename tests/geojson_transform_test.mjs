@@ -46,9 +46,14 @@ console.log('geojson transform tests passed');
 // known site corrections must move both camera heads without inventing coverage
 const newSites = JSON.parse(readFileSync(new URL('../data/alertwest-sites.geojson', import.meta.url), 'utf8'));
 const halfway = newSites.features.find(f => f.properties.name === 'Halfway');
-const corrected = attachViewshedIds({ features: [camera(18030, 'Axis-Halfway1', -117.0316, 44.8814), camera(18031, 'Axis-Halfway2', -117.0316, 44.8814)] }, manifest, newSites);
-for (const f of corrected.features) {
+const halfwayHeads = { features: [camera(18030, 'Axis-Halfway1', -117.0316, 44.8814), camera(18031, 'Axis-Halfway2', -117.0316, 44.8814)] };
+for (const f of attachViewshedIds(halfwayHeads, manifest, newSites).features) {
   assert.deepEqual(f.geometry, halfway.geometry);
+  assert.equal(f.properties.viewshed_id, 'halfway');
+}
+const pendingHalfway = structuredClone(halfway);
+pendingHalfway.properties.viewshedStatus = 'pending';
+for (const f of attachViewshedIds(halfwayHeads, manifest, { features: [pendingHalfway] }).features) {
   assert.equal(f.properties.viewshed_id, null);
 }
 const panoSites = JSON.parse(readFileSync(new URL('../data/pano-sites.geojson', import.meta.url), 'utf8'));
