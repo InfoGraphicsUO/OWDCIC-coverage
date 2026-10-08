@@ -14,7 +14,7 @@ from urllib.request import urlopen
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT / "data" / "divisions" / "counties.geojson"
+DEFAULT_OUTPUT = ROOT / "data" / "divisions" / "county.geojson"
 COUNTIES_URL = (
     "https://tigerweb.geo.census.gov/arcgis/rest/services/"
     "TIGERweb/State_County/MapServer/1/query"
