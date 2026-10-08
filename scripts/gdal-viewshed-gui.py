@@ -362,6 +362,12 @@ class ViewshedWindow(QMainWindow):
             "and skip the combined GeoPackage, Mapbox products, and manifest"
         )
 
+        self.combined = QCheckBox("Also rebuild the combined coverage tileset")
+        # shapefiles-only runs make no coverage to combine
+        self.products.currentIndexChanged.connect(
+            lambda: self.combined.setEnabled(self.products.currentData() is None)
+        )
+
         self.radius = QDoubleSpinBox()
         self.radius.setRange(0.1, 100.0)
         self.radius.setValue(12.0)
@@ -420,6 +426,8 @@ class ViewshedWindow(QMainWindow):
             "Choose a small test run or process every camera in the selected sites file."), self.mode)
         form.addRow(with_help("Outputs", self.products,
             "Full run creates combined coverage files and web map files. Shapefiles only creates a separate file for each camera; choose exact edges or smoother web edges."), self.products)
+        form.addRow(with_help(self.combined, self.combined,
+            "When the run finishes, also dissolves this provider's new coverage with the other providers' saved coverage into the combined tileset. Adds a few minutes. Full runs only."))
         form.addRow(with_help("Maximum distance", self.radius,
             "How far from each camera to check visibility. Larger distances cover more ground and take more time and memory."), self.radius)
         form.addRow(with_help("Analysis cell size", self.cell_size,
@@ -428,7 +436,7 @@ class ViewshedWindow(QMainWindow):
             "How many cameras to process at once. More can finish sooner, but each needs roughly 1 GB of memory."), self.jobs)
 
         form.addRow(reset_button("Run settings", [
-            self.mode, self.products, self.radius, self.cell_size, self.jobs,
+            self.mode, self.products, self.combined, self.radius, self.cell_size, self.jobs,
         ]))
 
         # these are still the runner's defaults; the advanced tab just keeps setup compact
@@ -547,6 +555,8 @@ class ViewshedWindow(QMainWindow):
         # exact shapefiles are built from the exact polygons, so the checkbox cannot skip them
         if not self.exact.isChecked() and shapefiles != "exact":
             arguments.append("--skip-exact-polygons")
+        if self.combined.isChecked() and not shapefiles:
+            arguments.append("--combined-coverage")
         if self.keep_dems.isChecked():
             arguments.append("--keep-working-dems")
         if self.overwrite.isChecked():
