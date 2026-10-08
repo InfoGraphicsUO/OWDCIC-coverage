@@ -18,7 +18,7 @@ export const DATA_URLS = Object.freeze({
   alertWestCameraSites: 'data/alertwest-sites.geojson',
   digitizedCameraSources: 'data/digitized-camera-sources.geojson',
   standingLookouts: 'data/standing-lookouts.geojson',
-  countyDivisions: 'data/divisions/counties.geojson',
+  countyDivisions: 'data/divisions/county.geojson',
   censusStateBoundaries:
     'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/10',
   worldCountries:
