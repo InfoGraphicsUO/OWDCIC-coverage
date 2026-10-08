@@ -28,8 +28,6 @@ except ImportError:
 def make_args(directory: Path, **overrides):
     dem = directory / "dem.tif"
     dem.write_bytes(b"dem")
-    sites = directory / "sites.geojson"
-    sites.write_text("{}", encoding="utf-8")
     boundary = directory / "boundary.geojson"
     boundary.write_text("boundary", encoding="utf-8")
     values = dict(
@@ -45,16 +43,16 @@ def make_args(directory: Path, **overrides):
         skip_exact_polygons=False,
     )
     values.update(overrides)
-    return SimpleNamespace(**values), [dem], sites
+    return SimpleNamespace(**values), [dem]
 
 
 class ConfigurationTests(unittest.TestCase):
     def test_web_settings_change_only_web_hash(self):
         with tempfile.TemporaryDirectory() as directory:
-            args, dems, sites = make_args(Path(directory))
-            first = viewsheds.config_document(args, dems, sites)
+            args, dems = make_args(Path(directory))
+            first = viewsheds.config_document(args, dems)
             args.web_resolution = 100.0
-            second = viewsheds.config_document(args, dems, sites)
+            second = viewsheds.config_document(args, dems)
 
         self.assertEqual(first["analysis_hash"], second["analysis_hash"])
         self.assertNotEqual(first["web_hash"], second["web_hash"])
@@ -62,10 +60,10 @@ class ConfigurationTests(unittest.TestCase):
 
     def test_dem_change_invalidates_analysis_hash(self):
         with tempfile.TemporaryDirectory() as directory:
-            args, dems, sites = make_args(Path(directory))
-            first = viewsheds.config_document(args, dems, sites)
+            args, dems = make_args(Path(directory))
+            first = viewsheds.config_document(args, dems)
             dems[0].write_bytes(b"dem with more bytes")
-            second = viewsheds.config_document(args, dems, sites)
+            second = viewsheds.config_document(args, dems)
 
         self.assertNotEqual(first["analysis_hash"], second["analysis_hash"])
         self.assertNotEqual(first["web_hash"], second["web_hash"])
@@ -226,6 +224,70 @@ class ResumeTests(unittest.TestCase):
 
 
 @unittest.skipIf(np is None, "QGIS NumPy runtime not available")
+class DatasetMergeTests(unittest.TestCase):
+    SITE = {
+        "source_id": 1,
+        "viewshed_id": "old-camera",
+        "name": "Old Camera",
+        "longitude": -122.0,
+        "latitude": 45.0,
+        "height_ft": 30.0,
+        "aliases": [],
+    }
+
+    def save_state(self, root: Path, site: dict, analysis_hash: str, web_hash: str) -> Path:
+        outputs = {}
+        for key, suffix in (("raster", "tif"), ("exact", "gpkg"), ("web", "geojson")):
+            path = root / f"{site['viewshed_id']}.{suffix}"
+            path.touch()
+            outputs[key] = str(path)
+        state = {
+            "status": "complete",
+            "analysis_hash": analysis_hash,
+            "web_hash": web_hash,
+            "site": site,
+            "outputs": outputs,
+        }
+        path = root / "state" / f"{site['viewshed_id']}.json"
+        viewsheds.write_json(path, state)
+        return path
+
+    def test_other_cameras_do_not_change_a_camera_hash(self):
+        moved = {**self.SITE, "height_ft": 40.0}
+        renamed = {**self.SITE, "source_id": 9, "name": "Renamed", "aliases": ["Old Camera"]}
+        self.assertEqual(
+            viewsheds.site_hashes("analysis", "web", self.SITE),
+            viewsheds.site_hashes("analysis", "web", renamed),
+        )
+        self.assertNotEqual(
+            viewsheds.site_hashes("analysis", "web", self.SITE)[0],
+            viewsheds.site_hashes("analysis", "web", moved)[0],
+        )
+
+    def test_legacy_state_survives_a_changed_sites_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args, dems = make_args(root)
+            config = viewsheds.config_document(args, dems)
+            legacy_analysis = viewsheds.payload_hash(
+                {"sites_sha256": "old-sites", **viewsheds.analysis_config_payload(args, dems)}
+            )
+            legacy_web = viewsheds.payload_hash(
+                {"analysis_hash": legacy_analysis, **viewsheds.web_config_payload(args)}
+            )
+            path = self.save_state(root, self.SITE, legacy_analysis, legacy_web)
+            other = self.save_state(root, {**self.SITE, "viewshed_id": "other"}, "other-settings", "web")
+
+            self.assertEqual(viewsheds.upgrade_legacy_states(root, "old-sites", args, dems, config), 1)
+            state = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                (state["analysis_hash"], state["web_hash"]),
+                viewsheds.site_hashes(config["analysis_hash"], config["web_hash"], self.SITE),
+            )
+            self.assertEqual(json.loads(other.read_text(encoding="utf-8"))["analysis_hash"], "other-settings")
+            self.assertEqual(viewsheds.reusable_stages(state, state["analysis_hash"], state["web_hash"], True), (True, True, True))
+
+
 class MajorityFilterTests(unittest.TestCase):
     def test_isolated_cell_is_removed(self):
         values = np.zeros((3, 3), dtype=np.uint8)
