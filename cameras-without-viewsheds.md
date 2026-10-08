@@ -46,4 +46,4 @@ The web map joins live ALERTWest cameras to viewsheds by ALERTWest site id, then
 2. Open `Run GDAL Viewsheds.command` (`.bat` on Windows). Load that queue file, keep the provider's existing output folder and the same DEMs, radius, and resolution, choose **All cameras** and **Full run**, and tick **Also rebuild the combined coverage tileset**. Only the queued sites are computed; the manifest and tilesets cover every camera saved in the folder.
 3. Copy the new manifest from the output folder to `data/<provider>-viewshed-manifest.json` and rerun the converter to clear the queue.
 4. Replace the provider and combined tilesets in Mapbox Studio (ids are in `js/config.js`).
-5. Rebuild the metrics with the QGIS Python: `scripts/build-county-coverage.py` and `scripts/build-selection-metrics.py` (update its expected viewshed count first).
+5. Rebuild the metrics with the QGIS Python: `scripts/build-selection-metrics.py` (update its expected viewshed count first).
