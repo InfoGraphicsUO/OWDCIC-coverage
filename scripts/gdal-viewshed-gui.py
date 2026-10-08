@@ -11,7 +11,7 @@ import time
 
 try:
     from qgis.PyQt.QtCore import QProcess, QTimer, QUrl
-    from qgis.PyQt.QtGui import QDesktopServices
+    from qgis.PyQt.QtGui import QColor, QDesktopServices, QPalette
     from qgis.PyQt.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -29,12 +29,14 @@ try:
         QProgressBar,
         QPushButton,
         QSpinBox,
+        QScrollArea,
+        QTabWidget,
         QVBoxLayout,
         QWidget,
     )
 except ImportError:
     from PyQt6.QtCore import QProcess, QTimer, QUrl
-    from PyQt6.QtGui import QDesktopServices
+    from PyQt6.QtGui import QColor, QDesktopServices, QPalette
     from PyQt6.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -52,6 +54,8 @@ except ImportError:
         QProgressBar,
         QPushButton,
         QSpinBox,
+        QScrollArea,
+        QTabWidget,
         QVBoxLayout,
         QWidget,
     )
@@ -78,6 +82,71 @@ DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 PROGRESS_PREFIX = "@@PROGRESS@@"
+
+# keep the native controls, with dark gray surfaces and yellow accents
+WINDOW_STYLE = """
+QMainWindow, QScrollArea, QWidget#settingsPage { background: #191d21; color: #edf0f2; }
+QWidget { font-size: 13px; }
+QLabel { color: #edf0f2; }
+QLabel#title { font-size: 24px; font-weight: 600; }
+QLabel#subtitle, QLabel#elapsed { color: #abb5be; }
+QGroupBox { font-weight: 600; border: 1px solid #454e57; border-radius: 5px;
+    margin-top: 12px; padding: 16px 12px 12px; background: #242a30; color: #edf0f2; }
+QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; }
+QLineEdit, QComboBox, QAbstractSpinBox, QPlainTextEdit {
+    background: #242a30; color: #edf0f2; border: 1px solid #626e79;
+    border-radius: 3px; padding: 6px; selection-background-color: #ffe16a;
+    selection-color: #191d21; }
+QLineEdit:focus, QComboBox:focus, QAbstractSpinBox:focus, QPlainTextEdit:focus {
+    border: 1px solid #ffda44; }
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+    subcontrol-origin: border; subcontrol-position: top right; width: 20px; height: 16px; }
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    subcontrol-origin: border; subcontrol-position: bottom right; width: 20px; height: 16px; }
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow,
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow { width: 8px; height: 8px; }
+QPushButton { background: #242a30; color: #edf0f2; border: 1px solid #626e79;
+    border-radius: 4px; padding: 8px 14px; }
+QPushButton:hover { background: #343d45; border-color: #a3aeb8; }
+QPushButton:focus { border: 2px solid #ffda44; padding: 7px 13px; }
+QPushButton#startButton { background: #ffda44; color: #191d21; border-color: #b79a27; font-weight: 600; }
+QPushButton#startButton:hover { background: #ffe576; }
+QPushButton:disabled, QPushButton#startButton:disabled { background: #282e34;
+    color: #89949e; border-color: #454e57; }
+QCheckBox { color: #edf0f2; spacing: 8px; padding: 3px 0; }
+QTabWidget::pane { border: 1px solid #454e57; }
+QTabBar::tab { background: #242a30; color: #b8c1c9; padding: 10px 20px;
+    border-bottom: 3px solid transparent; }
+QTabBar::tab:selected { background: #242a30; color: #edf0f2; border-bottom-color: #e3b900; }
+QTabBar::tab:hover { background: #343d45; }
+QProgressBar { background: #343d45; color: #edf0f2; border: none;
+    border-radius: 3px; min-height: 20px; text-align: center; }
+QProgressBar::chunk { background: #806700; border-radius: 3px; }
+QPlainTextEdit { font-family: Consolas, monospace; font-size: 12px; }
+"""
+
+
+def apply_dark_theme(app: QApplication) -> None:
+    """covers native controls and popups that are not painted by the window stylesheet"""
+
+    app.setStyle("Fusion")
+    palette = QPalette()
+    for role, color in {
+        "Window": "#191d21", "WindowText": "#edf0f2",
+        "Base": "#242a30", "AlternateBase": "#303840",
+        "Text": "#edf0f2", "Button": "#242a30", "ButtonText": "#edf0f2",
+        "ToolTipBase": "#343d45", "ToolTipText": "#edf0f2",
+        "Highlight": "#ffda44", "HighlightedText": "#191d21",
+        "Light": "#626e79", "Mid": "#454e57", "Dark": "#14171a",
+        "PlaceholderText": "#abb5be",
+    }.items():
+        palette.setColor(qt_enum(QPalette, "ColorRole", role), QColor(color))
+    for role in ("WindowText", "Text", "ButtonText"):
+        palette.setColor(
+            qt_enum(QPalette, "ColorGroup", "Disabled"),
+            qt_enum(QPalette, "ColorRole", role), QColor("#89949e"),
+        )
+    app.setPalette(palette)
 
 
 class PathRow(QWidget):
@@ -115,7 +184,9 @@ class ViewshedWindow(QMainWindow):
         super().__init__()
         self.qgis_runtime = qgis_runtime(DEFAULT_QGIS_ROOT)
         self.setWindowTitle("OWDCIC GDAL Camera Viewsheds")
-        self.resize(820, 720)
+        self.resize(920, 880)
+        self.setMinimumSize(720, 640)
+        self.setStyleSheet(WINDOW_STYLE)
         self.process = QProcess(self)
         self.process.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
         self.process.readyReadStandardOutput.connect(self.read_output)
@@ -128,21 +199,55 @@ class ViewshedWindow(QMainWindow):
 
         central = QWidget()
         root = QVBoxLayout(central)
-        root.addWidget(self.build_inputs())
-        root.addWidget(self.build_options())
+        root.setContentsMargins(24, 20, 24, 20)
+        root.setSpacing(12)
+        title = QLabel("Camera viewsheds")
+        title.setObjectName("title")
+        root.addWidget(title)
+        subtitle = QLabel("Build camera coverage from elevation data with GDAL.")
+        subtitle.setObjectName("subtitle")
+        root.addWidget(subtitle)
+
+        # scroll only the settings, so progress and the run controls stay within reach
+        self.settings = QTabWidget()
+        setup = QWidget()
+        setup_layout = QVBoxLayout(setup)
+        setup_layout.addWidget(self.build_inputs())
+        setup_layout.addStretch(1)
+        options = QWidget()
+        options_layout = QVBoxLayout(options)
+        options_layout.addWidget(self.build_options())
+        options_layout.addStretch(1)
+        for label, page in (
+            ("Inputs and outputs", setup),
+            ("Run settings", options),
+            ("Advanced options", self.advanced),
+        ):
+            page.setObjectName("settingsPage")
+            scroll = QScrollArea()
+            scroll.setWidgetResizable(True)
+            scroll.setFrameShape(qt_enum(QScrollArea, "Shape", "NoFrame"))
+            scroll.setWidget(page)
+            self.settings.addTab(scroll, label)
+        root.addWidget(self.settings, 3)
         root.addWidget(self.build_progress())
 
+        root.addWidget(QLabel("Run log"))
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
-        self.log.setPlaceholderText("Runner messages appear here")
+        self.log.setMinimumHeight(90)
+        self.log.setPlaceholderText("Start a run to see processing details and any warnings here.")
         root.addWidget(self.log, 1)
         root.addLayout(self.build_buttons())
         self.setCentralWidget(central)
+        self.output.edit.textChanged.connect(lambda: self.set_idle(self.process.state() == PROCESS_NOT_RUNNING))
         self.set_idle(True)
 
     def build_inputs(self) -> QGroupBox:
         group = QGroupBox("Inputs and outputs")
         form = QFormLayout(group)
+        form.setSpacing(10)
+        form.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
         self.sites = PathRow(PROJECT_ROOT / "data/alertwest-sites.geojson", False)
         self.dems = PathRow(PROJECT_ROOT / "data/dems", True)
         self.output = PathRow(PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest", True)
@@ -154,6 +259,8 @@ class ViewshedWindow(QMainWindow):
     def build_options(self) -> QGroupBox:
         group = QGroupBox("Run settings")
         form = QFormLayout(group)
+        form.setSpacing(10)
+        form.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
         self.mode = QComboBox()
         self.mode.addItem("1 camera (Portland)", "pilot")
         self.mode.addItem("3 cameras", "validation")
@@ -226,31 +333,46 @@ class ViewshedWindow(QMainWindow):
         form.addRow("Outputs", self.products)
         form.addRow("Maximum distance", self.radius)
         form.addRow("Analysis cell size", self.cell_size)
-        form.addRow("Web polygon grid", self.web_resolution)
-        form.addRow("Web simplify tolerance", self.simplify)
-        form.addRow("Web smoothing passes", self.smooth_iterations)
-        form.addRow(self.web_majority)
-        form.addRow(self.web_clip)
-        form.addRow("Minimum web patch cells", self.patch_cells)
         form.addRow("Parallel cameras", self.jobs)
-        form.addRow(self.exact)
-        form.addRow(self.keep_dems)
-        form.addRow(self.overwrite)
+
+
+        # these are still the runner's defaults; the advanced tab just keeps setup compact
+        self.advanced = QWidget()
+        advanced_layout = QVBoxLayout(self.advanced)
+        web_group = QGroupBox("Web polygon detail")
+        web_form = QFormLayout(web_group)
+        web_form.setSpacing(10)
+        web_form.addRow("Grid resolution", self.web_resolution)
+        web_form.addRow("Simplify tolerance", self.simplify)
+        web_form.addRow("Smoothing passes", self.smooth_iterations)
+        web_form.addRow("Minimum patch cells", self.patch_cells)
+        web_form.addRow(self.web_majority)
+        web_form.addRow(self.web_clip)
+        advanced_layout.addWidget(web_group)
+        files_group = QGroupBox("Files and repeat runs")
+        files_layout = QVBoxLayout(files_group)
+        files_layout.addWidget(self.exact)
+        files_layout.addWidget(self.keep_dems)
+        files_layout.addWidget(self.overwrite)
+        advanced_layout.addWidget(files_group)
+        advanced_layout.addStretch(1)
         return group
 
     def build_progress(self) -> QGroupBox:
         group = QGroupBox("Progress")
         layout = QVBoxLayout(group)
-        self.status = QLabel("Ready")
+        self.status = QLabel("Ready to start; choose inputs & check settings before starting a run!")
         self.status.setWordWrap(True)
         self.overall = QProgressBar()
         self.overall.setRange(0, 1000)
+        self.overall.setValue(0)
         self.overall.setFormat("Overall: %p%")
         self.current = QProgressBar()
         self.current.setRange(0, 100)
         self.current.setValue(0)
         self.current.setFormat("Current stage")
         self.elapsed = QLabel("Elapsed: 0s")
+        self.elapsed.setObjectName("elapsed")
         layout.addWidget(self.status)
         layout.addWidget(self.overall)
         layout.addWidget(self.current)
@@ -260,6 +382,7 @@ class ViewshedWindow(QMainWindow):
     def build_buttons(self) -> QHBoxLayout:
         layout = QHBoxLayout()
         self.start_button = QPushButton("Start run")
+        self.start_button.setObjectName("startButton")
         self.start_button.clicked.connect(self.start_run)
         self.cancel_button = QPushButton("Cancel")
         self.cancel_button.clicked.connect(self.cancel_run)
@@ -349,6 +472,10 @@ class ViewshedWindow(QMainWindow):
         self.process.start(sys.executable, self.runner_arguments())
         if not self.process.waitForStarted(5000):
             self.log.appendPlainText(self.process.errorString())
+            self.elapsed_timer.stop()
+            self.current.setRange(0, 100)
+            self.current.setValue(0)
+            self.status.setText("Could not start the runner — review the log.")
             self.set_idle(True)
 
     def read_output(self) -> None:
@@ -431,6 +558,7 @@ class ViewshedWindow(QMainWindow):
         self.elapsed.setText(f"Elapsed: {text}")
 
     def set_idle(self, idle: bool) -> None:
+        self.settings.setEnabled(idle)
         self.start_button.setEnabled(idle)
         self.cancel_button.setEnabled(not idle)
         self.open_output_button.setEnabled(idle and self.output.path().exists())
@@ -498,6 +626,7 @@ class ViewshedWindow(QMainWindow):
 
 def main() -> int:
     app = QApplication(sys.argv)
+    apply_dark_theme(app)
     app.setApplicationName("OWDCIC GDAL Viewsheds")
     window = ViewshedWindow()
     window.show()
