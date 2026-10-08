@@ -57,7 +57,7 @@ def supplement_sites(by_provider, text, converter):
         manifest = json.loads((data / f'{provider}-viewshed-manifest.json').read_text())
         entries = {e['viewshed_id']: e for e in manifest['viewsheds']}
         ready = []
-        for feature in collection['features']:
+        for source_id, feature in enumerate(collection['features'], start=1):
             props = feature['properties']
             view_id = props.get('viewshedId') or converter.slugify(props['name'])
             entry = entries.get(view_id)
@@ -71,7 +71,8 @@ def supplement_sites(by_provider, text, converter):
             if reason:
                 blocked.append({'provider': provider, 'name': props['name'], 'reason': reason})
             else:
-                ready.append(feature)
+                # sourceId keeps the site's position in the full file when the queue is merged
+                ready.append({**feature, 'properties': {**props, 'sourceId': source_id}})
         converter.write_geojson(data / f'{provider}-sites-needing-viewsheds.geojson', {'type': 'FeatureCollection', 'features': ready})
     blocked.append({'provider': 'alertwest', 'name': 'Gold Hill', 'reason': 'Missing coordinates and camera observer height'})
     (data / 'camera-viewsheds-blocked.json').write_text(json.dumps(blocked, indent=2) + '\n', encoding='utf-8')
