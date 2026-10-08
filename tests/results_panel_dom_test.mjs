@@ -329,9 +329,12 @@ assert.ok(content.querySelector('[data-results-chart]'), 'ODF protection distric
 
 content = show('showPolygon', 'state', { properties: { name: 'Oregon', cameraViewshedCoveragePct: 8.93, cameraViewshedAreaSqKm: 22121, landAreaSqKm: 247715, landMix } });
 assert.match(textOf(content), /9% covered by fire-spotting cameras/);
+// every filter group names the boundary its yellow outline traces
+assert.match(textOf(content.querySelector('.results-panel__qualifier')), /^State boundary$/);
 assert.equal(content.querySelector('[data-results-chart]'), null, 'state must not get a donut');
 
 content = show('showPolygon', 'county', { properties: { name: 'Baker County', cameraViewshedCoveragePct: 2.85, landMix } });
+assert.match(textOf(content.querySelector('.results-panel__qualifier')), /^County boundary$/);
 assert.equal(content.querySelector('[data-results-chart]'), null, 'county must not get a donut');
 
 for (const kind of ['national-forest', 'national-park', 'federal-land', 'tribal-land']) {
