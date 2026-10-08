@@ -47,6 +47,14 @@ DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_SITES = PROJECT_ROOT / "data/alertwest-sites.geojson"
 DEFAULT_DEMS = PROJECT_ROOT / "data/dems"
 DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest"
+# every provider's output folder, for the combined coverage tileset
+PROVIDER_OUTPUTS = {
+    "alertwest": DEFAULT_OUTPUT,
+    "pano": PROJECT_ROOT / "outputs/gdal_viewsheds_pano",
+}
+WEB_PACKAGE = "mapbox/camera_viewsheds_web_epsg5070.gpkg"
+DEFAULT_COMBINED_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_combined/mapbox"
+COMBINED_PRODUCT_NAME = "combined-camera-viewshed-coverage"
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 
@@ -215,6 +223,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "GeoPackage, Mapbox products, and manifest; 'exact' (default) keeps every 10 m "
         "cell, 'web' applies the web generalization, smoothing, and clip settings",
     )
+    parser.add_argument(
+        "--combined-coverage",
+        action="store_true",
+        help="after the run, also rebuild the combined coverage tileset from this "
+        "provider's new coverage and the other providers' saved coverage",
+    )
+    parser.add_argument("--combined-output-dir", type=Path, default=DEFAULT_COMBINED_OUTPUT)
     parser.add_argument("--keep-working-dems", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--fail-fast", action="store_true")
@@ -225,6 +240,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             parser.error(f"--{name.replace('_', '-')} must be positive")
     if args.shapefiles_only == "exact" and args.skip_exact_polygons:
         parser.error("--shapefiles-only exact needs the exact polygons")
+    if args.shapefiles_only and args.combined_coverage:
+        parser.error("--combined-coverage needs a full run, not --shapefiles-only")
     if args.simplify_tolerance < 0 or args.smooth_iterations < 0 or args.min_web_patch_cells < 0:
         parser.error("simplification, smoothing, and patch thresholds cannot be negative")
     return args
@@ -1602,6 +1619,82 @@ def rebuild_web_products(
     }
 
 
+def combined_providers(name: str, output_dir: Path) -> list[Path]:
+    """returns every provider's web package, with this run's standing in for its provider"""
+    packages = {provider: folder / WEB_PACKAGE for provider, folder in PROVIDER_OUTPUTS.items()}
+    packages[name.removesuffix("-camera-viewsheds")] = output_dir / WEB_PACKAGE
+    return list(packages.values())
+
+
+def build_combined_coverage(providers: list[Path], output_dir: Path, log: Callable[[str], None]) -> Path:
+    """dissolves every provider's coverage into one Mapbox tileset
+
+    Separate provider fills drawn in the same color stack their opacity where
+    they overlap; this one dissolved layer lets the map draw shared-color
+    coverage as a single continuous fill.
+    """
+    canonical = spatial_reference(CANONICAL_CRS)
+    web_srs = spatial_reference(WEB_CRS)
+    coverages = []
+    for path in providers:
+        srs, rows = read_features(path, COVERAGE_LAYER)
+        if len(rows) != 1 or rows[0][0] is None:
+            raise RuntimeError(f"{path} must hold one dissolved coverage feature")
+        if not srs or epsg_code(srs) != CANONICAL_CRS:
+            raise RuntimeError(f"{path} coverage must use EPSG:5070")
+        coverages.append(rows[0][0])
+        log(f"loaded coverage from {path}")
+
+    # union in the projected CRS, then reproject and repair like the provider products
+    log("dissolving combined coverage")
+    coverage = union_polygons(coverages)
+    if coverage.IsEmpty():
+        raise RuntimeError("combined coverage is empty")
+    coverage.Transform(transformation(canonical, web_srs))
+    coverage = repair_polygon_parts(coverage)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    geojson = output_dir / f"{COMBINED_PRODUCT_NAME}.geojson"
+    mbtiles = output_dir / f"{COMBINED_PRODUCT_NAME}-z5.mbtiles"
+    write_features(
+        geojson,
+        "GeoJSON",
+        COVERAGE_LAYER,
+        web_srs,
+        COVERAGE_FIELDS,
+        [(coverage, {"coverage_id": "all"})],
+        ["RFC7946=YES", "COORDINATE_PRECISION=9"],
+    )
+    validate_vector(geojson, None, 1)
+
+    tippecanoe = find_tippecanoe()
+    if not tippecanoe:
+        raise RuntimeError("tippecanoe is required to build the MBTiles")
+    safe_unlink(mbtiles)
+    log("building combined Mapbox MBTiles")
+    result = subprocess.run(
+        [
+            str(tippecanoe),
+            "--force",
+            f"--minimum-zoom={MAPBOX_MIN_ZOOM}",
+            f"--maximum-zoom={MAPBOX_MAX_ZOOM}",
+            "--drop-densest-as-needed",
+            f"--output={mbtiles}",
+            # same layer name as the provider tilesets so the map styles it identically
+            "-L",
+            f"{COVERAGE_LAYER}:{geojson}",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode:
+        tail = "\n".join((result.stdout + result.stderr).strip().splitlines()[-20:])
+        raise RuntimeError(f"tippecanoe failed ({result.returncode})\n{tail}")
+    log(f"wrote {mbtiles}")
+    return mbtiles
+
+
 def write_manifest(
     states: list[dict[str, Any]],
     output_dir: Path,
@@ -1769,6 +1862,16 @@ def main() -> int:
     web_products = rebuild_web_products(states, args.output_dir, name, emitter)
     manifest = write_manifest(states, args.output_dir, name, config, combined, web_products)
     write_json(args.output_dir / "failures.json", failures)
+    combined_failed = False
+    if args.combined_coverage and web_products:
+        emitter.progress(0, "combined_coverage", 1.0, "rebuilding combined coverage")
+        try:
+            build_combined_coverage(
+                combined_providers(name, args.output_dir), args.combined_output_dir.resolve(), emitter.log
+            )
+        except Exception as error:
+            combined_failed = True
+            emitter.log(f"combined coverage failed: {error}")
     emitter.progress(0, "complete", 1.0, f"manifest ready: {manifest}")
 
     complete_count = sum(item.get("status") == "complete" for item in completed)
@@ -1779,7 +1882,7 @@ def main() -> int:
         f"dataset now holds {sum(state.get('status') == 'complete' for state in states)} viewsheds"
     )
     packaging_failed = bool(web_products and web_products.get("status") == "failed")
-    return 1 if failures or packaging_failed else 0
+    return 1 if failures or packaging_failed or combined_failed else 0
 
 
 if __name__ == "__main__":
