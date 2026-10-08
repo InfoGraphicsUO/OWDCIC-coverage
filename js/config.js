@@ -15,6 +15,7 @@ export const DATA_URLS = Object.freeze({
   // built by scripts/build-combined-viewshed-coverage.py; empty falls back to stacked provider fills
   combinedCameraViewsheds: 'mapbox://infographics.4qzk4g',
   panoCameraSites: 'data/pano-sites.geojson',
+  alertWestCameraSites: 'data/alertwest-sites.geojson',
   digitizedCameraSources: 'data/digitized-camera-sources.geojson',
   standingLookouts: 'data/standing-lookouts.geojson',
   countyDivisions: 'data/divisions/counties.geojson',

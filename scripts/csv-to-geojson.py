@@ -60,6 +60,11 @@ def main(argv: list[str] | None = None) -> None:
         digitized = load_digitized(Path(args.digitized)) if args.digitized else []
         counties = load_counties(Path(args.counties)) if args.counties else []
         by_provider = sites_csv_to_geojson(text, digitized, counties)
+        if input_path.resolve() == DEFAULT_INPUT.resolve():
+            # project-only additions keep generic CSV conversion independent
+            import sys
+            from camera_site_supplements import supplement_sites
+            supplement_sites(by_provider, text, sys.modules[__name__])
         geojson = by_provider.pop(ALERTWEST)
         for provider, provider_geojson in by_provider.items():
             provider_output = PROVIDER_OUTPUTS.get(provider) or output_path.with_name(f"{provider}-sites.geojson")
