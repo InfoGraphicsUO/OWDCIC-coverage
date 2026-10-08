@@ -1689,7 +1689,8 @@ function selectionLegendItems(selection) {
   if (selection?.kind === 'polygon') {
     const name = selection.properties?.name || selection.properties?.label || 'Selected area';
     items.push({
-      label: `${name} border`,
+      // utility outlines are approximate service areas, so the label says so
+      label: selection.type === 'utility' ? `${name} approx. service boundary` : `${name} border`,
       visual: { type: 'swatch', style: 'border', color: SELECTED_BOUNDARY_COLOR },
     });
   }

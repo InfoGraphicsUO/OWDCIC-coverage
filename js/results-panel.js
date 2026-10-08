@@ -784,29 +784,20 @@ function layoutLegendPanel({ ctx, width, rows }) {
 }
 
 function exportStatsContent(current) {
-  const summaryLines = exportSummary(current);
-  let qualifier = null;
-  let lines = summaryLines;
-  // utility qualifier gets its own visual treatment above the coverage line
-  if (lines[0] === UTILITY_QUALIFIER) {
-    qualifier = lines[0];
-    lines = lines.slice(1);
-  }
+  const lines = exportSummary(current);
   return {
-    qualifier,
     leadLine: lines[0] || '',
     bodyLines: wrapExportLines(lines.slice(1), 38),
     landMixRows: exportLandMixRows(current),
   };
 }
 
-function layoutStatsPanel({ ctx, width, title, qualifier, leadLine, bodyLines, landMixRows, chartHeight }) {
+function layoutStatsPanel({ ctx, width, title, leadLine, bodyLines, landMixRows, chartHeight }) {
   const padX = 16;
   const padY = 16;
   const titleSize = 18;
   const leadSize = 16;
   const bodySize = 14;
-  const qualifierSize = 13;
   const lineGap = 4;
   ctx.font = `700 ${titleSize}px ${EXPORT_FONT}`;
   const titleLines = wrapExportLines([title], 30);
@@ -816,7 +807,6 @@ function layoutStatsPanel({ ctx, width, title, qualifier, leadLine, bodyLines, l
     wrapExportLines([`${formatPercent(row.percentage)}% ${row.label}`], 38));
   // compute card height from the exact rows the draw pass will paint
   let contentHeight = padY + titleLines.length * (titleSize + 4) + 8;
-  if (qualifier) contentHeight += qualifierSize + 10;
   if (leadLine) contentHeight += leadSize + lineGap;
   contentHeight += bodyLines.length * (bodySize + lineGap);
   if (chartHeight) contentHeight += chartHeight + 12;
@@ -831,7 +821,6 @@ function layoutStatsPanel({ ctx, width, title, qualifier, leadLine, bodyLines, l
     padX,
     padY,
     titleLines,
-    qualifier,
     leadLine,
     bodyLines,
     landMixRows,
@@ -840,7 +829,6 @@ function layoutStatsPanel({ ctx, width, title, qualifier, leadLine, bodyLines, l
     titleSize,
     leadSize,
     bodySize,
-    qualifierSize,
   };
 }
 
@@ -1012,14 +1000,6 @@ function drawStatsOverlay(ctx, x, y, layout, chartImage) {
     textY += layout.titleSize + 4;
   });
   textY += 4;
-  if (layout.qualifier) {
-    // boundary caveat gets a slim marker so it stays distinct from the coverage lead
-    ctx.fillStyle = '#e0e0e0';
-    ctx.fillRect(x + layout.padX, textY - 10, 3, layout.qualifierSize + 6);
-    ctx.font = `${layout.qualifierSize}px ${EXPORT_FONT}`;
-    ctx.fillText(layout.qualifier, x + layout.padX + 10, textY);
-    textY += layout.qualifierSize + 10;
-  }
   if (layout.leadLine) {
     ctx.fillStyle = '#fff';
     ctx.font = `600 ${layout.leadSize}px ${EXPORT_FONT}`;
@@ -1142,8 +1122,8 @@ function exportSummary({ kind, type, properties, metrics }) {
   const covered = finite(properties.cameraViewshedAreaSqKm);
   const selected = finite(properties.landAreaSqKm);
   const name = properties?.name || properties?.label || 'selected area';
+  // the export legend names the approximate utility boundary instead of a line here
   const lines = [];
-  if (type === 'utility') lines.push(UTILITY_QUALIFIER);
   lines.push(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire-spotting cameras`);
   if (coverage != null && covered != null && selected != null) {
     lines.push(`${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(selected * SQMI_PER_SQKM)} mi²`);
