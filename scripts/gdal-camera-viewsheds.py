@@ -234,8 +234,9 @@ def product_name(args: argparse.Namespace) -> str:
     """names uploads after their provider so tilesets are identifiable in Mapbox Studio"""
     if args.product_name:
         return slugify(args.product_name)
-    stem = args.sites.stem
-    provider = stem[: -len("-sites")] if stem.endswith("-sites") else ""
+    # queue files such as alertwest-sites-needing-viewsheds.geojson keep their provider
+    provider, separator, _ = args.sites.stem.partition("-sites")
+    provider = provider if separator else ""
     return f"{provider}-camera-viewsheds" if provider else "camera-viewsheds"
 
 
@@ -286,6 +287,8 @@ def load_sites(path: Path) -> list[Site]:
 
     sites: list[Site] = []
     for source_id, feature in enumerate(payload.get("features", []), start=1):
+        # queue files carry each camera's position in the full provider sites file
+        source_id = int((feature.get("properties") or {}).get("sourceId") or source_id)
         geometry = feature.get("geometry") or {}
         properties = feature.get("properties") or {}
         if geometry.get("type") != "Point" or len(geometry.get("coordinates", [])) < 2:

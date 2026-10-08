@@ -401,6 +401,10 @@ class ManifestTests(unittest.TestCase):
 
 
 class ProductNameTests(unittest.TestCase):
+    def test_queue_file_keeps_its_provider(self):
+        args = SimpleNamespace(product_name=None, sites=Path("data/alertwest-sites-needing-viewsheds.geojson"))
+        self.assertEqual(viewsheds.product_name(args), "alertwest-camera-viewsheds")
+
     def test_provider_comes_from_sites_file_name(self):
         for sites, expected in (
             ("data/alertwest-sites.geojson", "alertwest-camera-viewsheds"),
