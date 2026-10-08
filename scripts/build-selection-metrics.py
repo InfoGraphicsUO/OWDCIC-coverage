@@ -30,8 +30,8 @@ VIEWSHEDS = (
     ROOT / 'outputs/gdal_viewsheds_alertwest/mapbox/camera_viewsheds_web_epsg5070.gpkg',
     ROOT / 'outputs/gdal_viewsheds_pano/mapbox/camera_viewsheds_web_epsg5070.gpkg',
 )
-# guards against a missing provider: 75 ALERTWest + 24 Pano AI viewsheds
-EXPECTED_INDIVIDUAL_VIEWSHEDS = 99
+# guards against a missing provider: 83 ALERTWest + 24 Pano AI viewsheds
+EXPECTED_INDIVIDUAL_VIEWSHEDS = 107
 MASK = ROOT / 'data/pacific-northwest-land-mask.geojson'
 HYDRO_CACHE = ROOT / 'outputs/source-cache/census-areal-hydro-2025.geojsonl'
 PADUS_FEE_CACHE = ROOT / 'outputs/source-cache/padus-4.1-or-wa-fee-5070.geojsonl'
