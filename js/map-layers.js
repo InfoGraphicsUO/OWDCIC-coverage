@@ -339,10 +339,10 @@ async function loadMapLayers(map) {
     Promise.all([
       hydrateLegendLayer(
         LEGEND_LAYERS.alertWestCameras,
-        Promise.all([data.cameras, data.viewshedManifest]),
-        ([cameras, viewshedManifest]) => {
+        Promise.all([data.cameras, data.viewshedManifest, data.alertWestSites]),
+        ([cameras, viewshedManifest, sites]) => {
           // selection ids must be attached before features reach either UI
-          const features = attachViewshedIds(cameras, viewshedManifest).features;
+          const features = attachViewshedIds(cameras, viewshedManifest, sites).features;
           setSourceData(map, LAYER_IDS.cameras, { type: 'FeatureCollection', features });
           return features;
         }
@@ -377,7 +377,7 @@ async function loadMapLayers(map) {
       LEGEND_LAYERS.panoViewsheds,
       data.panoSites,
       (panoSites) => {
-        // viewsheds are only modeled for sites with a camera height
+        // pending sites may have heights but do not have published coverage yet
         const modeled = providerSitesToCameras(panoSites, PANO_OPERATOR).features
           .filter((feature) => feature.properties.viewshed_id);
         legendControl.updateInfo(
@@ -1201,6 +1201,10 @@ function loadLayerData() {
 
     panoSites: safelyLoadLegend('Pano AI cameras', LEGEND_LAYERS.panoCameras, () =>
       fetchJson(DATA_URLS.panoCameraSites, 'Pano AI camera sites')
+    ),
+
+    alertWestSites: safelyLoadLegend('ALERTWest site locations', LEGEND_LAYERS.alertWestCameras, () =>
+      fetchJson(DATA_URLS.alertWestCameraSites, 'ALERTWest site locations')
     ),
 
     fires: safelyLoadLegend('NIFC fires', 'Fires (NIFC)', () =>

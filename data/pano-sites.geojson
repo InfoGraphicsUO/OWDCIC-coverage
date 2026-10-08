@@ -598,6 +598,245 @@
         "county": "Washington",
         "state": "OR"
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.988209,
+          42.853411
+        ]
+      },
+      "properties": {
+        "name": "Sycan Substation",
+        "provider": "pano",
+        "aliases": [],
+        "cameraHeightFt": null,
+        "viewshedId": "pano-sycan-substation",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-119",
+        "source": "data/digitized-camera-sources.geojson",
+        "county": "Lake",
+        "state": "OR",
+        "viewshedStatus": "pending"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.829698,
+          42.983688
+        ]
+      },
+      "properties": {
+        "name": "Latgawa Mountain",
+        "provider": "pano",
+        "aliases": [],
+        "cameraHeightFt": null,
+        "viewshedId": "pano-latgawa-mountain",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-21",
+        "source": "data/digitized-camera-sources.geojson",
+        "county": "Lake",
+        "state": "OR",
+        "viewshedStatus": "pending"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.267855,
+          44.602038
+        ]
+      },
+      "properties": {
+        "name": "Round Butte",
+        "provider": "pano",
+        "aliases": [
+          "Round Butte (Warm Springs)"
+        ],
+        "locationNote": "PGE and digitized sources identify Round Butte and Warm Springs as separate locations; preserve both.",
+        "candidateTowerHeightFt": 100,
+        "heightNote": "PGE-towers_reduced1.csv tower height, not verified camera observer height.",
+        "cameraHeightFt": null,
+        "viewshedId": "pano-round-butte",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-118",
+        "source": "data/digitized-camera-sources.geojson",
+        "county": "Jefferson",
+        "state": "OR",
+        "viewshedStatus": "pending"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.219022,
+          44.754998
+        ]
+      },
+      "properties": {
+        "name": "Warm Springs",
+        "provider": "pano",
+        "aliases": [],
+        "locationNote": "PGE and digitized sources identify Round Butte and Warm Springs as separate locations; preserve both.",
+        "cameraHeightFt": null,
+        "viewshedId": "pano-warm-springs",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-117",
+        "source": "data/digitized-camera-sources.geojson",
+        "county": "Jefferson",
+        "state": "OR",
+        "viewshedStatus": "pending"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.642802,
+          45.637982
+        ]
+      },
+      "properties": {
+        "name": "Biglow Canyon",
+        "provider": "pano",
+        "aliases": [],
+        "cameraHeightFt": null,
+        "viewshedId": "pano-biglow-canyon",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-120",
+        "source": "data/digitized-camera-sources.geojson",
+        "county": "Sherman",
+        "state": "OR",
+        "viewshedStatus": "pending"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.539219,
+          44.926279
+        ]
+      },
+      "properties": {
+        "name": "Sidwalter",
+        "provider": "pano",
+        "aliases": [],
+        "cameraHeightFt": null,
+        "viewshedId": "pano-sidwalter",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-38",
+        "source": "data/digitized-camera-sources.geojson",
+        "county": "Wasco",
+        "state": "OR",
+        "viewshedStatus": "pending"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.475946,
+          44.761988
+        ]
+      },
+      "properties": {
+        "name": "Mill City",
+        "provider": "pano",
+        "aliases": [],
+        "cameraHeightFt": null,
+        "viewshedId": "pano-mill-city",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-116",
+        "source": "data/digitized-camera-sources.geojson",
+        "county": "Marion",
+        "state": "OR",
+        "viewshedStatus": "pending"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.631,
+          44.7633
+        ]
+      },
+      "properties": {
+        "name": "Lyons",
+        "provider": "pano",
+        "aliases": [],
+        "locationSource": "pge-camera-source",
+        "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp",
+        "cameraHeightFt": null,
+        "viewshedId": "pano-lyons",
+        "county": "Linn",
+        "state": "OR",
+        "viewshedStatus": "pending"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.0270865,
+          46.4200095
+        ]
+      },
+      "properties": {
+        "name": "Mullan Substation",
+        "provider": "pano",
+        "aliases": [
+          "Mullen Substation (WA)"
+        ],
+        "locationSource": "pge-camera-source",
+        "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp",
+        "candidateTowerHeightFt": 173.9,
+        "heightNote": "PGE-towers_reduced1.csv tower height, not verified camera observer height.",
+        "cameraHeightFt": null,
+        "viewshedId": "pano-mullan-substation",
+        "county": "Columbia",
+        "state": "WA",
+        "viewshedStatus": "pending"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.169382,
+          46.411965
+        ]
+      },
+      "properties": {
+        "name": "Waitsburg",
+        "provider": "pano",
+        "aliases": [
+          "Waitsburg (WA)"
+        ],
+        "locationSource": "pge-camera-source",
+        "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp",
+        "cameraHeightFt": null,
+        "viewshedId": "pano-waitsburg",
+        "county": "Columbia",
+        "state": "WA",
+        "viewshedStatus": "pending"
+      }
     }
   ]
 }

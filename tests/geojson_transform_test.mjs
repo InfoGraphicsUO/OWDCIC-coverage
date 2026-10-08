@@ -1,7 +1,7 @@
 // camera to viewshed join must key on id or location, not only display names
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
-import { attachViewshedIds } from '../js/geojson-transform.js';
+import { attachViewshedIds, providerSitesToCameras } from '../js/geojson-transform.js';
 
 const manifest = JSON.parse(readFileSync(new URL('../data/alertwest-viewshed-manifest.json', import.meta.url), 'utf8'));
 const entry = (id) => manifest.viewsheds.find((item) => item.viewshed_id === id);
@@ -42,3 +42,24 @@ assert.equal(attachViewshedIds({ features: [camera('7', 'Whatever', 50, 50)] }, 
 assert.equal(attachViewshedIds({ features: [{ type: 'Feature', geometry: null, properties: { id: '8', name: 'Axis-Alpha' } }] }, withIds).features[0].properties.viewshed_id, 'a');
 
 console.log('geojson transform tests passed');
+
+// known site corrections must move both camera heads without inventing coverage
+const newSites = JSON.parse(readFileSync(new URL('../data/alertwest-sites.geojson', import.meta.url), 'utf8'));
+const halfway = newSites.features.find(f => f.properties.name === 'Halfway');
+const halfwayHeads = { features: [camera(18030, 'Axis-Halfway1', -117.0316, 44.8814), camera(18031, 'Axis-Halfway2', -117.0316, 44.8814)] };
+for (const f of attachViewshedIds(halfwayHeads, manifest, newSites).features) {
+  assert.deepEqual(f.geometry, halfway.geometry);
+  assert.equal(f.properties.viewshed_id, 'halfway');
+}
+const pendingHalfway = structuredClone(halfway);
+pendingHalfway.properties.viewshedStatus = 'pending';
+for (const f of attachViewshedIds(halfwayHeads, manifest, { features: [pendingHalfway] }).features) {
+  assert.equal(f.properties.viewshed_id, null);
+}
+const panoSites = JSON.parse(readFileSync(new URL('../data/pano-sites.geojson', import.meta.url), 'utf8'));
+const panoCameras = providerSitesToCameras(panoSites, 'Pano AI').features;
+assert.equal(panoCameras.length, 34);
+assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 24);
+const pendingWithHeight = structuredClone(panoSites.features.find(f => f.properties.name === 'Mullan Substation'));
+pendingWithHeight.properties.cameraHeightFt = 173.9;
+assert.equal(providerSitesToCameras({ features: [pendingWithHeight] }, 'Pano AI').features[0].properties.viewshed_id, null);

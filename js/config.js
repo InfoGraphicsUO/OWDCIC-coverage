@@ -4,17 +4,18 @@ export const PGE_WILDFIREWATCH_URL = 'https://portlandgeneral.wildfirewatch.com/
 
 // hosted tilesets and provider endpoints used by the map layers
 export const DATA_URLS = Object.freeze({
-  cameraViewsheds: 'mapbox://infographics.qn8uiv', // latest ALERTWest camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.ibrv0q/
+  cameraViewsheds: 'mapbox://infographics.qn8uiv', // latest ALERTWest camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.qn8uiv/
   cameraViewshedsSourceLayer: 'camera_viewsheds',
   cameraViewshedsCoverageSourceLayer: 'camera_viewshed_coverage',
   viewshedManifest: 'data/alertwest-viewshed-manifest.json',
-  // latest Pano AI camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.dgexly/
+  // latest Pano AI camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.3eiwtk/
   // an empty value shows the legend row as unpublished instead of requesting tiles
   panoCameraViewsheds: 'mapbox://infographics.3eiwtk',
   // every provider's coverage dissolved together, drawn when they share one fill color https://console.mapbox.com/studio/tilesets/infographics.4qzk4g/
   // built by scripts/build-combined-viewshed-coverage.py; empty falls back to stacked provider fills
   combinedCameraViewsheds: 'mapbox://infographics.4qzk4g',
   panoCameraSites: 'data/pano-sites.geojson',
+  alertWestCameraSites: 'data/alertwest-sites.geojson',
   digitizedCameraSources: 'data/digitized-camera-sources.geojson',
   standingLookouts: 'data/standing-lookouts.geojson',
   countyDivisions: 'data/divisions/counties.geojson',

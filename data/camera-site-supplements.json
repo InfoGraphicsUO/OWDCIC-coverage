@@ -1,0 +1,270 @@
+{
+  "networkRoot": "\\\\cas-fs-geog\\InfoGraphics\\Projects\\FacultyRes\\OHAZ",
+  "sites": [
+    {
+      "sheetName": "Mt Defiance",
+      "name": "Mt Defiance",
+      "provider": "alertwest",
+      "aliases": [
+        "Axis-MountDefiance",
+        "Axis-MountDefiance2"
+      ],
+      "digitizedId": "digitized-camera-43",
+      "alertwestSiteIds": [
+        23607,
+        23608
+      ]
+    },
+    {
+      "sheetName": "Halfway",
+      "name": "Halfway",
+      "provider": "alertwest",
+      "aliases": [
+        "Axis-Halfway1",
+        "Axis-Halfway2"
+      ],
+      "digitizedId": "digitized-camera-53",
+      "alertwestSiteIds": [
+        18030,
+        18031
+      ],
+      "locationNote": "Digitized lookout preferred by user; archived ALERTWest point is about 5.1 km away.",
+      "alternateCoordinates": [
+        -117.0316,
+        44.8814
+      ]
+    },
+    {
+      "sheetName": "Jim Creek Butte",
+      "name": "Jim Creek Butte",
+      "provider": "alertwest",
+      "aliases": [
+        "Axis-jimcreekbutte"
+      ],
+      "coordinates": [
+        -116.93533,
+        45.93598
+      ],
+      "locationSource": "archived-alertwest-api",
+      "source": "Camera Locations/Internal camera review prototype/public/cameras.json",
+      "sourceDate": "2026-08-21T00:16:05Z",
+      "alertwestSiteIds": [
+        23681
+      ]
+    },
+    {
+      "sheetName": "Satus",
+      "name": "Satus",
+      "provider": "alertwest",
+      "aliases": [
+        "Axis-SatusPeak"
+      ],
+      "coordinates": [
+        -120.753469,
+        46.257481
+      ],
+      "locationSource": "archived-alertwest-api",
+      "source": "Camera Locations/Internal camera review prototype/public/cameras.json",
+      "sourceDate": "2026-08-21T00:16:05Z",
+      "alertwestSiteIds": [
+        16187
+      ]
+    },
+    {
+      "sheetName": "Elephant",
+      "name": "Elephant",
+      "provider": "alertwest",
+      "aliases": [
+        "Axis-Elephant"
+      ],
+      "coordinates": [
+        -120.335462,
+        46.522181
+      ],
+      "locationSource": "archived-alertwest-api",
+      "source": "Camera Locations/Internal camera review prototype/public/cameras.json",
+      "sourceDate": "2026-06-16T18:54:14Z",
+      "alertwestSiteIds": [
+        17909
+      ]
+    },
+    {
+      "sheetName": "Two Rivers",
+      "name": "Two Rivers",
+      "provider": "alertwest",
+      "aliases": [
+        "Axis-TwoRivers"
+      ],
+      "coordinates": [
+        -120.84488,
+        47.841117
+      ],
+      "locationSource": "archived-alertwest-api",
+      "source": "Camera Locations/Internal camera review prototype/public/cameras.json",
+      "sourceDate": "2026-08-21T00:15:40Z",
+      "alertwestSiteIds": [
+        16405
+      ]
+    },
+    {
+      "sheetName": "Round Mountain Chelan",
+      "name": "Round Mountain Chelan",
+      "provider": "alertwest",
+      "aliases": [
+        "Axis-RoundMtnChelan"
+      ],
+      "coordinates": [
+        -120.81022,
+        47.785531
+      ],
+      "locationSource": "archived-alertwest-api",
+      "source": "Camera Locations/Internal camera review prototype/public/cameras.json",
+      "sourceDate": "2026-08-21T00:15:46Z",
+      "alertwestSiteIds": [
+        8604
+      ]
+    },
+    {
+      "sheetName": "Natapoc Ridge North",
+      "name": "Natapoc Ridge North",
+      "provider": "alertwest",
+      "aliases": [
+        "Axis-NatapocRidge2"
+      ],
+      "coordinates": [
+        -120.693583,
+        47.780322
+      ],
+      "locationSource": "archived-alertwest-api",
+      "source": "Camera Locations/Internal camera review prototype/public/cameras.json",
+      "sourceDate": "2026-08-21T00:15:56Z",
+      "alertwestSiteIds": [
+        15871
+      ],
+      "viewshedReview": "Confirm sheet height assignment to archived camera ID; North is provisionally the northern point."
+    },
+    {
+      "sheetName": "Natapoc Ridge",
+      "name": "Natapoc Ridge",
+      "provider": "alertwest",
+      "aliases": [
+        "Axis-NatapocRidge"
+      ],
+      "coordinates": [
+        -120.697653,
+        47.77465
+      ],
+      "locationSource": "archived-alertwest-api",
+      "source": "Camera Locations/Internal camera review prototype/public/cameras.json",
+      "sourceDate": "2026-08-21T00:16:08Z",
+      "alertwestSiteIds": [
+        8603
+      ],
+      "viewshedReview": "Confirm sheet height assignment to archived camera ID; North is provisionally the northern point."
+    },
+    {
+      "sheetName": "Dry Mountain",
+      "name": "Dry Mountain",
+      "provider": "alertwest",
+      "aliases": [],
+      "digitizedId": "digitized-camera-30"
+    },
+    {
+      "sheetName": "Sycan Substation",
+      "name": "Sycan Substation",
+      "provider": "pano",
+      "aliases": [],
+      "digitizedId": "digitized-camera-119"
+    },
+    {
+      "sheetName": "Latgawa Mountain",
+      "name": "Latgawa Mountain",
+      "provider": "pano",
+      "aliases": [],
+      "digitizedId": "digitized-camera-21"
+    },
+    {
+      "sheetName": "Round Butte (Warm Springs)",
+      "name": "Round Butte",
+      "provider": "pano",
+      "aliases": [
+        "Round Butte (Warm Springs)"
+      ],
+      "digitizedId": "digitized-camera-118",
+      "locationNote": "PGE and digitized sources identify Round Butte and Warm Springs as separate locations; preserve both.",
+      "candidateTowerHeightFt": 100,
+      "heightNote": "PGE-towers_reduced1.csv tower height, not verified camera observer height."
+    },
+    {
+      "sheetName": null,
+      "name": "Warm Springs",
+      "provider": "pano",
+      "aliases": [],
+      "digitizedId": "digitized-camera-117",
+      "locationNote": "PGE and digitized sources identify Round Butte and Warm Springs as separate locations; preserve both."
+    },
+    {
+      "sheetName": "Biglow Canyon",
+      "name": "Biglow Canyon",
+      "provider": "pano",
+      "aliases": [],
+      "digitizedId": "digitized-camera-120"
+    },
+    {
+      "sheetName": "Sidwalter",
+      "name": "Sidwalter",
+      "provider": "pano",
+      "aliases": [],
+      "digitizedId": "digitized-camera-38"
+    },
+    {
+      "sheetName": "Mill City",
+      "name": "Mill City",
+      "provider": "pano",
+      "aliases": [],
+      "digitizedId": "digitized-camera-116"
+    },
+    {
+      "sheetName": "Lyons",
+      "name": "Lyons",
+      "provider": "pano",
+      "aliases": [],
+      "coordinates": [
+        -122.631,
+        44.7633
+      ],
+      "locationSource": "pge-camera-source",
+      "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp"
+    },
+    {
+      "sheetName": "Mullen Substation (WA)",
+      "name": "Mullan Substation",
+      "provider": "pano",
+      "aliases": [
+        "Mullen Substation (WA)"
+      ],
+      "coordinates": [
+        -118.0270865,
+        46.4200095
+      ],
+      "locationSource": "pge-camera-source",
+      "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp",
+      "candidateTowerHeightFt": 173.9,
+      "heightNote": "PGE-towers_reduced1.csv tower height, not verified camera observer height."
+    },
+    {
+      "sheetName": "Waitsburg (WA)",
+      "name": "Waitsburg",
+      "provider": "pano",
+      "aliases": [
+        "Waitsburg (WA)"
+      ],
+      "coordinates": [
+        -118.169382,
+        46.411965
+      ],
+      "locationSource": "pge-camera-source",
+      "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp"
+    }
+  ]
+}

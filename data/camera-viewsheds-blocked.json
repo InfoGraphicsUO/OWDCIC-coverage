@@ -1,0 +1,72 @@
+[
+  {
+    "provider": "alertwest",
+    "name": "Natapoc Ridge North",
+    "reason": "Confirm sheet height assignment to archived camera ID; North is provisionally the northern point."
+  },
+  {
+    "provider": "alertwest",
+    "name": "Natapoc Ridge",
+    "reason": "Confirm sheet height assignment to archived camera ID; North is provisionally the northern point."
+  },
+  {
+    "provider": "alertwest",
+    "name": "Dry Mountain",
+    "reason": "Missing camera observer height"
+  },
+  {
+    "provider": "pano",
+    "name": "Sycan Substation",
+    "reason": "Missing camera observer height"
+  },
+  {
+    "provider": "pano",
+    "name": "Latgawa Mountain",
+    "reason": "Missing camera observer height"
+  },
+  {
+    "provider": "pano",
+    "name": "Round Butte",
+    "reason": "Missing camera observer height"
+  },
+  {
+    "provider": "pano",
+    "name": "Warm Springs",
+    "reason": "Missing camera observer height"
+  },
+  {
+    "provider": "pano",
+    "name": "Biglow Canyon",
+    "reason": "Missing camera observer height"
+  },
+  {
+    "provider": "pano",
+    "name": "Sidwalter",
+    "reason": "Missing camera observer height"
+  },
+  {
+    "provider": "pano",
+    "name": "Mill City",
+    "reason": "Missing camera observer height"
+  },
+  {
+    "provider": "pano",
+    "name": "Lyons",
+    "reason": "Missing camera observer height"
+  },
+  {
+    "provider": "pano",
+    "name": "Mullan Substation",
+    "reason": "Missing camera observer height"
+  },
+  {
+    "provider": "pano",
+    "name": "Waitsburg",
+    "reason": "Missing camera observer height"
+  },
+  {
+    "provider": "alertwest",
+    "name": "Gold Hill",
+    "reason": "Missing coordinates and camera observer height"
+  }
+]
