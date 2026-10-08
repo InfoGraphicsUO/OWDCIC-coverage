@@ -236,17 +236,9 @@ def with_help(label: str | QCheckBox, control: QWidget, explanation: str) -> QWi
 class PathRow(QWidget):
     """line edit with a file or directory chooser"""
 
-    def __init__(
-        self,
-        value: Path,
-        directory: bool,
-        title: str = "Choose sites GeoJSON",
-        file_filter: str = "GeoJSON (*.geojson *.json)",
-    ) -> None:
+    def __init__(self, value: Path, directory: bool) -> None:
         super().__init__()
         self.directory = directory
-        self.title = title
-        self.file_filter = file_filter
         self.edit = QLineEdit(str(value))
         button = QPushButton("Browse…")
         button.clicked.connect(self.choose)
@@ -260,7 +252,7 @@ class PathRow(QWidget):
             selected = QFileDialog.getExistingDirectory(self, "Choose folder", self.edit.text())
         else:
             selected, _ = QFileDialog.getOpenFileName(
-                self, self.title, self.edit.text(), self.file_filter
+                self, "Choose sites GeoJSON", self.edit.text(), "GeoJSON (*.geojson *.json)"
             )
         if selected:
             self.edit.setText(selected)
