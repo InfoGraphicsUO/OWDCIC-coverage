@@ -278,6 +278,7 @@ class DatasetMergeTests(unittest.TestCase):
             path = self.save_state(root, self.SITE, legacy_analysis, legacy_web)
             other = self.save_state(root, {**self.SITE, "viewshed_id": "other"}, "other-settings", "web")
 
+            self.assertEqual(viewsheds.current_states(root, config), ([], ["Old Camera", "Old Camera"]))
             self.assertEqual(viewsheds.upgrade_legacy_states(root, "old-sites", args, dems, config), 1)
             state = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(
@@ -286,6 +287,22 @@ class DatasetMergeTests(unittest.TestCase):
             )
             self.assertEqual(json.loads(other.read_text(encoding="utf-8"))["analysis_hash"], "other-settings")
             self.assertEqual(viewsheds.reusable_stages(state, state["analysis_hash"], state["web_hash"], True), (True, True, True))
+
+    def test_dataset_holds_every_current_camera_in_site_order(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args, dems = make_args(root)
+            config = viewsheds.config_document(args, dems)
+            new = {**self.SITE, "source_id": 2, "viewshed_id": "new-camera", "name": "New Camera", "latitude": 46.0}
+            stale = {**self.SITE, "source_id": 3, "viewshed_id": "stale-camera", "name": "Stale Camera"}
+            for site in (new, self.SITE):
+                self.save_state(root, site, *viewsheds.site_hashes(config["analysis_hash"], config["web_hash"], site))
+            self.save_state(root, stale, "other-settings", "web")
+
+            states, left_out = viewsheds.current_states(root, config)
+
+        self.assertEqual([state["site"]["name"] for state in states], ["Old Camera", "New Camera"])
+        self.assertEqual(left_out, ["Stale Camera"])
 
 
 class MajorityFilterTests(unittest.TestCase):
