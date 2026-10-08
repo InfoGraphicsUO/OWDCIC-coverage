@@ -91,7 +91,7 @@ QMainWindow, QScrollArea, QWidget#settingsPage { background: #191d21; color: #ed
 QWidget { font-size: 13px; }
 QLabel { color: #edf0f2; }
 QLabel#title { font-size: 24px; font-weight: 600; }
-QLabel#subtitle, QLabel#elapsed { color: #abb5be; }
+QLabel#elapsed { color: #abb5be; }
 QGroupBox { font-weight: 600; border: 1px solid #454e57; border-radius: 5px;
     margin-top: 12px; padding: 16px 12px 12px; background: #242a30; color: #edf0f2; }
 QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; }
@@ -285,12 +285,9 @@ class ViewshedWindow(QMainWindow):
         root = QVBoxLayout(central)
         root.setContentsMargins(24, 20, 24, 20)
         root.setSpacing(12)
-        title = QLabel("Camera viewsheds")
+        title = QLabel("Camera viewshed generation")
         title.setObjectName("title")
         root.addWidget(title)
-        subtitle = QLabel("Build camera coverage from elevation data with GDAL.")
-        subtitle.setObjectName("subtitle")
-        root.addWidget(subtitle)
 
         # scroll only the settings, so progress and the run controls stay within reach
         self.settings = QTabWidget()
