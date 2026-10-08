@@ -400,6 +400,20 @@ class ManifestTests(unittest.TestCase):
         )
 
 
+class CombinedCoverageTests(unittest.TestCase):
+    def test_run_output_replaces_its_own_provider(self):
+        output = Path("outputs/alertwest-elsewhere")
+        providers = viewsheds.combined_providers("alertwest-camera-viewsheds", output)
+        self.assertEqual(
+            providers,
+            [output / viewsheds.WEB_PACKAGE, viewsheds.PROVIDER_OUTPUTS["pano"] / viewsheds.WEB_PACKAGE],
+        )
+
+    def test_unknown_provider_is_added(self):
+        providers = viewsheds.combined_providers("other-camera-viewsheds", Path("outputs/other"))
+        self.assertEqual(len(providers), len(viewsheds.PROVIDER_OUTPUTS) + 1)
+
+
 class ProductNameTests(unittest.TestCase):
     def test_queue_file_keeps_its_provider(self):
         args = SimpleNamespace(product_name=None, sites=Path("data/alertwest-sites-needing-viewsheds.geojson"))
