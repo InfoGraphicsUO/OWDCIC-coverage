@@ -234,8 +234,9 @@ def product_name(args: argparse.Namespace) -> str:
     """names uploads after their provider so tilesets are identifiable in Mapbox Studio"""
     if args.product_name:
         return slugify(args.product_name)
-    stem = args.sites.stem
-    provider = stem[: -len("-sites")] if stem.endswith("-sites") else ""
+    # queue files such as alertwest-sites-needing-viewsheds.geojson keep their provider
+    provider, separator, _ = args.sites.stem.partition("-sites")
+    provider = provider if separator else ""
     return f"{provider}-camera-viewsheds" if provider else "camera-viewsheds"
 
 
@@ -286,6 +287,8 @@ def load_sites(path: Path) -> list[Site]:
 
     sites: list[Site] = []
     for source_id, feature in enumerate(payload.get("features", []), start=1):
+        # queue files carry each camera's position in the full provider sites file
+        source_id = int((feature.get("properties") or {}).get("sourceId") or source_id)
         geometry = feature.get("geometry") or {}
         properties = feature.get("properties") or {}
         if geometry.get("type") != "Point" or len(geometry.get("coordinates", [])) < 2:
@@ -356,14 +359,9 @@ def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def analysis_config_payload(
-    args: argparse.Namespace,
-    dem_files: list[Path],
-    sites_path: Path,
-) -> dict[str, Any]:
-    """inputs that change the 10 m viewshed rasters"""
+def analysis_config_payload(args: argparse.Namespace, dem_files: list[Path]) -> dict[str, Any]:
+    """inputs shared by every camera that change the 10 m viewshed rasters"""
     return {
-        "sites_sha256": file_sha256(sites_path),
         "dem_inventory": [
             {"name": path.name, "size": path.stat().st_size, "mtime_ns": path.stat().st_mtime_ns}
             for path in dem_files
@@ -390,12 +388,8 @@ def web_config_payload(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
-def config_document(
-    args: argparse.Namespace,
-    dem_files: list[Path],
-    sites_path: Path,
-) -> dict[str, Any]:
-    analysis = analysis_config_payload(args, dem_files, sites_path)
+def config_document(args: argparse.Namespace, dem_files: list[Path]) -> dict[str, Any]:
+    analysis = analysis_config_payload(args, dem_files)
     web = web_config_payload(args)
     analysis_hash = payload_hash(analysis)
     web_hash = payload_hash({"analysis_hash": analysis_hash, **web})
@@ -411,6 +405,82 @@ def config_document(
         "web_hash": web_hash,
         "config_hash": payload_hash(base),
     }
+
+
+def site_record(site: Site) -> dict[str, Any]:
+    """one camera as it is saved in state files and manifests"""
+    return {**asdict(site), "aliases": list(site.aliases)}
+
+
+def site_hashes(analysis_hash: str, web_hash: str, site: dict[str, Any]) -> tuple[str, str]:
+    """returns one camera's (analysis, web) hashes from the run hashes and its record
+
+    Keyed per camera so adding or editing other cameras never invalidates it.
+    """
+    analysis = payload_hash(
+        {
+            "analysis_hash": analysis_hash,
+            **{key: site.get(key) for key in ("longitude", "latitude", "height_ft")},
+        }
+    )
+    return analysis, payload_hash({"analysis_hash": analysis, "web_hash": web_hash})
+
+
+def upgrade_legacy_states(
+    output_dir: Path,
+    sites_sha256: str,
+    args: argparse.Namespace,
+    dem_files: list[Path],
+    config: dict[str, Any],
+) -> int:
+    """re-keys states saved when one hash covered the whole sites file
+
+    That hash changed whenever a camera was added, which forced every viewshed
+    to be recomputed. States made with the current settings keep their outputs.
+    """
+    legacy_analysis = payload_hash(
+        {"sites_sha256": sites_sha256, **analysis_config_payload(args, dem_files)}
+    )
+    legacy_web = payload_hash({"analysis_hash": legacy_analysis, **web_config_payload(args)})
+    upgraded = 0
+    for path in sorted((output_dir / "state").glob("*.json")):
+        state = read_json(path)
+        if not state or "site" not in state or state.get("analysis_hash") != legacy_analysis:
+            continue
+        analysis_hash, web_hash = site_hashes(config["analysis_hash"], config["web_hash"], state["site"])
+        state["analysis_hash"] = analysis_hash
+        if state.get("web_hash") == legacy_web:
+            state["web_hash"] = web_hash
+        write_json(path, state)
+        upgraded += 1
+    return upgraded
+
+
+def current_states(output_dir: Path, config: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
+    """returns every saved camera state matching the current settings, plus stale camera names
+
+    The output folder is the dataset: a run over a few new cameras still builds
+    the combined products and manifest from all of the cameras saved in it.
+    """
+    states: list[dict[str, Any]] = []
+    stale: list[str] = []
+    for path in sorted((output_dir / "state").glob("*.json")):
+        state = read_json(path)
+        if not state or "site" not in state:
+            continue
+        analysis_hash, web_hash = site_hashes(config["analysis_hash"], config["web_hash"], state["site"])
+        complete = state.get("status") == "complete"
+        outputs = [value for value in state.get("outputs", {}).values() if value]
+        if (
+            state.get("analysis_hash") != analysis_hash
+            or (complete and state.get("web_hash") != web_hash)
+            or not all(Path(value).is_file() for value in outputs)
+        ):
+            stale.append(state["site"]["name"])
+        else:
+            states.append(state)
+    states.sort(key=lambda state: (state["site"]["source_id"], state["site"]["viewshed_id"]))
+    return states, stale
 
 
 def reusable_stages(
@@ -990,7 +1060,9 @@ def build_shapefile(site: Site, config: RunConfig, reporter: SiteReporter) -> di
         return {"site": asdict(site), "status": "skipped_missing_height", "outputs": {"shapefile": None}}
 
     analysis_reusable, exact_reusable, _ = reusable_stages(
-        read_json(paths["state"]), config.analysis_hash, config.web_hash, True
+        read_json(paths["state"]),
+        *site_hashes(config.analysis_hash, config.web_hash, asdict(site)),
+        True,
     )
     if config.overwrite:
         analysis_reusable = exact_reusable = False
@@ -1162,12 +1234,13 @@ def process_site(site: Site, site_index: int, config: RunConfig, reporter: SiteR
     if config.shapefiles_only:
         return build_shapefile(site, config, reporter)
     paths = output_paths(config.output_dir, site)
+    analysis_hash, web_hash = site_hashes(config.analysis_hash, config.web_hash, asdict(site))
     base_document = {
         "schema_version": SCHEMA_VERSION,
         "config_hash": config.config_hash,
-        "analysis_hash": config.analysis_hash,
-        "web_hash": config.web_hash,
-        "site": asdict(site),
+        "analysis_hash": analysis_hash,
+        "web_hash": web_hash,
+        "site": site_record(site),
     }
     if site.height_m is None:
         document = {
@@ -1183,13 +1256,17 @@ def process_site(site: Site, site_index: int, config: RunConfig, reporter: SiteR
 
     previous_state = read_json(paths["state"])
     analysis_reusable, exact_reusable, web_reusable = reusable_stages(
-        previous_state, config.analysis_hash, config.web_hash, config.exact_polygons
+        previous_state, analysis_hash, web_hash, config.exact_polygons
     )
     if config.overwrite:
         analysis_reusable = exact_reusable = web_reusable = False
     if analysis_reusable and exact_reusable and web_reusable:
         reporter.stage("complete", f"reused {site.name}")
-        return previous_state or {}
+        if previous_state["site"] != base_document["site"]:
+            # names, aliases, and ids can change without touching the viewshed
+            previous_state = {**previous_state, "site": base_document["site"]}
+            write_json(paths["state"], previous_state)
+        return previous_state
 
     if paths["work"].exists():
         shutil.rmtree(paths["work"])
@@ -1611,9 +1688,17 @@ def main() -> int:
     prepare_output(args.output_dir)
 
     previous_config = read_json(args.output_dir / "analysis_config.json") or {}
-    config = config_document(args, dem_files, args.sites)
+    config = config_document(args, dem_files)
     analysis_changed = previous_config.get("analysis_hash") != config["analysis_hash"]
     emitter.progress(0, "preparing", 0.0, f"loaded {len(selected)} cameras and {len(dem_files)} DEMs")
+    legacy_sites_sha256 = previous_config.get("sites_sha256") or previous_config.get("legacy_sites_sha256")
+    if legacy_sites_sha256:
+        # kept until it matches, so returning to the old settings still recovers old states
+        config["legacy_sites_sha256"] = legacy_sites_sha256
+        upgraded = upgrade_legacy_states(args.output_dir, legacy_sites_sha256, args, dem_files, config)
+        if upgraded:
+            emitter.log(f"kept {upgraded} viewsheds saved by an earlier version of this script")
+    saved_states, _ = current_states(args.output_dir, config)
     source_vrt = build_vrt(args.output_dir, dem_files, emitter, args.overwrite or analysis_changed)
     clip_wkb = (
         load_clip_boundary(args.web_clip_boundary)
@@ -1660,22 +1745,29 @@ def main() -> int:
     if not failures:
         write_json(args.output_dir / "analysis_config.json", config)
 
+    # merge this run into every camera already saved in the output folder
+    states, stale = current_states(args.output_dir, config)
+    if stale:
+        emitter.log(
+            f"left out {len(stale)} saved cameras made with other settings or inputs: "
+            f"{', '.join(sorted(stale))}"
+        )
     combined = None
-    if completed and not args.skip_exact_polygons:
-        expected_exact_count = sum(bool(state["outputs"].get("exact")) for state in completed)
+    if states and not args.skip_exact_polygons:
+        expected_exact_count = sum(bool(state["outputs"].get("exact")) for state in states)
         existing_combined = args.output_dir / "camera_viewsheds_exact_epsg5070.gpkg"
         if (
             not args.overwrite
-            and not analysis_changed
+            and states == saved_states
             and geopackage_feature_count(existing_combined, INDIVIDUAL_LAYER) == expected_exact_count
         ):
             combined = existing_combined
             emitter.log(f"reusing combined exact polygon: {combined}")
         else:
-            combined = rebuild_combined_exact(completed, args.output_dir, emitter)
+            combined = rebuild_combined_exact(states, args.output_dir, emitter)
     name = product_name(args)
-    web_products = rebuild_web_products(completed, args.output_dir, name, emitter)
-    manifest = write_manifest(completed, args.output_dir, name, config, combined, web_products)
+    web_products = rebuild_web_products(states, args.output_dir, name, emitter)
+    manifest = write_manifest(states, args.output_dir, name, config, combined, web_products)
     write_json(args.output_dir / "failures.json", failures)
     emitter.progress(0, "complete", 1.0, f"manifest ready: {manifest}")
 
@@ -1683,7 +1775,8 @@ def main() -> int:
     skipped_count = sum(str(item.get("status", "")).startswith("skipped") for item in completed)
     emitter.log(
         f"completed {complete_count}/{len(selected)} cameras; "
-        f"skipped: {skipped_count}; failures: {len(failures)}"
+        f"skipped: {skipped_count}; failures: {len(failures)}; "
+        f"dataset now holds {sum(state.get('status') == 'complete' for state in states)} viewsheds"
     )
     packaging_failed = bool(web_products and web_products.get("status") == "failed")
     return 1 if failures or packaging_failed else 0
