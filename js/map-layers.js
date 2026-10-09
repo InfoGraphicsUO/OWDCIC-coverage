@@ -195,6 +195,9 @@ let anchorRequest = 0;
 let cameraResultRequest = 0;
 let digitizedCameraLoad;
 let transmissionLinesLoad;
+// legend rows a filter preset switched on, hidden again when that filter is left
+// a row the user toggles themselves drops out and stays as they set it
+const presetLayersOn = new Set();
 let digitizedCameraLayersLoad;
 
 const DIGITIZED_CAMERA_OPERATORS = Object.freeze([
@@ -265,6 +268,12 @@ initSettings();
 const legendRows = visibleLegendItems(legendItems(), VISIBLE_LAYERS);
 const REMOVED_LAYER_LABELS = new Set(legendRows.removed.map(({ label }) => label));
 const legendControl = initLegend(legendRows.visible);
+// a preset row found unchecked was switched off by the user, so it is theirs now
+legendControl.onChange(() => {
+  for (const label of presetLayersOn) {
+    if (!legendControl.isChecked(label)) presetLayersOn.delete(label);
+  }
+});
 const resultsControl = initResultsPanel({
   getMap: () => activeMap,
   getBasemap,
@@ -824,7 +833,11 @@ function applyLayerPresetForFilter(filterType) {
 
   // off runs first so a label listed in both ends up visible
   for (const label of preset.layersOff ?? []) setLayerVisibility(label, false);
-  for (const label of preset.layersOn ?? []) setLayerVisibility(label, true);
+  for (const label of preset.layersOn ?? []) {
+    // a row that was already on is the user's choice and stays on later
+    const wasOff = !legendControl.isChecked(label);
+    if (setLayerVisibility(label, true) && wasOff) presetLayersOn.add(label);
+  }
   if (preset.basemap) {
     setBasemap(preset.basemap).catch((error) => {
       console.error('Failed to apply preset basemap:', error);
@@ -832,10 +845,19 @@ function applyLayerPresetForFilter(filterType) {
   }
 }
 
+// switch off the rows the last preset turned on, once its filter type is left
+function hidePresetLayers() {
+  const labels = [...presetLayersOn];
+  presetLayersOn.clear();
+  for (const label of labels) setLayerVisibility(label, false);
+}
+
 // list category change resets map selection and stale camera requests
 function typeSelected(type) {
   // invalidate pending camera metrics before the old result panel is cleared
   cameraResultRequest += 1;
+  // dropping the picked option reselects the same type, which keeps its layers
+  if ((type || null) !== activeFilterType) hidePresetLayers();
   activeFilterType = type || null;
   if (type) applyLayerPresetForFilter(type);
   // null is the brief gap while options load, so the link waits for the real type
@@ -914,6 +936,7 @@ function clearFilter() {
   // prevent a late metrics response from refilling the cleared panel
   cameraResultRequest += 1;
   activeFilterType = null;
+  hidePresetLayers();
   if (activeMap) {
     clearDivisionFilter(activeMap);
     selectCameraViewshed(activeMap, null);
