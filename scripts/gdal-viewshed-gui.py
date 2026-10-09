@@ -483,15 +483,10 @@ class ViewshedWindow(QMainWindow):
         self.overall.setRange(0, 1000)
         self.overall.setValue(0)
         self.overall.setFormat("Overall: %p%")
-        self.current = QProgressBar()
-        self.current.setRange(0, 100)
-        self.current.setValue(0)
-        self.current.setFormat("Current stage")
         self.elapsed = QLabel("Elapsed: 0s")
         self.elapsed.setObjectName("elapsed")
         layout.addWidget(self.status)
         layout.addWidget(self.overall)
-        layout.addWidget(self.current)
         layout.addWidget(self.elapsed)
         return group
 
@@ -583,7 +578,6 @@ class ViewshedWindow(QMainWindow):
         self.output_buffer = ""
         self.started = time.monotonic()
         self.overall.setValue(0)
-        self.current.setRange(0, 0)
         self.status.setText("Starting GDAL runner…")
         self.set_idle(False)
         self.elapsed_timer.start(1000)
@@ -591,8 +585,6 @@ class ViewshedWindow(QMainWindow):
         if not self.process.waitForStarted(5000):
             self.log.appendPlainText(self.process.errorString())
             self.elapsed_timer.stop()
-            self.current.setRange(0, 100)
-            self.current.setValue(0)
             self.status.setText("Could not start the runner — review the log.")
             self.set_idle(True)
 
@@ -614,13 +606,17 @@ class ViewshedWindow(QMainWindow):
                 self.log.appendPlainText(line)
                 return
             self.overall.setValue(round(float(payload.get("percent", 0)) * 10))
+            # GDAL callbacks report a percent with no detail, so the last status stays up
+            detail = payload.get("detail")
+            if not detail:
+                return
             site = payload.get("site_name")
             prefix = (
                 f"Camera {payload.get('site_index')}/{payload.get('site_total')}: {site} — "
                 if site
                 else ""
             )
-            self.status.setText(prefix + str(payload.get("detail", payload.get("stage", ""))))
+            self.status.setText(prefix + str(detail))
             return
         self.log.appendPlainText(line)
         scrollbar = self.log.verticalScrollBar()
@@ -631,8 +627,6 @@ class ViewshedWindow(QMainWindow):
             self.handle_line(self.output_buffer)
             self.output_buffer = ""
         self.elapsed_timer.stop()
-        self.current.setRange(0, 100)
-        self.current.setValue(100 if exit_code == 0 else 0)
         if exit_code == 0:
             self.overall.setValue(1000)
             if self.products.currentData():

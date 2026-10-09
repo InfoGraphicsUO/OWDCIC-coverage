@@ -82,6 +82,10 @@ STAGE_SPANS = {
     "web_polygon": (0.80, 1.00),
     "complete": (1.00, 1.00),
 }
+# steps that run once every camera is done, in the order they run
+FINISHING_STAGES = ("combined_exact", "web_polygons", "web_coverage", "mbtiles", "combined_coverage")
+# share of the whole run held back for those steps, so the bar is not full while they run
+FINISHING_SHARE = 0.20
 
 SITE_FIELDS = {
     "source_id": "integer",
@@ -550,6 +554,8 @@ class ProgressEmitter:
         self.total = len(sites)
         self.names = {index: site.name for index, site in enumerate(sites, start=1)}
         self.fractions: dict[int, float] = {}
+        self.finishing: tuple[str, ...] = ()
+        self.finishing_done: int | None = None
         self.started = time.monotonic()
         self.lock = threading.Lock()
 
@@ -564,6 +570,25 @@ class ProgressEmitter:
     def site_log(self, site_index: int, message: str) -> None:
         self.log(f"[{site_index}/{self.total}] {self.names[site_index]}: {message}")
 
+    def plan_finishing(self, stages: Iterable[str]) -> None:
+        """reserves the end of the bar for the steps that follow the cameras"""
+        self.finishing = tuple(stages)
+
+    def percent(self) -> float:
+        camera_share = 1.0 - FINISHING_SHARE if self.finishing else 1.0
+        if self.finishing_done is not None:
+            share = camera_share + FINISHING_SHARE * self.finishing_done / len(self.finishing)
+        else:
+            cameras = sum(self.fractions.values()) / self.total if self.total else 0.0
+            share = camera_share * cameras
+        return share * 100
+
+    def finishing_stage(self, stage: str, detail: str) -> None:
+        """reports the start of one finishing step"""
+        if stage in self.finishing:
+            self.finishing_done = self.finishing.index(stage)
+        self.progress(0, stage, 0.0, detail)
+
     def progress(
         self,
         site_index: int,
@@ -573,7 +598,7 @@ class ProgressEmitter:
     ) -> None:
         if site_index:
             self.fractions[site_index] = fraction
-        percent = sum(self.fractions.values()) / self.total * 100 if self.total else 0.0
+        percent = self.percent()
         if stage == "complete" and not site_index:
             percent = 100.0
         payload = {
@@ -1457,7 +1482,7 @@ def rebuild_combined_exact(states: list[dict[str, Any]], output_dir: Path, emitt
     if not inputs:
         return None
     combined = output_dir / "camera_viewsheds_exact_epsg5070.gpkg"
-    emitter.log(f"combining {len(inputs)} exact polygons")
+    emitter.finishing_stage("combined_exact", f"combining {len(inputs)} exact polygons")
 
     def features() -> Iterable[tuple[Any, dict[str, Any]]]:
         for source in inputs:
@@ -1532,7 +1557,7 @@ def rebuild_web_products(
     to_web = transformation(canonical, web_srs)
 
     # projected staging keeps the full union away from degree-based geometry math
-    emitter.log(f"combining {len(inputs)} web polygons")
+    emitter.finishing_stage("web_polygons", f"combining {len(inputs)} web polygons")
     individual: list[tuple[Any, dict[str, Any]]] = []
     for source in inputs:
         _, rows = read_features(source)
@@ -1542,7 +1567,7 @@ def rebuild_web_products(
     write_features(staging, "GPKG", INDIVIDUAL_LAYER, canonical, SITE_FIELDS, individual)
     validate_vector(staging, INDIVIDUAL_LAYER, len(inputs))
 
-    emitter.log("dissolving web coverage")
+    emitter.finishing_stage("web_coverage", "dissolving web coverage")
     coverage = union_polygons(geometry for geometry, _ in individual)
     if coverage.IsEmpty():
         raise RuntimeError("dissolved web coverage is empty")
@@ -1576,7 +1601,7 @@ def rebuild_web_products(
     packaging: dict[str, Any] = {"status": "skipped_tippecanoe_missing", "mbtiles": None, "error": None}
     tippecanoe = find_tippecanoe()
     if tippecanoe:
-        emitter.log("building multilayer Mapbox MBTiles")
+        emitter.finishing_stage("mbtiles", "building multilayer Mapbox MBTiles")
         try:
             result = subprocess.run(
                 [
@@ -1821,6 +1846,14 @@ def main() -> int:
         shapefiles_only=args.shapefiles_only,
     )
 
+    if not args.shapefiles_only:
+        skipped = {
+            "combined_exact": args.skip_exact_polygons,
+            "mbtiles": not find_tippecanoe(),
+            "combined_coverage": not args.combined_coverage,
+        }
+        emitter.plan_finishing(stage for stage in FINISHING_STAGES if not skipped.get(stage))
+
     completed, failures = run_sites(selected, run_config, jobs, args.fail_fast, emitter)
     if CANCEL.requested() and not (args.fail_fast and failures):
         emitter.log("cancelled by user")
@@ -1864,7 +1897,7 @@ def main() -> int:
     write_json(args.output_dir / "failures.json", failures)
     combined_failed = False
     if args.combined_coverage and web_products:
-        emitter.progress(0, "combined_coverage", 1.0, "rebuilding combined coverage")
+        emitter.finishing_stage("combined_coverage", "rebuilding combined coverage")
         try:
             build_combined_coverage(
                 combined_providers(name, args.output_dir), args.combined_output_dir.resolve(), emitter.log
