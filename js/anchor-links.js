@@ -1,8 +1,8 @@
 // anchor links keep the active filter in the URL query string so a link reopens the same view
 // ?filter=<filter type>                      opens that filter type, e.g. ?filter=county
-// ?filter=<filter type>&selection=<option>   picks one option, e.g. ?filter=utility-provider&selection=pacific-power-pacificorp
+// ?filter=<filter type>&selection=<option>   picks one option, e.g. ?filter=utility-provider&selection=pacificorp
 // both values are slugs of the labels shown in the filter panel, so new filters need no setup here
-// older links used the hash instead, #<filter type>/<option>, and are still read
+// option slugs are shortened where the label allows, e.g. deschutes for Deschutes National Forest
 
 const TYPE_PARAM = 'filter';
 const OPTION_PARAM = 'selection';
@@ -39,33 +39,68 @@ export function parseAnchor(search) {
   return { type, option: anchorSlug(params.get(OPTION_PARAM)) || null };
 }
 
-// reads a hash link from before links moved to the query string
-export function parseLegacyAnchor(hash) {
-  let text = `${hash ?? ''}`.replace(/^#/, '');
-  try {
-    text = decodeURIComponent(text);
-  } catch {
-    // a malformed escape is treated as literal text and will simply match nothing
-  }
-  const [type, option] = text.split('/').map(anchorSlug);
-  if (!type) return null;
-  return { type, option: option || null };
-}
-
 // filter type for a type slug; the type id is accepted too so hand-written links work
 export function anchorType(types, typeSlug) {
   return types.find(({ value, label }) => anchorSlug(label) === typeSlug || value === typeSlug) ?? null;
 }
 
-// maps each option value to a slug that is unique within its filter type
-// types spanning both states prefix every option with its state, e.g. or-benton and wa-benton
-// any names that still collide get their option value appended
-export function anchorOptionSlugs(options) {
-  const states = new Set(options.map(({ state }) => state).filter(Boolean));
-  const base = options.map((option) =>
-    anchorSlug(states.size > 1 && option.state ? `${option.state} ${option.label}` : option.label));
+// words that say what kind of place an option is rather than which one
+// they are left out of option slugs so links stay short, e.g. deschutes for Deschutes National Forest
+const FILLER_WORDS = new Set([
+  'national', 'forest', 'forests', 'park', 'monument', 'preserve', 'reserve',
+  'historic', 'historical', 'site', 'recreation', 'scenic', 'area',
+  'state', 'legislative', 'congressional', 'house', 'senate', 'district',
+  'indian', 'reservation', 'off',
+]);
+// joining words that mean nothing once the words beside them are gone
+const JOINING_WORDS = new Set(['and', 'of', 'the']);
+
+// a label without the U.S. some agencies lead with
+function plainLabel(label) {
+  return `${label ?? ''}`.replace(/\bU\.S\.\s*/gi, '');
+}
+
+// the short name an option goes by in a link
+function shortLabel(label) {
+  const text = plainLabel(label);
+  // a trailing name in parentheses is the one people know, e.g. Pacific Power (PacifiCorp)
+  const alias = text.match(/\(([^()]+)\)\s*$/)?.[1];
+  if (alias) return alias;
+  // apostrophes close up instead of splitting a name, e.g. ebeys-landing
+  const words = anchorSlug(text.replace(/['\u2019]/g, ''))
+    .split('-')
+    .filter((word) => !FILLER_WORDS.has(word));
+  while (JOINING_WORDS.has(words[0])) words.shift();
+  while (JOINING_WORDS.has(words.at(-1))) words.pop();
+  // a label made only of filler words keeps them
+  return words.join(' ') || text;
+}
+
+function slugCounts(slugs) {
   const counts = new Map();
-  for (const slug of base) counts.set(slug, (counts.get(slug) ?? 0) + 1);
+  for (const slug of slugs) counts.set(slug, (counts.get(slug) ?? 0) + 1);
+  return counts;
+}
+
+// maps each option value to a slug that is unique within its filter type
+// labels are shortened unless shorten is false, e.g. pacificorp, deschutes, or-10
+// types spanning both states prefix every option with its state, e.g. or-benton and wa-benton,
+// unless the short names are already unique without it, e.g. oregon and washington
+// short names that collide keep their filler words, and any still shared get their option value appended
+export function anchorOptionSlugs(options, { shorten = true } = {}) {
+  const states = new Set(options.map(({ state }) => state).filter(Boolean));
+  const slugsFor = (labelOf, prefixed = states.size > 1) => options.map((option) =>
+    anchorSlug(prefixed && option.state ? `${option.state} ${labelOf(option.label)}` : labelOf(option.label)));
+
+  let base = slugsFor((label) => label);
+  if (shorten) {
+    const bare = slugsFor(shortLabel, false);
+    const short = bare.every(Boolean) && new Set(bare).size === bare.length ? bare : slugsFor(shortLabel);
+    const shortCounts = slugCounts(short);
+    const plain = slugsFor(plainLabel);
+    base = short.map((slug, index) => (slug && shortCounts.get(slug) === 1 ? slug : plain[index]));
+  }
+  const counts = slugCounts(base);
 
   const slugs = new Map();
   options.forEach((option, index) => {

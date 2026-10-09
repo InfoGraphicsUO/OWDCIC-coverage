@@ -24,7 +24,6 @@ import {
   anchorType,
   formatAnchor,
   parseAnchor,
-  parseLegacyAnchor,
 } from './anchor-links.js';
 import {
   addNumericProperty,
@@ -189,8 +188,6 @@ const filterSourcesReady = new Promise((resolve) => {
 let cameraMetricsLoad;
 // option slugs per filter type, filled as each type's options load
 const anchorSlugsByType = new Map();
-// the filter link this page last read or wrote, so its own updates are not read back as navigation
-let currentAnchor = '';
 let anchorRequest = 0;
 // incremented whenever another selection or clear action takes ownership of results
 let cameraResultRequest = 0;
@@ -329,9 +326,6 @@ async function loadMapLayers(map) {
   // filter options can load only after their map sources exist
   resolveFilterSources();
   // a link that names a filter opens it as soon as its options can load
-  // browser history moves between links, and an older hash link can still be typed in
-  window.addEventListener('popstate', followAnchor);
-  window.addEventListener('hashchange', followAnchor);
   applyAnchor();
   // home fires before its camera animation starts
   map.on(MAP_HOME_EVENT, home);
@@ -695,7 +689,8 @@ async function loadFilterOptions(typeValue) {
       value: cameraOptionId(feature),
       label: feature.properties?.name || 'Camera',
     })).sort((a, b) => LABEL_COLLATOR.compare(a.label, b.label));
-    anchorSlugsByType.set(typeValue, anchorOptionSlugs(cameraOptions));
+    // camera names are already short and are kept whole
+    anchorSlugsByType.set(typeValue, anchorOptionSlugs(cameraOptions, { shorten: false }));
     return cameraOptions;
   }
 
@@ -704,37 +699,11 @@ async function loadFilterOptions(typeValue) {
   return options;
 }
 
-// the filter link in the address bar, as the query string this page would write for it
-function locationAnchor() {
-  const { search, hash } = window.location;
-  let anchor = parseAnchor(search);
-  if (!anchor) {
-    // an older hash link is moved into the query string before it is read
-    const legacy = parseLegacyAnchor(hash);
-    if (legacy && anchorType(FILTER_TYPES, legacy.type)) {
-      anchor = legacy;
-      const { pathname } = window.location;
-      window.history.replaceState(null, '', `${pathname}${formatAnchor(anchor.type, anchor.option, search)}`);
-    }
-  }
-  return anchor ? formatAnchor(anchor.type, anchor.option) : '';
-}
-
-function followAnchor() {
-  if (locationAnchor() !== currentAnchor) applyAnchor();
-}
-
 // open the filter named by the URL query string; unknown names leave the page as it is
 async function applyAnchor() {
   const request = ++anchorRequest;
-  const previousAnchor = currentAnchor;
-  currentAnchor = locationAnchor();
-  const anchor = parseAnchor(currentAnchor);
-  if (!anchor) {
-    // the link was removed by browser history, so drop the filter it named
-    if (previousAnchor) await filterControl.reset();
-    return;
-  }
+  const anchor = parseAnchor(window.location.search);
+  if (!anchor) return;
 
   const type = anchorType(FILTER_TYPES, anchor.type);
   if (!type) return;
@@ -777,12 +746,11 @@ async function writeAnchor(type, id) {
 }
 
 function setAnchor(typeSlug, optionSlug) {
-  currentAnchor = formatAnchor(typeSlug, optionSlug);
   const { pathname, search, hash } = window.location;
-  // other query parameters stay; a leftover hash from an older link does not
+  // other query parameters stay as they are
   const next = formatAnchor(typeSlug, optionSlug, search);
-  if (search === next && !hash) return;
-  window.history.replaceState(null, '', `${pathname}${next}`);
+  if (search === next) return;
+  window.history.replaceState(null, '', `${pathname}${next}${hash}`);
 }
 
 async function loadDivisionOptions(map, typeValue) {
