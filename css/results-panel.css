@@ -88,8 +88,15 @@
     border-top: 1px solid #444;
 }
 
-.results-panel__export {
-    width: 100%;
+.results-panel__actions {
+    display: flex;
+    gap: 8px;
+}
+
+.results-panel__export,
+.results-panel__share {
+    flex: 1 1 0;
+    min-width: 0;
     border: 1px solid var(--ohaz-yellow, #f8e109);
     padding: 10px 12px;
     color: var(--ohaz-grey, #2f2e2e);
@@ -100,16 +107,20 @@
 }
 
 .results-panel__export:hover,
-.results-panel__export:focus-visible {
+.results-panel__export:focus-visible,
+.results-panel__share:hover,
+.results-panel__share:focus-visible {
     background: #fff6a8;
 }
 
-.results-panel__export:focus-visible {
+.results-panel__export:focus-visible,
+.results-panel__share:focus-visible {
     outline: 2px solid var(--ohaz-yellow, #f8e109);
     outline-offset: 2px;
 }
 
-.results-panel__export:disabled {
+.results-panel__export:disabled,
+.results-panel__share:disabled {
     cursor: not-allowed;
     opacity: .55;
 }
@@ -118,12 +129,26 @@
     cursor: wait;
 }
 
+/* icon sits left of the label and the pair stays centered */
+.results-panel__share {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
 .results-panel__status {
     min-height: 16px;
     margin: 8px 0 0;
     padding: 0;
     color: #c8c8c8;
     font-size: 11px;
+}
+
+/* take no space until there is a message; stays rendered so the live region still announces */
+.results-panel__status:empty {
+    min-height: 0;
+    margin: 0;
 }
 
 .results-panel__empty,
@@ -392,6 +417,7 @@
 @media (prefers-reduced-motion: reduce) {
     .results-panel,
     .results-panel__export,
+    .results-panel__share,
     .results-panel__camera a {
         transition: none;
         animation: none;
