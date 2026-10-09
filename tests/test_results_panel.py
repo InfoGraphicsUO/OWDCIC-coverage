@@ -46,6 +46,7 @@ class ResultsPanelContractTests(unittest.TestCase):
     def test_export_modal_and_self_explanatory_copy(self):
         self.assertIn('Export as…', HTML)
         self.assertIn('data-results-export', HTML)
+        self.assertIn('data-results-share', HTML)
         self.assertIn('createExportModal', JS)
         self.assertIn('openModal', JS)
         self.assertIn("setAttribute('role', 'dialog')", MODAL_JS)

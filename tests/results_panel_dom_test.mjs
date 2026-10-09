@@ -190,6 +190,7 @@ const panel = el('aside', { id: 'results-panel' });
 const footer = el('div', { 'data-results-footer': '' });
 footer.append(
   el('button', { 'data-results-export': '', type: 'button' }),
+  el('button', { 'data-results-share': '', type: 'button' }),
   el('p', { 'data-results-status': '' }),
 );
 panel.append(
@@ -226,6 +227,16 @@ globalThis.Image = class {
   set src(value) { this._src = value; queueMicrotask(() => this.onload && this.onload()); }
 };
 globalThis.matchMedia = () => ({ matches: false });
+const copiedLinks = [];
+// capture the label reset so the test can run it without waiting
+const shareLabelTimers = [];
+const realSetTimeout = globalThis.setTimeout;
+globalThis.setTimeout = (fn, ms, ...args) => (ms === 2500 ? shareLabelTimers.push(fn) : realSetTimeout(fn, ms, ...args));
+Object.defineProperty(globalThis, 'navigator', {
+  configurable: true,
+  value: { clipboard: { writeText: async (text) => { copiedLinks.push(text); } } },
+});
+globalThis.location = { href: 'https://example.test/#county/or-lane' };
 globalThis.URL = URL;
 globalThis.requestAnimationFrame = (fn) => queueMicrotask(fn);
 
@@ -428,7 +439,19 @@ const escHandler = globalThis.document._docListeners.keydown.at(-1);
 escHandler({ key: 'Escape', preventDefault() {} });
 assert.equal(body.querySelector('.results-export-modal'), null, 'Escape should close modal');
 
+// without a touch share sheet the button copies the current address, hash included
+const shareButton = panel.querySelector('[data-results-share]');
+assert.equal(shareButton.textContent, 'Copy link');
+assert.equal(shareButton.disabled, false, 'a result should enable sharing');
+await shareButton._listeners.click[0]();
+assert.deepEqual(copiedLinks, ['https://example.test/#county/or-lane'], 'share should copy the anchor link');
+// the button confirms the copy in place, then takes its label back
+assert.equal(shareButton.textContent, 'Link copied!');
+shareLabelTimers.at(-1)();
+assert.equal(shareButton.textContent, 'Copy link');
+
 api.showError('Coverage statistics could not be loaded.');
+assert.equal(shareButton.disabled, true);
 // error state clears export eligibility and leaves the failure message visible
 assert.match(textOf(panel.querySelector('[data-results-content]')), /could not be loaded/);
 assert.equal(panel.querySelector('[data-results-export]').disabled, true);
