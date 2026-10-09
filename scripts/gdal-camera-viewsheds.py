@@ -56,6 +56,10 @@ WEB_PACKAGE = "mapbox/camera_viewsheds_web_epsg5070.gpkg"
 DEFAULT_COMBINED_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_combined/mapbox"
 COMBINED_PRODUCT_NAME = "combined-camera-viewshed-coverage"
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
+# published data the live map reads, and the scripts that rebuild it after a run
+DATA_DIR = PROJECT_ROOT / "data"
+SITE_DATA_BUILDER = PROJECT_ROOT / "scripts/csv-to-geojson.py"
+METRICS_BUILDER = PROJECT_ROOT / "scripts/build-selection-metrics.py"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 
 PILOT_NAMES = ("Portland Tower",)  # 'pilot' mode processes only one site
@@ -83,7 +87,10 @@ STAGE_SPANS = {
     "complete": (1.00, 1.00),
 }
 # steps that run once every camera is done, in the order they run
-FINISHING_STAGES = ("combined_exact", "web_polygons", "web_coverage", "mbtiles", "combined_coverage")
+FINISHING_STAGES = (
+    "combined_exact", "web_polygons", "web_coverage", "mbtiles", "combined_coverage",
+    "site_data", "coverage_metrics",
+)
 # share of the whole run held back for those steps, so the bar is not full while they run
 FINISHING_SHARE = 0.20
 
@@ -234,6 +241,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "provider's new coverage and the other providers' saved coverage",
     )
     parser.add_argument("--combined-output-dir", type=Path, default=DEFAULT_COMBINED_OUTPUT)
+    parser.add_argument(
+        "--publish-site-data",
+        action="store_true",
+        help="after the run, replace the provider's manifest in data/ and regenerate the "
+        "site GeoJSON and viewshed queues from it, so the map shows the new coverage",
+    )
+    parser.add_argument(
+        "--publish-metrics",
+        action="store_true",
+        help="after publishing site data, also rebuild the coverage metrics shown in the "
+        "results panel; needs --publish-site-data",
+    )
     parser.add_argument("--keep-working-dems", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--fail-fast", action="store_true")
@@ -246,6 +265,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--shapefiles-only exact needs the exact polygons")
     if args.shapefiles_only and args.combined_coverage:
         parser.error("--combined-coverage needs a full run, not --shapefiles-only")
+    if args.shapefiles_only and args.publish_site_data:
+        parser.error("--publish-site-data needs a full run, not --shapefiles-only")
+    if args.publish_metrics and not args.publish_site_data:
+        parser.error("--publish-metrics needs --publish-site-data")
     if args.simplify_tolerance < 0 or args.smooth_iterations < 0 or args.min_web_patch_cells < 0:
         parser.error("simplification, smoothing, and patch thresholds cannot be negative")
     return args
@@ -1782,6 +1805,71 @@ def write_manifest(
     return manifest
 
 
+def publish_manifest(manifest: Path, data_dir: Path) -> Path:
+    """replaces the published manifest, unless that would unpublish a viewshed"""
+
+    def complete(path: Path) -> set[str]:
+        document = read_json(path) or {}
+        return {
+            entry["viewshed_id"]
+            for entry in document.get("viewsheds", [])
+            if entry.get("status") == "complete"
+        }
+
+    published = data_dir / manifest.name
+    # a test run in a scratch folder holds only its own cameras
+    dropped = sorted(complete(published) - complete(manifest))
+    if dropped:
+        raise RuntimeError(
+            f"{manifest.parent} lacks {len(dropped)} published viewsheds "
+            f"({', '.join(dropped[:5])}{', …' if len(dropped) > 5 else ''}); "
+            "published data left unchanged"
+        )
+    shutil.copyfile(manifest, published)
+    return published
+
+
+def run_script(script: Path, arguments: list[str], log: Callable[[str], None]) -> None:
+    """runs another pipeline script under this Python, relaying its output to the log"""
+    process = subprocess.Popen(
+        [sys.executable, str(script), *arguments],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        errors="replace",
+    )
+
+    def relay() -> None:
+        for line in process.stdout:
+            if line.strip():
+                log(f"{script.name}: {line.rstrip()}")
+
+    reader = threading.Thread(target=relay, daemon=True)
+    reader.start()
+    while process.poll() is None:
+        if CANCEL.requested():
+            process.terminate()
+        time.sleep(0.2)
+    reader.join()
+    process.stdout.close()
+    if process.returncode and CANCEL.requested():
+        raise CancelledError(f"cancelled during {script.name}")
+    if process.returncode:
+        raise RuntimeError(f"{script.name} failed ({process.returncode})")
+
+
+def publish(manifest: Path, name: str, args: argparse.Namespace, emitter: ProgressEmitter) -> None:
+    """carries a finished run into the data the live map reads"""
+    emitter.finishing_stage("site_data", "publishing manifest and site data")
+    emitter.log(f"published {publish_manifest(manifest, DATA_DIR)}")
+    # the site files mark a camera as covered only once its manifest entry is published
+    run_script(SITE_DATA_BUILDER, [], emitter.log)
+    if args.publish_metrics:
+        emitter.finishing_stage("coverage_metrics", "rebuilding coverage metrics")
+        providers = combined_providers(name, args.output_dir)
+        run_script(METRICS_BUILDER, ["--viewsheds", *map(str, providers)], emitter.log)
+
+
 # ---------------------------------------------------------------------------
 
 
@@ -1851,6 +1939,8 @@ def main() -> int:
             "combined_exact": args.skip_exact_polygons,
             "mbtiles": not find_tippecanoe(),
             "combined_coverage": not args.combined_coverage,
+            "site_data": not args.publish_site_data,
+            "coverage_metrics": not args.publish_metrics,
         }
         emitter.plan_finishing(stage for stage in FINISHING_STAGES if not skipped.get(stage))
 
@@ -1905,6 +1995,18 @@ def main() -> int:
         except Exception as error:
             combined_failed = True
             emitter.log(f"combined coverage failed: {error}")
+    publish_failed = False
+    if args.publish_site_data and (failures or not web_products):
+        publish_failed = True
+        emitter.log("publishing skipped: the run must finish with web coverage and no failures")
+    elif args.publish_site_data:
+        try:
+            publish(manifest, name, args, emitter)
+        except CancelledError:
+            raise
+        except Exception as error:
+            publish_failed = True
+            emitter.log(f"publishing failed: {error}")
     emitter.progress(0, "complete", 1.0, f"manifest ready: {manifest}")
 
     complete_count = sum(item.get("status") == "complete" for item in completed)
@@ -1915,7 +2017,7 @@ def main() -> int:
         f"dataset now holds {sum(state.get('status') == 'complete' for state in states)} viewsheds"
     )
     packaging_failed = bool(web_products and web_products.get("status") == "failed")
-    return 1 if failures or packaging_failed or combined_failed else 0
+    return 1 if failures or packaging_failed or combined_failed or publish_failed else 0
 
 
 if __name__ == "__main__":
