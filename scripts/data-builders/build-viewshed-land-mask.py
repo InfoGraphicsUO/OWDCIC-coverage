@@ -12,7 +12,7 @@ from urllib.request import urlopen
 from osgeo import ogr
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
 SOURCE_LAYER = (
     "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/"
