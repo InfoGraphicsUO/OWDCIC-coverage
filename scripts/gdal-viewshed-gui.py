@@ -360,10 +360,13 @@ class ViewshedWindow(QMainWindow):
         )
 
         self.combined = QCheckBox("Also rebuild the combined coverage tileset")
-        # shapefiles-only runs make no coverage to combine
-        self.products.currentIndexChanged.connect(
-            lambda: self.combined.setEnabled(self.products.currentData() is None)
-        )
+        self.publish_sites = QCheckBox("Publish the manifest and site data to the map")
+        self.publish_sites.setChecked(True)
+        # off by default: the rebuild is the slowest step and a test run does not need it
+        self.publish_metrics = QCheckBox("Rebuild coverage metrics for the results panel")
+        # shapefiles-only runs make no coverage to combine or publish
+        self.products.currentIndexChanged.connect(self.sync_finishing_options)
+        self.publish_sites.toggled.connect(self.sync_finishing_options)
 
         self.radius = QDoubleSpinBox()
         self.radius.setRange(0.1, 100.0)
@@ -425,6 +428,10 @@ class ViewshedWindow(QMainWindow):
             "Full run creates combined coverage files and web map files. Shapefiles only creates a separate file for each camera; choose exact edges or smoother web edges."), self.products)
         form.addRow(with_help(self.combined, self.combined,
             "When the run finishes, also dissolves this provider's new coverage with the other providers' saved coverage into the combined tileset. Adds a few minutes. Full runs only."))
+        form.addRow(with_help(self.publish_sites, self.publish_sites,
+            "When the run finishes without failures, replaces this provider's manifest in the data folder and regenerates the camera site files and viewshed queues, so the map treats the new cameras as having coverage. Skipped if the output folder is missing viewsheds that are already published. Full runs only."))
+        form.addRow(with_help(self.publish_metrics, self.publish_metrics,
+            "After publishing, also recalculates land coverage for every division and camera so the results panel includes the new viewsheds. This is the slowest finishing step, so leave it off for test runs."))
         form.addRow(with_help("Maximum distance", self.radius,
             "How far from each camera to check visibility. Larger distances cover more ground and take more time and memory."), self.radius)
         form.addRow(with_help("Analysis cell size", self.cell_size,
@@ -433,7 +440,8 @@ class ViewshedWindow(QMainWindow):
             "How many cameras to process at once. More can finish sooner, but each needs roughly 1 GB of memory."), self.jobs)
 
         form.addRow(reset_button("Run settings", [
-            self.mode, self.products, self.combined, self.radius, self.cell_size, self.jobs,
+            self.mode, self.products, self.combined, self.publish_sites, self.publish_metrics,
+            self.radius, self.cell_size, self.jobs,
         ]))
 
         # these are still the runner's defaults; the advanced tab just keeps setup compact
@@ -473,6 +481,13 @@ class ViewshedWindow(QMainWindow):
         advanced_layout.addWidget(files_group)
         advanced_layout.addStretch(1)
         return group
+
+    def sync_finishing_options(self) -> None:
+        full_run = self.products.currentData() is None
+        self.combined.setEnabled(full_run)
+        self.publish_sites.setEnabled(full_run)
+        # metrics are checked against the published manifests
+        self.publish_metrics.setEnabled(full_run and self.publish_sites.isChecked())
 
     def build_progress(self) -> QGroupBox:
         group = QGroupBox("Progress")
@@ -549,6 +564,10 @@ class ViewshedWindow(QMainWindow):
             arguments.append("--skip-exact-polygons")
         if self.combined.isChecked() and not shapefiles:
             arguments.append("--combined-coverage")
+        if self.publish_sites.isChecked() and not shapefiles:
+            arguments.append("--publish-site-data")
+            if self.publish_metrics.isChecked():
+                arguments.append("--publish-metrics")
         if self.keep_dems.isChecked():
             arguments.append("--keep-working-dems")
         if self.overwrite.isChecked():
@@ -631,6 +650,8 @@ class ViewshedWindow(QMainWindow):
             self.overall.setValue(1000)
             if self.products.currentData():
                 self.status.setText("Run complete — shapefiles are in the output folder")
+            elif self.publish_sites.isChecked():
+                self.status.setText("Run complete — outputs are ready and site data is published")
             else:
                 self.status.setText("Run complete — outputs and manifest are ready")
         elif exit_code == 130:
