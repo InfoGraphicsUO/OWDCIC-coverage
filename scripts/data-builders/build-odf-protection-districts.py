@@ -18,7 +18,7 @@ from urllib.request import urlopen
 from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, mapping, shape
 from shapely.validation import make_valid
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "data" / "divisions"
 DIVISION_TYPE = "odf-protection-district"
 QUERY = (
