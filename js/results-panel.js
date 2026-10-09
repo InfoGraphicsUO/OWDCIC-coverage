@@ -232,7 +232,7 @@ export function initResultsPanel({
   async function shareLink() {
     if (!current) return;
     const selection = current;
-    // the map keeps the URL hash on the current selection, so the address is the link
+    // the map keeps the URL query string on the current selection, so the address is the link
     const url = window.location.href;
     if (useShareSheet) {
       try {

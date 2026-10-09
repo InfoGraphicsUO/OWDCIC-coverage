@@ -236,7 +236,7 @@ Object.defineProperty(globalThis, 'navigator', {
   configurable: true,
   value: { clipboard: { writeText: async (text) => { copiedLinks.push(text); } } },
 });
-globalThis.location = { href: 'https://example.test/#county/or-lane' };
+globalThis.location = { href: 'https://example.test/?filter=county&selection=or-lane' };
 globalThis.URL = URL;
 globalThis.requestAnimationFrame = (fn) => queueMicrotask(fn);
 
@@ -444,7 +444,7 @@ const shareButton = panel.querySelector('[data-results-share]');
 assert.equal(shareButton.textContent, 'Copy link');
 assert.equal(shareButton.disabled, false, 'a result should enable sharing');
 await shareButton._listeners.click[0]();
-assert.deepEqual(copiedLinks, ['https://example.test/#county/or-lane'], 'share should copy the anchor link');
+assert.deepEqual(copiedLinks, ['https://example.test/?filter=county&selection=or-lane'], 'share should copy the anchor link');
 // the button confirms the copy in place, then takes its label back
 assert.equal(shareButton.textContent, 'Link copied!');
 shareLabelTimers.at(-1)();
