@@ -9,6 +9,8 @@
 // FILTER GROUPS
 //   'Group name': 'all'                    shows every option in the group
 //   'Group name': ['Option', 'Option']     shows only the named options
+//   'Group name': 'none'                   removes the group from the filter panel
+//   a group left blank ('' or []) is removed the same way, as is one deleted from the list
 //   names are written as they appear on the site and ignore upper/lower case
 //   groups appear in the filter panel in the order they are listed
 //
@@ -119,7 +121,7 @@
 //     // ],
 //
 //   'Camera': 'all',
-//     // cameras come from the live provider feeds, so this group is all or nothing
+//     // cameras come from the live provider feeds, so this group is 'all' or 'none'
 //
 // MAP LAYERS
 //   layers appear in the legend in the order they are listed
