@@ -86,6 +86,7 @@ export const LAYER_IDS = Object.freeze({
   burnProbability: 'burn-probability',
   transmissionLinesSource: 'transmission-lines-source',
   transmissionLines: 'transmission-lines',
+  transmissionLinesHit: 'transmission-lines-hit',
   cameras: 'alertwest-cameras',
   panoCameras: 'pano-cameras',
   digitizedCamerasSource: 'digitized-camera-sources',

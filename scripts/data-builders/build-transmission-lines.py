@@ -28,7 +28,7 @@ DEFAULT_OUTPUT = PROJECT_ROOT / "data/transmission-lines.geojson"
 
 # matches REGION_DATA_BOUNDS in js/config.js
 REGION_BOUNDS = (-124.85, 41.99, -116.4, 49.01)
-# meters in the archive's EPSG:5070; keeps the web file near 2 MB
+# meters in the archive's EPSG:5070; keeps the web file under 3 MB
 SIMPLIFY_TOLERANCE = 20
 
 
@@ -50,8 +50,9 @@ def main() -> None:
         str(args.source),
         format="GeoJSON",
         dstSRS="EPSG:4326",
-        # the only attributes worth carrying to the browser
-        selectFields=["OWNER", "VOLTAGE", "VOLT_CLASS"],
+        # the only attributes worth carrying to the browser: VOLT_CLASS sets the
+        # line width and the rest fill the line's popup
+        selectFields=["OWNER", "VOLTAGE", "VOLT_CLASS", "TYPE", "STATUS", "SUB_1", "SUB_2"],
         simplifyTolerance=SIMPLIFY_TOLERANCE,
         options=["-clipdst", *map(str, REGION_BOUNDS)],
         layerName="transmission-lines",
