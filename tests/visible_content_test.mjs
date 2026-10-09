@@ -32,6 +32,26 @@ assert.equal(types[1].options, null);
 assert.equal(warnings.length, 1);
 assert.match(warnings[0], /Nope/);
 
+// 'none' and blank values remove the group without a warning
+const blankWarnings = [];
+const kept = visibleFilterTypes(
+  {
+    State: 'none',
+    County: [],
+    'State House': '',
+    'US House': null,
+    'State Senate': undefined,
+    'Utility provider': ['', '  '],
+    'National Forest': ' None ',
+    'Federal land': ['U.S. Forest Service'],
+    Camera: 'all',
+  },
+  FILTER_TYPES,
+  (text) => blankWarnings.push(text)
+);
+assert.deepEqual(kept.map(({ value }) => value), ['federal-land', 'camera']);
+assert.deepEqual(blankWarnings, []);
+
 // options match by label, name, or divisionId; unlisted ones are hidden
 const [federal, state] = types;
 assert.ok(filterOptionIsVisible(state, { label: 'Oregon' }));
