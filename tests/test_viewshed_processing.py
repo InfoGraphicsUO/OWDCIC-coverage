@@ -414,6 +414,43 @@ class CombinedCoverageTests(unittest.TestCase):
         self.assertEqual(len(providers), len(viewsheds.PROVIDER_OUTPUTS) + 1)
 
 
+class ProgressTests(unittest.TestCase):
+    def emitter(self, count=2):
+        sites = [SimpleNamespace(name=f"camera {index}") for index in range(count)]
+        return viewsheds.ProgressEmitter(False, sites)
+
+    def test_cameras_fill_the_bar_without_finishing_steps(self):
+        emitter = self.emitter()
+        emitter.progress(1, "complete", 1.0, None)
+        emitter.progress(2, "complete", 1.0, None)
+        self.assertEqual(emitter.percent(), 100.0)
+
+    def test_finishing_steps_hold_back_the_end_of_the_bar(self):
+        emitter = self.emitter()
+        emitter.plan_finishing(["web_polygons", "web_coverage"])
+        emitter.progress(1, "complete", 1.0, None)
+        self.assertAlmostEqual(emitter.percent(), 40.0)
+        emitter.progress(2, "complete", 1.0, None)
+        self.assertAlmostEqual(emitter.percent(), 80.0)
+        emitter.finishing_stage("web_polygons", "")
+        self.assertAlmostEqual(emitter.percent(), 80.0)
+        emitter.finishing_stage("web_coverage", "")
+        self.assertAlmostEqual(emitter.percent(), 90.0)
+
+    def test_finishing_steps_advance_past_failed_cameras(self):
+        emitter = self.emitter()
+        emitter.plan_finishing(["web_polygons"])
+        emitter.progress(1, "dem", 0.2, None)
+        emitter.finishing_stage("web_polygons", "")
+        self.assertAlmostEqual(emitter.percent(), 80.0)
+
+    def test_unplanned_finishing_step_leaves_the_bar_alone(self):
+        emitter = self.emitter()
+        emitter.progress(1, "complete", 1.0, None)
+        emitter.finishing_stage("mbtiles", "")
+        self.assertAlmostEqual(emitter.percent(), 50.0)
+
+
 class ProductNameTests(unittest.TestCase):
     def test_queue_file_keeps_its_provider(self):
         args = SimpleNamespace(product_name=None, sites=Path("data/alertwest-sites-needing-viewsheds.geojson"))
