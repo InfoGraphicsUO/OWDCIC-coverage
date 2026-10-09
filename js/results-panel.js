@@ -61,6 +61,19 @@ export function initResultsPanel({
   const subtitle = element.querySelector('[data-results-subtitle]');
   const content = element.querySelector('[data-results-content]');
   const exportButton = element.querySelector('[data-results-export]');
+  const shareButton = element.querySelector('[data-results-share]');
+  // touch devices get the OS share sheet; everything else copies the link
+  const useShareSheet = typeof navigator.share === 'function' && window.matchMedia('(pointer: coarse)').matches;
+  const shareIcon = document.createElement('i');
+  shareIcon.className = useShareSheet ? 'fa-solid fa-arrow-up-from-bracket' : 'fa-regular fa-copy';
+  shareIcon.setAttribute('aria-hidden', 'true');
+  const shareLabel = document.createElement('span');
+  const shareText = useShareSheet ? 'Share' : 'Copy link';
+  shareLabel.textContent = shareText;
+  // the label itself confirms a copy, so screen readers need to hear it change
+  shareLabel.setAttribute('aria-live', 'polite');
+  let shareLabelTimer = null;
+  shareButton.replaceChildren(shareIcon, shareLabel);
   const status = element.querySelector('[data-results-status]');
   const infoTooltip = attachInfoTooltip(content);
   let chart = null;
@@ -81,6 +94,7 @@ export function initResultsPanel({
     replaceContent(emptyState());
     status.textContent = '';
     exportButton.disabled = true;
+    shareButton.disabled = true;
     element.classList.remove('results-panel--has-result', 'results-panel--loading');
     element.hidden = true;
     element.setAttribute('aria-hidden', 'true');
@@ -101,6 +115,7 @@ export function initResultsPanel({
     replaceContent(messageState('Loading coverage statistics…', 'results-panel__loading'));
     status.textContent = '';
     exportButton.disabled = true;
+    shareButton.disabled = true;
   }
 
   function showError(message) {
@@ -118,6 +133,7 @@ export function initResultsPanel({
     replaceContent(messageState(message || 'Coverage statistics could not be loaded.', 'results-panel__error'));
     status.textContent = message || 'Coverage statistics could not be loaded.';
     exportButton.disabled = true;
+    shareButton.disabled = true;
   }
 
   function showPolygon(type, feature) {
@@ -211,7 +227,33 @@ export function initResultsPanel({
     }
   }
 
+  async function shareLink() {
+    if (!current) return;
+    const selection = current;
+    // the map keeps the URL hash on the current selection, so the address is the link
+    const url = window.location.href;
+    if (useShareSheet) {
+      try {
+        await navigator.share({ title: title.textContent, url });
+        return;
+      } catch (error) {
+        // dismissing the share sheet is not a failure; anything else falls back to copying
+        if (error?.name === 'AbortError') return;
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      // confirm in place, then hand the button its label back
+      shareLabel.textContent = 'Link copied!';
+      window.clearTimeout(shareLabelTimer);
+      shareLabelTimer = window.setTimeout(() => { shareLabel.textContent = shareText; }, 2500);
+    } catch (error) {
+      if (current === selection) status.textContent = 'Link could not be copied. Copy it from the address bar instead.';
+    }
+  }
+
   exportButton.addEventListener('click', openExportModal);
+  shareButton.addEventListener('click', shareLink);
   // the caller owns clearing so the filter panel and map reset together
   element.querySelector('[data-results-close]').addEventListener('click', () => onClose());
   clear();
@@ -249,6 +291,7 @@ export function initResultsPanel({
       : Promise.resolve();
     status.textContent = '';
     exportButton.disabled = false;
+    shareButton.disabled = false;
   }
 
   function destroyChart() {
