@@ -4,6 +4,7 @@
  * callbacks: onTypeSelected(type), onSelection(type, id), onClear()
  * onTypeSelected gets null while options load, then the selected type
  * select(type, id) is the programmatic path used by map feature clicks
+ * selectType(type) opens a type without picking an option, used by anchor links
  * option data stays cached after a successful load for the life of this panel
  */
 export function initFilterPanel({
@@ -319,8 +320,22 @@ export function initFilterPanel({
     await onTypeSelected(activeType.value);
   };
 
+  const selectType = async (typeValue) => {
+    shellApi?.openTab('filter', { expand: false });
+    const type = types.find((entry) => entry.value === typeValue);
+    if (!type) return false;
+    // reopening the active type would keep its picked option, so drop that instead
+    if (activeType?.value === typeValue && options.length) {
+      await clearSelection();
+      return true;
+    }
+    await chooseType(type, { focusSearch: false });
+    return activeType?.value === typeValue;
+  };
+
   return {
     select,
+    selectType,
     reset,
     clearSelection,
     currentType: () => activeType?.value ?? null,
