@@ -32,6 +32,7 @@ globalThis.document = {
 // unknown filter types have no preset; known ones only name real legend rows
 assert.equal(layerPresetForFilter('county'), null);
 assert.equal(layerPresetForFilter('toString'), null);
+assert.deepEqual(layerPresetForFilter('utility').layersOn, [LEGEND_LAYERS.transmissionLines]);
 const labels = new Set(Object.values(LEGEND_LAYERS));
 for (const preset of Object.values(FILTER_LAYER_PRESETS)) {
   for (const label of [...(preset.layersOn ?? []), ...(preset.layersOff ?? [])]) {

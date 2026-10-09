@@ -566,6 +566,7 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'National forests': { type: 'swatch', style: 'outline', color: '#3b7d4f' },
   'BLM lands': { type: 'swatch', style: 'fill', color: '#f6d94a' },
   'OR Burn probability (QWRA)': { type: 'swatch', style: 'burn-probability' },
+  'Transmission lines': { type: 'swatch', style: 'line', color: '#c2188f' },
   'Fires (NIFC)': { type: 'icon', src: 'img/fire-marker.svg' },
   'Prescribed fires (Watch Duty)': { type: 'icon', src: 'img/prescribed-marker.svg' },
 });
@@ -926,6 +927,16 @@ function drawExportLegendSwatch(ctx, { style, color }, x, y) {
   if (style === 'fill') {
     ctx.fillStyle = color || '#777';
     ctx.fillRect(x, y, size, size);
+    return;
+  }
+  if (style === 'line') {
+    // linear features read as a stroke across the middle of the swatch slot
+    ctx.strokeStyle = color || '#777';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, y + size / 2);
+    ctx.lineTo(x + size, y + size / 2);
+    ctx.stroke();
     return;
   }
   if (style === 'border') {
@@ -1326,6 +1337,9 @@ function parseLegendVisualFromDom(visualRoot) {
     const color = readCssColor(swatch, '--legend-swatch-color');
     if (swatch.classList.contains('legend-swatch--burn-probability')) {
       return { type: 'swatch', style: 'burn-probability' };
+    }
+    if (swatch.classList.contains('legend-swatch--line')) {
+      return { type: 'swatch', style: 'line', color };
     }
     if (swatch.classList.contains('legend-swatch--circle')) {
       return { type: 'swatch', style: 'circle', color };

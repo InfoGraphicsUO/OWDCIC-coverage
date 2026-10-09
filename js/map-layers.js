@@ -94,6 +94,7 @@ const LOOKOUT_COLOR = '#8154BD';
 const NATIONAL_FOREST_COLOR = '#3b7d4f';
 const BLM_LAND_COLOR = '#f6d94a';
 const BURN_PROBABILITY_COLOR = '#d7191c';
+const TRANSMISSION_LINE_COLOR = '#c2188f';
 const DIGITIZED_CAMERA_COLORS = Object.freeze({
   enviroVision: '#6eaa00',
   alertWest: '#a80000',
@@ -193,6 +194,7 @@ let anchorRequest = 0;
 // incremented whenever another selection or clear action takes ownership of results
 let cameraResultRequest = 0;
 let digitizedCameraLoad;
+let transmissionLinesLoad;
 let digitizedCameraLayersLoad;
 
 const DIGITIZED_CAMERA_OPERATORS = Object.freeze([
@@ -348,6 +350,9 @@ async function loadMapLayers(map) {
     for (const layerId of layerIds) setLayerVisible(map, layerId, false);
   }
   bindDigitizedCameraUnlock(map);
+  // a filter preset may have switched the row on before the map connected
+  legendControl.onChange(() => loadTransmissionLines(map));
+  loadTransmissionLines(map);
 
   // slow providers hydrate in the background after the map becomes usable
   hideMapLoading();
@@ -504,6 +509,36 @@ function addContextLayers(map) {
       'line-width': 1.25,
     },
   }, beforeId);
+
+  addGeoJSONSource(map, LAYER_IDS.transmissionLinesSource);
+  map.addLayer({
+    id: LAYER_IDS.transmissionLines,
+    type: 'line',
+    source: LAYER_IDS.transmissionLinesSource,
+    layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
+    paint: {
+      'line-color': TRANSMISSION_LINE_COLOR,
+      // widths in px by zoom level
+      'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.6, 9, 1.4, 13, 2.5],
+    },
+  }, beforeId);
+}
+
+// the lines are a couple of megabytes, so they load the first time the row is switched on
+function loadTransmissionLines(map) {
+  if (!legendControl.isChecked(LEGEND_LAYERS.transmissionLines)) return;
+  if (transmissionLinesLoad) return;
+
+  legendControl.setLoading(LEGEND_LAYERS.transmissionLines, true);
+  transmissionLinesLoad = hydrateLegendLayer(
+    LEGEND_LAYERS.transmissionLines,
+    safelyLoadLegend('transmission lines', LEGEND_LAYERS.transmissionLines, () =>
+      fetchJson(DATA_URLS.transmissionLines, 'Transmission lines')
+    ),
+    (transmissionLines) => {
+      setSourceData(map, LAYER_IDS.transmissionLinesSource, transmissionLines);
+    }
+  );
 }
 
 // QWRA tiles encode pre-classed colors rather than raw probability values
@@ -2032,6 +2067,14 @@ function legendItems() {
       visible: false,
       infoText: `Annual burn probability from the 2023 Pacific Northwest QWRA. Values below ${BURN_PROBABILITY_MIN} are hidden.`,
       layerIds: [LAYER_IDS.burnProbability],
+    },
+    {
+      label: LEGEND_LAYERS.transmissionLines,
+      swatchColor: TRANSMISSION_LINE_COLOR,
+      swatchClass: 'legend-swatch--line',
+      visible: false,
+      infoText: 'Electric power transmission lines from a 2024 archive of the U.S. Electric Power Transmission Lines dataset',
+      layerIds: [LAYER_IDS.transmissionLines],
     },
     {
       label: LEGEND_LAYERS.fires,
