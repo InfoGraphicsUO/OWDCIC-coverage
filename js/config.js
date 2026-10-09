@@ -165,6 +165,13 @@ function normalizeName(name) {
   return `${name}`.trim().toLowerCase();
 }
 
+// a group is blank when it is set to 'none', left empty, or lists no options
+function filterGroupIsBlank(options) {
+  if (options == null) return true;
+  if (Array.isArray(options)) return !options.some((option) => `${option ?? ''}`.trim());
+  return typeof options === 'string' && ['', 'none'].includes(normalizeName(options));
+}
+
 // resolves the editable filter list against every type the code can build
 // returns the listed types in list order as { value, label, options }
 // options is null when every option shows, otherwise a Set of normalized names
@@ -177,8 +184,10 @@ export function visibleFilterTypes(visibleFilters, types = FILTER_TYPES, warn = 
       warn(`Unknown filter group in VISIBLE_FILTERS: ${name}`);
       continue;
     }
+    // 'none' or a blank value removes the whole group rather than leaving it empty
+    if (filterGroupIsBlank(options)) continue;
     if (options !== 'all' && !Array.isArray(options)) {
-      warn(`VISIBLE_FILTERS['${name}'] must be 'all' or a list of options; showing all`);
+      warn(`VISIBLE_FILTERS['${name}'] must be 'all', 'none', or a list of options; showing all`);
     }
     visible.push({
       value: type[0],
