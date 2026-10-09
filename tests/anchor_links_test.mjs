@@ -1,4 +1,4 @@
-// anchor links turn filter labels into URL hashes and read them back
+// anchor links turn filter labels into URL query strings and read them back
 import { strict as assert } from 'node:assert';
 import { FILTER_TYPES, visibleFilterTypes } from '../js/config.js';
 import { VISIBLE_FILTERS } from '../js/visible-content.js';
@@ -9,6 +9,7 @@ import {
   anchorType,
   formatAnchor,
   parseAnchor,
+  parseLegacyAnchor,
 } from '../js/anchor-links.js';
 
 // slugs keep letters and digits and fold everything else into single hyphens
@@ -17,19 +18,35 @@ assert.equal(anchorSlug('  U.S. Forest Service '), 'u-s-forest-service');
 assert.equal(anchorSlug('Peña Blanca'), 'pena-blanca');
 assert.equal(anchorSlug(null), '');
 
-// a hash is the type slug, then an optional option slug
-assert.equal(formatAnchor('county'), '#county');
-assert.equal(formatAnchor('county', 'or-lane'), '#county/or-lane');
+// a link is the type slug, then an optional option slug
+assert.equal(formatAnchor('county'), '?filter=county');
+assert.equal(formatAnchor('county', 'or-lane'), '?filter=county&selection=or-lane');
 assert.equal(formatAnchor('', 'or-lane'), '');
-assert.deepEqual(parseAnchor('#county'), { type: 'county', option: null });
-assert.deepEqual(parseAnchor('#county/or-lane'), { type: 'county', option: 'or-lane' });
-assert.deepEqual(parseAnchor('#County/OR%20Lane/extra'), { type: 'county', option: 'or-lane' });
-assert.deepEqual(parseAnchor('#county/'), { type: 'county', option: null });
+assert.deepEqual(parseAnchor('?filter=county'), { type: 'county', option: null });
+assert.deepEqual(parseAnchor('?filter=county&selection=or-lane'), { type: 'county', option: 'or-lane' });
+assert.deepEqual(parseAnchor('?filter=County&selection=OR%20Lane'), { type: 'county', option: 'or-lane' });
+assert.deepEqual(parseAnchor('?filter=county&selection='), { type: 'county', option: null });
 assert.equal(parseAnchor(''), null);
-assert.equal(parseAnchor('#'), null);
-assert.equal(parseAnchor('#/or-lane'), null);
+assert.equal(parseAnchor('?'), null);
+assert.equal(parseAnchor('?selection=or-lane'), null);
 // a broken escape matches nothing instead of throwing
-assert.doesNotThrow(() => parseAnchor('#%E0%A4%A'));
+assert.doesNotThrow(() => parseAnchor('?filter=%E0%A4%A'));
+
+// other query parameters survive a link being written, replaced, or cleared
+assert.equal(formatAnchor('county', 'or-lane', '?basemap=topo'), '?basemap=topo&filter=county&selection=or-lane');
+assert.equal(formatAnchor('utility-provider', null, '?filter=county&selection=or-lane&basemap=topo'), '?basemap=topo&filter=utility-provider');
+assert.equal(formatAnchor('', null, '?filter=county&basemap=topo'), '?basemap=topo');
+assert.equal(formatAnchor('', null, '?filter=county&selection=or-lane'), '');
+
+// hash links from before the query string are still read
+assert.deepEqual(parseLegacyAnchor('#county'), { type: 'county', option: null });
+assert.deepEqual(parseLegacyAnchor('#county/or-lane'), { type: 'county', option: 'or-lane' });
+assert.deepEqual(parseLegacyAnchor('#County/OR%20Lane/extra'), { type: 'county', option: 'or-lane' });
+assert.deepEqual(parseLegacyAnchor('#county/'), { type: 'county', option: null });
+assert.equal(parseLegacyAnchor(''), null);
+assert.equal(parseLegacyAnchor('#'), null);
+assert.equal(parseLegacyAnchor('#/or-lane'), null);
+assert.doesNotThrow(() => parseLegacyAnchor('#%E0%A4%A'));
 
 // every shipped filter group has its own slug and can be found by slug or type id
 const types = visibleFilterTypes(VISIBLE_FILTERS, FILTER_TYPES, () => {});

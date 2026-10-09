@@ -1,7 +1,11 @@
-// anchor links keep the active filter in the URL hash so a link reopens the same view
-// #<filter type>            opens that filter type, e.g. #county
-// #<filter type>/<option>   picks one option, e.g. #utility-provider/pacific-power-pacificorp
-// both parts are slugs of the labels shown in the filter panel, so new filters need no setup here
+// anchor links keep the active filter in the URL query string so a link reopens the same view
+// ?filter=<filter type>                      opens that filter type, e.g. ?filter=county
+// ?filter=<filter type>&selection=<option>   picks one option, e.g. ?filter=utility-provider&selection=pacific-power-pacificorp
+// both values are slugs of the labels shown in the filter panel, so new filters need no setup here
+// older links used the hash instead, #<filter type>/<option>, and are still read
+
+const TYPE_PARAM = 'filter';
+const OPTION_PARAM = 'selection';
 
 // lowercase words joined by hyphens, with accents folded to plain letters
 export function anchorSlug(value) {
@@ -13,14 +17,30 @@ export function anchorSlug(value) {
     .replace(/^-|-$/g, '');
 }
 
-// returns '' when there is no type, so callers can clear the hash with the same value
-export function formatAnchor(typeSlug, optionSlug) {
-  if (!typeSlug) return '';
-  return optionSlug ? `#${typeSlug}/${optionSlug}` : `#${typeSlug}`;
+// query string for a filter link, keeping any other parameters already in search
+// returns '' when nothing is left, so callers can clear the link with the same value
+export function formatAnchor(typeSlug, optionSlug, search = '') {
+  const params = new URLSearchParams(search);
+  params.delete(TYPE_PARAM);
+  params.delete(OPTION_PARAM);
+  if (typeSlug) {
+    params.set(TYPE_PARAM, typeSlug);
+    if (optionSlug) params.set(OPTION_PARAM, optionSlug);
+  }
+  const text = params.toString();
+  return text ? `?${text}` : '';
 }
 
-// reads a location hash into { type, option } slugs; option is null for type-only links
-export function parseAnchor(hash) {
+// reads a location search into { type, option } slugs; option is null for type-only links
+export function parseAnchor(search) {
+  const params = new URLSearchParams(`${search ?? ''}`);
+  const type = anchorSlug(params.get(TYPE_PARAM));
+  if (!type) return null;
+  return { type, option: anchorSlug(params.get(OPTION_PARAM)) || null };
+}
+
+// reads a hash link from before links moved to the query string
+export function parseLegacyAnchor(hash) {
   let text = `${hash ?? ''}`.replace(/^#/, '');
   try {
     text = decodeURIComponent(text);
