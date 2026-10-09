@@ -19,6 +19,7 @@ export const DATA_URLS = Object.freeze({
   digitizedCameraSources: 'data/digitized-camera-sources.geojson',
   standingLookouts: 'data/standing-lookouts.geojson',
   countyDivisions: 'data/divisions/county.geojson',
+  transmissionLines: 'data/transmission-lines.geojson',
   censusStateBoundaries:
     'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/10',
   worldCountries:
@@ -83,6 +84,8 @@ export const LAYER_IDS = Object.freeze({
   blmLands: 'blm-lands',
   burnProbabilitySource: 'burn-probability-source',
   burnProbability: 'burn-probability',
+  transmissionLinesSource: 'transmission-lines-source',
+  transmissionLines: 'transmission-lines',
   cameras: 'alertwest-cameras',
   panoCameras: 'pano-cameras',
   digitizedCamerasSource: 'digitized-camera-sources',
@@ -119,6 +122,7 @@ export const LEGEND_LAYERS = Object.freeze({
   nationalForests: 'National forests',
   blmLands: 'BLM lands',
   burnProbability: 'OR Burn probability (QWRA)',
+  transmissionLines: 'Transmission lines',
   fires: 'Fires (NIFC)',
   prescribed: 'Prescribed fires (Watch Duty)',
 });
@@ -146,6 +150,7 @@ export const FILTER_TYPES = Object.freeze([
 // layersOn / layersOff: LEGEND_LAYERS values; omit or leave empty to leave layers alone
 // filter types without an entry keep the current layers and basemap
 export const FILTER_LAYER_PRESETS = Object.freeze({
+  utility: Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.transmissionLines]) }),
   'national-forest': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.nationalForests]) }),
   'federal-land': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.blmLands]) }),
 });

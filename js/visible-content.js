@@ -132,6 +132,7 @@
 //   'National forests',
 //   'BLM lands',
 //   'OR Burn probability (QWRA)',
+//   'Transmission lines',
 //   'Fires (NIFC)',
 //   'Prescribed fires (Watch Duty)',
 //
@@ -161,6 +162,7 @@ export const VISIBLE_LAYERS = [
   'National forests',
   'BLM lands',
   'OR Burn probability (QWRA)',
+  'Transmission lines',
   'Fires (NIFC)',
   'Prescribed fires (Watch Duty)',
 ];
