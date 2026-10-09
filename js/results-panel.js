@@ -9,6 +9,8 @@ const LAND_MIX_INFO = 'Tribal areas follow reservation and trust boundaries. Oth
 // square-kilometer to square-mile conversion for displayed area values
 const SQMI_PER_SQKM = 0.3861021585;
 const UTILITY_QUALIFIER = 'Approximate service area boundary';
+// the utility filter switches this layer on, so its panel keys the line color too
+const TRANSMISSION_LINES_QUALIFIER = 'Transmission lines';
 // names what the yellow selection outline traces for each filter group
 const BOUNDARY_QUALIFIERS = Object.freeze({
   state: 'State boundary',
@@ -367,6 +369,12 @@ function renderPolygon(type, properties) {
     ? 'This source boundary may include planning areas without federal fee ownership.'
     : BOUNDARY_QUALIFIERS[type];
   if (qualifier) wrapper.append(selfLine(qualifier, 'results-panel__qualifier'));
+  if (type === 'utility') {
+    wrapper.append(selfLine(
+      TRANSMISSION_LINES_QUALIFIER,
+      'results-panel__qualifier results-panel__qualifier--transmission-lines',
+    ));
+  }
   wrapper.append(selfLine(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire-spotting cameras`, 'results-panel__lead'));
   // area totals need valid source values; missing coverage must stay unavailable, not zero
   if (coverage != null && covered != null && total != null) {
@@ -566,6 +574,7 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'National forests': { type: 'swatch', style: 'outline', color: '#3b7d4f' },
   'BLM lands': { type: 'swatch', style: 'fill', color: '#f6d94a' },
   'OR Burn probability (QWRA)': { type: 'swatch', style: 'burn-probability' },
+  'Transmission lines': { type: 'swatch', style: 'line', color: '#c2188f' },
   'Fires (NIFC)': { type: 'icon', src: 'img/fire-marker.svg' },
   'Prescribed fires (Watch Duty)': { type: 'icon', src: 'img/prescribed-marker.svg' },
 });
@@ -926,6 +935,16 @@ function drawExportLegendSwatch(ctx, { style, color }, x, y) {
   if (style === 'fill') {
     ctx.fillStyle = color || '#777';
     ctx.fillRect(x, y, size, size);
+    return;
+  }
+  if (style === 'line') {
+    // linear features read as a stroke across the middle of the swatch slot
+    ctx.strokeStyle = color || '#777';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, y + size / 2);
+    ctx.lineTo(x + size, y + size / 2);
+    ctx.stroke();
     return;
   }
   if (style === 'border') {
@@ -1326,6 +1345,9 @@ function parseLegendVisualFromDom(visualRoot) {
     const color = readCssColor(swatch, '--legend-swatch-color');
     if (swatch.classList.contains('legend-swatch--burn-probability')) {
       return { type: 'swatch', style: 'burn-probability' };
+    }
+    if (swatch.classList.contains('legend-swatch--line')) {
+      return { type: 'swatch', style: 'line', color };
     }
     if (swatch.classList.contains('legend-swatch--circle')) {
       return { type: 'swatch', style: 'circle', color };
