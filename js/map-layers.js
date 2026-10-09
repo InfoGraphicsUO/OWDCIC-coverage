@@ -95,6 +95,22 @@ const NATIONAL_FOREST_COLOR = '#3b7d4f';
 const BLM_LAND_COLOR = '#f6d94a';
 const BURN_PROBABILITY_COLOR = '#d7191c';
 const TRANSMISSION_LINE_COLOR = '#c2188f';
+// relative line widths by the source's VOLT_CLASS; DC and NOT AVAILABLE borrow another class's width
+const TRANSMISSION_LINE_WIDTHS = Object.freeze({
+  'UNDER 100': 1,
+  '100-161': 1.75,
+  '220-287': 2.75,
+  '345': 4,
+  '500': 5.5,
+  'DC': 2.75,
+  'NOT AVAILABLE': 1,
+});
+const TRANSMISSION_LINE_WIDTH = [
+  'match',
+  ['get', 'VOLT_CLASS'],
+  ...Object.entries(TRANSMISSION_LINE_WIDTHS).flat(),
+  TRANSMISSION_LINE_WIDTHS['UNDER 100'],
+];
 const DIGITIZED_CAMERA_COLORS = Object.freeze({
   enviroVision: '#6eaa00',
   alertWest: '#a80000',
@@ -522,8 +538,13 @@ function addContextLayers(map) {
     layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
     paint: {
       'line-color': TRANSMISSION_LINE_COLOR,
-      // widths in px by zoom level
-      'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.6, 9, 1.4, 13, 2.5],
+      // px per unit of class width, by zoom level
+      'line-width': [
+        'interpolate', ['linear'], ['zoom'],
+        5, ['*', 0.4, TRANSMISSION_LINE_WIDTH],
+        9, ['*', 0.7, TRANSMISSION_LINE_WIDTH],
+        13, ['*', 1.2, TRANSMISSION_LINE_WIDTH],
+      ],
     },
   }, beforeId);
 }
@@ -2090,7 +2111,7 @@ function legendItems() {
       swatchColor: TRANSMISSION_LINE_COLOR,
       swatchClass: 'legend-swatch--line',
       visible: false,
-      infoText: 'Electric power transmission lines from a 2024 archive of the U.S. Electric Power Transmission Lines dataset',
+      infoText: 'Electric power transmission lines from a 2024 archive of the U.S. Electric Power Transmission Lines dataset. Thicker lines carry higher voltage.',
       layerIds: [LAYER_IDS.transmissionLines],
     },
     {

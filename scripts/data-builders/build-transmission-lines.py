@@ -51,7 +51,7 @@ def main() -> None:
         format="GeoJSON",
         dstSRS="EPSG:4326",
         # the only attributes worth carrying to the browser
-        selectFields=["OWNER", "VOLTAGE"],
+        selectFields=["OWNER", "VOLTAGE", "VOLT_CLASS"],
         simplifyTolerance=SIMPLIFY_TOLERANCE,
         options=["-clipdst", *map(str, REGION_BOUNDS)],
         layerName="transmission-lines",
