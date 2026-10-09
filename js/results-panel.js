@@ -9,6 +9,8 @@ const LAND_MIX_INFO = 'Tribal areas follow reservation and trust boundaries. Oth
 // square-kilometer to square-mile conversion for displayed area values
 const SQMI_PER_SQKM = 0.3861021585;
 const UTILITY_QUALIFIER = 'Approximate service area boundary';
+// the utility filter switches this layer on, so its panel keys the line color too
+const TRANSMISSION_LINES_QUALIFIER = 'Transmission lines';
 // names what the yellow selection outline traces for each filter group
 const BOUNDARY_QUALIFIERS = Object.freeze({
   state: 'State boundary',
@@ -367,6 +369,12 @@ function renderPolygon(type, properties) {
     ? 'This source boundary may include planning areas without federal fee ownership.'
     : BOUNDARY_QUALIFIERS[type];
   if (qualifier) wrapper.append(selfLine(qualifier, 'results-panel__qualifier'));
+  if (type === 'utility') {
+    wrapper.append(selfLine(
+      TRANSMISSION_LINES_QUALIFIER,
+      'results-panel__qualifier results-panel__qualifier--transmission-lines',
+    ));
+  }
   wrapper.append(selfLine(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire-spotting cameras`, 'results-panel__lead'));
   // area totals need valid source values; missing coverage must stay unavailable, not zero
   if (coverage != null && covered != null && total != null) {
