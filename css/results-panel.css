@@ -150,6 +150,16 @@
     line-height: 1.4;
 }
 
+/* stacked keys read as one group above the coverage figures */
+.results-panel__qualifier + .results-panel__qualifier {
+    margin-top: -8px;
+}
+
+/* matches TRANSMISSION_LINE_COLOR in js/map-layers.js */
+.results-panel__qualifier--transmission-lines {
+    border-left-color: #c2188f;
+}
+
 .results-panel__line {
     margin: 0 0 14px;
     font-size: 14px;

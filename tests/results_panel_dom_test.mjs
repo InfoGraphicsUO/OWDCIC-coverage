@@ -347,6 +347,7 @@ for (const kind of ['national-forest', 'national-park', 'federal-land', 'tribal-
 
 content = show('showPolygon', 'utility', { properties: { name: 'Eugene Water & Electric Board', cameraViewshedCoveragePct: null, landMix: [] } });
 assert.match(textOf(content), /Approximate service area boundary/);
+assert.match(textOf(content), /Transmission lines/);
 assert.match(textOf(content), /Coverage unavailable/);
 assert.equal(content.querySelector('[data-results-chart]'), null, 'utility without landMix has no donut');
 
