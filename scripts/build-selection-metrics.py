@@ -30,8 +30,8 @@ VIEWSHEDS = (
     ROOT / 'outputs/gdal_viewsheds_alertwest/mapbox/camera_viewsheds_web_epsg5070.gpkg',
     ROOT / 'outputs/gdal_viewsheds_pano/mapbox/camera_viewsheds_web_epsg5070.gpkg',
 )
-# guards against a missing provider: 83 ALERTWest + 24 Pano AI viewsheds
-EXPECTED_INDIVIDUAL_VIEWSHEDS = 107
+# published manifests name every viewshed the map shows; metrics must cover the same set
+MANIFESTS = ROOT / 'data'
 MASK = ROOT / 'data/pacific-northwest-land-mask.geojson'
 HYDRO_CACHE = ROOT / 'outputs/source-cache/census-areal-hydro-2025.geojsonl'
 PADUS_FEE_CACHE = ROOT / 'outputs/source-cache/padus-4.1-or-wa-fee-5070.geojsonl'
@@ -207,6 +207,26 @@ def load_hydro(path: Path):
     return union_all(water)
 
 
+def published_viewshed_ids(directory: Path):
+    ids = set()
+    for path in sorted(directory.glob('*-viewshed-manifest.json')):
+        for entry in json.loads(path.read_text())['viewsheds']:
+            if entry.get('web_geojson'):
+                ids.add(entry['viewshed_id'])
+    return ids
+
+
+def check_published_viewsheds(individual, published):
+    """guards against a missing provider or a manifest that was never published"""
+    missing = sorted(published - set(individual))
+    unpublished = sorted(set(individual) - published)
+    if missing or unpublished:
+        raise RuntimeError(
+            'viewsheds do not match the published manifests'
+            + (f'; missing from --viewsheds: {missing}' if missing else '')
+            + (f'; not in a data/ manifest: {unpublished}' if unpublished else ''))
+
+
 def load_all_viewsheds(paths):
     """merges providers into one dissolved coverage and one id -> viewshed lookup"""
     coverages = []
@@ -376,6 +396,8 @@ def coverage_metrics(selection, dissolved_coverage):
 def run(args):
     coverage, individual = load_all_viewsheds(args.viewsheds)
     print('loaded viewsheds:', len(individual), flush=True)
+    # checked before anything is written, so a mismatch leaves the data untouched
+    check_published_viewsheds(individual, published_viewshed_ids(MANIFESTS))
     mask = json.loads(args.mask.read_text())['features'][0]['geometry']
     coastal_land = project(mask)
     state_features = json.loads((DIVISIONS / 'state.geojson').read_text())['features']
@@ -528,9 +550,6 @@ def run(args):
             'missing coverage is never stored as 0%.')
     CAMERA_OUT.write_text(json.dumps(camera_data, ensure_ascii=False,
                                      allow_nan=False, separators=(',', ':')) + '\n')
-    if len(individual) != EXPECTED_INDIVIDUAL_VIEWSHEDS:
-        raise RuntimeError(
-            f'expected {EXPECTED_INDIVIDUAL_VIEWSHEDS} individual viewsheds, found {len(individual)}')
     print('camera viewsheds:', len(individual), 'unavailable:', unavailable, flush=True)
 
 

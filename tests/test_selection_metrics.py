@@ -99,6 +99,23 @@ class SelectionMetricsTests(unittest.TestCase):
         self.assertEqual(categories['Other federal land'].area,
                          categories['National Park Service land'].area)
 
+    def test_viewsheds_must_match_published_manifests(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for provider, entries in (
+                ('alertwest', [{'viewshed_id': 'a', 'web_geojson': 'web/a.geojson'},
+                               {'viewshed_id': 'no-height', 'web_geojson': None}]),
+                ('pano', [{'viewshed_id': 'pano-b', 'web_geojson': 'web/pano-b.geojson'}]),
+            ):
+                (Path(directory) / f'{provider}-viewshed-manifest.json').write_text(
+                    json.dumps({'viewsheds': entries}))
+            published = self.module.published_viewshed_ids(Path(directory))
+        self.assertEqual(published, {'a', 'pano-b'})
+        self.module.check_published_viewsheds({'a': None, 'pano-b': None}, published)
+        with self.assertRaisesRegex(RuntimeError, r"missing from --viewsheds: \['pano-b'\]"):
+            self.module.check_published_viewsheds({'a': None}, published)
+        with self.assertRaisesRegex(RuntimeError, r"not in a data/ manifest: \['new'\]"):
+            self.module.check_published_viewsheds({'a': None, 'pano-b': None, 'new': None}, published)
+
     def test_hydro_cache_rejects_empty_input(self):
         with tempfile.NamedTemporaryFile(mode='w+', suffix='.geojsonl') as cache:
             cache.write('\n')

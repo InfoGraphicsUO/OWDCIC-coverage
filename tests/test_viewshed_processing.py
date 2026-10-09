@@ -414,6 +414,58 @@ class CombinedCoverageTests(unittest.TestCase):
         self.assertEqual(len(providers), len(viewsheds.PROVIDER_OUTPUTS) + 1)
 
 
+class PublishTests(unittest.TestCase):
+    def write_manifest(self, directory: Path, *viewshed_ids: str) -> Path:
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / "pano-viewshed-manifest.json"
+        entries = [{"viewshed_id": viewshed_id, "status": "complete"} for viewshed_id in viewshed_ids]
+        path.write_text(json.dumps({"viewsheds": entries}), encoding="utf-8")
+        return path
+
+    def test_manifest_replaces_the_published_copy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            data = Path(directory) / "data"
+            self.write_manifest(data, "pano-a")
+            manifest = self.write_manifest(Path(directory) / "output", "pano-a", "pano-b")
+            published = viewsheds.publish_manifest(manifest, data)
+            self.assertEqual(published.read_bytes(), manifest.read_bytes())
+
+    def test_first_manifest_for_a_provider_is_published(self):
+        with tempfile.TemporaryDirectory() as directory:
+            data = Path(directory) / "data"
+            data.mkdir()
+            manifest = self.write_manifest(Path(directory) / "output", "pano-a")
+            self.assertTrue(viewsheds.publish_manifest(manifest, data).is_file())
+
+    def test_partial_output_folder_cannot_unpublish_viewsheds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            data = Path(directory) / "data"
+            published = self.write_manifest(data, "pano-a", "pano-b")
+            before = published.read_bytes()
+            manifest = self.write_manifest(Path(directory) / "output", "pano-a")
+            with self.assertRaisesRegex(RuntimeError, "pano-b"):
+                viewsheds.publish_manifest(manifest, data)
+            self.assertEqual(published.read_bytes(), before)
+
+    def test_script_output_reaches_the_log_and_failures_raise(self):
+        with tempfile.TemporaryDirectory() as directory:
+            script = Path(directory) / "step.py"
+            script.write_text("import sys\nprint('built', sys.argv[1])\nsys.exit(int(sys.argv[1]))\n")
+            lines = []
+            viewsheds.run_script(script, ["0"], lines.append)
+            self.assertEqual(lines, ["step.py: built 0"])
+            with self.assertRaisesRegex(RuntimeError, r"step\.py failed \(3\)"):
+                viewsheds.run_script(script, ["3"], lines.append)
+
+    def test_metrics_need_published_site_data(self):
+        with self.assertRaises(SystemExit):
+            viewsheds.parse_args(["--publish-metrics"])
+        with self.assertRaises(SystemExit):
+            viewsheds.parse_args(["--publish-site-data", "--shapefiles-only"])
+        args = viewsheds.parse_args(["--publish-site-data", "--publish-metrics"])
+        self.assertTrue(args.publish_site_data and args.publish_metrics)
+
+
 class ProgressTests(unittest.TestCase):
     def emitter(self, count=2):
         sites = [SimpleNamespace(name=f"camera {index}") for index in range(count)]
