@@ -61,6 +61,7 @@ import {
   showDigitizedCameraPopup,
   showFirePopup,
   showLookoutPopup,
+  showTransmissionLinePopup,
   showPrescribedPopup,
 } from './popups.js';
 import { getSetting, initSettings, onSettingChange } from './settings.js';
@@ -95,6 +96,22 @@ const NATIONAL_FOREST_COLOR = '#3b7d4f';
 const BLM_LAND_COLOR = '#f6d94a';
 const BURN_PROBABILITY_COLOR = '#d7191c';
 const TRANSMISSION_LINE_COLOR = '#c2188f';
+// relative line widths by the source's VOLT_CLASS; DC and NOT AVAILABLE borrow another class's width
+const TRANSMISSION_LINE_WIDTHS = Object.freeze({
+  'UNDER 100': 1,
+  '100-161': 1.75,
+  '220-287': 2.75,
+  '345': 4,
+  '500': 5.5,
+  'DC': 2.75,
+  'NOT AVAILABLE': 1,
+});
+const TRANSMISSION_LINE_WIDTH = [
+  'match',
+  ['get', 'VOLT_CLASS'],
+  ...Object.entries(TRANSMISSION_LINE_WIDTHS).flat(),
+  TRANSMISSION_LINE_WIDTHS['UNDER 100'],
+];
 const DIGITIZED_CAMERA_COLORS = Object.freeze({
   enviroVision: '#6eaa00',
   alertWest: '#a80000',
@@ -245,6 +262,16 @@ const DIGITIZED_CAMERA_OPERATORS = Object.freeze([
 const DIGITIZED_CAMERA_LAYER_IDS = Object.freeze(
   DIGITIZED_CAMERA_OPERATORS.map(({ layerId }) => layerId)
 );
+// features that take a click ahead of whatever lies under them
+const MARKER_LAYER_IDS = Object.freeze([
+  ...CAMERA_LAYER_IDS,
+  ...DIGITIZED_CAMERA_LAYER_IDS,
+  LAYER_IDS.fires,
+  LAYER_IDS.perimetersFill,
+  LAYER_IDS.prescribed,
+  LAYER_IDS.lookouts,
+]);
+const INTERACTIVE_LAYER_IDS = Object.freeze([...MARKER_LAYER_IDS, LAYER_IDS.transmissionLinesHit]);
 
 // marker sizes use CSS pixels
 const CAMERA_MARKER_SIZE = 20;
@@ -522,10 +549,29 @@ function addContextLayers(map) {
     layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
     paint: {
       'line-color': TRANSMISSION_LINE_COLOR,
-      // widths in px by zoom level
-      'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.6, 9, 1.4, 13, 2.5],
+      // px per unit of class width, by zoom level
+      'line-width': [
+        'interpolate', ['linear'], ['zoom'],
+        5, ['*', 0.4, TRANSMISSION_LINE_WIDTH],
+        9, ['*', 0.7, TRANSMISSION_LINE_WIDTH],
+        13, ['*', 1.2, TRANSMISSION_LINE_WIDTH],
+      ],
     },
   }, beforeId);
+  // the drawn lines are too thin to click, so an unseen wider copy takes the pointer
+  map.addLayer({
+    id: LAYER_IDS.transmissionLinesHit,
+    type: 'line',
+    source: LAYER_IDS.transmissionLinesSource,
+    layout: { visibility: 'none', 'line-cap': 'round', 'line-join': 'round' },
+    paint: { 'line-width': 10, 'line-opacity': 0 },
+  }, beforeId);
+
+  bindLayerInteractions(map, LAYER_IDS.transmissionLinesHit, (clickedMap, event) => {
+    // markers above the line keep priority for clicks
+    if (hasInteractiveFeatureAtPoint(clickedMap, event.point, MARKER_LAYER_IDS)) return;
+    showTransmissionLinePopup(clickedMap, event);
+  });
 }
 
 // the lines are a couple of megabytes, so they load the first time the row is switched on
@@ -1151,16 +1197,9 @@ function bindDivisionInteractions(map, division) {
   });
 }
 
-function hasInteractiveFeatureAtPoint(map, point) {
+function hasInteractiveFeatureAtPoint(map, point, candidateLayerIds = INTERACTIVE_LAYER_IDS) {
   // only query layers already installed during asynchronous setup
-  const layerIds = [
-    ...CAMERA_LAYER_IDS,
-    ...DIGITIZED_CAMERA_LAYER_IDS,
-    LAYER_IDS.fires,
-    LAYER_IDS.perimetersFill,
-    LAYER_IDS.prescribed,
-    LAYER_IDS.lookouts,
-  ].filter((layerId) => map.getLayer(layerId));
+  const layerIds = candidateLayerIds.filter((layerId) => map.getLayer(layerId));
 
   return (
     layerIds.length > 0 &&
@@ -2090,8 +2129,8 @@ function legendItems() {
       swatchColor: TRANSMISSION_LINE_COLOR,
       swatchClass: 'legend-swatch--line',
       visible: false,
-      infoText: 'Electric power transmission lines from a 2024 archive of the U.S. Electric Power Transmission Lines dataset',
-      layerIds: [LAYER_IDS.transmissionLines],
+      infoText: 'Electric power transmission lines from a 2024 archive of the U.S. Electric Power Transmission Lines dataset. Thicker lines carry higher voltage. Click a line for its owner, voltage, and substations.',
+      layerIds: [LAYER_IDS.transmissionLines, LAYER_IDS.transmissionLinesHit],
     },
     {
       label: LEGEND_LAYERS.fires,

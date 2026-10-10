@@ -77,6 +77,10 @@ export function showLookoutPopup(map, event) {
   showPopup(map, event, createLookoutPopup);
 }
 
+export function showTransmissionLinePopup(map, event) {
+  showPopup(map, event, createTransmissionLinePopup);
+}
+
 export function showDivisionPopup(map, properties) {
   const coordinates = properties?.labelPoint;
   if (!validCoordinates(coordinates)) return;
@@ -459,6 +463,43 @@ function createLookoutPopup(properties) {
   if (nhlr) popup.append(createMetaLine(nhlr));
 
   return popup;
+}
+
+function createTransmissionLinePopup(properties) {
+  const popup = createPopupContainer('Transmission line');
+
+  const owner = availableText(properties.OWNER);
+  if (owner) popup.append(createMetaLine(`Owner: ${owner}`));
+
+  // the source marks an unknown voltage with a negative placeholder
+  const voltage = Number(properties.VOLTAGE) > 0
+    ? `${formatNumber(properties.VOLTAGE, ACRES_FORMAT)} kV`
+    : null;
+  // TYPE reads like "AC; OVERHEAD"
+  const type = availableText(properties.TYPE)?.replace(/;\s*/g, ', ').toLowerCase()
+    .replace(/\b[ad]c\b/, (current) => current.toUpperCase());
+  const details = [voltage, type].filter(Boolean).join(' · ');
+  if (details) popup.append(createMetaLine(details));
+
+  // unnamed ends carry generated ids like TAP123456 or UNKNOWN123456
+  const substations = [properties.SUB_1, properties.SUB_2]
+    .map(availableText)
+    .filter((name) => name && !/^(TAP|UNKNOWN)\d+$/.test(name));
+  if (substations.length) {
+    const label = substations.length > 1 ? 'Substations' : 'Substation';
+    popup.append(createMetaLine(`${label}: ${substations.join(' to ')}`));
+  }
+
+  const status = availableText(properties.STATUS);
+  if (status) popup.append(createMetaLine(`Status: ${status.toLowerCase()}`));
+
+  return popup;
+}
+
+// the transmission line source writes NOT AVAILABLE where a value is unknown
+function availableText(value) {
+  const text = value == null ? '' : String(value).trim();
+  return text && text.toUpperCase() !== 'NOT AVAILABLE' ? text : null;
 }
 
 function createPrescribedPopup(properties) {
