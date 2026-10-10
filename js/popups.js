@@ -1,4 +1,5 @@
 import { featurePoint } from './geojson-transform.js';
+import { createLegendSymbol } from './legend.js';
 
 const INTEGER_FORMAT = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 const ACRES_FORMAT = new Intl.NumberFormat('en-US', {
@@ -40,12 +41,12 @@ export function showCameraPopup(map, event) {
   showPopup(map, event, createCameraPopup);
 }
 
-export function showDigitizedCameraPopup(map, event) {
-  showPopup(map, event, createDigitizedCameraPopup);
+export function showDigitizedCameraPopup(map, event, symbol) {
+  showPopup(map, event, createDigitizedCameraPopup, { symbol });
 }
 
 /** lightweight hover popup carrying only the camera name and locality */
-export function showCameraPreview(map, event) {
+export function showCameraPreview(map, event, symbol) {
   const feature = event.features?.[0];
   if (!feature) return;
 
@@ -57,7 +58,7 @@ export function showCameraPreview(map, event) {
   const key = featureKey(feature);
   if (active?.isPreview && active.featureKey === key) return;
 
-  showPopup(map, event, createCameraPreview, { preview: true, featureKey: key });
+  showPopup(map, event, createCameraPreview, { preview: true, featureKey: key, symbol });
 }
 
 export function hideCameraPreview(map) {
@@ -65,20 +66,20 @@ export function hideCameraPreview(map) {
   if (active?.isPreview) active.close();
 }
 
-export function showFirePopup(map, event) {
-  showPopup(map, event, createFirePopup);
+export function showFirePopup(map, event, symbol) {
+  showPopup(map, event, createFirePopup, { symbol });
 }
 
-export function showPrescribedPopup(map, event) {
-  showPopup(map, event, createPrescribedPopup);
+export function showPrescribedPopup(map, event, symbol) {
+  showPopup(map, event, createPrescribedPopup, { symbol });
 }
 
-export function showLookoutPopup(map, event) {
-  showPopup(map, event, createLookoutPopup);
+export function showLookoutPopup(map, event, symbol) {
+  showPopup(map, event, createLookoutPopup, { symbol });
 }
 
-export function showTransmissionLinePopup(map, event) {
-  showPopup(map, event, createTransmissionLinePopup);
+export function showTransmissionLinePopup(map, event, symbol) {
+  showPopup(map, event, createTransmissionLinePopup, { symbol });
 }
 
 export function showDivisionPopup(map, properties) {
@@ -106,7 +107,9 @@ function showPopup(map, event, createContent, options = {}) {
   const coordinates = featurePoint(feature) || event.lngLat;
   if (!coordinates) return;
 
-  showPopupAt(map, coordinates, createContent(feature.properties || {}), options);
+  // symbol is the layer's legend symbol, drawn beside the popup title
+  const { symbol, ...popupOptions } = options;
+  showPopupAt(map, coordinates, createContent(feature.properties || {}, symbol), popupOptions);
 }
 
 function showPopupAt(map, coordinates, content, options = {}) {
@@ -345,8 +348,8 @@ function clamp(value, minimum, maximum) {
 }
 
 // hover preview stays limited to what identifies the camera at a glance
-function createCameraPreview({ name, state, county }) {
-  const popup = createPopupContainer(name || 'Camera');
+function createCameraPreview({ name, state, county }, symbol) {
+  const popup = createPopupContainer(name || 'Camera', symbol);
 
   const location = cameraLocation({ county, state });
   if (location) popup.append(createMetaLine(location));
@@ -396,8 +399,8 @@ function createDigitizedCameraPopup({
   pointSourceName,
   siteType,
   cameraHeightFeet,
-}) {
-  const popup = createPopupContainer(name || 'Digitized camera');
+}, symbol) {
+  const popup = createPopupContainer(name || 'Digitized camera', symbol);
 
   const operatorStatus = [operator, status].filter(Boolean).join(' · ');
   if (operatorStatus) popup.append(createMetaLine(operatorStatus));
@@ -418,14 +421,14 @@ function cameraLocation({ county, state }) {
   return [county, state].filter(Boolean).join(', ');
 }
 
-function createFirePopup(properties) {
+function createFirePopup(properties, symbol) {
   // point and perimeter services expose the same fields under different names
   const title =
     properties.IncidentName ||
     properties.poly_IncidentName ||
     properties.attr_IncidentName ||
     'Fire';
-  const popup = createPopupContainer(title);
+  const popup = createPopupContainer(title, symbol);
 
   const acres = formatNumber(
     properties.acres ?? properties.IncidentSize ?? properties.poly_GISAcres,
@@ -450,8 +453,8 @@ function createFirePopup(properties) {
   return popup;
 }
 
-function createLookoutPopup(properties) {
-  const popup = createPopupContainer(properties.name || 'Lookout');
+function createLookoutPopup(properties, symbol) {
+  const popup = createPopupContainer(properties.name || 'Lookout', symbol);
 
   const location = [properties.County, properties.State].filter(Boolean).join(', ');
   if (location) popup.append(createMetaLine(location));
@@ -465,8 +468,8 @@ function createLookoutPopup(properties) {
   return popup;
 }
 
-function createTransmissionLinePopup(properties) {
-  const popup = createPopupContainer('Transmission line');
+function createTransmissionLinePopup(properties, symbol) {
+  const popup = createPopupContainer('Transmission line', symbol);
 
   const owner = availableText(properties.OWNER);
   if (owner) popup.append(createMetaLine(`Owner: ${owner}`));
@@ -502,8 +505,8 @@ function availableText(value) {
   return text && text.toUpperCase() !== 'NOT AVAILABLE' ? text : null;
 }
 
-function createPrescribedPopup(properties) {
-  const popup = createPopupContainer(properties.name || 'Prescribed fire');
+function createPrescribedPopup(properties, symbol) {
+  const popup = createPopupContainer(properties.name || 'Prescribed fire', symbol);
 
   const acres = formatNumber(properties.acreage, ACRES_FORMAT);
   if (acres != null) popup.append(createMetaLine(`${acres} target acres`));
@@ -528,13 +531,19 @@ function createDivisionPopup({ name, stateName, cameraViewshedCoveragePct }) {
   return popup;
 }
 
-function createPopupContainer(titleText) {
+function createPopupContainer(titleText, symbol) {
   const popup = document.createElement('div');
   popup.className = 'cam-popup';
 
+  const heading = document.createElement('div');
+  heading.className = 'cam-title';
+  // the title already names the feature, so its layer symbol stays decorative
+  if (symbol) heading.append(createLegendSymbol(symbol));
+
   const title = document.createElement('strong');
   title.textContent = titleText;
-  popup.append(title);
+  heading.append(title);
+  popup.append(heading);
   return popup;
 }
 

@@ -262,6 +262,16 @@ const DIGITIZED_CAMERA_OPERATORS = Object.freeze([
 const DIGITIZED_CAMERA_LAYER_IDS = Object.freeze(
   DIGITIZED_CAMERA_OPERATORS.map(({ layerId }) => layerId)
 );
+// legend symbols that the layer's popups repeat beside their titles
+const LAYER_SYMBOLS = Object.freeze({
+  lookouts: Object.freeze({ swatchColor: LOOKOUT_COLOR, swatchShape: 'circle' }),
+  transmissionLines: Object.freeze({
+    swatchColor: TRANSMISSION_LINE_COLOR,
+    swatchClass: 'legend-swatch--line',
+  }),
+  fires: Object.freeze({ iconUrl: MARKER_ICON_URLS.fire }),
+  prescribed: Object.freeze({ iconUrl: MARKER_ICON_URLS.prescribed }),
+});
 // features that take a click ahead of whatever lies under them
 const MARKER_LAYER_IDS = Object.freeze([
   ...CAMERA_LAYER_IDS,
@@ -570,7 +580,7 @@ function addContextLayers(map) {
   bindLayerInteractions(map, LAYER_IDS.transmissionLinesHit, (clickedMap, event) => {
     // markers above the line keep priority for clicks
     if (hasInteractiveFeatureAtPoint(clickedMap, event.point, MARKER_LAYER_IDS)) return;
-    showTransmissionLinePopup(clickedMap, event);
+    showTransmissionLinePopup(clickedMap, event, LAYER_SYMBOLS.transmissionLines);
   });
 }
 
@@ -969,7 +979,11 @@ function cameraHovered(cameraId, event) {
     hideCameraPreview(activeMap);
     return;
   }
-  if (event) showCameraPreview(activeMap, event);
+  if (!event) return;
+
+  const layerId = event.features?.[0]?.layer?.id;
+  const provider = CAMERA_PROVIDERS.find(({ cameraLayerId }) => cameraLayerId === layerId);
+  showCameraPreview(activeMap, event, provider && { iconUrl: provider.iconUrl });
 }
 
 function clearFilter() {
@@ -1716,7 +1730,13 @@ async function addDigitizedCameraLayers(map) {
       },
     });
 
-    bindLayerInteractions(map, operator.layerId, showDigitizedCameraPopup);
+    bindLayerInteractions(map, operator.layerId, (clickedMap, event) => {
+      // same marker the clicked site is drawn with
+      const planned = event.features?.[0]?.properties?.status === 'Planned';
+      showDigitizedCameraPopup(clickedMap, event, {
+        iconUrl: planned ? operator.plannedIconUrl : operator.operationalIconUrl,
+      });
+    });
   }
 }
 
@@ -1901,7 +1921,7 @@ async function addFireLayer(map) {
     layout: markerLayout(fireIconExpression()),
   });
 
-  bindLayerInteractions(map, LAYER_IDS.fires, showFirePopup);
+  bindLayerInteractions(map, LAYER_IDS.fires, withSymbol(showFirePopup, LAYER_SYMBOLS.fires));
 }
 
 /**
@@ -1947,7 +1967,11 @@ function addPerimeterLayers(map) {
     },
   });
 
-  bindLayerInteractions(map, LAYER_IDS.perimetersFill, showFirePopup);
+  bindLayerInteractions(
+    map,
+    LAYER_IDS.perimetersFill,
+    withSymbol(showFirePopup, LAYER_SYMBOLS.fires)
+  );
 }
 
 async function addPrescribedLayer(map) {
@@ -1966,7 +1990,11 @@ async function addPrescribedLayer(map) {
     layout: markerLayout(PRESCRIBED_ICON_ID),
   });
 
-  bindLayerInteractions(map, LAYER_IDS.prescribed, showPrescribedPopup);
+  bindLayerInteractions(
+    map,
+    LAYER_IDS.prescribed,
+    withSymbol(showPrescribedPopup, LAYER_SYMBOLS.prescribed)
+  );
 }
 
 function addLookoutLayer(map) {
@@ -1983,7 +2011,11 @@ function addLookoutLayer(map) {
     },
   });
 
-  bindLayerInteractions(map, LAYER_IDS.lookouts, showLookoutPopup);
+  bindLayerInteractions(
+    map,
+    LAYER_IDS.lookouts,
+    withSymbol(showLookoutPopup, LAYER_SYMBOLS.lookouts)
+  );
 }
 
 function markerLayout(iconImage) {
@@ -2015,6 +2047,11 @@ function setSourceData(map, sourceId, data) {
   }
 
   source.setData(data);
+}
+
+// popup opener that also hands over the layer's legend symbol
+function withSymbol(showPopup, symbol) {
+  return (map, event) => showPopup(map, event, symbol);
 }
 
 /**
@@ -2090,8 +2127,7 @@ function legendItems() {
     },
     {
       label: LEGEND_LAYERS.lookouts,
-      swatchColor: LOOKOUT_COLOR,
-      swatchShape: 'circle',
+      ...LAYER_SYMBOLS.lookouts,
       visible: false,
       loading: true,
       infoText: 'Fire lookout tower locations from Firelookout.org',
@@ -2126,15 +2162,14 @@ function legendItems() {
     },
     {
       label: LEGEND_LAYERS.transmissionLines,
-      swatchColor: TRANSMISSION_LINE_COLOR,
-      swatchClass: 'legend-swatch--line',
+      ...LAYER_SYMBOLS.transmissionLines,
       visible: false,
       infoText: 'Electric power transmission lines from a 2024 archive of the U.S. Electric Power Transmission Lines dataset. Thicker lines carry higher voltage. Click a line for its owner, voltage, and substations.',
       layerIds: [LAYER_IDS.transmissionLines, LAYER_IDS.transmissionLinesHit],
     },
     {
       label: LEGEND_LAYERS.fires,
-      iconUrl: MARKER_ICON_URLS.fire,
+      ...LAYER_SYMBOLS.fires,
       visible: false,
       loading: true,
       layerIds: [
@@ -2145,7 +2180,7 @@ function legendItems() {
     },
     {
       label: LEGEND_LAYERS.prescribed,
-      iconUrl: MARKER_ICON_URLS.prescribed,
+      ...LAYER_SYMBOLS.prescribed,
       visible: false,
       loading: true,
       layerIds: [LAYER_IDS.prescribed],

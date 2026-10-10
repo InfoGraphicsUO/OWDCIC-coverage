@@ -116,13 +116,28 @@
     font: 13px/1.4 "Merriweather", "Segoe UI", sans-serif;
 }
 
-.cam-popup strong {
-    display: block;
+.cam-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
     margin-bottom: 4px;
     padding-right: 24px;
+}
+
+.cam-popup strong {
     color: #17202a;
     font-size: 14px;
     line-height: 1.3;
+}
+
+/* layer symbol from the legend, sized by css/legend.css */
+.cam-title .legend-icon,
+.cam-title .legend-swatch {
+    flex: none;
+}
+
+.cam-title .legend-swatch--circle {
+    margin-top: 3px;
 }
 
 .cam-meta {

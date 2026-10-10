@@ -362,6 +362,11 @@ function createLegendVisual(icon, loading, label) {
   return visual;
 }
 
+// swatch or marker image for a layer, shared with the popups so both show the same symbol
+export function createLegendSymbol(item) {
+  return item.swatchColor ? createLegendSwatch(item) : createLegendIcon(item.iconUrl);
+}
+
 function createLegendIcon(iconUrl) {
   const icon = document.createElement('img');
   icon.className = 'legend-icon';
