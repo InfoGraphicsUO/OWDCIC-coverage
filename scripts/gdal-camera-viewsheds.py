@@ -51,6 +51,7 @@ DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest"
 PROVIDER_OUTPUTS = {
     "alertwest": DEFAULT_OUTPUT,
     "pano": PROJECT_ROOT / "outputs/gdal_viewsheds_pano",
+    "envirovision": PROJECT_ROOT / "outputs/gdal_viewsheds_envirovision",
 }
 WEB_PACKAGE = "mapbox/camera_viewsheds_web_epsg5070.gpkg"
 DEFAULT_COMBINED_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_combined/mapbox"
