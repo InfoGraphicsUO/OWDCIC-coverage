@@ -60,11 +60,13 @@ export function providerSitesToCameras(sites, operator) {
       properties: {
         name: properties.name || 'Camera',
         operator,
+        // utility or agency that runs the camera on the provider's network
+        owner: properties.owner ?? null,
         county: properties.county ?? null,
         state: properties.state ?? null,
         viewshed_id: (modeled && stringValue(properties.viewshedId)) || null,
         // placed on an ALERTWest site, so its marker would otherwise hide that camera
-        sharesAlertWestSite: properties.locationSource === 'alertwest-site',
+        sharesAlertWestSite: properties.locationSource === 'alertwest-site' || properties.sharesAlertWestSite === true,
       },
     });
   }

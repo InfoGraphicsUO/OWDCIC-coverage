@@ -1,0 +1,126 @@
+site,camera,latitude,longitude,ground_elevation_ft,camera_height_ft,protection_district,protection_unit,detection_center,site_id
+Bald Mountain,Bald Mountain,44.574,-117.893003,6576.0,35.0,Northeast Oregon,La Grande,BMIDC - La Grande,5
+Baughman,Baughman,43.269315,-123.581089,2842.0,102.0,Douglas FPA,DFPA Central,DFPA - Roseburg,10
+Bear Mountain,Bear Mountain,43.842774,-122.891679,3624.0,98.0,South Cascade,Eastern Lane,DFPA - Roseburg,12
+Bearwallow Butte,Bearwallow Butte,44.078575,-121.552084,6449.0,103.0,Central Oregon,Prineville,COIDC - Redmond,13
+Beaver Hill,Beaver Hill,43.210138,-124.305443,572.0,82.0,Coos FPA,Coos Bay,DFPA - Roseburg,250
+Bieberstedt Butte,Bieberstedt Butte East,42.410507,-122.472843,5255.0,54.0,Southwest Oregon,Medford,ODF - Medford,16
+Bieberstedt Butte,Bieberstedt Butte West,42.410507,-122.472843,5255.0,54.0,Southwest Oregon,Medford,ODF - Medford,17
+Big Rock,Big Rock 1,44.268034,-122.451324,4462.0,40.0,South Cascade,Sweet Home,DFPA - Roseburg,310
+Big Rock,Big Rock 2,44.268034,-122.451324,4462.0,40.0,South Cascade,Sweet Home,DFPA - Roseburg,311
+Black Mountain,Black Mountain,45.212869,-119.296187,5886.0,46.0,Central Oregon,John Day,COIDC - Redmond,20
+Bland Mountain,Bland Mountain,42.969109,-123.119198,2698.0,66.0,Douglas FPA,DFPA South,DFPA - Roseburg,23
+Bosley Butte,Bosley Butte,42.208871,-124.225653,3418.0,164.0,Coos FPA,Gold Beach,DFPA - Roseburg,27
+Bridge Creek,Bridge Creek 1,45.008398,-118.971001,3961.0,79.0,Northeast Oregon,Pendleton,BMIDC - La Grande,295
+Bridge Creek,Bridge Creek 2,45.008398,-118.971001,3961.0,79.0,Northeast Oregon,Pendleton,BMIDC - La Grande,296
+Canyon Mountain,Canyon Mountain,42.902197,-123.28592,3376.0,52.0,Douglas FPA,DFPA South,DFPA - Roseburg,39
+Carney Butte,Carney Butte North,45.281005,-118.949003,4796.0,77.0,Northeast Oregon,Pendleton,BMIDC - La Grande,301
+Carney Butte,Carney Butte South,45.281005,-118.949003,4796.0,77.0,Northeast Oregon,Pendleton,BMIDC - La Grande,302
+Cedar Springs Mountain,Cedar Springs Mountain,42.761717,-123.122364,5089.0,66.0,Douglas FPA,DFPA South,DFPA - Roseburg,42
+Chase Mountain,Chase Mountain 1,42.094607,-121.994049,6342.0,33.0,Klamath-Lake,Klamath,Lakeview Interagency (LIFC),44
+Chase Mountain,Chase Mountain 2,42.094607,-121.994049,6342.0,33.0,Klamath-Lake,Klamath,Lakeview Interagency (LIFC),45
+Chicken Hills,Chicken Hills 1,42.045966,-122.025006,5178.0,150.0,Klamath-Lake,Klamath,Lakeview Interagency (LIFC),123
+Chicken Hills,Chicken Hills 2,42.045966,-122.025006,5178.0,150.0,Klamath-Lake,Klamath,Lakeview Interagency (LIFC),123
+Chilcoot,Chilcoot,43.432294,-122.731281,4969.0,72.0,Douglas FPA,DFPA Central,DFPA - Roseburg,47
+Cougar Rock,Cougar Rock,44.479711,-122.310259,4524.0,82.0,South Cascade,Sweet Home,DFPA - Roseburg,52
+Crescent Butte,Crescent Butte 1,43.462499,-121.667219,5188.0,60.0,Walker Range FPA,Walker Range FPA,Lakeview Interagency (LIFC),293
+Crescent Butte,Crescent Butte 2,43.462499,-121.667219,5188.0,60.0,Walker Range FPA,Walker Range FPA,Lakeview Interagency (LIFC),294
+Dean Mountain,Dean Mountain,43.614574,-123.980085,1818.0,82.0,Coos FPA,Coos Bay,DFPA - Roseburg,59
+Dutchman Butte,Dutchman Butte,42.866898,-123.65998,3902.0,118.0,Douglas FPA,DFPA South,DFPA - Roseburg,63
+Dutchman Peak,Dutchman Peak North,42.043568,-122.891333,7406.0,49.0,Southwest Oregon,Medford,ODF - Medford,64
+Dutchman Peak,Dutchman Peak South,42.043568,-122.891333,7406.0,49.0,Southwest Oregon,Medford,ODF - Medford,65
+Eden,Eden ENE,45.919108,-117.490702,3849.0,60.0,Northeast Oregon,Wallowa,BMIDC - La Grande,251
+Eden,Eden WSW,45.919108,-117.490702,3849.0,60.0,Northeast Oregon,Wallowa,BMIDC - La Grande,251
+Edson Butte,Edson Butte,42.871735,-124.334605,2782.0,49.0,Coos FPA,Gold Beach,DFPA - Roseburg,68
+Elk Mountain (Bridge),Elk Mountain,43.120552,-123.95374,845.0,103.0,Coos FPA,Bridge,DFPA - Roseburg,70
+Elk Mountain (Wallowa),Elk Mountain,45.597699,-117.204842,5116.0,79.0,Northeast Oregon,Wallowa,BMIDC - La Grande,71
+Flag Point,Flag Point,45.318136,-121.466054,5646.0,40.0,Central Oregon,The Dalles,COIDC - Redmond,78
+Flounce,Flounce,42.728613,-122.608329,4168.0,100.0,Southwest Oregon,Medford,ODF - Medford,361
+Foley Butte,Foley Butte,44.527004,-120.784984,5470.0,80.0,Central Oregon,Prineville,COIDC - Redmond,80
+Frazier Mountain,Frazier Mountain,45.076,-117.695003,5434.0,60.0,Northeast Oregon,La Grande,BMIDC - La Grande,81
+Geneva,Geneva,44.537853,-121.391588,2906.0,105.0,Central Oregon,Prineville,COIDC - Redmond,174
+Gerow Butte,Gerow Butte,44.263403,-120.46011,5680.0,80.0,Central Oregon,Prineville,COIDC - Redmond,84
+Green Peter,Green Peter,44.483224,-122.58321,3888.0,39.0,South Cascade,Sweet Home,DFPA - Roseburg,91
+Grizzly Mountain,Grizzly Mountain,42.396399,-124.364714,2334.0,197.0,Coos FPA,Gold Beach,DFPA - Roseburg,92
+Grizzly Peak,Grizzly Peak North,42.25264,-120.639342,7745.0,33.0,Klamath-Lake,Lake,Lakeview Interagency (LIFC),94
+Grizzly Peak,Grizzly Peak South,42.25264,-120.639342,7745.0,33.0,Klamath-Lake,Lake,Lakeview Interagency (LIFC),95
+Hagen,Hagen,44.13909,-122.410181,3423.0,138.0,South Cascade,Eastern Lane,DFPA - Roseburg,96
+Hamelton,Hamelton 1,42.785549,-121.350817,6408.0,30.0,Klamath-Lake,Klamath,Lakeview Interagency (LIFC),297
+Hamelton,Hamelton 2,42.785549,-121.350817,6408.0,30.0,Klamath-Lake,Klamath,Lakeview Interagency (LIFC),298
+Harness Mountain,Harness Mountain,43.522161,-123.107364,3287.0,200.0,Douglas FPA,DFPA North,DFPA - Roseburg,102
+Hogback,Hogback East,42.24291,-121.705857,6193.0,35.0,Klamath-Lake,Klamath,Lakeview Interagency (LIFC),109
+Hogback,Hogback West,42.24291,-121.705857,6193.0,35.0,Klamath-Lake,Klamath,Lakeview Interagency (LIFC),110
+Hood Mountain,Hood Mountain,42.935899,-124.052476,1747.0,105.0,Coos FPA,Bridge,DFPA - Roseburg,111
+Howard Butte,Howard Butte,45.72379,-117.737324,4310.0,123.0,Northeast Oregon,Wallowa,BMIDC - La Grande,113
+Isabelle,Isabelle North,42.303197,-123.104493,4497.0,100.0,Southwest Oregon,Medford,ODF - Medford,115
+Isabelle,Isabelle South,42.303197,-123.104493,4497.0,100.0,Southwest Oregon,Medford,ODF - Medford,116
+Ivers Peak,Ivers Peak,43.403875,-123.853306,2436.0,115.0,Coos FPA,Coos Bay,DFPA - Roseburg,117
+King Mountain,King Mountain East,42.713578,-123.229851,3500.0,60.0,Douglas FPA,DFPA South,DFPA - Roseburg,312
+King Mountain,King Mountain West,42.713578,-123.229851,3500.0,60.0,Douglas FPA,DFPA South,DFPA - Roseburg,366
+Little Grayback,Little Grayback East,42.198247,-123.493881,5131.0,164.0,Southwest Oregon,Grants Pass,ODF - Medford,130
+Little Grayback,Little Grayback West,42.198247,-123.493881,5131.0,98.0,Southwest Oregon,Grants Pass,ODF - Medford,131
+Manzanita,Manzanita East,42.304277,-123.449798,4433.0,87.0,Southwest Oregon,Grants Pass,ODF - Medford,136
+Manzanita,Manzanita West,42.304277,-123.449798,4433.0,87.0,Southwest Oregon,Grants Pass,ODF - Medford,137
+Marsters Ridge,Marsters Ridge,43.187701,-123.417494,1599.0,49.0,Douglas FPA,DFPA Central,DFPA - Roseburg,138
+Menasha,Menasha,42.674371,-124.311772,1803.0,49.0,Coos FPA,Gold Beach,DFPA - Roseburg,146
+Middle Mountain,Middle Mountain 1,45.578971,-121.59753,2612.0,45.0,Central Oregon,The Dalles,COIDC - Redmond,147
+Middle Mountain,Middle Mountain 2,45.578971,-121.59753,2612.0,45.0,Central Oregon,The Dalles,COIDC - Redmond,148
+Monument Mountain,Monument Mountain,44.861992,-119.425722,3895.0,20.0,Central Oregon,John Day,COIDC - Redmond,151
+Mt Ashland,Mt Ashland North,42.081003,-122.720164,7444.0,97.0,Southwest Oregon,Medford,ODF - Medford,299
+Mt Ashland,Mt Ashland South,42.081003,-122.720164,7444.0,97.0,Southwest Oregon,Medford,ODF - Medford,300
+Mt Harris,Mt Harris NE,45.440312,-117.893183,5335.0,40.0,Northeast Oregon,La Grande,BMIDC - La Grande,314
+Mt Harris,Mt Harris SW,45.440312,-117.893183,5335.0,40.0,Northeast Oregon,La Grande,BMIDC - La Grande,367
+Mt Mahogany,Mt Mahogany,45.368,-118.177003,4639.0,125.0,Northeast Oregon,La Grande,BMIDC - La Grande,157
+Mt Nebo,Mt Nebo,44.153024,-122.715227,3242.0,145.0,South Cascade,Eastern Lane,DFPA - Roseburg,158
+Mt Scott,Mt Scott,43.371832,-123.064387,4252.0,84.0,Douglas FPA,DFPA Central,DFPA - Roseburg,162
+Old Baldy,Old Baldy East,42.490648,-123.231383,4000.0,82.0,Southwest Oregon,Grants Pass,ODF - Medford,166
+Old Baldy,Old Baldy West,42.490648,-123.231383,4000.0,82.0,Southwest Oregon,Grants Pass,ODF - Medford,167
+Old Blue,Old Blue,43.511105,-123.670097,2538.0,72.0,Douglas FPA,DFPA North,DFPA - Roseburg,168
+Onion,Onion East,42.454418,-123.616113,4451.0,66.0,Southwest Oregon,Grants Pass,ODF - Medford,169
+Onion,Onion West,42.454418,-123.616113,4451.0,66.0,Southwest Oregon,Grants Pass,ODF - Medford,170
+Parker Mountain,Parker Mountain 1,42.105557,-122.278887,5210.0,60.0,Klamath-Lake,Klamath,Lakeview Interagency (LIFC),125
+Parker Mountain,Parker Mountain 2,42.105557,-122.278887,5210.0,60.0,Klamath-Lake,Klamath,Lakeview Interagency (LIFC),125
+Peavine,Peavine East,42.601766,-123.642049,4045.0,87.0,Southwest Oregon,Grants Pass,ODF - Medford,171
+Peavine,Peavine West,42.601766,-123.642049,4045.0,87.0,Southwest Oregon,Grants Pass,ODF - Medford,172
+Prairie Peak,Prairie Peak,44.279589,-123.590676,3363.0,180.0,Western Lane,Veneta,DFPA - Roseburg,180
+Red Butte,Red Butte,43.165556,-122.880772,5256.0,92.0,Douglas FPA,DFPA Central,DFPA - Roseburg,184
+Reuben,Reuben East,42.718698,-123.59705,4017.0,98.0,Southwest Oregon,Grants Pass,ODF - Medford,160
+Reuben,Reuben West,42.718698,-123.59705,4017.0,62.0,Southwest Oregon,Grants Pass,ODF - Medford,161
+Ritter,Ritter,44.83361,-119.071475,4208.0,39.0,Central Oregon,John Day,COIDC - Redmond,188
+Roman Nose,Roman Nose,43.912048,-123.738697,2842.0,236.0,Western Lane,Veneta,DFPA - Roseburg,190
+Round Pass,Round Pass 1,42.499598,-120.511356,6786.0,25.0,Klamath-Lake,Lake,Lakeview Interagency (LIFC),192
+Round Pass,Round Pass 2,42.499598,-120.511356,6786.0,25.0,Klamath-Lake,Lake,Lakeview Interagency (LIFC),192
+Round Top,Round Top East,42.701906,-122.990903,4641.0,164.0,Southwest Oregon,Medford,ODF - Medford,193
+Round Top,Round Top West,42.701906,-122.990903,4641.0,164.0,Southwest Oregon,Medford,ODF - Medford,194
+Sexton,Sexton North,42.600138,-123.365834,3817.0,131.0,Southwest Oregon,Grants Pass,ODF - Medford,199
+Sexton,Sexton South,42.600138,-123.365834,3817.0,131.0,Southwest Oregon,Grants Pass,ODF - Medford,200
+Shutters Landing,Shutters Landing 1,43.533861,-124.175348,750.0,60.0,Coos FPA,Coos Bay,DFPA - Roseburg,294
+Shutters Landing,Shutters Landing 2,43.533861,-124.175348,750.0,60.0,Coos FPA,Coos Bay,DFPA - Roseburg,294
+Signal Tree,Signal Tree,43.001747,-123.778418,3299.0,164.0,Coos FPA,Bridge,DFPA - Roseburg,201
+Silver Butte,Silver Butte,42.858897,-123.37828,3965.0,80.0,Douglas FPA,DFPA South,DFPA - Roseburg,202
+Snowboard,Snowboard 1,44.961342,-119.990497,5007.0,66.0,Central Oregon,John Day,COIDC - Redmond,305
+Snowboard,Snowboard 2,44.961342,-119.990497,5007.0,66.0,Central Oregon,John Day,COIDC - Redmond,306
+Soda Mountain,Soda Mountain North,42.064779,-122.47901,6047.0,98.0,Southwest Oregon,Medford,ODF - Medford,207
+Soda Mountain,Soda Mountain South,42.064779,-122.47901,6047.0,131.0,Southwest Oregon,Medford,ODF - Medford,208
+Table Mountain,Table Mountain,43.627998,-122.842994,4082.0,50.0,South Cascade,Eastern Lane,DFPA - Roseburg,214
+Tallowbox,Tallowbox East,42.196366,-123.151557,5021.0,131.0,Southwest Oregon,Grants Pass,ODF - Medford,216
+Tallowbox,Tallowbox West,42.196366,-123.151557,5021.0,131.0,Southwest Oregon,Grants Pass,ODF - Medford,217
+Three Creeks,Three Creeks 1,44.173962,-121.582455,4252.0,40.0,Central Oregon,Prineville,COIDC - Redmond,307
+Three Creeks,Three Creeks 2,44.173962,-121.582455,4252.0,40.0,Central Oregon,Prineville,COIDC - Redmond,308
+Tiller,Tiller,42.905702,-122.961645,2804.0,98.0,Douglas FPA,DFPA South,DFPA - Roseburg,220
+Tiptop,Tiptop,45.445294,-118.421822,4570.0,85.0,Northeast Oregon,Pendleton,BMIDC - La Grande,222
+Tombstone,Tombstone East,42.298398,-122.750433,3831.0,75.0,Southwest Oregon,Medford,ODF - Medford,223
+Tombstone,Tombstone West,42.298398,-122.750433,3831.0,89.0,Southwest Oregon,Medford,ODF - Medford,224
+Walker Mountain,Walker Mountain 1,43.305214,-121.716936,7074.0,82.0,Walker Range FPA,Walker Range FPA,Lakeview Interagency (LIFC),233
+Walker Mountain,Walker Mountain 2,43.305214,-121.716936,7074.0,82.0,Walker Range FPA,Walker Range FPA,Lakeview Interagency (LIFC),233
+Walker Point,Walker Point,44.06655,-123.628874,2338.0,121.0,Western Lane,Veneta,DFPA - Roseburg,235
+Warner Mountain,Warner Mountain North,43.542999,-122.365996,5709.0,55.0,South Cascade,Eastern Lane,DFPA - Roseburg,303
+Warner Mountain,Warner Mountain South,43.542999,-122.365996,5709.0,55.0,South Cascade,Eastern Lane,DFPA - Roseburg,304
+Wasco Butte,Wasco Butte,45.616711,-121.335128,2330.0,150.0,Central Oregon,The Dalles,COIDC - Redmond,239
+Wastina Butte,Wastina Butte East,43.371643,-121.271323,4968.0,55.0,Walker Range FPA,Walker Range FPA,Lakeview Interagency (LIFC),240
+Wastina Butte,Wastina Butte West,43.371643,-121.271323,4968.0,55.0,Walker Range FPA,Walker Range FPA,Lakeview Interagency (LIFC),241
+Weston,Weston High,45.800075,-118.37586,2984.0,60.0,Northeast Oregon,Pendleton,BMIDC - La Grande,309
+Weston,Weston Low,45.800075,-118.37586,2984.0,60.0,Northeast Oregon,Pendleton,BMIDC - La Grande,309
+Yainax Butte,Yainax Butte East,42.326513,-121.269802,7209.0,35.0,Klamath-Lake,Lake,Lakeview Interagency (LIFC),247
+Yainax Butte,Yainax Butte West,42.326513,-121.269802,7209.0,35.0,Klamath-Lake,Lake,Lakeview Interagency (LIFC),248
+Yellow Butte,Yellow Butte,43.546614,-123.403728,2450.0,82.0,Douglas FPA,DFPA North,DFPA - Roseburg,249

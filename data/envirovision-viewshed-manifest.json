@@ -1,0 +1,1193 @@
+{
+  "schema_version": 3,
+  "generated_utc": "2026-10-12T22:38:40+00:00",
+  "config_hash": "1fc319aaf4acf161f84b3f6c5c31c3614d1ef1b830b541849cb2953bc3242bc6",
+  "web_processing": {
+    "resolution_m": 50.0,
+    "simplify_tolerance_m": 25.0,
+    "smooth_iterations": 3,
+    "majority_filter": true,
+    "minimum_patch_cells": 0,
+    "clip": {
+      "enabled": true,
+      "boundary_sha256": "2c723deac9d470b735f5b54684292cd60a83b9efd6b5278789b74924dd92d8c5"
+    }
+  },
+  "combined_exact_polygon": "camera_viewsheds_exact_epsg5070.gpkg",
+  "web_products": {
+    "individual_geojson": "mapbox/envirovision-camera-viewsheds.geojson",
+    "coverage_geojson": "mapbox/envirovision-camera-viewsheds-coverage.geojson",
+    "review_geopackage": "mapbox/camera_viewsheds_web_epsg5070.gpkg",
+    "individual_layer": "camera_viewsheds",
+    "coverage_layer": "camera_viewshed_coverage",
+    "minzoom": 5,
+    "maxzoom": 12,
+    "status": "complete",
+    "mbtiles": "mapbox/envirovision-camera-viewsheds-z5.mbtiles",
+    "error": null
+  },
+  "viewsheds": [
+    {
+      "source_id": 1,
+      "viewshed_id": "envirovision-bald-mountain",
+      "site_name": "Bald Mountain",
+      "aliases": [],
+      "longitude": -117.893003,
+      "latitude": 44.574,
+      "height_ft": 35.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-bald-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_bald_mountain.gpkg"
+    },
+    {
+      "source_id": 2,
+      "viewshed_id": "envirovision-baughman",
+      "site_name": "Baughman",
+      "aliases": [],
+      "longitude": -123.581089,
+      "latitude": 43.269315,
+      "height_ft": 102.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-baughman.geojson",
+      "exact_polygon": "polygons_exact/envirovision_baughman.gpkg"
+    },
+    {
+      "source_id": 3,
+      "viewshed_id": "envirovision-bear-mountain",
+      "site_name": "Bear Mountain",
+      "aliases": [],
+      "longitude": -122.891679,
+      "latitude": 43.842774,
+      "height_ft": 98.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-bear-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_bear_mountain.gpkg"
+    },
+    {
+      "source_id": 4,
+      "viewshed_id": "envirovision-bearwallow-butte",
+      "site_name": "Bearwallow Butte",
+      "aliases": [],
+      "longitude": -121.552084,
+      "latitude": 44.078575,
+      "height_ft": 103.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-bearwallow-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_bearwallow_butte.gpkg"
+    },
+    {
+      "source_id": 5,
+      "viewshed_id": "envirovision-beaver-hill",
+      "site_name": "Beaver Hill",
+      "aliases": [],
+      "longitude": -124.305443,
+      "latitude": 43.210138,
+      "height_ft": 82.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-beaver-hill.geojson",
+      "exact_polygon": "polygons_exact/envirovision_beaver_hill.gpkg"
+    },
+    {
+      "source_id": 6,
+      "viewshed_id": "envirovision-bieberstedt-butte",
+      "site_name": "Bieberstedt Butte",
+      "aliases": [
+        "Bieberstedt Butte East",
+        "Bieberstedt Butte West"
+      ],
+      "longitude": -122.472843,
+      "latitude": 42.410507,
+      "height_ft": 54.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-bieberstedt-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_bieberstedt_butte.gpkg"
+    },
+    {
+      "source_id": 7,
+      "viewshed_id": "envirovision-big-rock",
+      "site_name": "Big Rock",
+      "aliases": [
+        "Big Rock 1",
+        "Big Rock 2"
+      ],
+      "longitude": -122.451324,
+      "latitude": 44.268034,
+      "height_ft": 40.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-big-rock.geojson",
+      "exact_polygon": "polygons_exact/envirovision_big_rock.gpkg"
+    },
+    {
+      "source_id": 8,
+      "viewshed_id": "envirovision-black-mountain",
+      "site_name": "Black Mountain",
+      "aliases": [],
+      "longitude": -119.296187,
+      "latitude": 45.212869,
+      "height_ft": 46.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-black-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_black_mountain.gpkg"
+    },
+    {
+      "source_id": 9,
+      "viewshed_id": "envirovision-bland-mountain",
+      "site_name": "Bland Mountain",
+      "aliases": [],
+      "longitude": -123.119198,
+      "latitude": 42.969109,
+      "height_ft": 66.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-bland-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_bland_mountain.gpkg"
+    },
+    {
+      "source_id": 10,
+      "viewshed_id": "envirovision-bosley-butte",
+      "site_name": "Bosley Butte",
+      "aliases": [],
+      "longitude": -124.225653,
+      "latitude": 42.208871,
+      "height_ft": 164.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-bosley-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_bosley_butte.gpkg"
+    },
+    {
+      "source_id": 11,
+      "viewshed_id": "envirovision-bridge-creek",
+      "site_name": "Bridge Creek",
+      "aliases": [
+        "Bridge Creek 1",
+        "Bridge Creek 2"
+      ],
+      "longitude": -118.971001,
+      "latitude": 45.008398,
+      "height_ft": 79.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-bridge-creek.geojson",
+      "exact_polygon": "polygons_exact/envirovision_bridge_creek.gpkg"
+    },
+    {
+      "source_id": 12,
+      "viewshed_id": "envirovision-canyon-mountain",
+      "site_name": "Canyon Mountain",
+      "aliases": [],
+      "longitude": -123.28592,
+      "latitude": 42.902197,
+      "height_ft": 52.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-canyon-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_canyon_mountain.gpkg"
+    },
+    {
+      "source_id": 13,
+      "viewshed_id": "envirovision-carney-butte",
+      "site_name": "Carney Butte",
+      "aliases": [
+        "Carney Butte North",
+        "Carney Butte South"
+      ],
+      "longitude": -118.949003,
+      "latitude": 45.281005,
+      "height_ft": 77.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-carney-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_carney_butte.gpkg"
+    },
+    {
+      "source_id": 14,
+      "viewshed_id": "envirovision-cedar-springs-mountain",
+      "site_name": "Cedar Springs Mountain",
+      "aliases": [],
+      "longitude": -123.122364,
+      "latitude": 42.761717,
+      "height_ft": 66.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-cedar-springs-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_cedar_springs_mountain.gpkg"
+    },
+    {
+      "source_id": 15,
+      "viewshed_id": "envirovision-chase-mountain",
+      "site_name": "Chase Mountain",
+      "aliases": [
+        "Chase Mountain 1",
+        "Chase Mountain 2"
+      ],
+      "longitude": -121.994049,
+      "latitude": 42.094607,
+      "height_ft": 33.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-chase-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_chase_mountain.gpkg"
+    },
+    {
+      "source_id": 16,
+      "viewshed_id": "envirovision-chicken-hills",
+      "site_name": "Chicken Hills",
+      "aliases": [
+        "Chicken Hills 1",
+        "Chicken Hills 2"
+      ],
+      "longitude": -122.025006,
+      "latitude": 42.045966,
+      "height_ft": 150.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-chicken-hills.geojson",
+      "exact_polygon": "polygons_exact/envirovision_chicken_hills.gpkg"
+    },
+    {
+      "source_id": 17,
+      "viewshed_id": "envirovision-chilcoot",
+      "site_name": "Chilcoot",
+      "aliases": [],
+      "longitude": -122.731281,
+      "latitude": 43.432294,
+      "height_ft": 72.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-chilcoot.geojson",
+      "exact_polygon": "polygons_exact/envirovision_chilcoot.gpkg"
+    },
+    {
+      "source_id": 18,
+      "viewshed_id": "envirovision-cougar-rock",
+      "site_name": "Cougar Rock",
+      "aliases": [],
+      "longitude": -122.310259,
+      "latitude": 44.479711,
+      "height_ft": 82.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-cougar-rock.geojson",
+      "exact_polygon": "polygons_exact/envirovision_cougar_rock.gpkg"
+    },
+    {
+      "source_id": 19,
+      "viewshed_id": "envirovision-crescent-butte",
+      "site_name": "Crescent Butte",
+      "aliases": [
+        "Crescent Butte 1",
+        "Crescent Butte 2"
+      ],
+      "longitude": -121.667219,
+      "latitude": 43.462499,
+      "height_ft": 60.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-crescent-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_crescent_butte.gpkg"
+    },
+    {
+      "source_id": 20,
+      "viewshed_id": "envirovision-dean-mountain",
+      "site_name": "Dean Mountain",
+      "aliases": [],
+      "longitude": -123.980085,
+      "latitude": 43.614574,
+      "height_ft": 82.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-dean-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_dean_mountain.gpkg"
+    },
+    {
+      "source_id": 21,
+      "viewshed_id": "envirovision-dutchman-butte",
+      "site_name": "Dutchman Butte",
+      "aliases": [],
+      "longitude": -123.65998,
+      "latitude": 42.866898,
+      "height_ft": 118.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-dutchman-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_dutchman_butte.gpkg"
+    },
+    {
+      "source_id": 22,
+      "viewshed_id": "envirovision-dutchman-peak",
+      "site_name": "Dutchman Peak",
+      "aliases": [
+        "Dutchman Peak North",
+        "Dutchman Peak South"
+      ],
+      "longitude": -122.891333,
+      "latitude": 42.043568,
+      "height_ft": 49.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-dutchman-peak.geojson",
+      "exact_polygon": "polygons_exact/envirovision_dutchman_peak.gpkg"
+    },
+    {
+      "source_id": 23,
+      "viewshed_id": "envirovision-eden",
+      "site_name": "Eden",
+      "aliases": [
+        "Eden ENE",
+        "Eden WSW"
+      ],
+      "longitude": -117.490702,
+      "latitude": 45.919108,
+      "height_ft": 60.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-eden.geojson",
+      "exact_polygon": "polygons_exact/envirovision_eden.gpkg"
+    },
+    {
+      "source_id": 24,
+      "viewshed_id": "envirovision-edson-butte",
+      "site_name": "Edson Butte",
+      "aliases": [],
+      "longitude": -124.334605,
+      "latitude": 42.871735,
+      "height_ft": 49.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-edson-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_edson_butte.gpkg"
+    },
+    {
+      "source_id": 25,
+      "viewshed_id": "envirovision-elk-mountain-bridge",
+      "site_name": "Elk Mountain (Bridge)",
+      "aliases": [
+        "Elk Mountain"
+      ],
+      "longitude": -123.95374,
+      "latitude": 43.120552,
+      "height_ft": 103.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-elk-mountain-bridge.geojson",
+      "exact_polygon": "polygons_exact/envirovision_elk_mountain_bridge.gpkg"
+    },
+    {
+      "source_id": 26,
+      "viewshed_id": "envirovision-elk-mountain-wallowa",
+      "site_name": "Elk Mountain (Wallowa)",
+      "aliases": [
+        "Elk Mountain"
+      ],
+      "longitude": -117.204842,
+      "latitude": 45.597699,
+      "height_ft": 79.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-elk-mountain-wallowa.geojson",
+      "exact_polygon": "polygons_exact/envirovision_elk_mountain_wallowa.gpkg"
+    },
+    {
+      "source_id": 27,
+      "viewshed_id": "envirovision-flag-point",
+      "site_name": "Flag Point",
+      "aliases": [],
+      "longitude": -121.466054,
+      "latitude": 45.318136,
+      "height_ft": 40.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-flag-point.geojson",
+      "exact_polygon": "polygons_exact/envirovision_flag_point.gpkg"
+    },
+    {
+      "source_id": 28,
+      "viewshed_id": "envirovision-flounce",
+      "site_name": "Flounce",
+      "aliases": [],
+      "longitude": -122.608329,
+      "latitude": 42.728613,
+      "height_ft": 100.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-flounce.geojson",
+      "exact_polygon": "polygons_exact/envirovision_flounce.gpkg"
+    },
+    {
+      "source_id": 29,
+      "viewshed_id": "envirovision-foley-butte",
+      "site_name": "Foley Butte",
+      "aliases": [],
+      "longitude": -120.784984,
+      "latitude": 44.527004,
+      "height_ft": 80.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-foley-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_foley_butte.gpkg"
+    },
+    {
+      "source_id": 30,
+      "viewshed_id": "envirovision-frazier-mountain",
+      "site_name": "Frazier Mountain",
+      "aliases": [],
+      "longitude": -117.695003,
+      "latitude": 45.076,
+      "height_ft": 60.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-frazier-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_frazier_mountain.gpkg"
+    },
+    {
+      "source_id": 31,
+      "viewshed_id": "envirovision-geneva",
+      "site_name": "Geneva",
+      "aliases": [],
+      "longitude": -121.391588,
+      "latitude": 44.537853,
+      "height_ft": 105.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-geneva.geojson",
+      "exact_polygon": "polygons_exact/envirovision_geneva.gpkg"
+    },
+    {
+      "source_id": 32,
+      "viewshed_id": "envirovision-gerow-butte",
+      "site_name": "Gerow Butte",
+      "aliases": [],
+      "longitude": -120.46011,
+      "latitude": 44.263403,
+      "height_ft": 80.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-gerow-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_gerow_butte.gpkg"
+    },
+    {
+      "source_id": 33,
+      "viewshed_id": "envirovision-green-peter",
+      "site_name": "Green Peter",
+      "aliases": [],
+      "longitude": -122.58321,
+      "latitude": 44.483224,
+      "height_ft": 39.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-green-peter.geojson",
+      "exact_polygon": "polygons_exact/envirovision_green_peter.gpkg"
+    },
+    {
+      "source_id": 34,
+      "viewshed_id": "envirovision-grizzly-mountain",
+      "site_name": "Grizzly Mountain",
+      "aliases": [],
+      "longitude": -124.364714,
+      "latitude": 42.396399,
+      "height_ft": 197.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-grizzly-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_grizzly_mountain.gpkg"
+    },
+    {
+      "source_id": 35,
+      "viewshed_id": "envirovision-grizzly-peak",
+      "site_name": "Grizzly Peak",
+      "aliases": [
+        "Grizzly Peak North",
+        "Grizzly Peak South"
+      ],
+      "longitude": -120.639342,
+      "latitude": 42.25264,
+      "height_ft": 33.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-grizzly-peak.geojson",
+      "exact_polygon": "polygons_exact/envirovision_grizzly_peak.gpkg"
+    },
+    {
+      "source_id": 36,
+      "viewshed_id": "envirovision-hagen",
+      "site_name": "Hagen",
+      "aliases": [],
+      "longitude": -122.410181,
+      "latitude": 44.13909,
+      "height_ft": 138.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-hagen.geojson",
+      "exact_polygon": "polygons_exact/envirovision_hagen.gpkg"
+    },
+    {
+      "source_id": 37,
+      "viewshed_id": "envirovision-hamelton",
+      "site_name": "Hamelton",
+      "aliases": [
+        "Hamelton 1",
+        "Hamelton 2"
+      ],
+      "longitude": -121.350817,
+      "latitude": 42.785549,
+      "height_ft": 30.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-hamelton.geojson",
+      "exact_polygon": "polygons_exact/envirovision_hamelton.gpkg"
+    },
+    {
+      "source_id": 38,
+      "viewshed_id": "envirovision-harness-mountain",
+      "site_name": "Harness Mountain",
+      "aliases": [],
+      "longitude": -123.107364,
+      "latitude": 43.522161,
+      "height_ft": 200.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-harness-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_harness_mountain.gpkg"
+    },
+    {
+      "source_id": 39,
+      "viewshed_id": "envirovision-hogback",
+      "site_name": "Hogback",
+      "aliases": [
+        "Hogback East",
+        "Hogback West"
+      ],
+      "longitude": -121.705857,
+      "latitude": 42.24291,
+      "height_ft": 35.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-hogback.geojson",
+      "exact_polygon": "polygons_exact/envirovision_hogback.gpkg"
+    },
+    {
+      "source_id": 40,
+      "viewshed_id": "envirovision-hood-mountain",
+      "site_name": "Hood Mountain",
+      "aliases": [],
+      "longitude": -124.052476,
+      "latitude": 42.935899,
+      "height_ft": 105.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-hood-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_hood_mountain.gpkg"
+    },
+    {
+      "source_id": 41,
+      "viewshed_id": "envirovision-howard-butte",
+      "site_name": "Howard Butte",
+      "aliases": [],
+      "longitude": -117.737324,
+      "latitude": 45.72379,
+      "height_ft": 123.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-howard-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_howard_butte.gpkg"
+    },
+    {
+      "source_id": 42,
+      "viewshed_id": "envirovision-isabelle",
+      "site_name": "Isabelle",
+      "aliases": [
+        "Isabelle North",
+        "Isabelle South"
+      ],
+      "longitude": -123.104493,
+      "latitude": 42.303197,
+      "height_ft": 100.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-isabelle.geojson",
+      "exact_polygon": "polygons_exact/envirovision_isabelle.gpkg"
+    },
+    {
+      "source_id": 43,
+      "viewshed_id": "envirovision-ivers-peak",
+      "site_name": "Ivers Peak",
+      "aliases": [],
+      "longitude": -123.853306,
+      "latitude": 43.403875,
+      "height_ft": 115.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-ivers-peak.geojson",
+      "exact_polygon": "polygons_exact/envirovision_ivers_peak.gpkg"
+    },
+    {
+      "source_id": 44,
+      "viewshed_id": "envirovision-king-mountain",
+      "site_name": "King Mountain",
+      "aliases": [
+        "King Mountain East",
+        "King Mountain West"
+      ],
+      "longitude": -123.229851,
+      "latitude": 42.713578,
+      "height_ft": 60.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-king-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_king_mountain.gpkg"
+    },
+    {
+      "source_id": 45,
+      "viewshed_id": "envirovision-little-grayback",
+      "site_name": "Little Grayback",
+      "aliases": [
+        "Little Grayback East",
+        "Little Grayback West"
+      ],
+      "longitude": -123.493881,
+      "latitude": 42.198247,
+      "height_ft": 164.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-little-grayback.geojson",
+      "exact_polygon": "polygons_exact/envirovision_little_grayback.gpkg"
+    },
+    {
+      "source_id": 46,
+      "viewshed_id": "envirovision-manzanita",
+      "site_name": "Manzanita",
+      "aliases": [
+        "Manzanita East",
+        "Manzanita West"
+      ],
+      "longitude": -123.449798,
+      "latitude": 42.304277,
+      "height_ft": 87.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-manzanita.geojson",
+      "exact_polygon": "polygons_exact/envirovision_manzanita.gpkg"
+    },
+    {
+      "source_id": 47,
+      "viewshed_id": "envirovision-marsters-ridge",
+      "site_name": "Marsters Ridge",
+      "aliases": [],
+      "longitude": -123.417494,
+      "latitude": 43.187701,
+      "height_ft": 49.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-marsters-ridge.geojson",
+      "exact_polygon": "polygons_exact/envirovision_marsters_ridge.gpkg"
+    },
+    {
+      "source_id": 48,
+      "viewshed_id": "envirovision-menasha",
+      "site_name": "Menasha",
+      "aliases": [],
+      "longitude": -124.311772,
+      "latitude": 42.674371,
+      "height_ft": 49.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-menasha.geojson",
+      "exact_polygon": "polygons_exact/envirovision_menasha.gpkg"
+    },
+    {
+      "source_id": 49,
+      "viewshed_id": "envirovision-middle-mountain",
+      "site_name": "Middle Mountain",
+      "aliases": [
+        "Middle Mountain 1",
+        "Middle Mountain 2"
+      ],
+      "longitude": -121.59753,
+      "latitude": 45.578971,
+      "height_ft": 45.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-middle-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_middle_mountain.gpkg"
+    },
+    {
+      "source_id": 50,
+      "viewshed_id": "envirovision-monument-mountain",
+      "site_name": "Monument Mountain",
+      "aliases": [],
+      "longitude": -119.425722,
+      "latitude": 44.861992,
+      "height_ft": 20.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-monument-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_monument_mountain.gpkg"
+    },
+    {
+      "source_id": 51,
+      "viewshed_id": "envirovision-mt-ashland",
+      "site_name": "Mt Ashland",
+      "aliases": [
+        "Mt Ashland North",
+        "Mt Ashland South"
+      ],
+      "longitude": -122.720164,
+      "latitude": 42.081003,
+      "height_ft": 97.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-mt-ashland.geojson",
+      "exact_polygon": "polygons_exact/envirovision_mt_ashland.gpkg"
+    },
+    {
+      "source_id": 52,
+      "viewshed_id": "envirovision-mt-harris",
+      "site_name": "Mt Harris",
+      "aliases": [
+        "Mt Harris NE",
+        "Mt Harris SW"
+      ],
+      "longitude": -117.893183,
+      "latitude": 45.440312,
+      "height_ft": 40.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-mt-harris.geojson",
+      "exact_polygon": "polygons_exact/envirovision_mt_harris.gpkg"
+    },
+    {
+      "source_id": 53,
+      "viewshed_id": "envirovision-mt-mahogany",
+      "site_name": "Mt Mahogany",
+      "aliases": [],
+      "longitude": -118.177003,
+      "latitude": 45.368,
+      "height_ft": 125.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-mt-mahogany.geojson",
+      "exact_polygon": "polygons_exact/envirovision_mt_mahogany.gpkg"
+    },
+    {
+      "source_id": 54,
+      "viewshed_id": "envirovision-mt-nebo",
+      "site_name": "Mt Nebo",
+      "aliases": [],
+      "longitude": -122.715227,
+      "latitude": 44.153024,
+      "height_ft": 145.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-mt-nebo.geojson",
+      "exact_polygon": "polygons_exact/envirovision_mt_nebo.gpkg"
+    },
+    {
+      "source_id": 55,
+      "viewshed_id": "envirovision-mt-scott",
+      "site_name": "Mt Scott",
+      "aliases": [],
+      "longitude": -123.064387,
+      "latitude": 43.371832,
+      "height_ft": 84.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-mt-scott.geojson",
+      "exact_polygon": "polygons_exact/envirovision_mt_scott.gpkg"
+    },
+    {
+      "source_id": 56,
+      "viewshed_id": "envirovision-old-baldy",
+      "site_name": "Old Baldy",
+      "aliases": [
+        "Old Baldy East",
+        "Old Baldy West"
+      ],
+      "longitude": -123.231383,
+      "latitude": 42.490648,
+      "height_ft": 82.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-old-baldy.geojson",
+      "exact_polygon": "polygons_exact/envirovision_old_baldy.gpkg"
+    },
+    {
+      "source_id": 57,
+      "viewshed_id": "envirovision-old-blue",
+      "site_name": "Old Blue",
+      "aliases": [],
+      "longitude": -123.670097,
+      "latitude": 43.511105,
+      "height_ft": 72.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-old-blue.geojson",
+      "exact_polygon": "polygons_exact/envirovision_old_blue.gpkg"
+    },
+    {
+      "source_id": 58,
+      "viewshed_id": "envirovision-onion",
+      "site_name": "Onion",
+      "aliases": [
+        "Onion East",
+        "Onion West"
+      ],
+      "longitude": -123.616113,
+      "latitude": 42.454418,
+      "height_ft": 66.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-onion.geojson",
+      "exact_polygon": "polygons_exact/envirovision_onion.gpkg"
+    },
+    {
+      "source_id": 59,
+      "viewshed_id": "envirovision-parker-mountain",
+      "site_name": "Parker Mountain",
+      "aliases": [
+        "Parker Mountain 1",
+        "Parker Mountain 2"
+      ],
+      "longitude": -122.278887,
+      "latitude": 42.105557,
+      "height_ft": 60.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-parker-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_parker_mountain.gpkg"
+    },
+    {
+      "source_id": 60,
+      "viewshed_id": "envirovision-peavine",
+      "site_name": "Peavine",
+      "aliases": [
+        "Peavine East",
+        "Peavine West"
+      ],
+      "longitude": -123.642049,
+      "latitude": 42.601766,
+      "height_ft": 87.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-peavine.geojson",
+      "exact_polygon": "polygons_exact/envirovision_peavine.gpkg"
+    },
+    {
+      "source_id": 61,
+      "viewshed_id": "envirovision-prairie-peak",
+      "site_name": "Prairie Peak",
+      "aliases": [],
+      "longitude": -123.590676,
+      "latitude": 44.279589,
+      "height_ft": 180.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-prairie-peak.geojson",
+      "exact_polygon": "polygons_exact/envirovision_prairie_peak.gpkg"
+    },
+    {
+      "source_id": 62,
+      "viewshed_id": "envirovision-red-butte",
+      "site_name": "Red Butte",
+      "aliases": [],
+      "longitude": -122.880772,
+      "latitude": 43.165556,
+      "height_ft": 92.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-red-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_red_butte.gpkg"
+    },
+    {
+      "source_id": 63,
+      "viewshed_id": "envirovision-reuben",
+      "site_name": "Reuben",
+      "aliases": [
+        "Reuben East",
+        "Reuben West"
+      ],
+      "longitude": -123.59705,
+      "latitude": 42.718698,
+      "height_ft": 98.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-reuben.geojson",
+      "exact_polygon": "polygons_exact/envirovision_reuben.gpkg"
+    },
+    {
+      "source_id": 64,
+      "viewshed_id": "envirovision-ritter",
+      "site_name": "Ritter",
+      "aliases": [],
+      "longitude": -119.071475,
+      "latitude": 44.83361,
+      "height_ft": 39.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-ritter.geojson",
+      "exact_polygon": "polygons_exact/envirovision_ritter.gpkg"
+    },
+    {
+      "source_id": 65,
+      "viewshed_id": "envirovision-roman-nose",
+      "site_name": "Roman Nose",
+      "aliases": [],
+      "longitude": -123.738697,
+      "latitude": 43.912048,
+      "height_ft": 236.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-roman-nose.geojson",
+      "exact_polygon": "polygons_exact/envirovision_roman_nose.gpkg"
+    },
+    {
+      "source_id": 66,
+      "viewshed_id": "envirovision-round-pass",
+      "site_name": "Round Pass",
+      "aliases": [
+        "Round Pass 1",
+        "Round Pass 2"
+      ],
+      "longitude": -120.511356,
+      "latitude": 42.499598,
+      "height_ft": 25.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-round-pass.geojson",
+      "exact_polygon": "polygons_exact/envirovision_round_pass.gpkg"
+    },
+    {
+      "source_id": 67,
+      "viewshed_id": "envirovision-round-top",
+      "site_name": "Round Top",
+      "aliases": [
+        "Round Top East",
+        "Round Top West"
+      ],
+      "longitude": -122.990903,
+      "latitude": 42.701906,
+      "height_ft": 164.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-round-top.geojson",
+      "exact_polygon": "polygons_exact/envirovision_round_top.gpkg"
+    },
+    {
+      "source_id": 68,
+      "viewshed_id": "envirovision-sexton",
+      "site_name": "Sexton",
+      "aliases": [
+        "Sexton North",
+        "Sexton South"
+      ],
+      "longitude": -123.365834,
+      "latitude": 42.600138,
+      "height_ft": 131.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-sexton.geojson",
+      "exact_polygon": "polygons_exact/envirovision_sexton.gpkg"
+    },
+    {
+      "source_id": 69,
+      "viewshed_id": "envirovision-shutters-landing",
+      "site_name": "Shutters Landing",
+      "aliases": [
+        "Shutters Landing 1",
+        "Shutters Landing 2"
+      ],
+      "longitude": -124.175348,
+      "latitude": 43.533861,
+      "height_ft": 60.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-shutters-landing.geojson",
+      "exact_polygon": "polygons_exact/envirovision_shutters_landing.gpkg"
+    },
+    {
+      "source_id": 70,
+      "viewshed_id": "envirovision-signal-tree",
+      "site_name": "Signal Tree",
+      "aliases": [],
+      "longitude": -123.778418,
+      "latitude": 43.001747,
+      "height_ft": 164.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-signal-tree.geojson",
+      "exact_polygon": "polygons_exact/envirovision_signal_tree.gpkg"
+    },
+    {
+      "source_id": 71,
+      "viewshed_id": "envirovision-silver-butte",
+      "site_name": "Silver Butte",
+      "aliases": [],
+      "longitude": -123.37828,
+      "latitude": 42.858897,
+      "height_ft": 80.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-silver-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_silver_butte.gpkg"
+    },
+    {
+      "source_id": 72,
+      "viewshed_id": "envirovision-snowboard",
+      "site_name": "Snowboard",
+      "aliases": [
+        "Snowboard 1",
+        "Snowboard 2"
+      ],
+      "longitude": -119.990497,
+      "latitude": 44.961342,
+      "height_ft": 66.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-snowboard.geojson",
+      "exact_polygon": "polygons_exact/envirovision_snowboard.gpkg"
+    },
+    {
+      "source_id": 73,
+      "viewshed_id": "envirovision-soda-mountain",
+      "site_name": "Soda Mountain",
+      "aliases": [
+        "Soda Mountain North",
+        "Soda Mountain South"
+      ],
+      "longitude": -122.47901,
+      "latitude": 42.064779,
+      "height_ft": 131.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-soda-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_soda_mountain.gpkg"
+    },
+    {
+      "source_id": 74,
+      "viewshed_id": "envirovision-table-mountain",
+      "site_name": "Table Mountain",
+      "aliases": [],
+      "longitude": -122.842994,
+      "latitude": 43.627998,
+      "height_ft": 50.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-table-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_table_mountain.gpkg"
+    },
+    {
+      "source_id": 75,
+      "viewshed_id": "envirovision-tallowbox",
+      "site_name": "Tallowbox",
+      "aliases": [
+        "Tallowbox East",
+        "Tallowbox West"
+      ],
+      "longitude": -123.151557,
+      "latitude": 42.196366,
+      "height_ft": 131.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-tallowbox.geojson",
+      "exact_polygon": "polygons_exact/envirovision_tallowbox.gpkg"
+    },
+    {
+      "source_id": 76,
+      "viewshed_id": "envirovision-three-creeks",
+      "site_name": "Three Creeks",
+      "aliases": [
+        "Three Creeks 1",
+        "Three Creeks 2"
+      ],
+      "longitude": -121.582455,
+      "latitude": 44.173962,
+      "height_ft": 40.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-three-creeks.geojson",
+      "exact_polygon": "polygons_exact/envirovision_three_creeks.gpkg"
+    },
+    {
+      "source_id": 77,
+      "viewshed_id": "envirovision-tiller",
+      "site_name": "Tiller",
+      "aliases": [],
+      "longitude": -122.961645,
+      "latitude": 42.905702,
+      "height_ft": 98.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-tiller.geojson",
+      "exact_polygon": "polygons_exact/envirovision_tiller.gpkg"
+    },
+    {
+      "source_id": 78,
+      "viewshed_id": "envirovision-tiptop",
+      "site_name": "Tiptop",
+      "aliases": [],
+      "longitude": -118.421822,
+      "latitude": 45.445294,
+      "height_ft": 85.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-tiptop.geojson",
+      "exact_polygon": "polygons_exact/envirovision_tiptop.gpkg"
+    },
+    {
+      "source_id": 79,
+      "viewshed_id": "envirovision-tombstone",
+      "site_name": "Tombstone",
+      "aliases": [
+        "Tombstone East",
+        "Tombstone West"
+      ],
+      "longitude": -122.750433,
+      "latitude": 42.298398,
+      "height_ft": 89.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-tombstone.geojson",
+      "exact_polygon": "polygons_exact/envirovision_tombstone.gpkg"
+    },
+    {
+      "source_id": 80,
+      "viewshed_id": "envirovision-walker-mountain",
+      "site_name": "Walker Mountain",
+      "aliases": [
+        "Walker Mountain 1",
+        "Walker Mountain 2"
+      ],
+      "longitude": -121.716936,
+      "latitude": 43.305214,
+      "height_ft": 82.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-walker-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_walker_mountain.gpkg"
+    },
+    {
+      "source_id": 81,
+      "viewshed_id": "envirovision-walker-point",
+      "site_name": "Walker Point",
+      "aliases": [],
+      "longitude": -123.628874,
+      "latitude": 44.06655,
+      "height_ft": 121.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-walker-point.geojson",
+      "exact_polygon": "polygons_exact/envirovision_walker_point.gpkg"
+    },
+    {
+      "source_id": 82,
+      "viewshed_id": "envirovision-warner-mountain",
+      "site_name": "Warner Mountain",
+      "aliases": [
+        "Warner Mountain North",
+        "Warner Mountain South"
+      ],
+      "longitude": -122.365996,
+      "latitude": 43.542999,
+      "height_ft": 55.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-warner-mountain.geojson",
+      "exact_polygon": "polygons_exact/envirovision_warner_mountain.gpkg"
+    },
+    {
+      "source_id": 83,
+      "viewshed_id": "envirovision-wasco-butte",
+      "site_name": "Wasco Butte",
+      "aliases": [],
+      "longitude": -121.335128,
+      "latitude": 45.616711,
+      "height_ft": 150.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-wasco-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_wasco_butte.gpkg"
+    },
+    {
+      "source_id": 84,
+      "viewshed_id": "envirovision-wastina-butte",
+      "site_name": "Wastina Butte",
+      "aliases": [
+        "Wastina Butte East",
+        "Wastina Butte West"
+      ],
+      "longitude": -121.271323,
+      "latitude": 43.371643,
+      "height_ft": 55.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-wastina-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_wastina_butte.gpkg"
+    },
+    {
+      "source_id": 85,
+      "viewshed_id": "envirovision-weston",
+      "site_name": "Weston",
+      "aliases": [
+        "Weston High",
+        "Weston Low"
+      ],
+      "longitude": -118.37586,
+      "latitude": 45.800075,
+      "height_ft": 60.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-weston.geojson",
+      "exact_polygon": "polygons_exact/envirovision_weston.gpkg"
+    },
+    {
+      "source_id": 86,
+      "viewshed_id": "envirovision-yainax-butte",
+      "site_name": "Yainax Butte",
+      "aliases": [
+        "Yainax Butte East",
+        "Yainax Butte West"
+      ],
+      "longitude": -121.269802,
+      "latitude": 42.326513,
+      "height_ft": 35.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-yainax-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_yainax_butte.gpkg"
+    },
+    {
+      "source_id": 87,
+      "viewshed_id": "envirovision-yellow-butte",
+      "site_name": "Yellow Butte",
+      "aliases": [],
+      "longitude": -123.403728,
+      "latitude": 43.546614,
+      "height_ft": 82.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-yellow-butte.geojson",
+      "exact_polygon": "polygons_exact/envirovision_yellow_butte.gpkg"
+    }
+  ]
+}

@@ -72,6 +72,7 @@ const LABEL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity
 const FIRE_ICON_ID = 'fire-marker';
 const CAMERA_ICON_ID = 'camera-marker';
 const PANO_CAMERA_ICON_ID = 'pano-camera-marker';
+const ENVIROVISION_CAMERA_ICON_ID = 'envirovision-camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
 const DIGITIZED_CAMERA_GROUP_LABEL = 'Digitized Camera Sources';
 const DIGITIZED_CAMERA_UNLOCK_SEQUENCE = Object.freeze(['1', '2', '3', '4']); // key sequence reveals digitized camera layer
@@ -81,6 +82,7 @@ const BOUNDARY_COLOR = '#494949';
 const BOUNDARY_FILL_COLOR = '#929292';
 const SELECTED_BOUNDARY_COLOR = '#f8e109';
 const PANO_OPERATOR = 'Pano AI';
+const ENVIROVISION_OPERATOR = 'EnviroVision';
 // every provider shares this fill unless the viewer turns on per-provider colors
 // satellite imagery needs a light viewshed fill for contrast
 const VIEWSHED_FILL_COLOR = Object.freeze({
@@ -153,13 +155,51 @@ const CAMERA_PROVIDERS = Object.freeze([
       outdoors: CAMERA_PROVIDER_COLORS.pano,
       satellite: '#a9d4fb',
     }),
+    sharedSiteIconOffset: Object.freeze([14, 0]),
+  }),
+  Object.freeze({
+    name: ENVIROVISION_OPERATOR,
+    color: CAMERA_PROVIDER_COLORS.enviroVision,
+    cameraLabel: LEGEND_LAYERS.enviroVisionCameras,
+    cameraLayerId: LAYER_IDS.enviroVisionCameras,
+    iconId: ENVIROVISION_CAMERA_ICON_ID,
+    iconUrl: MARKER_ICON_URLS.enviroVisionCamera,
+    viewshedLabel: LEGEND_LAYERS.enviroVisionViewsheds,
+    viewshedTileset: DATA_URLS.enviroVisionCameraViewsheds,
+    viewshedSourceId: LAYER_IDS.enviroVisionViewshedsSource,
+    viewshedFillLayerId: LAYER_IDS.enviroVisionViewshedsFill,
+    viewshedHighlightLayerId: LAYER_IDS.enviroVisionViewshedsHighlightFill,
+    viewshedFillColor: Object.freeze({
+      outdoors: CAMERA_PROVIDER_COLORS.enviroVision,
+      satellite: '#b5e3a8',
+    }),
+    sharedSiteIconOffset: Object.freeze([-14, 0]),
+  }),
+]);
+// providers whose cameras and viewshed ids come from a sites file in data/
+const SITE_FILE_PROVIDERS = Object.freeze([
+  Object.freeze({
+    operator: PANO_OPERATOR,
+    dataKey: 'panoSites',
+    cameraLabel: LEGEND_LAYERS.panoCameras,
+    cameraLayerId: LAYER_IDS.panoCameras,
+    viewshedLabel: LEGEND_LAYERS.panoViewsheds,
+    viewshedTileset: DATA_URLS.panoCameraViewsheds,
+  }),
+  Object.freeze({
+    operator: ENVIROVISION_OPERATOR,
+    dataKey: 'enviroVisionSites',
+    cameraLabel: LEGEND_LAYERS.enviroVisionCameras,
+    cameraLayerId: LAYER_IDS.enviroVisionCameras,
+    viewshedLabel: LEGEND_LAYERS.enviroVisionViewsheds,
+    viewshedTileset: DATA_URLS.enviroVisionCameraViewsheds,
   }),
 ]);
 const CAMERA_LAYER_IDS = Object.freeze(
   CAMERA_PROVIDERS.map(({ cameraLayerId }) => cameraLayerId)
 );
-// Pano markers on a shared ALERTWest site sit beside its marker instead of on top
-const SHARED_SITE_ICON_OFFSET = Object.freeze([14, 0]);
+// markers on a shared ALERTWest site sit beside its marker instead of on top,
+// each provider on its own side (sharedSiteIconOffset above)
 const NO_DIVISION_SELECTED = '__none__';
 // only the groups listed in js/visible-content.js reach the filter menu and the map
 const FILTER_TYPES = Object.freeze(visibleFilterTypes(VISIBLE_FILTERS));
@@ -392,7 +432,7 @@ async function loadMapLayers(map) {
     data.regionFocus.then((regionFocus) => {
       setSourceData(map, LAYER_IDS.regionFocusSource, regionFocus);
     }),
-    // the camera filter lists every provider, so it waits for both
+    // the camera filter lists every provider, so it waits for all of them
     Promise.all([
       hydrateLegendLayer(
         LEGEND_LAYERS.alertWestCameras,
@@ -404,15 +444,13 @@ async function loadMapLayers(map) {
           return features;
         }
       ),
-      hydrateLegendLayer(
-        LEGEND_LAYERS.panoCameras,
-        data.panoSites,
-        (panoSites) => {
+      ...SITE_FILE_PROVIDERS.map(({ operator, dataKey, cameraLabel, cameraLayerId }) =>
+        hydrateLegendLayer(cameraLabel, data[dataKey], (sites) => {
           // provider sites already carry their viewshed ids
-          const cameras = providerSitesToCameras(panoSites, PANO_OPERATOR);
-          setSourceData(map, LAYER_IDS.panoCameras, cameras);
+          const cameras = providerSitesToCameras(sites, operator);
+          setSourceData(map, cameraLayerId, cameras);
           return cameras.features;
-        }
+        })
       ),
     ]).then((providerFeatures) => {
       // a failed provider contributes no cameras rather than blocking the filter
@@ -430,18 +468,18 @@ async function loadMapLayers(map) {
         );
       }
     ),
-    hydrateLegendLayer(
-      LEGEND_LAYERS.panoViewsheds,
-      data.panoSites,
-      (panoSites) => {
+    ...SITE_FILE_PROVIDERS.map(({ operator, dataKey, viewshedLabel, viewshedTileset }) =>
+      hydrateLegendLayer(viewshedLabel, data[dataKey], (sites) => {
+        // an unpublished tileset keeps the error its legend row already shows
+        if (!viewshedTileset) return;
         // pending sites may have heights but do not have published coverage yet
-        const modeled = providerSitesToCameras(panoSites, PANO_OPERATOR).features
+        const modeled = providerSitesToCameras(sites, operator).features
           .filter((feature) => feature.properties.viewshed_id);
         legendControl.updateInfo(
-          LEGEND_LAYERS.panoViewsheds,
-          `Contains ${modeled.length} camera viewsheds from Pano AI, capped at a 12mi maximum radius`
+          viewshedLabel,
+          `Contains ${modeled.length} camera viewsheds from ${operator}, capped at a 12mi maximum radius`
         );
-      }
+      })
     ),
     hydrateLegendLayer(
       'Fires (NIFC)',
@@ -1380,6 +1418,10 @@ function loadLayerData() {
       fetchJson(DATA_URLS.panoCameraSites, 'Pano AI camera sites')
     ),
 
+    enviroVisionSites: safelyLoadLegend('EnviroVision cameras', LEGEND_LAYERS.enviroVisionCameras, () =>
+      fetchJson(DATA_URLS.enviroVisionCameraSites, 'EnviroVision camera sites')
+    ),
+
     alertWestSites: safelyLoadLegend('ALERTWest site locations', LEGEND_LAYERS.alertWestCameras, () =>
       fetchJson(DATA_URLS.alertWestCameraSites, 'ALERTWest site locations')
     ),
@@ -1643,7 +1685,7 @@ async function addCameraLayers(map) {
     )
   );
 
-  for (const { cameraLayerId, iconId } of CAMERA_PROVIDERS) {
+  for (const { cameraLayerId, iconId, sharedSiteIconOffset = [0, 0] } of CAMERA_PROVIDERS) {
     addGeoJSONSource(map, cameraLayerId);
     map.addLayer({
       id: cameraLayerId,
@@ -1654,7 +1696,7 @@ async function addCameraLayers(map) {
         'icon-offset': [
           'case',
           ['==', ['get', 'sharesAlertWestSite'], true],
-          ['literal', SHARED_SITE_ICON_OFFSET],
+          ['literal', sharedSiteIconOffset],
           ['literal', [0, 0]],
         ],
       },
