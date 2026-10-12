@@ -272,6 +272,17 @@ assert.deepEqual(
   condenseCameraLegendRows(panoOnly, { separateViewshedColors: true }).map(({ label }) => label),
   ['Pano AI cameras', 'Pano AI viewsheds', 'Standing lookouts']);
 
+// a third provider joins the same rows
+const threeProviders = [
+  'Cameras', 'ALERTWest cameras', 'Pano AI cameras', 'EnviroVision cameras',
+  'Camera viewsheds', 'ALERTWest camera viewsheds', 'Pano AI camera viewsheds', 'EnviroVision camera viewsheds',
+].map((label) => ({ label }));
+assert.deepEqual(condenseCameraLegendRows(threeProviders).map(({ label }) => label),
+  ['ALERTWest cameras', 'Pano AI cameras', 'EnviroVision cameras', 'Viewsheds']);
+assert.deepEqual(
+  condenseCameraLegendRows(threeProviders, { separateViewshedColors: true }).map(({ label }) => label).slice(3),
+  ['ALERTWest viewsheds', 'Pano AI viewsheds', 'EnviroVision viewsheds']);
+
 // retain map and export canvas inputs so the crop math can be checked directly
 const canvas = new FakeNode('canvas');
 canvas.width = 1200;

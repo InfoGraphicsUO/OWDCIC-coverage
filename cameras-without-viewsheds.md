@@ -1,27 +1,40 @@
 # OWDCIC cameras without matched viewsheds
 
-Updated October 8, 2026. 83 ALERTWest and 24 Pano AI sites have published viewsheds.
-The sites below are in the installation sheet but have no viewshed yet;
+Updated October 12, 2026. 85 ALERTWest, 68 Pano AI, and 87 EnviroVision sites have published viewsheds.
+The sites below are in the installation sheet but have no viewshed yet; every other
+site with a location and camera height is modeled. Gold Hill and Dry Mountain use
+heights the sheet marks as estimated.
+
+## Blocked: 4 sites
+
 `data/camera-viewsheds-blocked.json` is the generated copy of this list.
 
-## ALERTWest: 4 sites
+| Site | Provider | Needed before a viewshed can be run |
+| --- | --- | --- |
+| Natapoc Ridge | ALERTWest | Confirm which camera (8603 or 15871) gets the sheet's 89 ft height |
+| Natapoc Ridge North | ALERTWest | Confirm which camera (8603 or 15871) gets the sheet's 84 ft height; North is provisionally the northern point |
+| Anderson | ALERTWest | Coordinates; the sheet gives only an estimated 50 ft height, so it is not mapped |
+| Midnight Gulch | Pano AI (Pacific Power) | Camera height |
 
-| Site | Needed before a viewshed can be run |
-| --- | --- |
-| Natapoc Ridge | Confirm which camera (8603 or 15871) gets the sheet's 89 ft height |
-| Natapoc Ridge North | Confirm which camera (8603 or 15871) gets the sheet's 84 ft height; North is provisionally the northern point |
-| Dry Mountain | Camera height. Location is digitized (43.671954, -119.563696) |
-| Gold Hill | Coordinates and camera height; not mapped |
+**Clearwater Wind Farm** (Pano AI, PGE table) is held out of the map: its sheet coordinates
+(46.85, -106.01) are in Montana. Remove it from `excluded` in `data/camera-site-supplements.json` once clarified.
 
-## Pano AI: 10 sites
+## Pano AI notes
 
-All ten lack a confirmed camera height: Sycan Substation, Latgawa Mountain, Round Butte,
-Warm Springs, Biglow Canyon, Sidwalter, Mill City, Lyons, Mullan Substation, and Waitsburg.
-
-- The sheet lists **Round Butte (Warm Springs)**; PGE lists these as two sites, and both are kept. Confirm which one the sheet means.
 - The sheet's **Mullen** is PGE's **Mullan Substation**.
-- `PGE-towers_reduced1.csv` gives tower heights for Mullan (173.9 ft) and Round Butte (100 ft). These are candidates only, not camera heights.
-- PGE supplied its own viewshed polygons for these sites (`PGE_WF_Cameras_Viewsheds.shp`). They have not been validated or imported.
+- The PGE rows are rounded to 0.01°, so sites keep their digitized or PGE camera-source points where one exists. Hazel Dell has no better source and sits on the rounded point.
+- **Timberline** shares the ALERTWest Timberline Lodge location with its own 79.99 ft height.
+- `PGE-towers_reduced1.csv` gives tower heights for Mullan (173.9 ft) and Round Butte (100 ft). The sheet's camera heights (64.99 ft and 81.99 ft) are used instead.
+- PGE supplied its own viewshed polygons (`PGE_WF_Cameras_Viewsheds.shp`). They have not been validated or imported.
+
+## EnviroVision notes
+
+All 87 sites in ODF's geodatabase are modeled. See the readme in the OHAZ network folder
+(`Data/ODF-info/README.md`) for the source's caveats.
+
+- Seven sites use ODF's 60 ft planning default, flagged `cameraHeightEstimated`: Crescent Butte, Eden, Frazier Mountain, King Mountain, Parker Mountain, Shutters Landing, and Weston.
+- **Menasha** is modeled at the geodatabase point (42.674371, -124.311772). ODF's coordinate columns put it about 850 m away, where the ground matches the record's elevation; confirm with ODF.
+- Little Grayback, Reuben, Soda Mountain, and Tombstone have two cameras at different heights and are modeled from the taller one.
 
 ## Live ALERTWest cameras not matched to a site
 
@@ -29,7 +42,7 @@ Carried over from the earlier inventory; not rechecked against the live API on O
 
 - Camera ID 17952, **Axis-JackassButte**: about 1.1 km from the modeled viewshed site
 - Camera ID 23723, **Axis-RattlesnakeHills**: about 1.4 km from the modeled viewshed site
-- Camera ID 16734, **Axis-Anderson**: not in the installation sheet
+- Camera ID 16734, **Axis-Anderson**: the sheet's Anderson row has no coordinates
 
 The web map joins live ALERTWest cameras to viewsheds by ALERTWest site id, then by location
 (nearest viewshed site within 250 m, `js/geojson-transform.js`), then by name.

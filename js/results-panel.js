@@ -436,7 +436,9 @@ function renderPolygon(type, properties) {
 function renderCamera(properties, metrics) {
   const wrapper = document.createElement('div');
   wrapper.className = 'results-panel__body results-panel__camera';
-  const isPano = properties.operator === 'Pano AI' || properties.provider === 'pano';
+  // PGE's public viewer only carries PGE's own Pano AI cameras
+  const isPano = (properties.operator === 'Pano AI' || properties.provider === 'pano') &&
+    (!properties.owner || properties.owner === 'Portland General Electric');
   const imageUrl = safeHttpsUrl(properties.image);
   const preview = document.createElement('div');
   preview.className = 'results-panel__camera-preview';
@@ -610,9 +612,11 @@ const EXPORT_PANEL_FILL = 'rgba(47, 46, 46, 0.9)';
 const EXPORT_LEGEND_VISUALS = Object.freeze({
   'ALERTWest cameras': { type: 'icon', src: 'img/camera-marker.svg' },
   'Pano AI cameras': { type: 'icon', src: 'img/pano-camera-marker.svg' },
+  'EnviroVision cameras': { type: 'icon', src: 'img/envirovision-camera-marker.svg' },
   'Camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
   'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
   'Pano AI camera viewsheds': { type: 'swatch', style: 'fill', color: '#3898ec' },
+  'EnviroVision camera viewsheds': { type: 'swatch', style: 'fill', color: '#4fa83d' },
   'Standing lookouts': { type: 'swatch', style: 'circle', color: '#8154BD' },
   'National forests': { type: 'swatch', style: 'outline', color: '#3b7d4f' },
   'BLM lands': { type: 'swatch', style: 'fill', color: '#f6d94a' },
@@ -626,6 +630,7 @@ const EXPORT_SHARED_VIEWSHED_LABEL = 'Viewsheds';
 const EXPORT_PROVIDER_VIEWSHED_LABELS = Object.freeze({
   [LEGEND_LAYERS.alertWestViewsheds]: 'ALERTWest viewsheds',
   [LEGEND_LAYERS.panoViewsheds]: 'Pano AI viewsheds',
+  [LEGEND_LAYERS.enviroVisionViewsheds]: 'EnviroVision viewsheds',
 });
 
 async function composeExport({ mapCanvas, map, basemap, legendItems, title, current, chart }) {
@@ -1324,7 +1329,8 @@ async function resolveLegendRowsForExport(getLegendItems) {
 export function condenseCameraLegendRows(rows, { separateViewshedColors = false } = {}) {
   const labels = new Set(rows.map(({ label }) => label));
   const hasProviderCameras = labels.has(LEGEND_LAYERS.alertWestCameras) ||
-    labels.has(LEGEND_LAYERS.panoCameras);
+    labels.has(LEGEND_LAYERS.panoCameras) ||
+    labels.has(LEGEND_LAYERS.enviroVisionCameras);
   const providerViewsheds = rows.filter(({ label }) => label in EXPORT_PROVIDER_VIEWSHED_LABELS);
 
   const condensed = [];

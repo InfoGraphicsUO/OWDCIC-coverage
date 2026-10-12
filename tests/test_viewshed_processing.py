@@ -406,7 +406,10 @@ class CombinedCoverageTests(unittest.TestCase):
         providers = viewsheds.combined_providers("alertwest-camera-viewsheds", output)
         self.assertEqual(
             providers,
-            [output / viewsheds.WEB_PACKAGE, viewsheds.PROVIDER_OUTPUTS["pano"] / viewsheds.WEB_PACKAGE],
+            [output / viewsheds.WEB_PACKAGE] + [
+                viewsheds.PROVIDER_OUTPUTS[provider] / viewsheds.WEB_PACKAGE
+                for provider in ("pano", "envirovision")
+            ],
         )
 
     def test_unknown_provider_is_added(self):

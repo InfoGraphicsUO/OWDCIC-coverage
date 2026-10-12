@@ -1,0 +1,2239 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.893003,
+          44.574
+        ]
+      },
+      "properties": {
+        "name": "Bald Mountain",
+        "aliases": [],
+        "cameraHeightFt": 35.0,
+        "cameraCount": 1,
+        "groundElevationFt": 6576.0,
+        "viewshedId": "envirovision-bald-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Northeast Oregon",
+        "protectionUnit": "La Grande",
+        "detectionCenter": "BMIDC - La Grande",
+        "county": "Baker",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.581089,
+          43.269315
+        ]
+      },
+      "properties": {
+        "name": "Baughman",
+        "aliases": [],
+        "cameraHeightFt": 102.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2842.0,
+        "viewshedId": "envirovision-baughman",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA Central",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.891679,
+          43.842774
+        ]
+      },
+      "properties": {
+        "name": "Bear Mountain",
+        "aliases": [],
+        "cameraHeightFt": 98.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3624.0,
+        "viewshedId": "envirovision-bear-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "South Cascade",
+        "protectionUnit": "Eastern Lane",
+        "detectionCenter": "DFPA - Roseburg",
+        "sharesAlertWestSite": true,
+        "county": "Lane",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.552084,
+          44.078575
+        ]
+      },
+      "properties": {
+        "name": "Bearwallow Butte",
+        "aliases": [],
+        "cameraHeightFt": 103.0,
+        "cameraCount": 1,
+        "groundElevationFt": 6449.0,
+        "viewshedId": "envirovision-bearwallow-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "Prineville",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Deschutes",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.305443,
+          43.210138
+        ]
+      },
+      "properties": {
+        "name": "Beaver Hill",
+        "aliases": [],
+        "cameraHeightFt": 82.0,
+        "cameraCount": 1,
+        "groundElevationFt": 572.0,
+        "viewshedId": "envirovision-beaver-hill",
+        "provider": "envirovision",
+        "protectionDistrict": "Coos FPA",
+        "protectionUnit": "Coos Bay",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Coos",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.472843,
+          42.410507
+        ]
+      },
+      "properties": {
+        "name": "Bieberstedt Butte",
+        "aliases": [
+          "Bieberstedt Butte East",
+          "Bieberstedt Butte West"
+        ],
+        "cameraHeightFt": 54.0,
+        "cameraCount": 2,
+        "groundElevationFt": 5255.0,
+        "viewshedId": "envirovision-bieberstedt-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Medford",
+        "detectionCenter": "ODF - Medford",
+        "county": "Jackson",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.451324,
+          44.268034
+        ]
+      },
+      "properties": {
+        "name": "Big Rock",
+        "aliases": [
+          "Big Rock 1",
+          "Big Rock 2"
+        ],
+        "cameraHeightFt": 40.0,
+        "cameraCount": 2,
+        "groundElevationFt": 4462.0,
+        "viewshedId": "envirovision-big-rock",
+        "provider": "envirovision",
+        "protectionDistrict": "South Cascade",
+        "protectionUnit": "Sweet Home",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Linn",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.296187,
+          45.212869
+        ]
+      },
+      "properties": {
+        "name": "Black Mountain",
+        "aliases": [],
+        "cameraHeightFt": 46.0,
+        "cameraCount": 1,
+        "groundElevationFt": 5886.0,
+        "viewshedId": "envirovision-black-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "John Day",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Morrow",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.119198,
+          42.969109
+        ]
+      },
+      "properties": {
+        "name": "Bland Mountain",
+        "aliases": [],
+        "cameraHeightFt": 66.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2698.0,
+        "viewshedId": "envirovision-bland-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA South",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.225653,
+          42.208871
+        ]
+      },
+      "properties": {
+        "name": "Bosley Butte",
+        "aliases": [],
+        "cameraHeightFt": 164.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3418.0,
+        "viewshedId": "envirovision-bosley-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Coos FPA",
+        "protectionUnit": "Gold Beach",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Curry",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.971001,
+          45.008398
+        ]
+      },
+      "properties": {
+        "name": "Bridge Creek",
+        "aliases": [
+          "Bridge Creek 1",
+          "Bridge Creek 2"
+        ],
+        "cameraHeightFt": 79.0,
+        "cameraCount": 2,
+        "groundElevationFt": 3961.0,
+        "viewshedId": "envirovision-bridge-creek",
+        "provider": "envirovision",
+        "protectionDistrict": "Northeast Oregon",
+        "protectionUnit": "Pendleton",
+        "detectionCenter": "BMIDC - La Grande",
+        "county": "Umatilla",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.28592,
+          42.902197
+        ]
+      },
+      "properties": {
+        "name": "Canyon Mountain",
+        "aliases": [],
+        "cameraHeightFt": 52.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3376.0,
+        "viewshedId": "envirovision-canyon-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA South",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.949003,
+          45.281005
+        ]
+      },
+      "properties": {
+        "name": "Carney Butte",
+        "aliases": [
+          "Carney Butte North",
+          "Carney Butte South"
+        ],
+        "cameraHeightFt": 77.0,
+        "cameraCount": 2,
+        "groundElevationFt": 4796.0,
+        "viewshedId": "envirovision-carney-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Northeast Oregon",
+        "protectionUnit": "Pendleton",
+        "detectionCenter": "BMIDC - La Grande",
+        "county": "Umatilla",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.122364,
+          42.761717
+        ]
+      },
+      "properties": {
+        "name": "Cedar Springs Mountain",
+        "aliases": [],
+        "cameraHeightFt": 66.0,
+        "cameraCount": 1,
+        "groundElevationFt": 5089.0,
+        "viewshedId": "envirovision-cedar-springs-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA South",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.994049,
+          42.094607
+        ]
+      },
+      "properties": {
+        "name": "Chase Mountain",
+        "aliases": [
+          "Chase Mountain 1",
+          "Chase Mountain 2"
+        ],
+        "cameraHeightFt": 33.0,
+        "cameraCount": 2,
+        "groundElevationFt": 6342.0,
+        "viewshedId": "envirovision-chase-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Klamath-Lake",
+        "protectionUnit": "Klamath",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Klamath",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.025006,
+          42.045966
+        ]
+      },
+      "properties": {
+        "name": "Chicken Hills",
+        "aliases": [
+          "Chicken Hills 1",
+          "Chicken Hills 2"
+        ],
+        "cameraHeightFt": 150.0,
+        "cameraCount": 2,
+        "groundElevationFt": 5178.0,
+        "viewshedId": "envirovision-chicken-hills",
+        "provider": "envirovision",
+        "protectionDistrict": "Klamath-Lake",
+        "protectionUnit": "Klamath",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Klamath",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.731281,
+          43.432294
+        ]
+      },
+      "properties": {
+        "name": "Chilcoot",
+        "aliases": [],
+        "cameraHeightFt": 72.0,
+        "cameraCount": 1,
+        "groundElevationFt": 4969.0,
+        "viewshedId": "envirovision-chilcoot",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA Central",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.310259,
+          44.479711
+        ]
+      },
+      "properties": {
+        "name": "Cougar Rock",
+        "aliases": [],
+        "cameraHeightFt": 82.0,
+        "cameraCount": 1,
+        "groundElevationFt": 4524.0,
+        "viewshedId": "envirovision-cougar-rock",
+        "provider": "envirovision",
+        "protectionDistrict": "South Cascade",
+        "protectionUnit": "Sweet Home",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Linn",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.667219,
+          43.462499
+        ]
+      },
+      "properties": {
+        "name": "Crescent Butte",
+        "aliases": [
+          "Crescent Butte 1",
+          "Crescent Butte 2"
+        ],
+        "cameraHeightFt": 60.0,
+        "cameraCount": 2,
+        "groundElevationFt": 5188.0,
+        "viewshedId": "envirovision-crescent-butte",
+        "provider": "envirovision",
+        "cameraHeightEstimated": true,
+        "protectionDistrict": "Walker Range FPA",
+        "protectionUnit": "Walker Range FPA",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Klamath",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.980085,
+          43.614574
+        ]
+      },
+      "properties": {
+        "name": "Dean Mountain",
+        "aliases": [],
+        "cameraHeightFt": 82.0,
+        "cameraCount": 1,
+        "groundElevationFt": 1818.0,
+        "viewshedId": "envirovision-dean-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Coos FPA",
+        "protectionUnit": "Coos Bay",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.65998,
+          42.866898
+        ]
+      },
+      "properties": {
+        "name": "Dutchman Butte",
+        "aliases": [],
+        "cameraHeightFt": 118.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3902.0,
+        "viewshedId": "envirovision-dutchman-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA South",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.891333,
+          42.043568
+        ]
+      },
+      "properties": {
+        "name": "Dutchman Peak",
+        "aliases": [
+          "Dutchman Peak North",
+          "Dutchman Peak South"
+        ],
+        "cameraHeightFt": 49.0,
+        "cameraCount": 2,
+        "groundElevationFt": 7406.0,
+        "viewshedId": "envirovision-dutchman-peak",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Medford",
+        "detectionCenter": "ODF - Medford",
+        "county": "Jackson",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.490702,
+          45.919108
+        ]
+      },
+      "properties": {
+        "name": "Eden",
+        "aliases": [
+          "Eden ENE",
+          "Eden WSW"
+        ],
+        "cameraHeightFt": 60.0,
+        "cameraCount": 2,
+        "groundElevationFt": 3849.0,
+        "viewshedId": "envirovision-eden",
+        "provider": "envirovision",
+        "cameraHeightEstimated": true,
+        "protectionDistrict": "Northeast Oregon",
+        "protectionUnit": "Wallowa",
+        "detectionCenter": "BMIDC - La Grande",
+        "county": "Wallowa",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.334605,
+          42.871735
+        ]
+      },
+      "properties": {
+        "name": "Edson Butte",
+        "aliases": [],
+        "cameraHeightFt": 49.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2782.0,
+        "viewshedId": "envirovision-edson-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Coos FPA",
+        "protectionUnit": "Gold Beach",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Curry",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.95374,
+          43.120552
+        ]
+      },
+      "properties": {
+        "name": "Elk Mountain (Bridge)",
+        "aliases": [
+          "Elk Mountain"
+        ],
+        "cameraHeightFt": 103.0,
+        "cameraCount": 1,
+        "groundElevationFt": 845.0,
+        "viewshedId": "envirovision-elk-mountain-bridge",
+        "provider": "envirovision",
+        "protectionDistrict": "Coos FPA",
+        "protectionUnit": "Bridge",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Coos",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.204842,
+          45.597699
+        ]
+      },
+      "properties": {
+        "name": "Elk Mountain (Wallowa)",
+        "aliases": [
+          "Elk Mountain"
+        ],
+        "cameraHeightFt": 79.0,
+        "cameraCount": 1,
+        "groundElevationFt": 5116.0,
+        "viewshedId": "envirovision-elk-mountain-wallowa",
+        "provider": "envirovision",
+        "protectionDistrict": "Northeast Oregon",
+        "protectionUnit": "Wallowa",
+        "detectionCenter": "BMIDC - La Grande",
+        "county": "Wallowa",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.466054,
+          45.318136
+        ]
+      },
+      "properties": {
+        "name": "Flag Point",
+        "aliases": [],
+        "cameraHeightFt": 40.0,
+        "cameraCount": 1,
+        "groundElevationFt": 5646.0,
+        "viewshedId": "envirovision-flag-point",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "The Dalles",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Wasco",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.608329,
+          42.728613
+        ]
+      },
+      "properties": {
+        "name": "Flounce",
+        "aliases": [],
+        "cameraHeightFt": 100.0,
+        "cameraCount": 1,
+        "groundElevationFt": 4168.0,
+        "viewshedId": "envirovision-flounce",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Medford",
+        "detectionCenter": "ODF - Medford",
+        "county": "Jackson",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.784984,
+          44.527004
+        ]
+      },
+      "properties": {
+        "name": "Foley Butte",
+        "aliases": [],
+        "cameraHeightFt": 80.0,
+        "cameraCount": 1,
+        "groundElevationFt": 5470.0,
+        "viewshedId": "envirovision-foley-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "Prineville",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Crook",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.695003,
+          45.076
+        ]
+      },
+      "properties": {
+        "name": "Frazier Mountain",
+        "aliases": [],
+        "cameraHeightFt": 60.0,
+        "cameraCount": 1,
+        "groundElevationFt": 5434.0,
+        "viewshedId": "envirovision-frazier-mountain",
+        "provider": "envirovision",
+        "cameraHeightEstimated": true,
+        "protectionDistrict": "Northeast Oregon",
+        "protectionUnit": "La Grande",
+        "detectionCenter": "BMIDC - La Grande",
+        "county": "Union",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.391588,
+          44.537853
+        ]
+      },
+      "properties": {
+        "name": "Geneva",
+        "aliases": [],
+        "cameraHeightFt": 105.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2906.0,
+        "viewshedId": "envirovision-geneva",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "Prineville",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Jefferson",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.46011,
+          44.263403
+        ]
+      },
+      "properties": {
+        "name": "Gerow Butte",
+        "aliases": [],
+        "cameraHeightFt": 80.0,
+        "cameraCount": 1,
+        "groundElevationFt": 5680.0,
+        "viewshedId": "envirovision-gerow-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "Prineville",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Crook",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.58321,
+          44.483224
+        ]
+      },
+      "properties": {
+        "name": "Green Peter",
+        "aliases": [],
+        "cameraHeightFt": 39.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3888.0,
+        "viewshedId": "envirovision-green-peter",
+        "provider": "envirovision",
+        "protectionDistrict": "South Cascade",
+        "protectionUnit": "Sweet Home",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Linn",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.364714,
+          42.396399
+        ]
+      },
+      "properties": {
+        "name": "Grizzly Mountain",
+        "aliases": [],
+        "cameraHeightFt": 197.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2334.0,
+        "viewshedId": "envirovision-grizzly-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Coos FPA",
+        "protectionUnit": "Gold Beach",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Curry",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.639342,
+          42.25264
+        ]
+      },
+      "properties": {
+        "name": "Grizzly Peak",
+        "aliases": [
+          "Grizzly Peak North",
+          "Grizzly Peak South"
+        ],
+        "cameraHeightFt": 33.0,
+        "cameraCount": 2,
+        "groundElevationFt": 7745.0,
+        "viewshedId": "envirovision-grizzly-peak",
+        "provider": "envirovision",
+        "protectionDistrict": "Klamath-Lake",
+        "protectionUnit": "Lake",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Lake",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.410181,
+          44.13909
+        ]
+      },
+      "properties": {
+        "name": "Hagen",
+        "aliases": [],
+        "cameraHeightFt": 138.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3423.0,
+        "viewshedId": "envirovision-hagen",
+        "provider": "envirovision",
+        "protectionDistrict": "South Cascade",
+        "protectionUnit": "Eastern Lane",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Lane",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.350817,
+          42.785549
+        ]
+      },
+      "properties": {
+        "name": "Hamelton",
+        "aliases": [
+          "Hamelton 1",
+          "Hamelton 2"
+        ],
+        "cameraHeightFt": 30.0,
+        "cameraCount": 2,
+        "groundElevationFt": 6408.0,
+        "viewshedId": "envirovision-hamelton",
+        "provider": "envirovision",
+        "protectionDistrict": "Klamath-Lake",
+        "protectionUnit": "Klamath",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Klamath",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.107364,
+          43.522161
+        ]
+      },
+      "properties": {
+        "name": "Harness Mountain",
+        "aliases": [],
+        "cameraHeightFt": 200.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3287.0,
+        "viewshedId": "envirovision-harness-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA North",
+        "detectionCenter": "DFPA - Roseburg",
+        "sharesAlertWestSite": true,
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.705857,
+          42.24291
+        ]
+      },
+      "properties": {
+        "name": "Hogback",
+        "aliases": [
+          "Hogback East",
+          "Hogback West"
+        ],
+        "cameraHeightFt": 35.0,
+        "cameraCount": 2,
+        "groundElevationFt": 6193.0,
+        "viewshedId": "envirovision-hogback",
+        "provider": "envirovision",
+        "protectionDistrict": "Klamath-Lake",
+        "protectionUnit": "Klamath",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Klamath",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.052476,
+          42.935899
+        ]
+      },
+      "properties": {
+        "name": "Hood Mountain",
+        "aliases": [],
+        "cameraHeightFt": 105.0,
+        "cameraCount": 1,
+        "groundElevationFt": 1747.0,
+        "viewshedId": "envirovision-hood-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Coos FPA",
+        "protectionUnit": "Bridge",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Coos",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.737324,
+          45.72379
+        ]
+      },
+      "properties": {
+        "name": "Howard Butte",
+        "aliases": [],
+        "cameraHeightFt": 123.0,
+        "cameraCount": 1,
+        "groundElevationFt": 4310.0,
+        "viewshedId": "envirovision-howard-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Northeast Oregon",
+        "protectionUnit": "Wallowa",
+        "detectionCenter": "BMIDC - La Grande",
+        "county": "Wallowa",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.104493,
+          42.303197
+        ]
+      },
+      "properties": {
+        "name": "Isabelle",
+        "aliases": [
+          "Isabelle North",
+          "Isabelle South"
+        ],
+        "cameraHeightFt": 100.0,
+        "cameraCount": 2,
+        "groundElevationFt": 4497.0,
+        "viewshedId": "envirovision-isabelle",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Medford",
+        "detectionCenter": "ODF - Medford",
+        "county": "Jackson",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.853306,
+          43.403875
+        ]
+      },
+      "properties": {
+        "name": "Ivers Peak",
+        "aliases": [],
+        "cameraHeightFt": 115.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2436.0,
+        "viewshedId": "envirovision-ivers-peak",
+        "provider": "envirovision",
+        "protectionDistrict": "Coos FPA",
+        "protectionUnit": "Coos Bay",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Coos",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.229851,
+          42.713578
+        ]
+      },
+      "properties": {
+        "name": "King Mountain",
+        "aliases": [
+          "King Mountain East",
+          "King Mountain West"
+        ],
+        "cameraHeightFt": 60.0,
+        "cameraCount": 2,
+        "groundElevationFt": 3500.0,
+        "viewshedId": "envirovision-king-mountain",
+        "provider": "envirovision",
+        "cameraHeightEstimated": true,
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA South",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.493881,
+          42.198247
+        ]
+      },
+      "properties": {
+        "name": "Little Grayback",
+        "aliases": [
+          "Little Grayback East",
+          "Little Grayback West"
+        ],
+        "cameraHeightFt": 164.0,
+        "cameraCount": 2,
+        "groundElevationFt": 5131.0,
+        "viewshedId": "envirovision-little-grayback",
+        "provider": "envirovision",
+        "cameraHeightsFt": [
+          98.0,
+          164.0
+        ],
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Grants Pass",
+        "detectionCenter": "ODF - Medford",
+        "county": "Josephine",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.449798,
+          42.304277
+        ]
+      },
+      "properties": {
+        "name": "Manzanita",
+        "aliases": [
+          "Manzanita East",
+          "Manzanita West"
+        ],
+        "cameraHeightFt": 87.0,
+        "cameraCount": 2,
+        "groundElevationFt": 4433.0,
+        "viewshedId": "envirovision-manzanita",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Grants Pass",
+        "detectionCenter": "ODF - Medford",
+        "county": "Josephine",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.417494,
+          43.187701
+        ]
+      },
+      "properties": {
+        "name": "Marsters Ridge",
+        "aliases": [],
+        "cameraHeightFt": 49.0,
+        "cameraCount": 1,
+        "groundElevationFt": 1599.0,
+        "viewshedId": "envirovision-marsters-ridge",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA Central",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.311772,
+          42.674371
+        ]
+      },
+      "properties": {
+        "name": "Menasha",
+        "aliases": [],
+        "cameraHeightFt": 49.0,
+        "cameraCount": 1,
+        "groundElevationFt": 1803.0,
+        "viewshedId": "envirovision-menasha",
+        "provider": "envirovision",
+        "protectionDistrict": "Coos FPA",
+        "protectionUnit": "Gold Beach",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Curry",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.59753,
+          45.578971
+        ]
+      },
+      "properties": {
+        "name": "Middle Mountain",
+        "aliases": [
+          "Middle Mountain 1",
+          "Middle Mountain 2"
+        ],
+        "cameraHeightFt": 45.0,
+        "cameraCount": 2,
+        "groundElevationFt": 2612.0,
+        "viewshedId": "envirovision-middle-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "The Dalles",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Hood River",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.425722,
+          44.861992
+        ]
+      },
+      "properties": {
+        "name": "Monument Mountain",
+        "aliases": [],
+        "cameraHeightFt": 20.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3895.0,
+        "viewshedId": "envirovision-monument-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "John Day",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Grant",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.720164,
+          42.081003
+        ]
+      },
+      "properties": {
+        "name": "Mt Ashland",
+        "aliases": [
+          "Mt Ashland North",
+          "Mt Ashland South"
+        ],
+        "cameraHeightFt": 97.0,
+        "cameraCount": 2,
+        "groundElevationFt": 7444.0,
+        "viewshedId": "envirovision-mt-ashland",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Medford",
+        "detectionCenter": "ODF - Medford",
+        "county": "Jackson",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.893183,
+          45.440312
+        ]
+      },
+      "properties": {
+        "name": "Mt Harris",
+        "aliases": [
+          "Mt Harris NE",
+          "Mt Harris SW"
+        ],
+        "cameraHeightFt": 40.0,
+        "cameraCount": 2,
+        "groundElevationFt": 5335.0,
+        "viewshedId": "envirovision-mt-harris",
+        "provider": "envirovision",
+        "protectionDistrict": "Northeast Oregon",
+        "protectionUnit": "La Grande",
+        "detectionCenter": "BMIDC - La Grande",
+        "county": "Union",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.177003,
+          45.368
+        ]
+      },
+      "properties": {
+        "name": "Mt Mahogany",
+        "aliases": [],
+        "cameraHeightFt": 125.0,
+        "cameraCount": 1,
+        "groundElevationFt": 4639.0,
+        "viewshedId": "envirovision-mt-mahogany",
+        "provider": "envirovision",
+        "protectionDistrict": "Northeast Oregon",
+        "protectionUnit": "La Grande",
+        "detectionCenter": "BMIDC - La Grande",
+        "county": "Union",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.715227,
+          44.153024
+        ]
+      },
+      "properties": {
+        "name": "Mt Nebo",
+        "aliases": [],
+        "cameraHeightFt": 145.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3242.0,
+        "viewshedId": "envirovision-mt-nebo",
+        "provider": "envirovision",
+        "protectionDistrict": "South Cascade",
+        "protectionUnit": "Eastern Lane",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Lane",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.064387,
+          43.371832
+        ]
+      },
+      "properties": {
+        "name": "Mt Scott",
+        "aliases": [],
+        "cameraHeightFt": 84.0,
+        "cameraCount": 1,
+        "groundElevationFt": 4252.0,
+        "viewshedId": "envirovision-mt-scott",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA Central",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.231383,
+          42.490648
+        ]
+      },
+      "properties": {
+        "name": "Old Baldy",
+        "aliases": [
+          "Old Baldy East",
+          "Old Baldy West"
+        ],
+        "cameraHeightFt": 82.0,
+        "cameraCount": 2,
+        "groundElevationFt": 4000.0,
+        "viewshedId": "envirovision-old-baldy",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Grants Pass",
+        "detectionCenter": "ODF - Medford",
+        "county": "Josephine",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.670097,
+          43.511105
+        ]
+      },
+      "properties": {
+        "name": "Old Blue",
+        "aliases": [],
+        "cameraHeightFt": 72.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2538.0,
+        "viewshedId": "envirovision-old-blue",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA North",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.616113,
+          42.454418
+        ]
+      },
+      "properties": {
+        "name": "Onion",
+        "aliases": [
+          "Onion East",
+          "Onion West"
+        ],
+        "cameraHeightFt": 66.0,
+        "cameraCount": 2,
+        "groundElevationFt": 4451.0,
+        "viewshedId": "envirovision-onion",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Grants Pass",
+        "detectionCenter": "ODF - Medford",
+        "county": "Josephine",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.278887,
+          42.105557
+        ]
+      },
+      "properties": {
+        "name": "Parker Mountain",
+        "aliases": [
+          "Parker Mountain 1",
+          "Parker Mountain 2"
+        ],
+        "cameraHeightFt": 60.0,
+        "cameraCount": 2,
+        "groundElevationFt": 5210.0,
+        "viewshedId": "envirovision-parker-mountain",
+        "provider": "envirovision",
+        "cameraHeightEstimated": true,
+        "protectionDistrict": "Klamath-Lake",
+        "protectionUnit": "Klamath",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Klamath",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.642049,
+          42.601766
+        ]
+      },
+      "properties": {
+        "name": "Peavine",
+        "aliases": [
+          "Peavine East",
+          "Peavine West"
+        ],
+        "cameraHeightFt": 87.0,
+        "cameraCount": 2,
+        "groundElevationFt": 4045.0,
+        "viewshedId": "envirovision-peavine",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Grants Pass",
+        "detectionCenter": "ODF - Medford",
+        "county": "Josephine",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.590676,
+          44.279589
+        ]
+      },
+      "properties": {
+        "name": "Prairie Peak",
+        "aliases": [],
+        "cameraHeightFt": 180.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3363.0,
+        "viewshedId": "envirovision-prairie-peak",
+        "provider": "envirovision",
+        "protectionDistrict": "Western Lane",
+        "protectionUnit": "Veneta",
+        "detectionCenter": "DFPA - Roseburg",
+        "sharesAlertWestSite": true,
+        "county": "Lane",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.880772,
+          43.165556
+        ]
+      },
+      "properties": {
+        "name": "Red Butte",
+        "aliases": [],
+        "cameraHeightFt": 92.0,
+        "cameraCount": 1,
+        "groundElevationFt": 5256.0,
+        "viewshedId": "envirovision-red-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA Central",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.59705,
+          42.718698
+        ]
+      },
+      "properties": {
+        "name": "Reuben",
+        "aliases": [
+          "Reuben East",
+          "Reuben West"
+        ],
+        "cameraHeightFt": 98.0,
+        "cameraCount": 2,
+        "groundElevationFt": 4017.0,
+        "viewshedId": "envirovision-reuben",
+        "provider": "envirovision",
+        "cameraHeightsFt": [
+          62.0,
+          98.0
+        ],
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Grants Pass",
+        "detectionCenter": "ODF - Medford",
+        "county": "Josephine",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.071475,
+          44.83361
+        ]
+      },
+      "properties": {
+        "name": "Ritter",
+        "aliases": [],
+        "cameraHeightFt": 39.0,
+        "cameraCount": 1,
+        "groundElevationFt": 4208.0,
+        "viewshedId": "envirovision-ritter",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "John Day",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Grant",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.738697,
+          43.912048
+        ]
+      },
+      "properties": {
+        "name": "Roman Nose",
+        "aliases": [],
+        "cameraHeightFt": 236.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2842.0,
+        "viewshedId": "envirovision-roman-nose",
+        "provider": "envirovision",
+        "protectionDistrict": "Western Lane",
+        "protectionUnit": "Veneta",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.511356,
+          42.499598
+        ]
+      },
+      "properties": {
+        "name": "Round Pass",
+        "aliases": [
+          "Round Pass 1",
+          "Round Pass 2"
+        ],
+        "cameraHeightFt": 25.0,
+        "cameraCount": 2,
+        "groundElevationFt": 6786.0,
+        "viewshedId": "envirovision-round-pass",
+        "provider": "envirovision",
+        "protectionDistrict": "Klamath-Lake",
+        "protectionUnit": "Lake",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Lake",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.990903,
+          42.701906
+        ]
+      },
+      "properties": {
+        "name": "Round Top",
+        "aliases": [
+          "Round Top East",
+          "Round Top West"
+        ],
+        "cameraHeightFt": 164.0,
+        "cameraCount": 2,
+        "groundElevationFt": 4641.0,
+        "viewshedId": "envirovision-round-top",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Medford",
+        "detectionCenter": "ODF - Medford",
+        "county": "Jackson",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.365834,
+          42.600138
+        ]
+      },
+      "properties": {
+        "name": "Sexton",
+        "aliases": [
+          "Sexton North",
+          "Sexton South"
+        ],
+        "cameraHeightFt": 131.0,
+        "cameraCount": 2,
+        "groundElevationFt": 3817.0,
+        "viewshedId": "envirovision-sexton",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Grants Pass",
+        "detectionCenter": "ODF - Medford",
+        "county": "Josephine",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -124.175348,
+          43.533861
+        ]
+      },
+      "properties": {
+        "name": "Shutters Landing",
+        "aliases": [
+          "Shutters Landing 1",
+          "Shutters Landing 2"
+        ],
+        "cameraHeightFt": 60.0,
+        "cameraCount": 2,
+        "groundElevationFt": 750.0,
+        "viewshedId": "envirovision-shutters-landing",
+        "provider": "envirovision",
+        "cameraHeightEstimated": true,
+        "protectionDistrict": "Coos FPA",
+        "protectionUnit": "Coos Bay",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Coos",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.778418,
+          43.001747
+        ]
+      },
+      "properties": {
+        "name": "Signal Tree",
+        "aliases": [],
+        "cameraHeightFt": 164.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3299.0,
+        "viewshedId": "envirovision-signal-tree",
+        "provider": "envirovision",
+        "protectionDistrict": "Coos FPA",
+        "protectionUnit": "Bridge",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Coos",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.37828,
+          42.858897
+        ]
+      },
+      "properties": {
+        "name": "Silver Butte",
+        "aliases": [],
+        "cameraHeightFt": 80.0,
+        "cameraCount": 1,
+        "groundElevationFt": 3965.0,
+        "viewshedId": "envirovision-silver-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA South",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.990497,
+          44.961342
+        ]
+      },
+      "properties": {
+        "name": "Snowboard",
+        "aliases": [
+          "Snowboard 1",
+          "Snowboard 2"
+        ],
+        "cameraHeightFt": 66.0,
+        "cameraCount": 2,
+        "groundElevationFt": 5007.0,
+        "viewshedId": "envirovision-snowboard",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "John Day",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Wheeler",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.47901,
+          42.064779
+        ]
+      },
+      "properties": {
+        "name": "Soda Mountain",
+        "aliases": [
+          "Soda Mountain North",
+          "Soda Mountain South"
+        ],
+        "cameraHeightFt": 131.0,
+        "cameraCount": 2,
+        "groundElevationFt": 6047.0,
+        "viewshedId": "envirovision-soda-mountain",
+        "provider": "envirovision",
+        "cameraHeightsFt": [
+          98.0,
+          131.0
+        ],
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Medford",
+        "detectionCenter": "ODF - Medford",
+        "county": "Jackson",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.842994,
+          43.627998
+        ]
+      },
+      "properties": {
+        "name": "Table Mountain",
+        "aliases": [],
+        "cameraHeightFt": 50.0,
+        "cameraCount": 1,
+        "groundElevationFt": 4082.0,
+        "viewshedId": "envirovision-table-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "South Cascade",
+        "protectionUnit": "Eastern Lane",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Lane",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.151557,
+          42.196366
+        ]
+      },
+      "properties": {
+        "name": "Tallowbox",
+        "aliases": [
+          "Tallowbox East",
+          "Tallowbox West"
+        ],
+        "cameraHeightFt": 131.0,
+        "cameraCount": 2,
+        "groundElevationFt": 5021.0,
+        "viewshedId": "envirovision-tallowbox",
+        "provider": "envirovision",
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Grants Pass",
+        "detectionCenter": "ODF - Medford",
+        "county": "Jackson",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.582455,
+          44.173962
+        ]
+      },
+      "properties": {
+        "name": "Three Creeks",
+        "aliases": [
+          "Three Creeks 1",
+          "Three Creeks 2"
+        ],
+        "cameraHeightFt": 40.0,
+        "cameraCount": 2,
+        "groundElevationFt": 4252.0,
+        "viewshedId": "envirovision-three-creeks",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "Prineville",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Deschutes",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.961645,
+          42.905702
+        ]
+      },
+      "properties": {
+        "name": "Tiller",
+        "aliases": [],
+        "cameraHeightFt": 98.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2804.0,
+        "viewshedId": "envirovision-tiller",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA South",
+        "detectionCenter": "DFPA - Roseburg",
+        "sharesAlertWestSite": true,
+        "county": "Douglas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.421822,
+          45.445294
+        ]
+      },
+      "properties": {
+        "name": "Tiptop",
+        "aliases": [],
+        "cameraHeightFt": 85.0,
+        "cameraCount": 1,
+        "groundElevationFt": 4570.0,
+        "viewshedId": "envirovision-tiptop",
+        "provider": "envirovision",
+        "protectionDistrict": "Northeast Oregon",
+        "protectionUnit": "Pendleton",
+        "detectionCenter": "BMIDC - La Grande",
+        "county": "Umatilla",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.750433,
+          42.298398
+        ]
+      },
+      "properties": {
+        "name": "Tombstone",
+        "aliases": [
+          "Tombstone East",
+          "Tombstone West"
+        ],
+        "cameraHeightFt": 89.0,
+        "cameraCount": 2,
+        "groundElevationFt": 3831.0,
+        "viewshedId": "envirovision-tombstone",
+        "provider": "envirovision",
+        "cameraHeightsFt": [
+          75.0,
+          89.0
+        ],
+        "protectionDistrict": "Southwest Oregon",
+        "protectionUnit": "Medford",
+        "detectionCenter": "ODF - Medford",
+        "sharesAlertWestSite": true,
+        "county": "Jackson",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.716936,
+          43.305214
+        ]
+      },
+      "properties": {
+        "name": "Walker Mountain",
+        "aliases": [
+          "Walker Mountain 1",
+          "Walker Mountain 2"
+        ],
+        "cameraHeightFt": 82.0,
+        "cameraCount": 2,
+        "groundElevationFt": 7074.0,
+        "viewshedId": "envirovision-walker-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "Walker Range FPA",
+        "protectionUnit": "Walker Range FPA",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Klamath",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.628874,
+          44.06655
+        ]
+      },
+      "properties": {
+        "name": "Walker Point",
+        "aliases": [],
+        "cameraHeightFt": 121.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2338.0,
+        "viewshedId": "envirovision-walker-point",
+        "provider": "envirovision",
+        "protectionDistrict": "Western Lane",
+        "protectionUnit": "Veneta",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Lane",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.365996,
+          43.542999
+        ]
+      },
+      "properties": {
+        "name": "Warner Mountain",
+        "aliases": [
+          "Warner Mountain North",
+          "Warner Mountain South"
+        ],
+        "cameraHeightFt": 55.0,
+        "cameraCount": 2,
+        "groundElevationFt": 5709.0,
+        "viewshedId": "envirovision-warner-mountain",
+        "provider": "envirovision",
+        "protectionDistrict": "South Cascade",
+        "protectionUnit": "Eastern Lane",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Lane",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.335128,
+          45.616711
+        ]
+      },
+      "properties": {
+        "name": "Wasco Butte",
+        "aliases": [],
+        "cameraHeightFt": 150.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2330.0,
+        "viewshedId": "envirovision-wasco-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Central Oregon",
+        "protectionUnit": "The Dalles",
+        "detectionCenter": "COIDC - Redmond",
+        "county": "Wasco",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.271323,
+          43.371643
+        ]
+      },
+      "properties": {
+        "name": "Wastina Butte",
+        "aliases": [
+          "Wastina Butte East",
+          "Wastina Butte West"
+        ],
+        "cameraHeightFt": 55.0,
+        "cameraCount": 2,
+        "groundElevationFt": 4968.0,
+        "viewshedId": "envirovision-wastina-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Walker Range FPA",
+        "protectionUnit": "Walker Range FPA",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Lake",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.37586,
+          45.800075
+        ]
+      },
+      "properties": {
+        "name": "Weston",
+        "aliases": [
+          "Weston High",
+          "Weston Low"
+        ],
+        "cameraHeightFt": 60.0,
+        "cameraCount": 2,
+        "groundElevationFt": 2984.0,
+        "viewshedId": "envirovision-weston",
+        "provider": "envirovision",
+        "cameraHeightEstimated": true,
+        "protectionDistrict": "Northeast Oregon",
+        "protectionUnit": "Pendleton",
+        "detectionCenter": "BMIDC - La Grande",
+        "county": "Umatilla",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.269802,
+          42.326513
+        ]
+      },
+      "properties": {
+        "name": "Yainax Butte",
+        "aliases": [
+          "Yainax Butte East",
+          "Yainax Butte West"
+        ],
+        "cameraHeightFt": 35.0,
+        "cameraCount": 2,
+        "groundElevationFt": 7209.0,
+        "viewshedId": "envirovision-yainax-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Klamath-Lake",
+        "protectionUnit": "Lake",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Klamath",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.403728,
+          43.546614
+        ]
+      },
+      "properties": {
+        "name": "Yellow Butte",
+        "aliases": [],
+        "cameraHeightFt": 82.0,
+        "cameraCount": 1,
+        "groundElevationFt": 2450.0,
+        "viewshedId": "envirovision-yellow-butte",
+        "provider": "envirovision",
+        "protectionDistrict": "Douglas FPA",
+        "protectionUnit": "DFPA North",
+        "detectionCenter": "DFPA - Roseburg",
+        "county": "Douglas",
+        "state": "OR"
+      }
+    }
+  ]
+}

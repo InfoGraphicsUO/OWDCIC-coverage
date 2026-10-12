@@ -1,5 +1,19 @@
 {
   "networkRoot": "\\\\cas-fs-geog\\InfoGraphics\\Projects\\FacultyRes\\OHAZ",
+  "excluded": [
+    {
+      "sheetName": "Clearwater Wind Farm",
+      "provider": "pano",
+      "reason": "Sheet coordinates (46.85, -106.01) are in Montana; held out until clarified."
+    }
+  ],
+  "unmapped": [
+    {
+      "sheetName": "Anderson",
+      "provider": "alertwest",
+      "reason": "Missing coordinates"
+    }
+  ],
   "sites": [
     {
       "sheetName": "Mt Defiance",
@@ -184,7 +198,7 @@
       "digitizedId": "digitized-camera-21"
     },
     {
-      "sheetName": "Round Butte (Warm Springs)",
+      "sheetName": "Round Butte",
       "name": "Round Butte",
       "provider": "pano",
       "aliases": [
@@ -196,7 +210,7 @@
       "heightNote": "PGE-towers_reduced1.csv tower height, not verified camera observer height."
     },
     {
-      "sheetName": null,
+      "sheetName": "Warm Springs",
       "name": "Warm Springs",
       "provider": "pano",
       "aliases": [],

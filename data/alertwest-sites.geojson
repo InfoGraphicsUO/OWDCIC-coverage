@@ -1357,6 +1357,50 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
+          -123.04631,
+          42.43578
+        ]
+      },
+      "properties": {
+        "name": "Gold Hill",
+        "aliases": [],
+        "cameraHeightFt": 20.0,
+        "cameraHeightEstimated": true,
+        "alertWestLive": false,
+        "provider": "alertwest"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.563696,
+          43.671954
+        ]
+      },
+      "properties": {
+        "name": "Dry Mountain",
+        "aliases": [],
+        "cameraHeightFt": 70.0,
+        "cameraHeightEstimated": true,
+        "alertWestLive": false,
+        "provider": "alertwest",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-30",
+        "reportedCoordinates": [
+          -119.5637,
+          43.672058
+        ],
+        "viewshedId": "dry-mountain",
+        "source": "data/digitized-camera-sources.geojson"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
           -121.722655,
           45.648648
         ]
@@ -1595,28 +1639,6 @@
         "viewshedReview": "Confirm sheet height assignment to archived camera ID; North is provisionally the northern point.",
         "cameraHeightFt": 89.0,
         "viewshedId": "natapoc-ridge",
-        "alertWestLive": false,
-        "viewshedStatus": "pending"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -119.563696,
-          43.671954
-        ]
-      },
-      "properties": {
-        "name": "Dry Mountain",
-        "provider": "alertwest",
-        "aliases": [],
-        "cameraHeightFt": null,
-        "viewshedId": "dry-mountain",
-        "locationSource": "digitized",
-        "digitizedId": "digitized-camera-30",
-        "source": "data/digitized-camera-sources.geojson",
         "alertWestLive": false,
         "viewshedStatus": "pending"
       }

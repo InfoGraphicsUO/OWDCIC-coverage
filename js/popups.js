@@ -345,20 +345,22 @@ function clamp(value, minimum, maximum) {
 }
 
 // hover preview stays limited to what identifies the camera at a glance
-function createCameraPreview({ name, state, county }) {
+function createCameraPreview({ name, state, county, owner }) {
   const popup = createPopupContainer(name || 'Camera');
 
   const location = cameraLocation({ county, state });
   if (location) popup.append(createMetaLine(location));
+  if (owner) popup.append(createMetaLine(`Owner: ${owner}`));
 
   return popup;
 }
 
-function createCameraPopup({ name, id, pan, image, state, county }) {
+function createCameraPopup({ name, id, pan, image, state, county, owner }) {
   const popup = createPopupContainer(name || 'Camera');
 
   const location = cameraLocation({ county, state });
   if (location) popup.append(createMetaLine(location));
+  if (owner) popup.append(createMetaLine(`Owner: ${owner}`));
 
   const numericPan = Number(pan);
   const formattedPan = Number.isFinite(numericPan) ? `${numericPan}\u00b0` : '\u2014';
