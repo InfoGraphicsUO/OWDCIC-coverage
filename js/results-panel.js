@@ -436,7 +436,9 @@ function renderPolygon(type, properties) {
 function renderCamera(properties, metrics) {
   const wrapper = document.createElement('div');
   wrapper.className = 'results-panel__body results-panel__camera';
-  const isPano = properties.operator === 'Pano AI' || properties.provider === 'pano';
+  // PGE's public viewer only carries PGE's own Pano AI cameras
+  const isPano = (properties.operator === 'Pano AI' || properties.provider === 'pano') &&
+    (!properties.owner || properties.owner === 'Portland General Electric');
   const imageUrl = safeHttpsUrl(properties.image);
   const preview = document.createElement('div');
   preview.className = 'results-panel__camera-preview';
