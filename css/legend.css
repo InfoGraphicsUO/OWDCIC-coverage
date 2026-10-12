@@ -247,6 +247,11 @@
     background: var(--legend-swatch-color);
 }
 
+/* viewsheds read as rounded areas, and a round fill is not mistaken for a checkbox */
+.legend-swatch--round {
+    border-radius: 50%;
+}
+
 .legend-swatch--burn-probability {
     background: linear-gradient(to right, #f2774f, #b83745);
 }

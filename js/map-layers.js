@@ -1913,7 +1913,7 @@ function selectionLegendItems(selection) {
   if (highlightedCameraName && highlightedViewshedIsRendered(activeMap)) {
     items.push({
       label: `${highlightedCameraName} viewshed`,
-      visual: { type: 'swatch', style: 'fill', color: VIEWSHED_HIGHLIGHT_COLOR },
+      visual: { type: 'swatch', style: 'round', color: VIEWSHED_HIGHLIGHT_COLOR },
     });
   }
   return items;
@@ -2120,11 +2120,13 @@ function legendItems() {
       label: LEGEND_LAYERS.viewsheds,
       swatchColor: VIEWSHED_FILL_COLOR.outdoors,
       swatchBorder: false,
+      swatchClass: 'legend-swatch--round',
       layerIds: CAMERA_PROVIDERS.flatMap(viewshedLayerIds),
       children: CAMERA_PROVIDERS.map((provider) => ({
         label: provider.viewshedLabel,
         swatchColor: viewshedColors(provider).outdoors,
         swatchBorder: false,
+        swatchClass: 'legend-swatch--round',
         infoText: 'Loading camera viewshed count…',
         loading: true,
         layerIds: viewshedLayerIds(provider),

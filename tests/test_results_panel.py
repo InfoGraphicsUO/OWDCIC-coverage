@@ -71,7 +71,7 @@ class ResultsPanelContractTests(unittest.TestCase):
         self.assertIn('resolveLegendRowsForExport', JS)
         self.assertIn('drawStatsOverlay', JS)
         self.assertIn("ctx.fillText('OWDCIC Camera Coverage'", JS)
-        self.assertIn("'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' }", JS)
+        self.assertIn("'ALERTWest camera viewsheds': { type: 'swatch', style: 'round', color: '#F28D05' }", JS)
         self.assertIn('MAP_ATTRIBUTION', JS)
         self.assertIn("basemap === 'satellite' ? SATELLITE_MAP_ATTRIBUTION : MAP_ATTRIBUTION", JS)
         self.assertIn('exportLandMixRows', JS)

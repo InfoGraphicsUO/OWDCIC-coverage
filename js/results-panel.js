@@ -613,10 +613,10 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'ALERTWest cameras': { type: 'icon', src: 'img/camera-marker.svg' },
   'Pano AI cameras': { type: 'icon', src: 'img/pano-camera-marker.svg' },
   'EnviroVision cameras': { type: 'icon', src: 'img/envirovision-camera-marker.svg' },
-  'Camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
-  'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
-  'Pano AI camera viewsheds': { type: 'swatch', style: 'fill', color: '#3898ec' },
-  'EnviroVision camera viewsheds': { type: 'swatch', style: 'fill', color: '#4fa83d' },
+  'Camera viewsheds': { type: 'swatch', style: 'round', color: '#F28D05' },
+  'ALERTWest camera viewsheds': { type: 'swatch', style: 'round', color: '#F28D05' },
+  'Pano AI camera viewsheds': { type: 'swatch', style: 'round', color: '#3898ec' },
+  'EnviroVision camera viewsheds': { type: 'swatch', style: 'round', color: '#4fa83d' },
   'Standing lookouts': { type: 'swatch', style: 'circle', color: '#8154BD' },
   'National forests': { type: 'swatch', style: 'outline', color: '#3b7d4f' },
   'BLM lands': { type: 'swatch', style: 'fill', color: '#f6d94a' },
@@ -983,6 +983,14 @@ function drawExportLegendSwatch(ctx, { style, color }, x, y) {
   if (style === 'fill') {
     ctx.fillStyle = color || '#777';
     ctx.fillRect(x, y, size, size);
+    return;
+  }
+  if (style === 'round') {
+    // viewsheds use a filled disc so a light fill is not mistaken for an empty checkbox
+    ctx.fillStyle = color || '#777';
+    ctx.beginPath();
+    ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+    ctx.fill();
     return;
   }
   if (style === 'line') {
@@ -1400,6 +1408,9 @@ function parseLegendVisualFromDom(visualRoot) {
     }
     if (swatch.classList.contains('legend-swatch--circle')) {
       return { type: 'swatch', style: 'circle', color };
+    }
+    if (swatch.classList.contains('legend-swatch--round')) {
+      return { type: 'swatch', style: 'round', color };
     }
     if (swatch.classList.contains('legend-swatch--fill')) {
       return { type: 'swatch', style: 'fill', color };

@@ -309,7 +309,7 @@ const api = initResultsPanel({
   // the map names selection symbols that have no layer row
   getSelectionLegendItems: (selection) => (selection.kind === 'polygon' ? [
     { label: `${selection.properties.name} border`, visual: { type: 'swatch', style: 'border', color: '#f8e109' } },
-    { label: 'Confederated Tribes Lookout Camera viewshed', visual: { type: 'swatch', style: 'fill', color: '#ffee00' } },
+    { label: 'Confederated Tribes Lookout Camera viewshed', visual: { type: 'swatch', style: 'round', color: '#ffee00' } },
   ] : []),
 });
 
