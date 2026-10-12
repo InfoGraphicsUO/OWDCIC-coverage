@@ -167,12 +167,24 @@
 }
 
 .results-panel__qualifier {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
     margin: 0 0 14px;
-    padding: 0 0 0 10px;
     color: #e0e0e0;
-    border-left: 3px solid var(--ohaz-yellow, #f8e109);
     font-size: 12px;
     line-height: 1.4;
+}
+
+/* hollow square matches the export legend's selected-boundary swatch */
+.results-panel__qualifier::before {
+    content: '';
+    flex: none;
+    box-sizing: border-box;
+    width: 14px;
+    height: 14px;
+    margin-top: 1px;
+    border: 2.5px solid var(--ohaz-yellow, #f8e109);
 }
 
 /* stacked keys read as one group above the coverage figures */
@@ -180,9 +192,12 @@
     margin-top: -8px;
 }
 
-/* matches TRANSMISSION_LINE_COLOR in js/map-layers.js */
-.results-panel__qualifier--transmission-lines {
-    border-left-color: #c2188f;
+/* horizontal stroke matches the export legend's line swatch; color matches TRANSMISSION_LINE_COLOR in js/map-layers.js */
+.results-panel__qualifier--transmission-lines::before {
+    height: 0;
+    margin-top: 7px;
+    border: 0;
+    border-top: 3px solid #c2188f;
 }
 
 .results-panel__line {
