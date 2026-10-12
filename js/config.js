@@ -11,10 +11,13 @@ export const DATA_URLS = Object.freeze({
   // latest Pano AI camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.3eiwtk/
   // an empty value shows the legend row as unpublished instead of requesting tiles
   panoCameraViewsheds: 'mapbox://infographics.3eiwtk',
+  // latest EnviroVision camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.493ien/
+  enviroVisionCameraViewsheds: 'mapbox://infographics.493ien',
   // every provider's coverage dissolved together, drawn when they share one fill color https://console.mapbox.com/studio/tilesets/infographics.4qzk4g/
   // built by scripts/build-combined-viewshed-coverage.py; empty falls back to stacked provider fills
   combinedCameraViewsheds: 'mapbox://infographics.4qzk4g',
   panoCameraSites: 'data/pano-sites.geojson',
+  enviroVisionCameraSites: 'data/envirovision-sites.geojson',
   alertWestCameraSites: 'data/alertwest-sites.geojson',
   digitizedCameraSources: 'data/digitized-camera-sources.geojson',
   standingLookouts: 'data/standing-lookouts.geojson',
@@ -46,12 +49,14 @@ export const BURN_PROBABILITY_MIN = 0.002154;
 export const CAMERA_PROVIDER_COLORS = Object.freeze({
   alertWest: '#f2b705',
   pano: '#3898ec',
+  enviroVision: '#4fa83d',
 });
 
 // marker artwork rasterized by js/marker-icons.js and shown in the legend
 export const MARKER_ICON_URLS = Object.freeze({
   camera: 'img/camera-marker.svg',
   panoCamera: 'img/pano-camera-marker.svg',
+  enviroVisionCamera: 'img/envirovision-camera-marker.svg',
   fire: 'img/fire-marker.svg',
   prescribed: 'img/prescribed-marker.svg',
 });
@@ -89,6 +94,7 @@ export const LAYER_IDS = Object.freeze({
   transmissionLinesHit: 'transmission-lines-hit',
   cameras: 'alertwest-cameras',
   panoCameras: 'pano-cameras',
+  enviroVisionCameras: 'envirovision-cameras',
   digitizedCamerasSource: 'digitized-camera-sources',
   digitizedEnviroVision: 'digitized-cameras-envirovision',
   digitizedAlertWest: 'digitized-cameras-alertwest',
@@ -100,6 +106,9 @@ export const LAYER_IDS = Object.freeze({
   panoViewshedsSource: 'pano-camera-viewsheds',
   panoViewshedsFill: 'pano-camera-viewsheds-fill',
   panoViewshedsHighlightFill: 'pano-camera-viewsheds-highlight-fill',
+  enviroVisionViewshedsSource: 'envirovision-camera-viewsheds',
+  enviroVisionViewshedsFill: 'envirovision-camera-viewsheds-fill',
+  enviroVisionViewshedsHighlightFill: 'envirovision-camera-viewsheds-highlight-fill',
   combinedViewshedsSource: 'combined-camera-viewsheds',
   combinedViewshedsFill: 'combined-camera-viewsheds-fill',
   fires: 'nifc-fires',
@@ -116,9 +125,11 @@ export const LEGEND_LAYERS = Object.freeze({
   cameras: 'Cameras',
   alertWestCameras: 'ALERTWest cameras',
   panoCameras: 'Pano AI cameras',
+  enviroVisionCameras: 'EnviroVision cameras',
   viewsheds: 'Camera viewsheds',
   alertWestViewsheds: 'ALERTWest camera viewsheds',
   panoViewsheds: 'Pano AI camera viewsheds',
+  enviroVisionViewsheds: 'EnviroVision camera viewsheds',
   lookouts: 'Standing lookouts',
   nationalForests: 'National forests',
   blmLands: 'BLM lands',
