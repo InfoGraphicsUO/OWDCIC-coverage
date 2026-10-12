@@ -29,6 +29,7 @@ DIVISIONS = ROOT / 'data/divisions'
 VIEWSHEDS = (
     ROOT / 'outputs/gdal_viewsheds_alertwest/mapbox/camera_viewsheds_web_epsg5070.gpkg',
     ROOT / 'outputs/gdal_viewsheds_pano/mapbox/camera_viewsheds_web_epsg5070.gpkg',
+    ROOT / 'outputs/gdal_viewsheds_envirovision/mapbox/camera_viewsheds_web_epsg5070.gpkg',
 )
 # published manifests name every viewshed the map shows; metrics must cover the same set
 MANIFESTS = ROOT / 'data'
