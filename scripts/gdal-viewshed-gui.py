@@ -10,8 +10,8 @@ import sys
 import time
 
 try:
-    from qgis.PyQt.QtCore import QPoint, QProcess, Qt, QTimer, QUrl
-    from qgis.PyQt.QtGui import QColor, QDesktopServices, QPalette
+    from qgis.PyQt.QtCore import QPoint, QProcess, QRectF, Qt, QTimer, QUrl
+    from qgis.PyQt.QtGui import QColor, QDesktopServices, QPainter, QPalette, QPen
     from qgis.PyQt.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -36,8 +36,8 @@ try:
         QWidget,
     )
 except ImportError:
-    from PyQt6.QtCore import QPoint, QProcess, Qt, QTimer, QUrl
-    from PyQt6.QtGui import QColor, QDesktopServices, QPalette
+    from PyQt6.QtCore import QPoint, QProcess, QRectF, Qt, QTimer, QUrl
+    from PyQt6.QtGui import QColor, QDesktopServices, QPainter, QPalette, QPen
     from PyQt6.QtWidgets import (
         QApplication,
         QCheckBox,
@@ -179,6 +179,37 @@ def reset_button(section: str, widgets: list[QWidget]) -> QPushButton:
     button.clicked.connect(reset)
     return button
 
+
+
+class Spinner(QWidget):
+    """draws a small loading arc that turns on the GUI's own timer"""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setFixedSize(18, 18)
+        self.angle = 0
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.advance)
+
+    def start(self) -> None:
+        self.show()
+        self.timer.start(40)
+
+    def stop(self) -> None:
+        self.timer.stop()
+        self.hide()
+
+    def advance(self) -> None:
+        self.angle = (self.angle - 20) % 360
+        self.update()
+
+    def paintEvent(self, _event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(qt_enum(QPainter, "RenderHint", "Antialiasing"))
+        pen = QPen(QColor("#ffda44"), 2.5)
+        pen.setCapStyle(qt_enum(Qt, "PenCapStyle", "RoundCap"))
+        painter.setPen(pen)
+        painter.drawArc(QRectF(2, 2, 14, 14), self.angle * 16, 270 * 16)
 
 
 class HelpButton(QPushButton):
@@ -500,7 +531,12 @@ class ViewshedWindow(QMainWindow):
         self.overall.setFormat("Overall: %p%")
         self.elapsed = QLabel("Elapsed: 0s")
         self.elapsed.setObjectName("elapsed")
-        layout.addWidget(self.status)
+        self.spinner = Spinner()
+        self.spinner.hide()
+        step = QHBoxLayout()
+        step.addWidget(self.spinner)
+        step.addWidget(self.status, 1)
+        layout.addLayout(step)
         layout.addWidget(self.overall)
         layout.addWidget(self.elapsed)
         return group
@@ -692,6 +728,10 @@ class ViewshedWindow(QMainWindow):
 
     def set_idle(self, idle: bool) -> None:
         self.settings.setEnabled(idle)
+        if idle:
+            self.spinner.stop()
+        else:
+            self.spinner.start()
         self.start_button.setEnabled(idle)
         self.cancel_button.setEnabled(not idle)
         self.open_output_button.setEnabled(idle and self.output.path().exists())
