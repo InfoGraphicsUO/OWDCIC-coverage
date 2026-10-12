@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "generated_utc": "2026-10-08T21:20:50+00:00",
+  "generated_utc": "2026-10-12T21:20:48+00:00",
   "config_hash": "1fc319aaf4acf161f84b3f6c5c31c3614d1ef1b830b541849cb2953bc3242bc6",
   "web_processing": {
     "resolution_m": 50.0,
@@ -1000,6 +1000,18 @@
     },
     {
       "source_id": 77,
+      "viewshed_id": "gold-hill",
+      "site_name": "Gold Hill",
+      "aliases": [],
+      "longitude": -123.04631,
+      "latitude": 42.43578,
+      "height_ft": 20.0,
+      "status": "complete",
+      "web_geojson": "web/gold-hill.geojson",
+      "exact_polygon": "polygons_exact/gold_hill.gpkg"
+    },
+    {
+      "source_id": 77,
       "viewshed_id": "mt-defiance",
       "site_name": "Mt Defiance",
       "aliases": [
@@ -1012,6 +1024,18 @@
       "status": "complete",
       "web_geojson": "web/mt-defiance.geojson",
       "exact_polygon": "polygons_exact/mt_defiance.gpkg"
+    },
+    {
+      "source_id": 78,
+      "viewshed_id": "dry-mountain",
+      "site_name": "Dry Mountain",
+      "aliases": [],
+      "longitude": -119.563696,
+      "latitude": 43.671954,
+      "height_ft": 70.0,
+      "status": "complete",
+      "web_geojson": "web/dry-mountain.geojson",
+      "exact_polygon": "polygons_exact/dry_mountain.gpkg"
     },
     {
       "source_id": 78,
