@@ -58,8 +58,20 @@ for (const f of attachViewshedIds(halfwayHeads, manifest, { features: [pendingHa
 }
 const panoSites = JSON.parse(readFileSync(new URL('../data/pano-sites.geojson', import.meta.url), 'utf8'));
 const panoCameras = providerSitesToCameras(panoSites, 'Pano AI').features;
-assert.equal(panoCameras.length, 34);
-assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 24);
-const pendingWithHeight = structuredClone(panoSites.features.find(f => f.properties.name === 'Mullan Substation'));
-pendingWithHeight.properties.cameraHeightFt = 173.9;
+assert.equal(panoCameras.length, 69);
+assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 68);
+// each owner's table lands in the one Pano layer
+const owners = (name) => panoCameras.filter(f => f.properties.owner === name).length;
+assert.deepEqual(
+  ['Portland General Electric', 'Pacific Power', 'Washington DNR'].map(owners),
+  [38, 5, 26],
+);
+// EnviroVision sites flag a shared ALERTWest tower themselves instead of borrowing its point
+const enviroVisionSites = JSON.parse(readFileSync(new URL('../data/envirovision-sites.geojson', import.meta.url), 'utf8'));
+const enviroVisionCameras = providerSitesToCameras(enviroVisionSites, 'EnviroVision').features;
+assert.equal(enviroVisionCameras.length, 87);
+assert.equal(enviroVisionCameras.filter(f => f.properties.viewshed_id).length, 87);
+assert.equal(enviroVisionCameras.filter(f => f.properties.sharesAlertWestSite).length, 5);
+const pendingWithHeight = structuredClone(panoSites.features.find(f => f.properties.name === 'Midnight Gulch'));
+pendingWithHeight.properties.cameraHeightFt = 100;
 assert.equal(providerSitesToCameras({ features: [pendingWithHeight] }, 'Pano AI').features[0].properties.viewshed_id, null);
