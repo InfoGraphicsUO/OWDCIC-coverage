@@ -66,7 +66,7 @@ export function providerSitesToCameras(sites, operator) {
         state: properties.state ?? null,
         viewshed_id: (modeled && stringValue(properties.viewshedId)) || null,
         // placed on an ALERTWest site, so its marker would otherwise hide that camera
-        sharesAlertWestSite: properties.locationSource === 'alertwest-site',
+        sharesAlertWestSite: properties.locationSource === 'alertwest-site' || properties.sharesAlertWestSite === true,
       },
     });
   }
