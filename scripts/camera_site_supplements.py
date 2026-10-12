@@ -15,10 +15,14 @@ def supplement_sites(by_provider, text, converter):
     digitized = {f['properties']['id']: f for f in json.loads((data / 'digitized-camera-sources.geojson').read_text())['features']}
     counties = converter.load_counties(converter.DEFAULT_COUNTIES)
     supplements = json.loads((data / 'camera-site-supplements.json').read_text())
+    # Rows held out of the map until the sheet is clarified.
+    excluded = {(r['provider'], r['sheetName']) for r in supplements.get('excluded', [])}
+    for provider, collection in by_provider.items():
+        collection['features'] = [f for f in collection['features'] if (provider, f['properties']['name']) not in excluded]
     for record in supplements['sites']:
         provider = record['provider']
         row = rows.get(record.get('sheetName'))
-        height = converter.to_finite_number(row[4]) if row else None
+        height = converter.to_height_ft(row[4]) if row else None
         props = {k: v for k, v in record.items() if k not in ('coordinates', 'sheetName', 'digitizedId')}
         props['cameraHeightFt'] = height
         props['viewshedId'] = ('' if provider == 'alertwest' else 'pano-') + converter.slugify(record['name'])
@@ -38,10 +42,19 @@ def supplement_sites(by_provider, text, converter):
                 props.update(county=county['name'], state=county['state'])
         features = by_provider[provider]['features']
         # Collapse aliases of the same provider/site, not neighboring towers.
-        existing = next((f for f in features if f['properties']['name'] == record['name'] or
+        existing = next((f for f in features if f['properties']['name'] in (record['name'], record.get('sheetName')) or
                          converter.distance_m(*point, *f['geometry']['coordinates']) < 1), None)
         if existing:
             old = existing['properties']
+            if old['name'] == record.get('sheetName'):
+                # The sheet now locates this row; the reviewed name and point still win.
+                if existing['geometry']['coordinates'] != point:
+                    old.setdefault('reportedCoordinates', existing['geometry']['coordinates'])
+                    existing['geometry']['coordinates'] = point
+                sheet_name = old['name']
+                old.update({k: v for k, v in props.items() if k not in ('aliases', 'cameraHeightFt', 'alertWestLive')})
+                if sheet_name != old['name']:
+                    old['aliases'] = old.get('aliases', []) + [sheet_name]
             if old.get('cameraHeightFt') not in (None, height) and height is not None:
                 raise ValueError(f"Conflicting heights at {record['name']}")
             old['aliases'] = sorted(set(old.get('aliases', []) + props['aliases'] + [record['name']]) - {old['name']})
@@ -74,5 +87,6 @@ def supplement_sites(by_provider, text, converter):
                 # sourceId keeps the site's position in the full file when the queue is merged
                 ready.append({**feature, 'properties': {**props, 'sourceId': source_id}})
         converter.write_geojson(data / f'{provider}-sites-needing-viewsheds.geojson', {'type': 'FeatureCollection', 'features': ready})
-    blocked.append({'provider': 'alertwest', 'name': 'Gold Hill', 'reason': 'Missing coordinates and camera observer height'})
+    # Sheet rows with no usable location never become features, so list them here.
+    blocked += [{'provider': r['provider'], 'name': r['sheetName'], 'reason': r['reason']} for r in supplements.get('unmapped', [])]
     (data / 'camera-viewsheds-blocked.json').write_text(json.dumps(blocked, indent=2) + '\n', encoding='utf-8')

@@ -16,6 +16,7 @@
         "cameraHeightFt": 44.0,
         "viewshedId": "pano-portland-willalatin-tank",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-99",
         "reportedCoordinates": [
@@ -41,6 +42,7 @@
         "cameraHeightFt": 48.0,
         "viewshedId": "pano-portland-lookout-point",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-114",
         "reportedCoordinates": [
@@ -66,6 +68,7 @@
         "cameraHeightFt": 56.0,
         "viewshedId": "pano-bald-peak",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-102",
         "reportedCoordinates": [
@@ -91,6 +94,7 @@
         "cameraHeightFt": 50.0,
         "viewshedId": "pano-doane-creek",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-105",
         "reportedCoordinates": [
@@ -116,6 +120,7 @@
         "cameraHeightFt": 50.0,
         "viewshedId": "pano-high-heaven",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-103",
         "reportedCoordinates": [
@@ -141,6 +146,7 @@
         "cameraHeightFt": 87.99,
         "viewshedId": "pano-high-compromise",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-100",
         "reportedCoordinates": [
@@ -166,6 +172,7 @@
         "cameraHeightFt": 14.99,
         "viewshedId": "pano-pumpkin-ridge",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-96",
         "reportedCoordinates": [
@@ -191,6 +198,7 @@
         "cameraHeightFt": 14.01,
         "viewshedId": "pano-hayward",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-98",
         "reportedCoordinates": [
@@ -216,6 +224,7 @@
         "cameraHeightFt": 43.01,
         "viewshedId": "pano-west-salem",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-106",
         "reportedCoordinates": [
@@ -241,6 +250,7 @@
         "cameraHeightFt": 50.0,
         "viewshedId": "pano-eola-hills",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-107",
         "reportedCoordinates": [
@@ -266,6 +276,7 @@
         "cameraHeightFt": 46.0,
         "viewshedId": "pano-sawtell",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-111",
         "reportedCoordinates": [
@@ -291,6 +302,7 @@
         "cameraHeightFt": 54.99,
         "viewshedId": "pano-day-hill",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-115",
         "reportedCoordinates": [
@@ -316,6 +328,7 @@
         "cameraHeightFt": 41.99,
         "viewshedId": "pano-lenhart",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "alertwest-site",
         "reportedCoordinates": [
           -122.17,
@@ -340,6 +353,7 @@
         "cameraHeightFt": 69.0,
         "viewshedId": "pano-spirit-mountain",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-104",
         "reportedCoordinates": [
@@ -365,6 +379,7 @@
         "cameraHeightFt": 23.0,
         "viewshedId": "pano-silverton",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-110",
         "reportedCoordinates": [
@@ -390,6 +405,7 @@
         "cameraHeightFt": 29.99,
         "viewshedId": "pano-goat-mountain",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-113",
         "reportedCoordinates": [
@@ -415,6 +431,7 @@
         "cameraHeightFt": 18.01,
         "viewshedId": "pano-brightwood",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "alertwest-site",
         "reportedCoordinates": [
           -122.04,
@@ -439,6 +456,7 @@
         "cameraHeightFt": 47.01,
         "viewshedId": "pano-colton",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-112",
         "reportedCoordinates": [
@@ -464,6 +482,7 @@
         "cameraHeightFt": 47.01,
         "viewshedId": "pano-oak-grove-butte",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-121",
         "reportedCoordinates": [
@@ -489,6 +508,7 @@
         "cameraHeightFt": 54.99,
         "viewshedId": "pano-lodge-road",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-97",
         "reportedCoordinates": [
@@ -514,6 +534,7 @@
         "cameraHeightFt": 50.0,
         "viewshedId": "pano-whale-head",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-40",
         "reportedCoordinates": [
@@ -539,6 +560,7 @@
         "cameraHeightFt": 50.0,
         "viewshedId": "pano-memaloose",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-41",
         "reportedCoordinates": [
@@ -564,6 +586,7 @@
         "cameraHeightFt": 18.01,
         "viewshedId": "pano-bald-hill",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-101",
         "reportedCoordinates": [
@@ -589,6 +612,7 @@
         "cameraHeightFt": 36.52,
         "viewshedId": "pano-portland-round-top",
         "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-95",
         "reportedCoordinates": [
@@ -610,16 +634,20 @@
       },
       "properties": {
         "name": "Sycan Substation",
-        "provider": "pano",
         "aliases": [],
-        "cameraHeightFt": null,
+        "cameraHeightFt": 95.01,
         "viewshedId": "pano-sycan-substation",
+        "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-119",
-        "source": "data/digitized-camera-sources.geojson",
+        "reportedCoordinates": [
+          -120.99,
+          42.85
+        ],
         "county": "Lake",
         "state": "OR",
-        "viewshedStatus": "pending"
+        "source": "data/digitized-camera-sources.geojson"
       }
     },
     {
@@ -633,16 +661,20 @@
       },
       "properties": {
         "name": "Latgawa Mountain",
-        "provider": "pano",
         "aliases": [],
-        "cameraHeightFt": null,
+        "cameraHeightFt": 116.99,
         "viewshedId": "pano-latgawa-mountain",
+        "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-21",
-        "source": "data/digitized-camera-sources.geojson",
+        "reportedCoordinates": [
+          -120.83,
+          42.98
+        ],
         "county": "Lake",
         "state": "OR",
-        "viewshedStatus": "pending"
+        "source": "data/digitized-camera-sources.geojson"
       }
     },
     {
@@ -656,45 +688,25 @@
       },
       "properties": {
         "name": "Round Butte",
-        "provider": "pano",
         "aliases": [
           "Round Butte (Warm Springs)"
         ],
+        "cameraHeightFt": 81.99,
+        "viewshedId": "pano-round-butte",
+        "provider": "pano",
+        "owner": "Portland General Electric",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-118",
+        "reportedCoordinates": [
+          -121.27,
+          44.6
+        ],
+        "county": "Jefferson",
+        "state": "OR",
         "locationNote": "PGE and digitized sources identify Round Butte and Warm Springs as separate locations; preserve both.",
         "candidateTowerHeightFt": 100,
         "heightNote": "PGE-towers_reduced1.csv tower height, not verified camera observer height.",
-        "cameraHeightFt": null,
-        "viewshedId": "pano-round-butte",
-        "locationSource": "digitized",
-        "digitizedId": "digitized-camera-118",
-        "source": "data/digitized-camera-sources.geojson",
-        "county": "Jefferson",
-        "state": "OR",
-        "viewshedStatus": "pending"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -121.219022,
-          44.754998
-        ]
-      },
-      "properties": {
-        "name": "Warm Springs",
-        "provider": "pano",
-        "aliases": [],
-        "locationNote": "PGE and digitized sources identify Round Butte and Warm Springs as separate locations; preserve both.",
-        "cameraHeightFt": null,
-        "viewshedId": "pano-warm-springs",
-        "locationSource": "digitized",
-        "digitizedId": "digitized-camera-117",
-        "source": "data/digitized-camera-sources.geojson",
-        "county": "Jefferson",
-        "state": "OR",
-        "viewshedStatus": "pending"
+        "source": "data/digitized-camera-sources.geojson"
       }
     },
     {
@@ -708,16 +720,20 @@
       },
       "properties": {
         "name": "Biglow Canyon",
-        "provider": "pano",
         "aliases": [],
-        "cameraHeightFt": null,
+        "cameraHeightFt": 210.01,
         "viewshedId": "pano-biglow-canyon",
+        "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-120",
-        "source": "data/digitized-camera-sources.geojson",
+        "reportedCoordinates": [
+          -120.64,
+          45.64
+        ],
         "county": "Sherman",
         "state": "OR",
-        "viewshedStatus": "pending"
+        "source": "data/digitized-camera-sources.geojson"
       }
     },
     {
@@ -731,16 +747,20 @@
       },
       "properties": {
         "name": "Sidwalter",
-        "provider": "pano",
         "aliases": [],
-        "cameraHeightFt": null,
+        "cameraHeightFt": 110.01,
         "viewshedId": "pano-sidwalter",
+        "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-38",
-        "source": "data/digitized-camera-sources.geojson",
+        "reportedCoordinates": [
+          -121.54,
+          44.93
+        ],
         "county": "Wasco",
         "state": "OR",
-        "viewshedStatus": "pending"
+        "source": "data/digitized-camera-sources.geojson"
       }
     },
     {
@@ -754,16 +774,20 @@
       },
       "properties": {
         "name": "Mill City",
-        "provider": "pano",
         "aliases": [],
-        "cameraHeightFt": null,
+        "cameraHeightFt": 135.01,
         "viewshedId": "pano-mill-city",
+        "provider": "pano",
+        "owner": "Portland General Electric",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-116",
-        "source": "data/digitized-camera-sources.geojson",
+        "reportedCoordinates": [
+          -122.48,
+          44.76
+        ],
         "county": "Marion",
         "state": "OR",
-        "viewshedStatus": "pending"
+        "source": "data/digitized-camera-sources.geojson"
       }
     },
     {
@@ -777,15 +801,144 @@
       },
       "properties": {
         "name": "Lyons",
-        "provider": "pano",
         "aliases": [],
-        "locationSource": "pge-camera-source",
-        "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp",
-        "cameraHeightFt": null,
+        "cameraHeightFt": 54.99,
         "viewshedId": "pano-lyons",
+        "provider": "pano",
+        "owner": "Portland General Electric",
         "county": "Linn",
         "state": "OR",
-        "viewshedStatus": "pending"
+        "reportedCoordinates": [
+          -122.63,
+          44.76
+        ],
+        "locationSource": "pge-camera-source",
+        "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.71451,
+          45.33302
+        ]
+      },
+      "properties": {
+        "name": "Timberline",
+        "aliases": [],
+        "cameraHeightFt": 79.99,
+        "viewshedId": "pano-timberline",
+        "provider": "pano",
+        "owner": "Portland General Electric",
+        "locationSource": "alertwest-site",
+        "reportedCoordinates": [
+          -121.71,
+          45.33
+        ],
+        "county": "Clackamas",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.66,
+          45.69
+        ]
+      },
+      "properties": {
+        "name": "Hazel Dell",
+        "aliases": [],
+        "cameraHeightFt": 95.01,
+        "viewshedId": "pano-hazel-dell",
+        "provider": "pano",
+        "owner": "Portland General Electric",
+        "county": "Clark",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.219022,
+          44.754998
+        ]
+      },
+      "properties": {
+        "name": "Warm Springs",
+        "aliases": [],
+        "cameraHeightFt": 114.99,
+        "viewshedId": "pano-warm-springs",
+        "provider": "pano",
+        "owner": "Portland General Electric",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-117",
+        "reportedCoordinates": [
+          -121.22,
+          44.76
+        ],
+        "county": "Jefferson",
+        "state": "OR",
+        "locationNote": "PGE and digitized sources identify Round Butte and Warm Springs as separate locations; preserve both.",
+        "source": "data/digitized-camera-sources.geojson"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.893069,
+          45.306439
+        ]
+      },
+      "properties": {
+        "name": "Parrett Mountain",
+        "aliases": [],
+        "cameraHeightFt": 119.98,
+        "viewshedId": "pano-parrett-mountain",
+        "provider": "pano",
+        "owner": "Portland General Electric",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-108",
+        "reportedCoordinates": [
+          -122.89,
+          45.31
+        ],
+        "county": "Yamhill",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.693679,
+          45.34419
+        ]
+      },
+      "properties": {
+        "name": "Petes Mountain",
+        "aliases": [],
+        "cameraHeightFt": 164.99,
+        "viewshedId": "pano-petes-mountain",
+        "provider": "pano",
+        "owner": "Portland General Electric",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-109",
+        "reportedCoordinates": [
+          -122.69,
+          45.34
+        ],
+        "county": "Clackamas",
+        "state": "OR"
       }
     },
     {
@@ -799,19 +952,23 @@
       },
       "properties": {
         "name": "Mullan Substation",
-        "provider": "pano",
         "aliases": [
           "Mullen Substation (WA)"
+        ],
+        "cameraHeightFt": 64.99,
+        "viewshedId": "pano-mullan-substation",
+        "provider": "pano",
+        "owner": "Portland General Electric",
+        "county": "Columbia",
+        "state": "WA",
+        "reportedCoordinates": [
+          -118.03,
+          46.42
         ],
         "locationSource": "pge-camera-source",
         "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp",
         "candidateTowerHeightFt": 173.9,
-        "heightNote": "PGE-towers_reduced1.csv tower height, not verified camera observer height.",
-        "cameraHeightFt": null,
-        "viewshedId": "pano-mullan-substation",
-        "county": "Columbia",
-        "state": "WA",
-        "viewshedStatus": "pending"
+        "heightNote": "PGE-towers_reduced1.csv tower height, not verified camera observer height."
       }
     },
     {
@@ -825,17 +982,648 @@
       },
       "properties": {
         "name": "Waitsburg",
-        "provider": "pano",
         "aliases": [
           "Waitsburg (WA)"
         ],
-        "locationSource": "pge-camera-source",
-        "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp",
-        "cameraHeightFt": null,
+        "cameraHeightFt": 109.97,
         "viewshedId": "pano-waitsburg",
+        "provider": "pano",
+        "owner": "Portland General Electric",
         "county": "Columbia",
         "state": "WA",
+        "reportedCoordinates": [
+          -118.17,
+          46.41
+        ],
+        "locationSource": "pge-camera-source",
+        "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.661489,
+          42.258482
+        ]
+      },
+      "properties": {
+        "name": "Eight Dollar Mountain",
+        "aliases": [],
+        "cameraHeightFt": 122.0,
+        "viewshedId": "pano-eight-dollar-mountain",
+        "provider": "pano",
+        "owner": "Pacific Power",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-59",
+        "reportedCoordinates": [
+          -123.66175,
+          42.25847
+        ],
+        "county": "Josephine",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.2164,
+          42.44601
+        ]
+      },
+      "properties": {
+        "name": "Fielder Mountain",
+        "aliases": [],
+        "cameraHeightFt": 112.0,
+        "viewshedId": "pano-fielder-mountain",
+        "provider": "pano",
+        "owner": "Pacific Power",
+        "county": "Jackson",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.24531,
+          42.27183
+        ]
+      },
+      "properties": {
+        "name": "Provolt",
+        "aliases": [],
+        "cameraHeightFt": 50.0,
+        "viewshedId": "pano-provolt",
+        "provider": "pano",
+        "owner": "Pacific Power",
+        "county": "Josephine",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.59884,
+          42.07674
+        ]
+      },
+      "properties": {
+        "name": "Takilma",
+        "aliases": [],
+        "cameraHeightFt": 140.0,
+        "viewshedId": "pano-takilma",
+        "provider": "pano",
+        "owner": "Pacific Power",
+        "county": "Josephine",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.51066,
+          42.48583
+        ]
+      },
+      "properties": {
+        "name": "Midnight Gulch",
+        "aliases": [],
+        "cameraHeightFt": null,
+        "viewshedId": "pano-midnight-gulch",
+        "provider": "pano",
+        "owner": "Pacific Power",
+        "county": "Josephine",
+        "state": "OR",
         "viewshedStatus": "pending"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.6119115,
+          47.5488945
+        ]
+      },
+      "properties": {
+        "name": "Wrights Hill",
+        "aliases": [],
+        "cameraHeightFt": 60.0,
+        "viewshedId": "pano-wrights-hill",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Spokane",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.573033,
+          48.283738
+        ]
+      },
+      "properties": {
+        "name": "Chewelah Peak",
+        "aliases": [],
+        "cameraHeightFt": 105.0,
+        "viewshedId": "pano-chewelah-peak",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Stevens",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.378193,
+          45.6763665
+        ]
+      },
+      "properties": {
+        "name": "Livingston Mountain",
+        "aliases": [],
+        "cameraHeightFt": 159.0,
+        "viewshedId": "pano-livingston-mountain",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Clark",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.9277,
+          48.388
+        ]
+      },
+      "properties": {
+        "name": "Little Buck Mountain",
+        "aliases": [],
+        "cameraHeightFt": 184.0,
+        "viewshedId": "pano-little-buck-mountain",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Okanogan",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.173136,
+          46.0936505
+        ]
+      },
+      "properties": {
+        "name": "Rattlesnake Summit",
+        "aliases": [],
+        "cameraHeightFt": 250.0,
+        "viewshedId": "pano-rattlesnake-summit",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Asotin",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.0660945,
+          48.490219
+        ]
+      },
+      "properties": {
+        "name": "Monumental Mountain",
+        "aliases": [],
+        "cameraHeightFt": 160.0,
+        "viewshedId": "pano-monumental-mountain",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Stevens",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.5517305,
+          46.28558
+        ]
+      },
+      "properties": {
+        "name": "Signal Peak",
+        "aliases": [],
+        "cameraHeightFt": 137.0,
+        "viewshedId": "pano-signal-peak",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Cowlitz",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.26803,
+          48.364426
+        ]
+      },
+      "properties": {
+        "name": "Devils Mountain",
+        "aliases": [],
+        "cameraHeightFt": 108.0,
+        "viewshedId": "pano-devils-mountain",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Skagit",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.15945,
+          48.594735
+        ]
+      },
+      "properties": {
+        "name": "Lyman Hill",
+        "aliases": [],
+        "cameraHeightFt": 78.0,
+        "viewshedId": "pano-lyman-hill",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Skagit",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.1688065,
+          46.743177
+        ]
+      },
+      "properties": {
+        "name": "Puyallup Ridge",
+        "aliases": [],
+        "cameraHeightFt": 135.0,
+        "viewshedId": "pano-puyallup-ridge",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Lewis",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.100892,
+          46.71699
+        ]
+      },
+      "properties": {
+        "name": "Bethel Ridge",
+        "aliases": [],
+        "cameraHeightFt": 232.0,
+        "viewshedId": "pano-bethel-ridge",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Yakima",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.3927775,
+          47.2634195
+        ]
+      },
+      "properties": {
+        "name": "Naneum Ridge",
+        "aliases": [],
+        "cameraHeightFt": 110.0,
+        "viewshedId": "pano-naneum-ridge",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Chelan",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.144099,
+          47.0475206
+        ]
+      },
+      "properties": {
+        "name": "Cowling Ridge CC",
+        "aliases": [],
+        "cameraHeightFt": 129.0,
+        "viewshedId": "pano-cowling-ridge-cc",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Pierce",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.5965315,
+          45.9935705
+        ]
+      },
+      "properties": {
+        "name": "Davis Peak",
+        "aliases": [],
+        "cameraHeightFt": 69.0,
+        "viewshedId": "pano-davis-peak",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Cowlitz",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.62216,
+          48.743135
+        ]
+      },
+      "properties": {
+        "name": "Aeneas Mountain",
+        "aliases": [],
+        "cameraHeightFt": 49.0,
+        "viewshedId": "pano-aeneas-mountain",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Okanogan",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.0346597,
+          47.8070051
+        ]
+      },
+      "properties": {
+        "name": "Chelan Butte",
+        "aliases": [],
+        "cameraHeightFt": 158.0,
+        "viewshedId": "pano-chelan-butte",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Chelan",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.5381525,
+          47.0291735
+        ]
+      },
+      "properties": {
+        "name": "Ellensburg",
+        "aliases": [],
+        "cameraHeightFt": 35.0,
+        "viewshedId": "pano-ellensburg",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Kittitas",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.1394923,
+          46.9729147
+        ]
+      },
+      "properties": {
+        "name": "Capitol Peak",
+        "aliases": [],
+        "cameraHeightFt": 270.0,
+        "viewshedId": "pano-capitol-peak",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Thurston",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.3418365,
+          45.915236
+        ]
+      },
+      "properties": {
+        "name": "Diamond Gap",
+        "aliases": [],
+        "cameraHeightFt": 82.0,
+        "viewshedId": "pano-diamond-gap",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Klickitat",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.975136,
+          47.5036815
+        ]
+      },
+      "properties": {
+        "name": "Tiger West",
+        "aliases": [],
+        "cameraHeightFt": 98.0,
+        "viewshedId": "pano-tiger-west",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "King",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.3580245,
+          47.3160975
+        ]
+      },
+      "properties": {
+        "name": "North Mountain",
+        "aliases": [],
+        "cameraHeightFt": 175.0,
+        "viewshedId": "pano-north-mountain",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Mason",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.8407,
+          48.6804
+        ]
+      },
+      "properties": {
+        "name": "Mount Constitution",
+        "aliases": [],
+        "cameraHeightFt": 210.0,
+        "viewshedId": "pano-mount-constitution",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "San Juan",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.058333,
+          46.554166
+        ]
+      },
+      "properties": {
+        "name": "Baw Faw",
+        "aliases": [],
+        "cameraHeightFt": 172.0,
+        "viewshedId": "pano-baw-faw",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Lewis",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -122.8686,
+          46.8601
+        ]
+      },
+      "properties": {
+        "name": "Lemon Hill",
+        "aliases": [],
+        "cameraHeightFt": 180.0,
+        "viewshedId": "pano-lemon-hill",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Thurston",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.761816,
+          48.923994
+        ]
+      },
+      "properties": {
+        "name": "Flagstaff Mountain",
+        "aliases": [],
+        "cameraHeightFt": 110.0,
+        "viewshedId": "pano-flagstaff-mountain",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Stevens",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -123.86792,
+          47.39019
+        ]
+      },
+      "properties": {
+        "name": "Nielton Hill",
+        "aliases": [],
+        "cameraHeightFt": 108.0,
+        "viewshedId": "pano-nielton-hill",
+        "provider": "pano",
+        "owner": "Washington DNR",
+        "county": "Grays Harbor",
+        "state": "WA"
       }
     }
   ]

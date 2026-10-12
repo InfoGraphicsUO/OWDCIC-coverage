@@ -34,6 +34,13 @@ HEIGHT_ALIASES = ["camera height (ft)", "camera height (feet)", "camera height",
 ALERTWEST = "alertwest"
 # a title row containing the marker starts that provider's table; a blank row ends it
 SECTION_PROVIDERS = {"PANO.AI": "pano"}
+# the same title row names who owns that table's cameras
+SECTION_OWNERS = {
+    "PORTLAND GENERAL ELECTRIC": "Portland General Electric",
+    "PACIFIC POWER": "Pacific Power",
+    "WASHINGTON DEPT OF NATURAL RESOURCES": "Washington DNR",
+}
+ESTIMATED_HEIGHT = re.compile(r"estimated", re.I)
 PROVIDER_OUTPUTS = {"pano": HERE.parent / "data" / "pano-sites.geojson"}
 # prefixed so viewshed ids stay unique across provider tilesets
 PROVIDER_VIEWSHED_PREFIXES = {"pano": "pano-"}
@@ -232,10 +239,14 @@ def sites_csv_to_geojson(
     col = sites_column_index(rows[0])
     sites: dict[str, dict[str, dict]] = {ALERTWEST: {}}
     provider = ALERTWEST
+    owner = None
+    # the unlabeled column after the height holds notes such as "estimated height"
+    note_index = col["height"] + 1
 
     for row in rows[1:]:
         if not any(value.strip() for value in row):
             provider = ALERTWEST
+            owner = None
             continue
         if len(row) <= max(col.values()):
             continue
@@ -244,7 +255,10 @@ def sites_csv_to_geojson(
         latitude = to_finite_number(row[col["latitude"]])
         longitude = to_finite_number(row[col["longitude"]])
         if latitude is None or longitude is None:
-            provider = section_provider(name) or provider
+            started = section_provider(name)
+            if started:
+                provider = started
+                owner = section_owner(name)
             continue
 
         extra = (row[col["height"]] or "").strip()
@@ -256,6 +270,8 @@ def sites_csv_to_geojson(
             "aliases": [],
             "cameraHeightFt": None,
             "alertWestLive": False,
+            "owner": owner,
+            "heightEstimated": False,
             "latitude": latitude,
             "longitude": longitude,
         }
@@ -267,9 +283,11 @@ def sites_csv_to_geojson(
         if AW_LIVE.match(extra):
             site["alertWestLive"] = True
         else:
-            height = to_finite_number(extra)
+            height = to_height_ft(extra)
             if height is not None:
                 site["cameraHeightFt"] = height
+                note = row[note_index] if len(row) > note_index else ""
+                site["heightEstimated"] = bool(ESTIMATED_HEIGHT.search(note))
 
         provider_sites[key] = site
 
@@ -291,6 +309,11 @@ def section_provider(title: str) -> str | None:
     return next((provider for marker, provider in SECTION_PROVIDERS.items() if marker in upper), None)
 
 
+def section_owner(title: str) -> str | None:
+    upper = title.upper()
+    return next((owner for marker, owner in SECTION_OWNERS.items() if marker in upper), None)
+
+
 def site_feature(
     site: dict,
     provider: str,
@@ -304,11 +327,15 @@ def site_feature(
         "aliases": site["aliases"],
         "cameraHeightFt": site["cameraHeightFt"],
     }
+    if site.get("heightEstimated"):
+        properties["cameraHeightEstimated"] = True
     if provider == ALERTWEST:
         properties["alertWestLive"] = site["alertWestLive"]
     else:
         properties["viewshedId"] = PROVIDER_VIEWSHED_PREFIXES.get(provider, f"{provider}-") + slugify(site["name"])
     properties["provider"] = provider
+    if site.get("owner"):
+        properties["owner"] = site["owner"]
 
     coordinates = reported
     match = match_digitized(site, provider, digitized)
@@ -535,6 +562,11 @@ def coerce_value(value: str):
     if re.search(r"[.eE]", stripped):
         return numeric
     return int(numeric)
+
+
+def to_height_ft(value) -> float | None:
+    # some tables write feet with a trailing mark, e.g. 60'
+    return to_finite_number(re.sub(r"\s*(?:'|’|ft\.?|feet)$", "", str(value or "").strip(), flags=re.I))
 
 
 def to_finite_number(value) -> float | None:
