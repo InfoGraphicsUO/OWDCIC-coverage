@@ -330,8 +330,8 @@ function show(kind, ...args) {
 
 // polygon donut eligibility follows the allowed district and utility types
 let content = show('showPolygon', 'house', { properties: { name: 'State House District 1', cameraViewshedCoveragePct: 5.05, cameraViewshedAreaSqKm: 446.9, landAreaSqKm: 8850.7, landMix } });
-assert.match(textOf(content), /5% covered by fire-spotting cameras/);
-assert.match(textOf(content), /mi² of State House District 1 is covered by fire-spotting cameras, out of total/);
+assert.match(textOf(content), /5% covered by fire detection cameras/);
+assert.match(textOf(content), /mi² of State House District 1 is covered by fire detection cameras, out of total/);
 assert.doesNotMatch(textOf(content), /CAMERA COVERAGE|Covered area|Selected area/i);
 assert.ok(content.querySelector('[data-results-chart]'), 'house should get a donut host');
 assert.match(textOf(content), /40% U\.S\. Forest Service land/);
@@ -350,7 +350,7 @@ content = show('showPolygon', 'odf-protection-district', { properties: { name: '
 assert.ok(content.querySelector('[data-results-chart]'), 'ODF protection district should get a donut host');
 
 content = show('showPolygon', 'state', { properties: { name: 'Oregon', cameraViewshedCoveragePct: 8.93, cameraViewshedAreaSqKm: 22121, landAreaSqKm: 247715, landMix } });
-assert.match(textOf(content), /9% covered by fire-spotting cameras/);
+assert.match(textOf(content), /9% covered by fire detection cameras/);
 // every filter group names the boundary its yellow outline traces
 assert.match(textOf(content.querySelector('.results-panel__qualifier')), /^State boundary$/);
 assert.equal(content.querySelector('[data-results-chart]'), null, 'state must not get a donut');

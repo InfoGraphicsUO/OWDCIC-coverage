@@ -418,11 +418,11 @@ function renderPolygon(type, properties) {
       'results-panel__qualifier results-panel__qualifier--transmission-lines',
     ));
   }
-  wrapper.append(selfLine(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire-spotting cameras`, 'results-panel__lead'));
+  wrapper.append(selfLine(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`, 'results-panel__lead'));
   // area totals need valid source values; missing coverage must stay unavailable, not zero
   if (coverage != null && covered != null && total != null) {
     wrapper.append(selfLine(
-      `${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(total * SQMI_PER_SQKM)} mi²`,
+      `${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire detection cameras, out of total ${formatNumber(total * SQMI_PER_SQKM)} mi²`,
     ));
   } else if (total != null) {
     wrapper.append(selfLine(`${formatNumber(total * SQMI_PER_SQKM)} mi² total area`));
@@ -1199,9 +1199,9 @@ function exportSummary({ kind, type, properties, metrics }) {
   const name = properties?.name || properties?.label || 'selected area';
   // the export legend names the approximate utility boundary instead of a line here
   const lines = [];
-  lines.push(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire-spotting cameras`);
+  lines.push(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`);
   if (coverage != null && covered != null && selected != null) {
-    lines.push(`${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire-spotting cameras, out of total ${formatNumber(selected * SQMI_PER_SQKM)} mi²`);
+    lines.push(`${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire detection cameras, out of total ${formatNumber(selected * SQMI_PER_SQKM)} mi²`);
   } else if (selected != null) {
     lines.push(`${formatNumber(selected * SQMI_PER_SQKM)} mi² total area`);
   }

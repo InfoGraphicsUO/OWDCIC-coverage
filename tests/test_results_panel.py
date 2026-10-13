@@ -37,7 +37,7 @@ class ResultsPanelContractTests(unittest.TestCase):
     def test_camera_unavailable_copy_never_uses_zero_percent_fallback(self):
         self.assertIn("'Coverage unavailable'", JS)
         self.assertIn('cameraCoverageAvailable', JS)
-        self.assertIn('% covered by fire-spotting cameras', JS)
+        self.assertIn('% covered by fire detection cameras', JS)
         self.assertNotRegex(
             JS,
             r"Viewshed coverage['\"],\s*['\"]0",
