@@ -778,11 +778,17 @@ async function loadFilterOptions(typeValue) {
   if (typeValue === 'camera') {
     // camera choices depend on the provider hydration, not just map setup
     const features = await cameraFeaturesReady;
+    const providerNames = CAMERA_PROVIDERS.map(({ name }) => name);
     // numeric collation keeps labels like Camera 2 ahead of Camera 10
     const cameraOptions = features.map((feature) => ({
       value: cameraOptionId(feature),
       label: feature.properties?.name || 'Camera',
-    })).sort((a, b) => LABEL_COLLATOR.compare(a.label, b.label));
+      // live ALERTWest features carry no operator, so they fall back to the first provider
+      group: feature.properties?.operator || providerNames[0],
+    })).sort((a, b) =>
+      // the panel lists groups in the order they first appear, so keep providers together
+      providerNames.indexOf(a.group) - providerNames.indexOf(b.group) ||
+      LABEL_COLLATOR.compare(a.label, b.label));
     // camera names are already short and are kept whole
     anchorSlugsByType.set(typeValue, anchorOptionSlugs(cameraOptions, { shorten: false }));
     return cameraOptions;
