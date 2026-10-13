@@ -229,6 +229,18 @@ export function filterOptionIsVisible(type, properties) {
     .some((name) => name != null && type.options.has(normalizeName(name)));
 }
 
+// position of an option in the editable list, so a listed group can keep its list order
+// groups set to 'all' have no order of their own and return 0
+export function filterOptionRank(type, properties) {
+  if (!type.options) return 0;
+  const listed = [...type.options];
+  const ranks = [properties?.label, properties?.name, properties?.divisionId]
+    .filter((name) => name != null)
+    .map((name) => listed.indexOf(normalizeName(name)))
+    .filter((rank) => rank >= 0);
+  return ranks.length ? Math.min(...ranks) : listed.length;
+}
+
 // listed option names that match no feature, so typos can be reported
 export function unmatchedFilterOptions(type, features) {
   if (!type.options) return [];

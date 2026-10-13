@@ -13,7 +13,7 @@ KINDS = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
     'utility': 3, 'national-forest': 23, 'national-park': 14,
-    'federal-land': 7, 'tribal-land': 66, 'odf-protection-district': 12,
+    'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 12,
 }
 
 try:

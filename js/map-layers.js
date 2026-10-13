@@ -11,6 +11,7 @@ import {
   REGION_DATA_BOUNDS,
   emptyFeatureCollection,
   filterOptionIsVisible,
+  filterOptionRank,
   layerPresetForFilter,
   unmatchedFilterOptions,
   visibleFilterTypes,
@@ -879,7 +880,9 @@ async function loadDivisionOptions(map, typeValue) {
       ? `${feature.properties.label}`
       : feature.properties.label,
     state: feature.properties.state,
-  })).sort((a, b) => LABEL_COLLATOR.compare(a.label, b.label));
+    rank: filterOptionRank(division, feature.properties),
+    // listed options keep their order from js/visible-content.js, ties fall back to the label
+  })).sort((a, b) => a.rank - b.rank || LABEL_COLLATOR.compare(a.label, b.label));
 }
 
 function cameraOptionId(feature) {
