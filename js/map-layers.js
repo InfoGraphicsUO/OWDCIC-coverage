@@ -852,12 +852,14 @@ async function loadDivisionOptions(map, typeValue) {
   if (!division) throw new Error(`Unknown division type: ${typeValue}`);
 
   const data = await loadDivisionData(division);
+  // a combined option has no shape of its own on the map, so clicks and labels land on its members
+  const drawn = data.features.filter((feature) => !isCombinedDivision(feature));
   // keep full geometry for hit testing and selection, labels use compact points
-  setSourceData(map, division.sourceId, data);
+  setSourceData(map, division.sourceId, { ...data, features: drawn });
   // precomputed label points keep text placement independent of polygon geometry
   setSourceData(map, division.labelSourceId, {
     type: 'FeatureCollection',
-    features: data.features.flatMap((feature) => {
+    features: drawn.flatMap((feature) => {
       const coordinates = feature.properties?.labelPoint;
       // malformed or missing label points should not block the polygon options
       if (!Array.isArray(coordinates) || coordinates.length !== 2 ||
@@ -879,7 +881,14 @@ async function loadDivisionOptions(map, typeValue) {
       ? `${feature.properties.label}`
       : feature.properties.label,
     state: feature.properties.state,
-  })).sort((a, b) => LABEL_COLLATOR.compare(a.label, b.label));
+    combined: isCombinedDivision(feature),
+    // the combined option stays first however the rest of the list sorts
+  })).sort((a, b) => b.combined - a.combined || LABEL_COLLATOR.compare(a.label, b.label));
+}
+
+// an option that stands for several others, e.g. All ODF districts; it lists them in memberDivisionIds
+function isCombinedDivision(feature) {
+  return Array.isArray(feature?.properties?.memberDivisionIds);
 }
 
 function cameraOptionId(feature) {
@@ -1145,10 +1154,13 @@ function selectDivision(map, typeValue, divisionId) {
   const division = divisionType(typeValue);
   if (!division) return;
 
+  const feature = divisionFeatures.get(typeValue)?.get(divisionId);
+  // a combined option highlights every member together
   setDivisionLayerFilter(
     map,
     division,
-    divisionId || NO_DIVISION_SELECTED
+    (isCombinedDivision(feature) ? feature.properties.memberDivisionIds : divisionId)
+      || NO_DIVISION_SELECTED
   );
 
   if (!divisionId) {
@@ -1156,7 +1168,6 @@ function selectDivision(map, typeValue, divisionId) {
     return;
   }
 
-  const feature = divisionFeatures.get(typeValue)?.get(divisionId);
   if (!feature) {
     console.warn(`Division ${divisionId} is not available`);
     resultsControl.clear();
@@ -1211,6 +1222,7 @@ function setDivisionHoverFilter(map, division, divisionId) {
 
 function divisionFilterExpression(divisionId) {
   // hover fill and selected outline share the same stable property
+  if (Array.isArray(divisionId)) return ['in', ['get', 'divisionId'], ['literal', divisionId]];
   return ['==', ['get', 'divisionId'], divisionId];
 }
 
