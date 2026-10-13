@@ -4,6 +4,7 @@ import {
   FILTER_TYPES,
   LEGEND_LAYERS,
   filterOptionIsVisible,
+  filterOptionRank,
   unmatchedFilterOptions,
   visibleFilterTypes,
   visibleLegendItems,
@@ -57,6 +58,13 @@ const [federal, state] = types;
 assert.ok(filterOptionIsVisible(state, { label: 'Oregon' }));
 assert.ok(filterOptionIsVisible(federal, { label: 'U.S. Forest Service' }));
 assert.ok(!filterOptionIsVisible(federal, { label: 'National Park Service' }));
+
+// listed groups keep list order, 'all' groups have none, unlisted options sort last
+const [shippedFederal] = visibleFilterTypes({ 'Federal land': ['National Forest', 'Dept of Interior (BLM, USFWS, NPS)'] });
+assert.equal(filterOptionRank(shippedFederal, { label: 'National Forest' }), 0);
+assert.equal(filterOptionRank(shippedFederal, { label: 'Dept of Interior (BLM, USFWS, NPS)' }), 1);
+assert.equal(filterOptionRank(shippedFederal, { label: 'Other' }), 2);
+assert.equal(filterOptionRank(state, { label: 'Oregon' }), 0);
 const [county] = visibleFilterTypes({ County: ['Baker County', 'county:41009'] });
 assert.ok(filterOptionIsVisible(county, { label: 'Baker', name: 'Baker County', divisionId: 'county:41001' }));
 assert.ok(filterOptionIsVisible(county, { label: 'Columbia', divisionId: 'county:41009' }));
