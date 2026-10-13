@@ -468,7 +468,8 @@ function renderCamera(properties, metrics) {
   overlay.className = 'results-panel__camera-overlay';
   const fallbackFeed = isPano ? PGE_WILDFIREWATCH_URL : properties.id == null ? '' : `https://alertwest.live/cam-console/${encodeURIComponent(String(properties.id))}`;
   const feed = safeCameraFeedUrl(properties.feed || properties.url || properties.link || fallbackFeed, isPano);
-  const feedLabel = isPano ? 'Open PGE Wildfire Watch' : 'Open live camera feed';
+  // a Pano camera without its own page still opens the viewer's front page
+  const feedLabel = isPano && feed === PGE_WILDFIREWATCH_URL ? 'Open PGE Wildfire Watch' : 'Open live camera feed';
   if (feed) {
     // links open separately and cannot reach the parent window through window.opener
     const a = document.createElement('a');
