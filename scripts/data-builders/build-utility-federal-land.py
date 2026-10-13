@@ -3,7 +3,7 @@
 
 Utility areas come from the Oregon utility incentive layer; Washington has no
 accessible service-area layer. Federal land is the PAD-US federal fee layer
-unioned into one feature per managing agency. Area and viewshed metrics stay
+unioned into one feature per managing agency plus a combined Interior feature. Area and viewshed metrics stay
 null until scripts/build-selection-metrics.py is run.
 
 Run with the QGIS bundled Python for the GDAL bindings.
@@ -42,8 +42,12 @@ FEDERAL_MANAGERS = {
     "NPS": "National Park Service",
     "OTHF": "Other federal fee manager",
     "USBR": "U.S. Bureau of Reclamation",
-    "USFS": "U.S. Forest Service",
+    "USFS": "National Forest",
 }
+# one combined option for the interior bureaus; the per-agency features stay
+# in the file because the land mix chart still splits them
+INTERIOR_MANAGERS = ("BLM", "FWS", "NPS")
+INTERIOR_NAME = "Dept of Interior (BLM, USFWS, NPS)"
 
 
 def fetch(url: str, where: str, fields: str) -> tuple[list[dict], str]:
@@ -157,11 +161,16 @@ def build_federal_land() -> None:
         division_feature("federal-land", code, FEDERAL_MANAGERS[code], by_manager[code])
         for code in sorted(by_manager)
     ]
+    # union, not a sum, so land shared between bureaus is counted once
+    interior = None
+    for code in INTERIOR_MANAGERS:
+        interior = interior.Union(by_manager[code]) if interior else by_manager[code]
+    features.append(division_feature("federal-land", "DOI", INTERIOR_NAME, interior))
     write_collection("federal-land", features, {
         "source": FEDERAL_QUERY,
         "vintage": "PAD-US authoritative",
         "sourceSha256": digest,
-        "aggregation": "Union by PAD-US Mang_Name; excluded TRIB",
+        "aggregation": "Union by PAD-US Mang_Name; excluded TRIB; DOI is the union of BLM, FWS, NPS",
     })
 
 
