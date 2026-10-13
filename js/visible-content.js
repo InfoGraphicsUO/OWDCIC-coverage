@@ -14,6 +14,12 @@
 //   names are written as they appear on the site and ignore upper/lower case
 //   groups appear in the filter panel in the order they are listed
 //
+//   a group can also be put inside a folder that opens and closes in the panel:
+//   'Folder name': { 'Group name': 'all', 'Other group': ['Option'] },
+//   folders can hold other folders, and a folder with nothing showing is not shown
+//   the folder name is free text; to hide a whole folder, delete it or comment it out
+//   groups and folders appear in the panel in the order they are first listed
+//
 //   'State': 'all',
 //     // or pick from:
 //     // ['Oregon', 'Washington'],
@@ -146,18 +152,22 @@
 // ---------------------------------------------------------------------------
 
 export const VISIBLE_FILTERS = {
-  'State': 'all',
-  'County': 'all',
-  'State House': 'all',
-  'US House': 'all',
-  'State Senate': 'all',
-  'Utility provider': ['Pacific Power (PacifiCorp)', 'Portland General Electric (PGE)'],
-  'National Forest': 'all',
-  'National Park': 'all',
   'Federal land': ['National Forest', 'Dept of Interior (BLM, USFWS, NPS)'],
-  'Tribal land': 'all',
+  'Utility provider': ['Pacific Power (PacifiCorp)', 'Portland General Electric (PGE)'],
   'ODF protection district': 'all',
   'Camera': 'all',
+  'Other': {
+    'Legislative': {
+      'State House': 'all',
+      'US House': 'all',
+      'State Senate': 'all',
+    },
+    'Tribal land': 'all',
+    'State': 'all',
+    'County': 'all',
+  },
+  'National Forest': 'none',
+  'National Park': 'none',
 };
 
 export const VISIBLE_LAYERS = [

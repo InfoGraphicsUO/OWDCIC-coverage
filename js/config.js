@@ -184,12 +184,23 @@ function filterGroupIsBlank(options) {
   return typeof options === 'string' && ['', 'none'].includes(normalizeName(options));
 }
 
+// a value that is an object (not a list or text) is a named group holding more entries
+function isFilterGroup(value) {
+  return value != null && typeof value === 'object' && !Array.isArray(value);
+}
+
 // resolves the editable filter list against every type the code can build
-// returns the listed types in list order as { value, label, options }
+// returns the listed types in list order as { value, label, options, group }
 // options is null when every option shows, otherwise a Set of normalized names
-export function visibleFilterTypes(visibleFilters, types = FILTER_TYPES, warn = console.warn) {
+// group is the names of the groups the type sits inside, outermost first, [] at the top level
+export function visibleFilterTypes(visibleFilters, types = FILTER_TYPES, warn = console.warn, group = []) {
   const visible = [];
   for (const [name, options] of Object.entries(visibleFilters)) {
+    if (isFilterGroup(options)) {
+      // a group with nothing visible inside adds nothing, so it never shows empty
+      visible.push(...visibleFilterTypes(options, types, warn, [...group, name]));
+      continue;
+    }
     const type = types.find(([value, label]) =>
       normalizeName(label) === normalizeName(name) || value === name);
     if (!type) {
@@ -205,6 +216,7 @@ export function visibleFilterTypes(visibleFilters, types = FILTER_TYPES, warn = 
       value: type[0],
       label: type[1],
       options: Array.isArray(options) ? new Set(options.map(normalizeName)) : null,
+      group,
     });
   }
   return visible;

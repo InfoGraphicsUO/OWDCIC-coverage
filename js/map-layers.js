@@ -364,7 +364,7 @@ const resultsControl = initResultsPanel({
   onClose: () => filterControl.clearSelection(),
 });
 const filterControl = initFilterPanel({
-  types: FILTER_TYPES.map(({ value, label }) => ({ value, label })),
+  types: FILTER_TYPES.map(({ value, label, group }) => ({ value, label, group })),
   loadOptions: loadFilterOptions,
   onTypeSelected: typeSelected,
   onSelection: optionSelected,
