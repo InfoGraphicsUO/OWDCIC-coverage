@@ -2,8 +2,10 @@
 """Build the selectable ODF forest protection district GeoJSON product.
 
 Geometries come from the Oregon Department of Forestry district boundary
-service. Area and viewshed metrics stay null until
-scripts/build-selection-metrics.py is run with --only odf-protection-district.
+service, plus one "All ODF districts" feature holding their union so the
+combined result is measured on the merged land, not summed per district. Area
+and viewshed metrics stay null until scripts/build-selection-metrics.py is run
+with --only odf-protection-district.
 """
 
 from __future__ import annotations
@@ -16,6 +18,7 @@ from urllib.parse import urlencode
 from urllib.request import urlopen
 
 from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, mapping, shape
+from shapely.ops import unary_union
 from shapely.validation import make_valid
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -34,6 +37,7 @@ PARAMS = {
     "geometryPrecision": "5",
     "f": "geojson",
 }
+ALL_DISTRICTS_NAME = "All ODF districts"
 # forest protective associations already carry their own suffix in the source
 ASSOCIATION_SUFFIX = re.compile(r"\bFPA$")
 
@@ -67,13 +71,9 @@ def repaired_geometry(geometry: dict):
     return polygons[0] if len(polygons) == 1 else MultiPolygon(polygons)
 
 
-def normalized_feature(feature: dict) -> dict:
-    source_name = feature["properties"]["ODF_FPD"]
-    geometry = repaired_geometry(feature["geometry"])
+def division_feature(division_id: str, name: str, source_name: str, geometry, **extra) -> dict:
     # a point guaranteed to fall inside the district, unlike a bbox center
     label_point = geometry.representative_point()
-    division_id = f"{DIVISION_TYPE}:{slug(source_name)}"
-    name = display_name(source_name)
     return {
         "type": "Feature",
         "id": division_id,
@@ -91,8 +91,22 @@ def normalized_feature(feature: dict) -> dict:
             "cameraViewshedAreaSqKm": None,
             "cameraViewshedCoveragePct": None,
             "landMix": [],
+            **extra,
         },
     }
+
+
+def normalized_feature(feature: dict) -> dict:
+    source_name = feature["properties"]["ODF_FPD"]
+    return division_feature(f"{DIVISION_TYPE}:{slug(source_name)}", display_name(source_name),
+                            source_name, repaired_geometry(feature["geometry"]))
+
+
+def combined_feature(districts: list[dict]) -> dict:
+    """The union of every district; the map highlights the members, not this shape."""
+    geometry = repaired_geometry(mapping(unary_union([shape(item["geometry"]) for item in districts])))
+    return division_feature(f"{DIVISION_TYPE}:all", ALL_DISTRICTS_NAME, "all",
+                            geometry, memberDivisionIds=[item["id"] for item in districts])
 
 
 def main():
@@ -105,10 +119,12 @@ def main():
         raise RuntimeError(f"{source}: {payload['error']}")
     if payload.get("exceededTransferLimit") or payload.get("properties", {}).get("exceededTransferLimit"):
         raise RuntimeError("ODF district query was truncated by the service")
-    features = sorted((normalized_feature(feature) for feature in payload["features"]),
-                      key=lambda item: item["id"])
-    if len({feature["id"] for feature in features}) != len(features):
+    districts = sorted((normalized_feature(feature) for feature in payload["features"]),
+                       key=lambda item: item["id"])
+    if len({feature["id"] for feature in districts}) != len(districts):
         raise ValueError("ODF district names must be unique")
+    # listed first; the page also pins it to the top of the option list
+    features = [combined_feature(districts), *districts]
     collection = {
         "type": "FeatureCollection",
         "features": features,
@@ -126,7 +142,7 @@ def main():
     path = OUT / f"{DIVISION_TYPE}.geojson"
     path.write_text(json.dumps(collection, ensure_ascii=False, separators=(",", ":")) + "\n",
                     encoding="utf-8")
-    print(f"{DIVISION_TYPE}: {len(features)} features")
+    print(f"{DIVISION_TYPE}: {len(districts)} districts plus the combined feature")
 
 
 if __name__ == "__main__":
