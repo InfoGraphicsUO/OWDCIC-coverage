@@ -13,8 +13,10 @@
     grid-area: 1 / 1;
     align-items: center;
     gap: 8px;
+    box-sizing: border-box;
     min-height: 56px;
-    padding: 0px 16px 0px;
+    /* a title that wraps to two lines keeps clear of the bar above and the search below */
+    padding: 10px 16px;
 }
 
 .filter-panel__title {
