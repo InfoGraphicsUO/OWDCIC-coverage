@@ -13,7 +13,7 @@ KINDS = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
     'utility': 3, 'national-forest': 23, 'national-park': 14,
-    'federal-land': 7, 'tribal-land': 66, 'odf-protection-district': 12,
+    'federal-land': 7, 'tribal-land': 66, 'odf-protection-district': 13,
 }
 
 try:
@@ -94,6 +94,17 @@ class SelectionDataTests(unittest.TestCase):
         self.assertIn('Oregon', meta['coverageNote'])
         self.assertIn('Washington', meta['coverageNote'])
         self.assertNotIn('exact', meta['coverageNote'].lower())
+
+    def test_all_odf_districts_combines_every_district(self):
+        data = json.loads((ROOT / 'data/divisions/odf-protection-district.geojson').read_text())
+        combined = [f for f in data['features'] if 'memberDivisionIds' in f['properties']]
+        self.assertEqual([f['properties']['name'] for f in combined], ['All ODF districts'])
+        members = [f for f in data['features'] if f not in combined]
+        self.assertEqual(combined[0]['properties']['memberDivisionIds'], [f['id'] for f in members])
+        # districts do not overlap, so the union measures the same land as their sum
+        for key in ('landAreaSqKm', 'cameraViewshedAreaSqKm'):
+            self.assertAlmostEqual(combined[0]['properties'][key],
+                                   sum(f['properties'][key] for f in members), delta=0.1)
 
     def test_national_forest_drops_idaho_only_unit(self):
         data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())

@@ -63,8 +63,11 @@ assert.equal(anchorOptionValue(utilities, 'eweb'), null);
 const districts = anchorOptionSlugs([
   { value: 'odf:1', label: 'Central Oregon District', state: 'OR' },
   { value: 'odf:2', label: 'Klamath-Lake District', state: 'OR' },
+  { value: 'odf:all', label: 'All ODF districts', state: 'OR' },
 ]);
 assert.equal(districts.get('odf:1'), 'central-oregon');
+// the combined option keeps its own words, so existing district links do not change
+assert.equal(districts.get('odf:all'), 'all-odf-districts');
 const parks = anchorOptionSlugs([
   { value: 'park:1', label: 'Deschutes National Forest' },
   { value: 'park:2', label: 'Oregon Caves National Monument and Preserve' },

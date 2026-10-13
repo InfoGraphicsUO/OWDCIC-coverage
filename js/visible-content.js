@@ -106,6 +106,7 @@
 //   'ODF protection district': 'all',
 //     // or pick from:
 //     // [
+//     //   'All ODF districts',
 //     //   'Central Oregon District',
 //     //   'Coos FPA',
 //     //   'Douglas FPA',
