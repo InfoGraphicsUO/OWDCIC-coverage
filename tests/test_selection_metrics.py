@@ -84,10 +84,8 @@ class SelectionMetricsTests(unittest.TestCase):
     def test_federal_chart_excludes_proclamation_manager_groups(self):
         geometry = mapping(box(-124, 42, -123.9, 42.1))
         features = [
-            {'properties': {'name': name}, 'geometry': geometry}
-            for name in ('National Park Service', 'U.S. Forest Service',
-                         'Bureau of Land Management', 'U.S. Department of Defense',
-                         'Other federal fee manager')
+            {'properties': {'divisionId': f'federal-land:{code}'}, 'geometry': geometry}
+            for code in ('NPS', 'USFS', 'BLM', 'DOD', 'OTHF', 'DOI')
         ]
         with tempfile.NamedTemporaryFile(mode='w+', suffix='.geojson') as source:
             source.write(json.dumps({'features': features}))

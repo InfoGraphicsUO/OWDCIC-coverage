@@ -11,6 +11,7 @@ import {
   REGION_DATA_BOUNDS,
   emptyFeatureCollection,
   filterOptionIsVisible,
+  filterOptionRank,
   layerPresetForFilter,
   unmatchedFilterOptions,
   visibleFilterTypes,
@@ -363,7 +364,7 @@ const resultsControl = initResultsPanel({
   onClose: () => filterControl.clearSelection(),
 });
 const filterControl = initFilterPanel({
-  types: FILTER_TYPES.map(({ value, label }) => ({ value, label })),
+  types: FILTER_TYPES.map(({ value, label, group }) => ({ value, label, group })),
   loadOptions: loadFilterOptions,
   onTypeSelected: typeSelected,
   onSelection: optionSelected,
@@ -882,8 +883,11 @@ async function loadDivisionOptions(map, typeValue) {
       : feature.properties.label,
     state: feature.properties.state,
     combined: isCombinedDivision(feature),
-    // the combined option stays first however the rest of the list sorts
-  })).sort((a, b) => b.combined - a.combined || LABEL_COLLATOR.compare(a.label, b.label));
+    rank: filterOptionRank(division, feature.properties),
+    // the combined option stays first, then listed options keep their order from
+    // js/visible-content.js, and ties fall back to the label
+  })).sort((a, b) => b.combined - a.combined || a.rank - b.rank
+    || LABEL_COLLATOR.compare(a.label, b.label));
 }
 
 // an option that stands for several others, e.g. All ODF districts; it lists them in memberDivisionIds

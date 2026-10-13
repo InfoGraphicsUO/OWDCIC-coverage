@@ -45,7 +45,7 @@ TYPES = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
     'utility': 3, 'national-forest': 23, 'national-park': 14,
-    'federal-land': 7, 'tribal-land': 66, 'odf-protection-district': 13,
+    'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
 }
 TO_5070 = Transformer.from_crs(4326, 5070, always_xy=True).transform
 UNAVAILABLE_COVERAGE = 'Coverage unavailable'
@@ -285,13 +285,15 @@ def load_federal_categories(path: Path, land):
     grouped = {'National Park Service land': [],
                'U.S. Forest Service land': [], 'Other federal land': []}
     for feature in features:
-        name = feature['properties']['name']
+        # matched by id because the display names are option labels
+        manager = feature['properties']['divisionId'].split(':')[1]
         # The source service also includes DOD and some OTHF proclamation
         # boundaries; fee-only versions of other agencies come from PAD-US Fee.
-        if name in ('U.S. Department of Defense', 'Other federal fee manager'):
+        # DOI repeats BLM, FWS and NPS, so it would double count here.
+        if manager in ('DOD', 'OTHF', 'DOI'):
             continue
-        label = ('National Park Service land' if name == 'National Park Service'
-                 else 'U.S. Forest Service land' if name == 'U.S. Forest Service'
+        label = ('National Park Service land' if manager == 'NPS'
+                 else 'U.S. Forest Service land' if manager == 'USFS'
                  else 'Other federal land')
         grouped[label].append(project(feature['geometry']).intersection(land))
     return [(label, union_all(geometries)) for label, geometries in grouped.items()]
