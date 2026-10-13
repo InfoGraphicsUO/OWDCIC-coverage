@@ -204,6 +204,16 @@
     font-weight: 500;
 }
 
+.filter-panel__group-items .filter-panel__group-toggle {
+    padding-left: 28px;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.filter-panel__group-items .filter-panel__group-items .filter-panel__item {
+    padding-left: 40px;
+}
+
 .filter-panel__group-items[hidden] {
     display: none;
 }
