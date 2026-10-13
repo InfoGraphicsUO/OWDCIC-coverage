@@ -98,13 +98,16 @@
 //     // or pick from:
 //     // [
 //     //   'Bureau of Land Management',
+//     //   'Dept of Interior (BLM, USFWS, NPS)',
+//     //   'National Forest',
 //     //   'National Park Service',
 //     //   'Other federal fee manager',
 //     //   'U.S. Bureau of Reclamation',
 //     //   'U.S. Department of Defense',
 //     //   'U.S. Fish and Wildlife Service',
-//     //   'U.S. Forest Service',
 //     // ],
+//     // 'Dept of Interior (BLM, USFWS, NPS)' is the union of the BLM, USFWS, and NPS options
+//     // 'National Forest' is the Forest Service land; the panel lists options in the order given here
 //
 //   'Tribal land': 'all',
 //     // 66 options, see data/divisions/tribal-land.geojson
@@ -149,7 +152,7 @@
 // ---------------------------------------------------------------------------
 
 export const VISIBLE_FILTERS = {
-  'Federal land': ['Bureau of Land Management', 'U.S. Forest Service'],
+  'Federal land': ['National Forest', 'Dept of Interior (BLM, USFWS, NPS)'],
   'Utility provider': ['Pacific Power (PacifiCorp)', 'Portland General Electric (PGE)'],
   'ODF protection district': 'all',
   'Camera': 'all',
