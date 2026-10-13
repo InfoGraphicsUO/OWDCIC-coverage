@@ -1,10 +1,12 @@
 // anchor links keep the active filter in the URL query string so a link reopens the same view
-// ?filter=<filter type>                      opens that filter type, e.g. ?filter=county
-// ?filter=<filter type>&selection=<option>   picks one option, e.g. ?filter=utility-provider&selection=pacificorp
+// ?coverage=<filter type>                      opens that filter type, e.g. ?coverage=county
+// ?coverage=<filter type>&selection=<option>   picks one option, e.g. ?coverage=utility-provider&selection=pacificorp
 // both values are slugs of the labels shown in the filter panel, so new filters need no setup here
 // option slugs are shortened where the label allows, e.g. deschutes for Deschutes National Forest
 
-const TYPE_PARAM = 'filter';
+const TYPE_PARAM = 'coverage';
+// links shared before the rename used ?filter= and still open the same view
+const LEGACY_TYPE_PARAM = 'filter';
 const OPTION_PARAM = 'selection';
 
 // lowercase words joined by hyphens, with accents folded to plain letters
@@ -22,6 +24,7 @@ export function anchorSlug(value) {
 export function formatAnchor(typeSlug, optionSlug, search = '') {
   const params = new URLSearchParams(search);
   params.delete(TYPE_PARAM);
+  params.delete(LEGACY_TYPE_PARAM);
   params.delete(OPTION_PARAM);
   if (typeSlug) {
     params.set(TYPE_PARAM, typeSlug);
@@ -34,7 +37,7 @@ export function formatAnchor(typeSlug, optionSlug, search = '') {
 // reads a location search into { type, option } slugs; option is null for type-only links
 export function parseAnchor(search) {
   const params = new URLSearchParams(`${search ?? ''}`);
-  const type = anchorSlug(params.get(TYPE_PARAM));
+  const type = anchorSlug(params.get(TYPE_PARAM) ?? params.get(LEGACY_TYPE_PARAM));
   if (!type) return null;
   return { type, option: anchorSlug(params.get(OPTION_PARAM)) || null };
 }
