@@ -18,24 +18,28 @@ assert.equal(anchorSlug('Peña Blanca'), 'pena-blanca');
 assert.equal(anchorSlug(null), '');
 
 // a link is the type slug, then an optional option slug
-assert.equal(formatAnchor('county'), '?filter=county');
-assert.equal(formatAnchor('county', 'or-lane'), '?filter=county&selection=or-lane');
+assert.equal(formatAnchor('county'), '?coverage=county');
+assert.equal(formatAnchor('county', 'or-lane'), '?coverage=county&selection=or-lane');
 assert.equal(formatAnchor('', 'or-lane'), '');
-assert.deepEqual(parseAnchor('?filter=county'), { type: 'county', option: null });
-assert.deepEqual(parseAnchor('?filter=county&selection=or-lane'), { type: 'county', option: 'or-lane' });
-assert.deepEqual(parseAnchor('?filter=County&selection=OR%20Lane'), { type: 'county', option: 'or-lane' });
-assert.deepEqual(parseAnchor('?filter=county&selection='), { type: 'county', option: null });
+assert.deepEqual(parseAnchor('?coverage=county'), { type: 'county', option: null });
+assert.deepEqual(parseAnchor('?coverage=county&selection=or-lane'), { type: 'county', option: 'or-lane' });
+assert.deepEqual(parseAnchor('?coverage=County&selection=OR%20Lane'), { type: 'county', option: 'or-lane' });
+assert.deepEqual(parseAnchor('?coverage=county&selection='), { type: 'county', option: null });
 assert.equal(parseAnchor(''), null);
 assert.equal(parseAnchor('?'), null);
 assert.equal(parseAnchor('?selection=or-lane'), null);
 // a broken escape matches nothing instead of throwing
-assert.doesNotThrow(() => parseAnchor('?filter=%E0%A4%A'));
+assert.doesNotThrow(() => parseAnchor('?coverage=%E0%A4%A'));
+// links shared before the rename still open, and are rewritten with the new name
+assert.deepEqual(parseAnchor('?filter=county&selection=or-lane'), { type: 'county', option: 'or-lane' });
+assert.equal(formatAnchor('county', 'or-lane', '?filter=state'), '?coverage=county&selection=or-lane');
+assert.equal(formatAnchor('', null, '?filter=county&selection=or-lane'), '');
 
 // other query parameters survive a link being written, replaced, or cleared
-assert.equal(formatAnchor('county', 'or-lane', '?basemap=topo'), '?basemap=topo&filter=county&selection=or-lane');
-assert.equal(formatAnchor('utility-provider', null, '?filter=county&selection=or-lane&basemap=topo'), '?basemap=topo&filter=utility-provider');
-assert.equal(formatAnchor('', null, '?filter=county&basemap=topo'), '?basemap=topo');
-assert.equal(formatAnchor('', null, '?filter=county&selection=or-lane'), '');
+assert.equal(formatAnchor('county', 'or-lane', '?basemap=topo'), '?basemap=topo&coverage=county&selection=or-lane');
+assert.equal(formatAnchor('utility-provider', null, '?coverage=county&selection=or-lane&basemap=topo'), '?basemap=topo&coverage=utility-provider');
+assert.equal(formatAnchor('', null, '?coverage=county&basemap=topo'), '?basemap=topo');
+assert.equal(formatAnchor('', null, '?coverage=county&selection=or-lane'), '');
 
 // every shipped filter group has its own slug and can be found by slug or type id
 const types = visibleFilterTypes(VISIBLE_FILTERS, FILTER_TYPES, () => {});

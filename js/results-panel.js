@@ -383,7 +383,7 @@ function createExportModal({ previewSrc, downloadName, onDownload, onDownloadPdf
 }
 
 function emptyState() {
-  return messageState('Choose a filter or camera to view coverage and land information.', 'results-panel__empty');
+  return messageState('Choose a coverage area or camera to view coverage and land information.', 'results-panel__empty');
 }
 
 function messageState(text, className) {

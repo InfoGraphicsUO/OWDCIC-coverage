@@ -37,12 +37,12 @@ export function initFilterPanel({
   backButton.type = 'button';
   backButton.className = 'filter-panel__back';
   // icon is decorative; the text label remains available to assistive technology
-  backButton.setAttribute('aria-label', 'Back to filter types');
+  backButton.setAttribute('aria-label', 'Back to coverage types');
   backButton.innerHTML = '<i class="fa-solid fa-arrow-left" aria-hidden="true"></i>';
 
   const title = document.createElement('h2');
   title.className = 'filter-panel__title';
-  title.textContent = 'Filter by';
+  title.textContent = 'Coverage by';
 
   header.append(backButton, title);
 
@@ -55,7 +55,7 @@ export function initFilterPanel({
   const categoryView = document.createElement('div');
   categoryView.className = 'filter-panel__view';
   const categorySearch = makeSearch('Search options...', 'filter-category-search');
-  const categoryList = makeList('filter-category-list', 'Filter types');
+  const categoryList = makeList('filter-category-list', 'Coverage types');
   categoryView.append(categorySearch.wrapper, categoryList);
 
   // the second view narrows choices to the currently selected type
@@ -63,7 +63,7 @@ export function initFilterPanel({
   optionView.className = 'filter-panel__view';
   optionView.hidden = true;
   const optionSearch = makeSearch('Search options...', 'filter-option-search');
-  const optionList = makeList('filter-option-list', 'Filter options');
+  const optionList = makeList('filter-option-list', 'Coverage options');
   optionView.append(optionSearch.wrapper, optionList);
   const viewFade = createPanelFade([categoryView, optionView]);
 
@@ -84,7 +84,7 @@ export function initFilterPanel({
   };
 
   const showCategoryView = ({ animate = true } = {}) => {
-    title.textContent = 'Filter by';
+    title.textContent = 'Coverage by';
     backButton.classList.remove('is-visible');
     // render again so the current search term and active type are reflected
     viewFade.show(categoryView, { animate });
@@ -92,7 +92,7 @@ export function initFilterPanel({
   };
 
   const showOptionView = ({ animate = true } = {}) => {
-    title.textContent = activeType ? `Filter by ${activeType.label}` : 'Filter by';
+    title.textContent = activeType ? `Coverage by ${activeType.label}` : 'Coverage by';
     backButton.classList.add('is-visible');
     viewFade.show(optionView, { animate });
     // give the search field a useful accessible name for the current category
@@ -505,7 +505,7 @@ function makeClearButton() {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'filter-panel__clear';
-  button.textContent = 'Clear filter';
+  button.textContent = 'Clear coverage';
   button.disabled = true;
   return button;
 }
