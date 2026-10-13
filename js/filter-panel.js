@@ -29,6 +29,8 @@ export function initFilterPanel({
   let requestId = 0;
   let globalSearchId = 0;
   const optionsCache = new Map();
+  // folders (groups of types) the user has open, as joined name paths
+  const openFolders = new Set();
 
   const header = document.createElement('div');
   header.className = 'filter-panel__header';
@@ -114,9 +116,7 @@ export function initFilterPanel({
     const query = categorySearch.input.value.trim().toLowerCase();
     if (!query) {
       // an empty category query keeps the fast, type-only drilldown
-      renderItems(categoryList, types, activeType?.value, (type) => chooseType(type), {
-        stepped: true,
-      });
+      renderTypeTree(categoryList, types, activeType?.value, openFolders, (type) => chooseType(type));
       setStatus('');
       return;
     }
@@ -217,6 +217,8 @@ export function initFilterPanel({
     activeType = type;
     activeId = null;
     options = [];
+    // open the folders holding this type so the back button lands on it
+    (type.group ?? []).forEach((_, depth) => openFolders.add(folderKey(type.group.slice(0, depth + 1))));
     groupExpandedState.set('Oregon', false);
     groupExpandedState.set('Washington', false);
     // choosing any category makes clearing available, even before an option is picked
@@ -264,6 +266,7 @@ export function initFilterPanel({
     activeType = null;
     activeId = null;
     options = [];
+    openFolders.clear();
     groupExpandedState.set('Oregon', false);
     groupExpandedState.set('Washington', false);
     categorySearch.input.value = '';
@@ -596,6 +599,79 @@ function renderItems(list, items, selectedValue, onChoose, { stepped = false } =
   });
 }
 
+function folderKey(path) {
+  return path.join('/');
+}
+
+// types with a group path nest inside collapsible folders, in the order first listed
+function renderTypeTree(list, types, selectedValue, openFolders, onChoose) {
+  const root = { entries: [] };
+  for (const type of types) {
+    let node = root;
+    (type.group ?? []).forEach((name, depth) => {
+      let folder = node.entries.find((entry) => entry.folder && entry.name === name);
+      if (!folder) {
+        folder = { folder: true, name, path: type.group.slice(0, depth + 1), entries: [] };
+        node.entries.push(folder);
+      }
+      node = folder;
+    });
+    node.entries.push({ type });
+  }
+
+  list.replaceChildren();
+  let index = 0;
+  let firstFocusable = null;
+  const build = (node, container) => {
+    for (const entry of node.entries) {
+      if (!entry.folder) {
+        const selected = `${entry.type.value}` === `${selectedValue}`;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.id = `${list.id}-option-${index}`;
+        index += 1;
+        button.className = 'filter-panel__item filter-panel__item--step';
+        button.setAttribute('role', 'option');
+        button.setAttribute('aria-selected', `${selected}`);
+        // keep one option in the tab order, preferring the current selection
+        const focusable = selected || (selectedValue == null && !firstFocusable);
+        button.tabIndex = focusable ? 0 : -1;
+        if (focusable && !firstFocusable) firstFocusable = button;
+        button.textContent = entry.type.label;
+        button.addEventListener('click', () => onChoose(entry.type));
+        container.append(button);
+        continue;
+      }
+
+      const key = folderKey(entry.path);
+      const expanded = openFolders.has(key);
+      const group = document.createElement('div');
+      group.className = 'filter-panel__group';
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'filter-panel__group-toggle';
+      toggle.textContent = entry.name;
+      toggle.setAttribute('aria-expanded', `${expanded}`);
+      toggle.setAttribute('aria-controls', `${list.id}-folder-${list.querySelectorAll('.filter-panel__group').length + 1}`);
+      const itemsContainer = document.createElement('div');
+      itemsContainer.id = toggle.getAttribute('aria-controls');
+      itemsContainer.className = 'filter-panel__group-items';
+      itemsContainer.hidden = !expanded;
+      toggle.addEventListener('click', () => {
+        const next = toggle.getAttribute('aria-expanded') !== 'true';
+        toggle.setAttribute('aria-expanded', `${next}`);
+        itemsContainer.hidden = !next;
+        if (next) openFolders.add(key);
+        else openFolders.delete(key);
+      });
+      group.append(toggle, itemsContainer);
+      container.append(group);
+      build(entry, itemsContainer);
+    }
+  };
+  build(root, list);
+}
+
 function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' } = {}) {
   // rebuild groups from visible matches so empty buckets do not take up space
   list.replaceChildren();
@@ -748,7 +824,9 @@ function optionMatchesQuery(option, query) {
 }
 
 function moveListFocus(list, event) {
-  const items = [...list.querySelectorAll('.filter-panel__item')];
+  // rows inside a collapsed group cannot take focus, so skip them
+  const items = [...list.querySelectorAll('.filter-panel__item, .filter-panel__group-toggle')]
+    .filter((item) => !item.closest('[hidden]'));
   if (!items.length) return;
   // use the first result as the arrow-key anchor when focus is on a group toggle
   const current = Math.max(0, items.indexOf(document.activeElement));
