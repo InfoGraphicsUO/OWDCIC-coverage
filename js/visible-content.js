@@ -14,6 +14,12 @@
 //   names are written as they appear on the site and ignore upper/lower case
 //   groups appear in the filter panel in the order they are listed
 //
+//   a group can also be put inside a folder that opens and closes in the panel:
+//   'Folder name': { 'Group name': 'all', 'Other group': ['Option'] },
+//   folders can hold other folders, and a folder with nothing showing is not shown
+//   the folder name is free text; to hide a whole folder, delete it or comment it out
+//   groups and folders appear in the panel in the order they are first listed
+//
 //   'State': 'all',
 //     // or pick from:
 //     // ['Oregon', 'Washington'],
@@ -92,13 +98,16 @@
 //     // or pick from:
 //     // [
 //     //   'Bureau of Land Management',
+//     //   'Dept of Interior (BLM, USFWS, NPS)',
+//     //   'National Forest',
 //     //   'National Park Service',
 //     //   'Other federal fee manager',
 //     //   'U.S. Bureau of Reclamation',
 //     //   'U.S. Department of Defense',
 //     //   'U.S. Fish and Wildlife Service',
-//     //   'U.S. Forest Service',
 //     // ],
+//     // 'Dept of Interior (BLM, USFWS, NPS)' is the union of the BLM, USFWS, and NPS options
+//     // 'National Forest' is the Forest Service land; the panel lists options in the order given here
 //
 //   'Tribal land': 'all',
 //     // 66 options, see data/divisions/tribal-land.geojson
@@ -106,6 +115,7 @@
 //   'ODF protection district': 'all',
 //     // or pick from:
 //     // [
+//     //   'All ODF districts',
 //     //   'Central Oregon District',
 //     //   'Coos FPA',
 //     //   'Douglas FPA',
@@ -143,18 +153,22 @@
 // ---------------------------------------------------------------------------
 
 export const VISIBLE_FILTERS = {
-  'State': 'all',
-  'County': 'all',
-  'State House': 'all',
-  'US House': 'all',
-  'State Senate': 'all',
+  'Federal land': ['National Forest', 'Dept of Interior (BLM, USFWS, NPS)'],
   'Utility provider': ['Pacific Power (PacifiCorp)', 'Portland General Electric (PGE)'],
-  'National Forest': 'all',
-  'National Park': 'all',
-  'Federal land': ['Bureau of Land Management', 'U.S. Forest Service'],
-  'Tribal land': 'all',
   'ODF protection district': 'all',
   'Camera': 'all',
+  'Other': {
+    'Legislative': {
+      'State House': 'all',
+      'US House': 'all',
+      'State Senate': 'all',
+    },
+    'Tribal land': 'all',
+    'State': 'all',
+    'County': 'all',
+  },
+  'National Forest': 'none',
+  'National Park': 'none',
 };
 
 export const VISIBLE_LAYERS = [
