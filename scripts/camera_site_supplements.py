@@ -11,6 +11,7 @@ from pathlib import Path
 
 # Built by scripts/data-builders/build-envirovision-sites.py from ODF's geodatabase.
 EXTERNAL_PROVIDERS = ('envirovision',)
+PANO_STATION_URL = 'https://portlandgeneral.wildfirewatch.com/station/'
 
 
 def supplement_sites(by_provider, text, converter):
@@ -66,6 +67,34 @@ def supplement_sites(by_provider, text, converter):
                 old['cameraHeightFt'] = height
             continue
         features.append({'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': point}, 'properties': props})
+
+    # Hand-collected viewer pages; rows without a link keep the panel's general viewer link.
+    links_path = data / 'pano-camera-links.csv'
+    if links_path.exists():
+
+        pano = {}
+        for feature in by_provider['pano']['features']:
+            properties = feature['properties']
+            pano[properties['name']] = properties
+
+        links_text = links_path.read_text(encoding='utf-8-sig')
+        rows = csv.DictReader(links_text.splitlines())
+
+        for row in rows:
+
+            name = (row.get('name') or '').strip()
+            link = (row.get('link') or '').strip()
+
+            if not link:
+                continue
+
+            if name not in pano:
+                raise ValueError(f"Unknown Pano site in {links_path.name}: {name}")
+
+            if not link.startswith(PANO_STATION_URL):
+                raise ValueError(f"Expected a {PANO_STATION_URL} link for {name}: {link}")
+
+            pano[name]['feed'] = link
 
     # A height alone does not mean published coverage exists. Queue only missing
     # or stale models, and keep unresolved observer heights out of runnable files.

@@ -64,6 +64,8 @@ export function providerSitesToCameras(sites, operator) {
         owner: properties.owner ?? null,
         county: properties.county ?? null,
         state: properties.state ?? null,
+        // the site's own page on its owner's public viewer, when one is known
+        feed: properties.feed ?? null,
         viewshed_id: (modeled && stringValue(properties.viewshedId)) || null,
         // placed on an ALERTWest site, so its marker would otherwise hide that camera
         sharesAlertWestSite: properties.locationSource === 'alertwest-site' || properties.sharesAlertWestSite === true,

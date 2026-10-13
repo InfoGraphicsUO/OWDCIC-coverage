@@ -66,6 +66,11 @@ assert.deepEqual(
   ['Portland General Electric', 'Pacific Power', 'Washington DNR'].map(owners),
   [38, 5, 26],
 );
+// only PGE's sites have a page on its public viewer
+const linked = panoCameras.filter(f => f.properties.feed);
+assert.equal(linked.length, 38);
+assert.ok(linked.every(f => f.properties.owner === 'Portland General Electric' &&
+  f.properties.feed.startsWith('https://portlandgeneral.wildfirewatch.com/station/')));
 // EnviroVision sites flag a shared ALERTWest tower themselves instead of borrowing its point
 const enviroVisionSites = JSON.parse(readFileSync(new URL('../data/envirovision-sites.geojson', import.meta.url), 'utf8'));
 const enviroVisionCameras = providerSitesToCameras(enviroVisionSites, 'EnviroVision').features;
