@@ -1949,7 +1949,8 @@ function selectionLegendItems(selection) {
   if (highlightedCameraName && highlightedViewshedIsRendered(activeMap)) {
     items.push({
       label: `${highlightedCameraName} viewshed`,
-      visual: { type: 'swatch', style: 'fill', color: VIEWSHED_HIGHLIGHT_COLOR },
+      // a sample viewshed in the highlight color reads better than a flat swatch
+      visual: { type: 'icon', src: 'img/yellow_portland_tower_viewshed.png' },
     });
   }
   return items;
