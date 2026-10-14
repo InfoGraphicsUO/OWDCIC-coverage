@@ -460,6 +460,22 @@ class PublishTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, r"step\.py failed \(3\)"):
                 viewsheds.run_script(script, ["3"], lines.append)
 
+    def test_handled_script_lines_stay_out_of_the_log(self):
+        with tempfile.TemporaryDirectory() as directory:
+            script = Path(directory) / "step.py"
+            script.write_text("print('@@step')\nprint('built')\n")
+            lines, handled = [], []
+
+            def handle(line):
+                if line.startswith("@@"):
+                    handled.append(line)
+                    return True
+                return False
+
+            viewsheds.run_script(script, [], lines.append, handle)
+            self.assertEqual(lines, ["step.py: built"])
+            self.assertEqual(handled, ["@@step"])
+
     def test_metrics_need_published_site_data(self):
         with self.assertRaises(SystemExit):
             viewsheds.parse_args(["--publish-metrics"])
@@ -481,29 +497,73 @@ class ProgressTests(unittest.TestCase):
         self.assertEqual(emitter.percent(), 100.0)
 
     def test_finishing_steps_hold_back_the_end_of_the_bar(self):
+        cameras = 100 * (1 - viewsheds.FINISHING_SHARE)
+        first, second = (viewsheds.FINISHING_STAGES[stage] for stage in ("web_polygons", "web_coverage"))
         emitter = self.emitter()
         emitter.plan_finishing(["web_polygons", "web_coverage"])
         emitter.progress(1, "complete", 1.0, None)
-        self.assertAlmostEqual(emitter.percent(), 40.0)
+        self.assertAlmostEqual(emitter.percent(), cameras / 2)
         emitter.progress(2, "complete", 1.0, None)
-        self.assertAlmostEqual(emitter.percent(), 80.0)
+        self.assertAlmostEqual(emitter.percent(), cameras)
         emitter.finishing_stage("web_polygons", "")
-        self.assertAlmostEqual(emitter.percent(), 80.0)
+        self.assertAlmostEqual(emitter.percent(), cameras)
         emitter.finishing_stage("web_coverage", "")
-        self.assertAlmostEqual(emitter.percent(), 90.0)
+        self.assertAlmostEqual(emitter.percent(), cameras + (100 - cameras) * first / (first + second))
 
     def test_finishing_steps_advance_past_failed_cameras(self):
         emitter = self.emitter()
         emitter.plan_finishing(["web_polygons"])
         emitter.progress(1, "dem", 0.2, None)
         emitter.finishing_stage("web_polygons", "")
-        self.assertAlmostEqual(emitter.percent(), 80.0)
+        self.assertAlmostEqual(emitter.percent(), 100 * (1 - viewsheds.FINISHING_SHARE))
+
+    def test_finishing_step_progress_moves_the_bar_within_its_step(self):
+        cameras = 100 * (1 - viewsheds.FINISHING_SHARE)
+        emitter = self.emitter()
+        emitter.plan_finishing(["coverage_metrics"])
+        emitter.finishing_stage("coverage_metrics", "")
+        emitter.finishing_step_progress("coverage_metrics", 0.5, "halfway", log=False)
+        self.assertAlmostEqual(emitter.percent(), cameras + (100 - cameras) / 2)
+        emitter.finishing_stage("coverage_metrics", "")
+        self.assertAlmostEqual(emitter.percent(), cameras)
+
+    def test_metrics_reports_become_step_details(self):
+        emitter = self.emitter()
+        emitter.plan_finishing(["coverage_metrics"])
+        emitter.finishing_stage("coverage_metrics", "")
+        reports = []
+        emitter.progress = lambda *args: reports.append(args)
+        line = '@@METRICS@@{"step": 2, "total": 4, "label": "counties", "done": 1, "count": 10}'
+        self.assertTrue(viewsheds.metrics_progress(line, emitter))
+        self.assertFalse(viewsheds.metrics_progress("counties complete 10", emitter))
+        self.assertEqual(
+            reports, [(0, "coverage_metrics", 0.25, "rebuilding coverage metrics 2/4: counties 1/10", True)]
+        )
 
     def test_unplanned_finishing_step_leaves_the_bar_alone(self):
         emitter = self.emitter()
         emitter.progress(1, "complete", 1.0, None)
         emitter.finishing_stage("mbtiles", "")
         self.assertAlmostEqual(emitter.percent(), 50.0)
+
+
+class SampleSelectionTests(unittest.TestCase):
+    @staticmethod
+    def site(index: int, height_ft: float | None = 100.0):
+        return viewsheds.Site(index, f"camera-{index}", f"Camera {index}", -122.0, 45.0, height_ft, ())
+
+    def test_sample_picks_three_cameras_with_heights(self):
+        sites = [self.site(index, None if index % 2 else 100.0) for index in range(10)]
+        args = SimpleNamespace(mode="sample", site_names=None)
+        selected = viewsheds.select_sites(sites, args)
+        self.assertEqual(len(selected), 3)
+        self.assertEqual(len(set(selected)), 3)
+        self.assertTrue(all(site.height_m is not None for site in selected))
+
+    def test_sample_takes_every_camera_from_a_small_file(self):
+        sites = [self.site(0), self.site(1, None)]
+        args = SimpleNamespace(mode="sample", site_names=None)
+        self.assertCountEqual(viewsheds.select_sites(sites, args), sites)
 
 
 class ProductNameTests(unittest.TestCase):
