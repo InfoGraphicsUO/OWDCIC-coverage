@@ -953,17 +953,7 @@ function drawLegendVisual(ctx, visual, x, y) {
       drawExportLegendSwatch(ctx, visual, x, y);
       break;
     case 'icon':
-      // large raster icons such as the viewshed samples blur with the default low-quality scaling
-      ctx.imageSmoothingQuality = 'high';
-      if (visual.image) ctx.drawImage(visual.image, x, y, EXPORT_LEGEND_SWATCH_SIZE, EXPORT_LEGEND_SWATCH_SIZE);
-      if (visual.image && visual.outline) {
-        // round outline follows the circular sample viewshed
-        ctx.strokeStyle = visual.outline;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.arc(x + EXPORT_LEGEND_SWATCH_SIZE / 2, y + EXPORT_LEGEND_SWATCH_SIZE / 2, EXPORT_LEGEND_SWATCH_SIZE / 2 - 0.5, 0, Math.PI * 2);
-        ctx.stroke();
-      }
+      drawExportLegendIcon(ctx, visual, x, y);
       break;
     case 'markers':
       drawExportLegendMarkers(ctx, visual, x, y);
@@ -974,6 +964,22 @@ function drawLegendVisual(ctx, visual, x, y) {
     default:
       break;
   }
+}
+
+function drawExportLegendIcon(ctx, { image, size = EXPORT_LEGEND_SWATCH_SIZE, outline }, x, y) {
+  if (!image) return;
+  // larger icons grow evenly around the normal slot so centering holds
+  const inset = (EXPORT_LEGEND_SWATCH_SIZE - size) / 2;
+  // large raster icons such as the viewshed samples blur with the default low-quality scaling
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(image, x + inset, y + inset, size, size);
+  if (!outline) return;
+  // round outline follows the circular sample viewshed
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(x + EXPORT_LEGEND_SWATCH_SIZE / 2, y + EXPORT_LEGEND_SWATCH_SIZE / 2, size / 2 - 0.5, 0, Math.PI * 2);
+  ctx.stroke();
 }
 
 function drawExportLegendSwatch(ctx, { style, color }, x, y) {
@@ -1349,7 +1355,7 @@ async function resolveLegendRowsForExport(getLegendItems, basemap) {
   });
   const viewshedIcon = EXPORT_VIEWSHED_ICONS[basemap] ?? EXPORT_VIEWSHED_ICONS.outdoors;
   return condensed.map((row) => (EXPORT_SHARED_COLOR_VIEWSHED_LABELS.has(row.label)
-    ? { ...row, visual: { type: 'icon', src: viewshedIcon, outline: '#808080' } }
+    ? { ...row, visual: { type: 'icon', src: viewshedIcon, outline: '#808080', size: 22 } }
     : row));
 }
 

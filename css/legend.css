@@ -266,6 +266,9 @@
 
 /* sample viewshed image set inline by the legend; replaces the flat fill */
 .legend-swatch--image {
+    /* slightly larger than other swatches; the centered legend visual lets it spill evenly */
+    width: 20px;
+    height: 20px;
     /* round outline follows the circular sample viewshed */
     border: 1px solid #808080;
     border-radius: 50%;

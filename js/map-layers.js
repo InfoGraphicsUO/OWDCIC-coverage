@@ -1959,7 +1959,7 @@ function selectionLegendItems(selection) {
     items.push({
       label: `${highlightedCameraName} viewshed`,
       // a sample viewshed in the highlight color reads better than a flat swatch
-      visual: { type: 'icon', src: 'img/yellow_portland_tower_viewshed.png', outline: '#808080' },
+      visual: { type: 'icon', src: 'img/yellow_portland_tower_viewshed.png', outline: '#808080', size: 22 },
     });
   }
   return items;
