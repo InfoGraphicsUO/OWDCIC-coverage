@@ -6,6 +6,8 @@
  * select(type, id) is the programmatic path used by map feature clicks
  * selectType(type) opens a type without picking an option, used by anchor links
  * option data stays cached after a successful load for the life of this panel
+ * a type with parent { type, option } opens from that option of its parent type
+ * instead of listing on its own, and its back button returns to the parent
  */
 export function initFilterPanel({
   types = [],
@@ -85,6 +87,14 @@ export function initFilterPanel({
     optionSearch.input.setAttribute('aria-label', text);
   };
 
+  // the type a nested option opens, e.g. National Forest from Federal land
+  const nestedType = (option) => activeType && types.find(({ parent }) =>
+    parent?.type === activeType.value && `${parent.option}` === `${option.value}`);
+  // the type the active nested type opened from, or null at the top level
+  const parentType = () => (activeType?.parent
+    ? types.find(({ value }) => value === activeType.parent.type) ?? null
+    : null);
+
   const showCategoryView = ({ animate = true } = {}) => {
     title.textContent = 'Coverage by';
     backButton.classList.remove('is-visible');
@@ -95,6 +105,8 @@ export function initFilterPanel({
 
   const showOptionView = ({ animate = true } = {}) => {
     title.textContent = activeType ? `Coverage by ${activeType.label}` : 'Coverage by';
+    const parent = parentType();
+    backButton.setAttribute('aria-label', parent ? `Back to ${parent.label}` : 'Back to coverage types');
     backButton.classList.add('is-visible');
     viewFade.show(optionView, { animate });
     // give the search field a useful accessible name for the current category
@@ -116,7 +128,10 @@ export function initFilterPanel({
     const query = categorySearch.input.value.trim().toLowerCase();
     if (!query) {
       // an empty category query keeps the fast, type-only drilldown
-      renderTypeTree(categoryList, types, activeType?.value, openFolders, (type) => chooseType(type));
+      // nested types open from their parent's option list rather than this one
+      const listed = types.filter((type) => !type.parent);
+      const selected = activeType?.parent?.type ?? activeType?.value;
+      renderTypeTree(categoryList, listed, selected, openFolders, (type) => chooseType(type));
       setStatus('');
       return;
     }
@@ -190,7 +205,8 @@ export function initFilterPanel({
 
   const renderOptions = () => {
     const query = optionSearch.input.value.trim().toLowerCase();
-    const visible = options.filter((option) => optionMatchesQuery(option, query));
+    const visible = options.filter((option) => optionMatchesQuery(option, query))
+      .map((option) => (nestedType(option) ? { ...option, opens: true } : option));
     // district-like datasets carry state prefixes and need separate collapsible buckets
     // options that name their own group, like cameras by provider, use the same buckets
     const grouped = visible.some((option) => option.group);
@@ -254,6 +270,11 @@ export function initFilterPanel({
 
   const chooseOption = async (option) => {
     if (!activeType || !option) return;
+    const child = nestedType(option);
+    if (child) {
+      await chooseType(child);
+      return;
+    }
     // update selection styling before the map callback finishes
     activeId = option.value;
     renderOptions();
@@ -286,6 +307,12 @@ export function initFilterPanel({
   categorySearch.input.addEventListener('input', renderCategories);
   optionSearch.input.addEventListener('input', renderOptions);
   backButton.addEventListener('click', () => {
+    const parent = parentType();
+    if (parent) {
+      // a nested type steps back to the list it opened from
+      chooseType(parent);
+      return;
+    }
     showCategoryView();
     // return focus to the search that led into this category
     categorySearch.input.focus();
@@ -588,7 +615,7 @@ function renderItems(list, items, selectedValue, onChoose, { stepped = false } =
     const button = document.createElement('button');
     button.type = 'button';
     button.id = `${list.id}-option-${index}`;
-    button.className = stepped ? 'filter-panel__item filter-panel__item--step' : 'filter-panel__item';
+    button.className = stepped || item.opens ? 'filter-panel__item filter-panel__item--step' : 'filter-panel__item';
     button.setAttribute('role', 'option');
     button.setAttribute('aria-selected', `${selected}`);
     // keep one option in the tab order, preferring the current selection
@@ -740,7 +767,7 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
       // one list-wide counter avoids duplicate ids across the two state buckets
       button.id = `${list.id}-option-${optionIndex}`;
       optionIndex += 1;
-      button.className = 'filter-panel__item';
+      button.className = item.opens ? 'filter-panel__item filter-panel__item--step' : 'filter-panel__item';
       button.setAttribute('role', 'option');
       button.setAttribute('aria-selected', `${selected}`);
       // prefer the selected row, otherwise start tab navigation at the first option
@@ -763,7 +790,7 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
     // continue the same id sequence after all named state groups
     button.id = `${list.id}-option-${optionIndex}`;
     optionIndex += 1;
-    button.className = 'filter-panel__item';
+    button.className = item.opens ? 'filter-panel__item filter-panel__item--step' : 'filter-panel__item';
     button.setAttribute('role', 'option');
     button.setAttribute('aria-selected', `${selected}`);
     // keep unknown or future state labels after the named buckets

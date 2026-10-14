@@ -30,6 +30,9 @@ SOURCES = {
     "national-forest": ("https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_ForestSystemBoundaries_01/MapServer/0", "1=1", "adminforestid,forestname,region", "national-forest", "Administrative Forest Boundaries - National Extent"),
 }
 
+# listed first in the national forest options; the map highlights its members, not its shape
+ALL_FORESTS_NAME = "All National Forests"
+
 # counties are generalized server-side because the map draws all 75 outlines at once
 COUNTY_PARAMS = {"maxAllowableOffset": "0.0005", "f": "geojson", "orderByFields": "GEOID"}
 
@@ -108,6 +111,23 @@ def normalize(payload, division_type, service_name, url, source_hash):
         "sourceSha256": source_hash, "areaCrs":"EPSG:5070", "metricsStatus":"pending-gdal-coverage-build"
     }}
 
+def polygons(geometry):
+    return [geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"]
+
+def combined_feature(features, division_type):
+    """Every member's polygons in one shape; the coverage step repairs shared edges into a union."""
+    geom = {"type": "MultiPolygon", "coordinates": [poly for f in features for poly in polygons(f["geometry"])]}
+    b = bbox(geom)
+    did = f"{division_type}:all"
+    return {"type":"Feature", "id":did, "geometry":geom, "bbox":b, "properties":{
+        "divisionId": did, "divisionType": division_type, "name": ALL_FORESTS_NAME,
+        "label": ALL_FORESTS_NAME, "labelPoint":[(b[0]+b[2])/2, (b[1]+b[3])/2],
+        "state": None, "sourceFeatureId": "all",
+        "landAreaSqKm": None, "cameraViewshedAreaSqKm": None,
+        "cameraViewshedCoveragePct": None, "landMix": [],
+        "memberDivisionIds": [f["id"] for f in features]
+    }}
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--only", nargs="*"); ap.add_argument("--output", type=Path, default=OUT)
     args = ap.parse_args(); args.output.mkdir(parents=True, exist_ok=True)
@@ -117,6 +137,8 @@ def main():
         url, where, fields, dtype, layer = SOURCES[kind]
         payload, query, digest = fetch(url, where, fields, COUNTY_PARAMS if kind == "county" else None)
         result = normalize(payload, dtype, layer, query, digest)
+        if kind == "national-forest":
+            result["features"].insert(0, combined_feature(result["features"], dtype))
         (args.output / f"{kind}.geojson").write_text(json.dumps(result, ensure_ascii=False, separators=(",",":"))+"\n", encoding="utf-8")
         print(f"{kind}: {len(result['features'])} features")
 

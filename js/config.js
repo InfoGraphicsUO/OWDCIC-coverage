@@ -167,6 +167,19 @@ export const FILTER_LAYER_PRESETS = Object.freeze({
   'federal-land': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.blmLands]) }),
 });
 
+// filter type -> the option of another group that opens it, so it lists as a step inside that group
+// e.g. Federal land > National Forest > [All National Forests, Mt. Hood National Forest, ...]
+// it only nests when the other group is shown too; otherwise it stays a group of its own
+export const NESTED_FILTER_TYPES = Object.freeze({
+  'national-forest': Object.freeze({ type: 'federal-land', option: 'federal-land:USFS' }),
+});
+
+// returns where a visible filter type nests, or null when it lists on its own
+export function nestedFilterParent(typeValue, visibleTypes, nested = NESTED_FILTER_TYPES) {
+  const parent = Object.hasOwn(nested, typeValue) ? nested[typeValue] : null;
+  return parent && visibleTypes.some(({ value }) => value === parent.type) ? parent : null;
+}
+
 // returns the preset for a filter type, or null when it has none
 export function layerPresetForFilter(filterType, presets = FILTER_LAYER_PRESETS) {
   return Object.hasOwn(presets, filterType) ? presets[filterType] : null;
