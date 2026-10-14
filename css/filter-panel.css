@@ -97,6 +97,7 @@
 
 .filter-panel__search input:focus-visible,
 .filter-panel__item:focus-visible,
+.filter-panel__group-toggle:focus-visible,
 .filter-panel__back:focus-visible {
     outline: 2px solid var(--ohaz-yellow);
     outline-offset: 2px;
@@ -180,11 +181,7 @@
 }
 
 .filter-panel__group-toggle:hover,
-.filter-panel__group-toggle:focus-visible {
-    background: rgba(255, 255, 255, .08);
-    outline: 2px solid var(--ohaz-yellow);
-    outline-offset: -2px;
-}
+.filter-panel__group-toggle:focus-visible { background: rgba(255, 255, 255, .08); }
 
 .filter-panel__group-toggle::after {
     content: "›";
