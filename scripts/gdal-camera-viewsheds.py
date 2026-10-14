@@ -18,6 +18,7 @@ import multiprocessing
 import os
 from pathlib import Path
 import queue as queue_module
+import random
 import shutil
 import signal
 import sqlite3
@@ -66,6 +67,7 @@ DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 
 PILOT_NAMES = ("Portland Tower",)  # 'pilot' mode processes only one site
 VALIDATION_NAMES = ("Portland Tower", "Quail Prairie Mtn", "Beaty's Butte")
+SAMPLE_SIZE = 3  # 'sample' mode picks this many random cameras for a quick review
 # coordinate reference system for viewsheds & web polygons
 CANONICAL_CRS = "EPSG:5070"
 WEB_CRS = "EPSG:4326"
@@ -200,7 +202,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument(
         "--mode",
-        choices=("pilot", "validation", "production"),
+        choices=("pilot", "validation", "sample", "production"),
         default="pilot",
     )
     parser.add_argument(
@@ -369,6 +371,11 @@ def load_sites(path: Path) -> list[Site]:
 
 
 def select_sites(sites: list[Site], args: argparse.Namespace) -> list[Site]:
+    if args.mode == "sample" and not args.site_names:
+        # cameras without a height are skipped, so draw from the rest when there are enough
+        with_height = [site for site in sites if site.height_m is not None]
+        pool = with_height if len(with_height) >= SAMPLE_SIZE else sites
+        return random.sample(pool, min(SAMPLE_SIZE, len(pool)))
     requested = args.site_names or {
         "pilot": PILOT_NAMES,
         "validation": VALIDATION_NAMES,
