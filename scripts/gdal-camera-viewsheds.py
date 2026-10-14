@@ -61,6 +61,7 @@ DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson
 DATA_DIR = PROJECT_ROOT / "data"
 SITE_DATA_BUILDER = PROJECT_ROOT / "scripts/csv-to-geojson.py"
 METRICS_BUILDER = PROJECT_ROOT / "scripts/build-selection-metrics.py"
+METRICS_PROGRESS_PREFIX = "@@METRICS@@"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 
 PILOT_NAMES = ("Portland Tower",)  # 'pilot' mode processes only one site
@@ -588,6 +589,7 @@ class ProgressEmitter:
         self.fractions: dict[int, float] = {}
         self.finishing: tuple[str, ...] = ()
         self.finishing_done: int | None = None
+        self.finishing_fraction = 0.0
         self.started = time.monotonic()
         self.lock = threading.Lock()
 
@@ -610,7 +612,8 @@ class ProgressEmitter:
         camera_share = 1.0 - FINISHING_SHARE if self.finishing else 1.0
         if self.finishing_done is not None:
             weights = [FINISHING_STAGES[stage] for stage in self.finishing]
-            finished = sum(weights[: self.finishing_done]) / sum(weights)
+            current = weights[self.finishing_done] * self.finishing_fraction
+            finished = (sum(weights[: self.finishing_done]) + current) / sum(weights)
             share = camera_share + FINISHING_SHARE * finished
         else:
             cameras = sum(self.fractions.values()) / self.total if self.total else 0.0
@@ -621,7 +624,14 @@ class ProgressEmitter:
         """reports the start of one finishing step"""
         if stage in self.finishing:
             self.finishing_done = self.finishing.index(stage)
+            self.finishing_fraction = 0.0
         self.progress(0, stage, 0.0, detail)
+
+    def finishing_step_progress(self, stage: str, fraction: float, detail: str, log: bool) -> None:
+        """reports progress within the current finishing step, logging only when asked"""
+        if stage in self.finishing:
+            self.finishing_fraction = fraction
+        self.progress(0, stage, fraction, detail, log)
 
     def progress(
         self,
@@ -629,6 +639,7 @@ class ProgressEmitter:
         stage: str,
         fraction: float,
         detail: str | None,
+        log: bool = True,
     ) -> None:
         if site_index:
             self.fractions[site_index] = fraction
@@ -646,7 +657,7 @@ class ProgressEmitter:
         }
         if self.enabled:
             self._write("@@PROGRESS@@" + json.dumps(payload, separators=(",", ":")))
-        if detail:
+        if detail and log:
             if site_index:
                 self.site_log(site_index, detail)
             else:
@@ -1840,8 +1851,14 @@ def publish_manifest(manifest: Path, data_dir: Path) -> Path:
     return published
 
 
-def run_script(script: Path, arguments: list[str], log: Callable[[str], None]) -> None:
-    """runs another pipeline script under this Python, relaying its output to the log"""
+def run_script(
+    script: Path,
+    arguments: list[str],
+    log: Callable[[str], None],
+    handle: Callable[[str], bool] | None = None,
+) -> None:
+    """runs another pipeline script under this Python, relaying its output to the log;
+    lines that handle accepts are kept out of the log"""
     process = subprocess.Popen(
         [sys.executable, str(script), *arguments],
         stdout=subprocess.PIPE,
@@ -1852,8 +1869,9 @@ def run_script(script: Path, arguments: list[str], log: Callable[[str], None]) -
 
     def relay() -> None:
         for line in process.stdout:
-            if line.strip():
-                log(f"{script.name}: {line.rstrip()}")
+            if not line.strip() or (handle and handle(line.rstrip())):
+                continue
+            log(f"{script.name}: {line.rstrip()}")
 
     reader = threading.Thread(target=relay, daemon=True)
     reader.start()
@@ -1878,7 +1896,24 @@ def publish(manifest: Path, name: str, args: argparse.Namespace, emitter: Progre
     if args.publish_metrics:
         emitter.finishing_stage("coverage_metrics", "rebuilding coverage metrics")
         providers = combined_providers(name, args.output_dir)
-        run_script(METRICS_BUILDER, ["--viewsheds", *map(str, providers)], emitter.log)
+        arguments = ["--viewsheds", *map(str, providers), "--json-progress"]
+        run_script(METRICS_BUILDER, arguments, emitter.log, lambda line: metrics_progress(line, emitter))
+
+
+def metrics_progress(line: str, emitter: ProgressEmitter) -> bool:
+    """turns the metrics builder's step reports into GUI progress"""
+    if not line.startswith(METRICS_PROGRESS_PREFIX):
+        return False
+    try:
+        report = json.loads(line[len(METRICS_PROGRESS_PREFIX) :])
+    except json.JSONDecodeError:
+        return False
+    step, total, done, count = report["step"], report["total"], report["done"], report["count"]
+    detail = f"rebuilding coverage metrics {step}/{total}: {report['label']} {done}/{count}"
+    fraction = (step - 1 + (done - 1) / count) / total
+    # each step's first item goes to the log; the rest only update the GUI status
+    emitter.finishing_step_progress("coverage_metrics", fraction, detail, log=done == 1)
+    return True
 
 
 # ---------------------------------------------------------------------------
