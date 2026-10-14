@@ -90,6 +90,11 @@ const VIEWSHED_FILL_COLOR = Object.freeze({
   outdoors: '#F28D05',
   satellite: '#F4F1EA',
 });
+// layer list rows in the shared color show a sample viewshed instead of a flat swatch
+const VIEWSHED_LEGEND_IMAGES = Object.freeze({
+  outdoors: 'img/orange_portland_tower_viewshed.png',
+  satellite: 'img/grey_portland_tower_viewshed.png',
+});
 const SEPARATE_VIEWSHED_COLORS_SETTING = 'separateViewshedColors';
 const VIEWSHED_HIGHLIGHT_COLOR = '#ffee00';
 const VIEWSHED_FILL_OPACITY = 0.5;
@@ -1897,17 +1902,21 @@ function syncViewshedFills(map) {
 function applyViewshedSymbology(map, basemap) {
   const darkOutline = basemap === 'satellite';
   const sharedColor = basemapColor(VIEWSHED_FILL_COLOR, basemap);
-  legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, sharedColor, { darkOutline });
+  const sharedImage = basemapColor(VIEWSHED_LEGEND_IMAGES, basemap);
+  legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, sharedColor, { darkOutline, image: sharedImage });
   if (map.getLayer(LAYER_IDS.combinedViewshedsFill)) {
     map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color', sharedColor);
   }
 
   for (const provider of CAMERA_PROVIDERS) {
-    const fillColor = basemapColor(viewshedColors(provider), basemap);
+    const colors = viewshedColors(provider);
+    const fillColor = basemapColor(colors, basemap);
     if (map.getLayer(provider.viewshedFillLayerId)) {
       map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', fillColor);
     }
-    legendControl.updateSwatchColor(provider.viewshedLabel, fillColor, { darkOutline });
+    // providers in their own color keep a flat swatch
+    const image = colors === VIEWSHED_FILL_COLOR ? sharedImage : null;
+    legendControl.updateSwatchColor(provider.viewshedLabel, fillColor, { darkOutline, image });
   }
 }
 
@@ -1950,7 +1959,7 @@ function selectionLegendItems(selection) {
     items.push({
       label: `${highlightedCameraName} viewshed`,
       // a sample viewshed in the highlight color reads better than a flat swatch
-      visual: { type: 'icon', src: 'img/yellow_portland_tower_viewshed.png' },
+      visual: { type: 'icon', src: 'img/yellow_portland_tower_viewshed.png', outline: '#808080' },
     });
   }
   return items;

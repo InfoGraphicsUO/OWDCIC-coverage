@@ -264,6 +264,17 @@
     border: 1px solid #2a2a2a;
 }
 
+/* sample viewshed image set inline by the legend; replaces the flat fill */
+.legend-swatch--image {
+    /* round outline follows the circular sample viewshed */
+    border: 1px solid #808080;
+    border-radius: 50%;
+    background-color: transparent;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+}
+
 @media (max-width: 520px) {
     .legend {
         font-size: 12px;
