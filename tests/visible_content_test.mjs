@@ -5,6 +5,7 @@ import {
   LEGEND_LAYERS,
   filterOptionIsVisible,
   filterOptionRank,
+  nestedFilterParent,
   unmatchedFilterOptions,
   visibleFilterTypes,
   visibleLegendItems,
@@ -27,7 +28,13 @@ assert.deepEqual(shippedPaths, [
   'Other > Tribal land',
   'Other > State',
   'Other > County',
+  'National Forest',
 ]);
+// National Forest opens from the Federal land option rather than listing on its own
+assert.deepEqual(nestedFilterParent('national-forest', shipped),
+  { type: 'federal-land', option: 'federal-land:USFS' });
+assert.equal(nestedFilterParent('national-forest', shipped.filter(({ value }) => value !== 'federal-land')), null);
+assert.equal(nestedFilterParent('federal-land', shipped), null);
 const legendLabels = new Set(Object.values(LEGEND_LAYERS));
 for (const label of VISIBLE_LAYERS) {
   assert.ok(legendLabels.has(label), `${label} must be a LEGEND_LAYERS value`);

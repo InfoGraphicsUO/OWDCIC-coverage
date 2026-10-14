@@ -48,8 +48,11 @@
 //     // ],
 //
 //   'National Forest': 'all',
+//     // opens from the 'National Forest' option of 'Federal land' when both are shown,
+//     // otherwise it is a group of its own; 'All National Forests' is every forest together
 //     // or pick from:
 //     // [
+//     //   'All National Forests',
 //     //   'Columbia River Gorge National Scenic Area',
 //     //   'Colville National Forest',
 //     //   'Deschutes National Forest',
@@ -107,7 +110,8 @@
 //     //   'U.S. Fish and Wildlife Service',
 //     // ],
 //     // 'Dept of Interior (BLM, USFWS, NPS)' is the union of the BLM, USFWS, and NPS options
-//     // 'National Forest' is the Forest Service land; the panel lists options in the order given here
+//     // 'National Forest' opens the 'National Forest' group when it is shown, otherwise it is
+//     // the Forest Service land; the panel lists options in the order given here
 //
 //   'Tribal land': 'all',
 //     // 66 options, see data/divisions/tribal-land.geojson
@@ -167,7 +171,8 @@ export const VISIBLE_FILTERS = {
     'State': 'all',
     'County': 'all',
   },
-  'National Forest': 'none',
+  // opens from 'National Forest' under 'Federal land'
+  'National Forest': 'all',
   'National Park': 'none',
 };
 
