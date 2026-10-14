@@ -79,21 +79,29 @@ MAPBOX_MAX_ZOOM = 12
 SCHEMA_VERSION = 3
 
 # share of one camera's work covered by each stage, for GUI progress
+# (measured from the 44 camera run in issue #79: dem 15%, viewshed 12%, exact polygon 64%, web polygon 10%)
 STAGE_SPANS = {
     "preparing": (0.00, 0.00),
-    "dem": (0.00, 0.20),
-    "viewshed": (0.20, 0.40),
-    "exact_polygon": (0.40, 0.80),
-    "web_polygon": (0.80, 1.00),
+    "dem": (0.00, 0.15),
+    "viewshed": (0.15, 0.27),
+    "exact_polygon": (0.27, 0.91),
+    "web_polygon": (0.91, 1.00),
     "complete": (1.00, 1.00),
 }
-# steps that run once every camera is done, in the order they run
-FINISHING_STAGES = (
-    "combined_exact", "web_polygons", "web_coverage", "mbtiles", "combined_coverage",
-    "site_data", "coverage_metrics",
-)
+# steps that run once every camera is done, in the order they run, with their run time in seconds
+# from the same run; only the ratios matter
+FINISHING_STAGES = {
+    "combined_exact": 24,
+    "web_polygons": 6,
+    "web_coverage": 129,
+    "mbtiles": 29,
+    "combined_coverage": 488,
+    "site_data": 1,
+    "coverage_metrics": 1249,
+}
 # share of the whole run held back for those steps, so the bar is not full while they run
-FINISHING_SHARE = 0.20
+# (the cameras took 68 s of a 33 min run, and fewer when most are already saved)
+FINISHING_SHARE = 0.95
 
 SITE_FIELDS = {
     "source_id": "integer",
@@ -601,7 +609,9 @@ class ProgressEmitter:
     def percent(self) -> float:
         camera_share = 1.0 - FINISHING_SHARE if self.finishing else 1.0
         if self.finishing_done is not None:
-            share = camera_share + FINISHING_SHARE * self.finishing_done / len(self.finishing)
+            weights = [FINISHING_STAGES[stage] for stage in self.finishing]
+            finished = sum(weights[: self.finishing_done]) / sum(weights)
+            share = camera_share + FINISHING_SHARE * finished
         else:
             cameras = sum(self.fractions.values()) / self.total if self.total else 0.0
             share = camera_share * cameras
