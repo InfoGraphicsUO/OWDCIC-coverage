@@ -192,7 +192,9 @@ export function initFilterPanel({
     const query = optionSearch.input.value.trim().toLowerCase();
     const visible = options.filter((option) => optionMatchesQuery(option, query));
     // district-like datasets carry state prefixes and need separate collapsible buckets
-    if (activeType && STATE_SPLIT_TYPES.has(activeType.value)) {
+    // options that name their own group, like cameras by provider, use the same buckets
+    const grouped = visible.some((option) => option.group);
+    if (activeType && (STATE_SPLIT_TYPES.has(activeType.value) || grouped)) {
       renderGroupedItems(optionList, visible, activeId, (option) => chooseOption(option), {
         query,
       });
@@ -219,8 +221,7 @@ export function initFilterPanel({
     options = [];
     // open the folders holding this type so the back button lands on it
     (type.group ?? []).forEach((_, depth) => openFolders.add(folderKey(type.group.slice(0, depth + 1))));
-    groupExpandedState.set('Oregon', false);
-    groupExpandedState.set('Washington', false);
+    groupExpandedState.clear();
     // choosing any category makes clearing available, even before an option is picked
     clearButton.disabled = false;
     optionSearch.input.value = '';
@@ -267,8 +268,7 @@ export function initFilterPanel({
     activeId = null;
     options = [];
     openFolders.clear();
-    groupExpandedState.set('Oregon', false);
-    groupExpandedState.set('Washington', false);
+    groupExpandedState.clear();
     categorySearch.input.value = '';
     optionSearch.input.value = '';
     // reset the category-specific search name with the visible category view
@@ -683,7 +683,11 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
 
   for (const item of items) {
     const parsed = parseStateLabel(item);
-    if (parsed.state && groups.has(parsed.state)) {
+    if (item.group) {
+      // named groups are added in the order their first option arrives
+      if (!groups.has(item.group)) groups.set(item.group, []);
+      groups.get(item.group).push({ ...item, displayLabel: parsed.displayLabel });
+    } else if (parsed.state && groups.has(parsed.state)) {
       groups.get(parsed.state).push({ ...item, displayLabel: parsed.displayLabel });
     } else {
       ungrouped.push({ ...item, displayLabel: parsed.displayLabel });
@@ -701,7 +705,9 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
     group.className = 'filter-panel__group';
 
     // a search opens each populated bucket so matches arent hidden behind a collapsed group
-    const expanded = Boolean(query) || groupExpandedState.get(stateName) === true;
+    // a selection made from the map also opens its bucket so the picked row is visible
+    const holdsSelection = groupItems.some((item) => `${item.value}` === `${selectedValue}`);
+    const expanded = Boolean(query) || holdsSelection || groupExpandedState.get(stateName) === true;
     if (query) groupExpandedState.set(stateName, true);
 
     const toggle = document.createElement('button');
@@ -710,7 +716,11 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
     toggle.textContent = stateName;
     toggle.setAttribute('aria-expanded', `${expanded}`);
     // connect the disclosure control to the region it expands or collapses
-    toggle.setAttribute('aria-controls', `${list.id}-${stateName.toLowerCase()}-items`);
+    // group names like Pano AI contain spaces, which an id reference cannot
+    toggle.setAttribute(
+      'aria-controls',
+      `${list.id}-${stateName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-items`
+    );
     toggle.addEventListener('click', () => {
       const next = toggle.getAttribute('aria-expanded') !== 'true';
       toggle.setAttribute('aria-expanded', `${next}`);
@@ -766,11 +776,8 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
   }
 }
 
-// preserve each state bucket choice while option rows rerender during search
-const groupExpandedState = new Map([
-  ['Oregon', false],
-  ['Washington', false],
-]);
+// preserve each bucket choice while option rows rerender during search
+const groupExpandedState = new Map();
 
 function renderSearchResults(list, items, selectedValue, onChoose) {
   // search results can represent either a category drilldown or a direct option pick
