@@ -44,7 +44,7 @@ TYPES = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
          'odf-protection-district')
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
-    'utility': 3, 'national-forest': 24, 'national-park': 14,
+    'utility': 3, 'national-forest': 20, 'national-park': 14,
     'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
 }
 TO_5070 = Transformer.from_crs(4326, 5070, always_xy=True).transform

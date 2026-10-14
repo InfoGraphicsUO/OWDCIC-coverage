@@ -87,7 +87,7 @@ def normalize(payload, division_type, service_name, url, source_hash):
         geoid = str(prop.get("GEOID") or prop.get("adminforestid") or raw.get("id") or len(features))
         name = str(prop.get("NAME") or prop.get("forestname") or "Unnamed")
         state, state_name = STATES.get(prop.get("STATE"), (None, None))
-        # USFS does not carry a state field; clip is applied by bbox against OR/WA.
+        # USFS does not carry a state field; a bbox check against OR/WA drops far-away units, then clip_to_project_boundary clips the rest
         b = bbox(geom)
         if division_type == "national-forest" and not (b[2] >= -124.8 and b[0] <= -116.4 and b[3] >= 41.9 and b[1] <= 49.1): continue
         did = f"{division_type}:{geoid}"
@@ -128,6 +128,45 @@ def combined_feature(features, division_type):
         "memberDivisionIds": [f["id"] for f in features]
     }}
 
+# what is left of a unit after clipping can be a sliver where the two boundaries disagree by a hair
+MIN_CLIPPED_AREA_SQKM = 10
+
+def clip_to_project_boundary(features, division_type):
+    """Cut each feature to the OR/WA project boundary and drop those with next to nothing inside it.
+
+    Forest Service units run into CA, ID and NV, so each is clipped to
+    data/or-wa-boundary.geojson, which keeps the shown area and the coverage metrics to the project region.
+    """
+    from pyproj import Transformer
+    from shapely import set_precision, to_geojson
+    from shapely.ops import transform
+    from shapely.geometry import MultiPolygon, Polygon, shape
+    from shapely.validation import make_valid
+
+    to_equal_area = Transformer.from_crs(4326, 5070, always_xy=True).transform
+    boundary = shape(json.loads((ROOT / "data" / "or-wa-boundary.geojson").read_text())["features"][0]["geometry"])
+    clipped, dropped = [], []
+    for feature in features:
+        inside = make_valid(shape(feature["geometry"])).intersection(boundary)
+        parts = [part for part in getattr(inside, "geoms", [inside]) if isinstance(part, (Polygon, MultiPolygon)) and part.area > 0]
+        polygons = [poly for part in parts for poly in getattr(part, "geoms", [part])]
+        if not polygons:
+            dropped.append({"id": feature["id"], "name": feature["properties"]["name"]})
+            continue
+        geometry = set_precision(MultiPolygon(polygons), 1e-5)
+        if geometry.is_empty or transform(to_equal_area, geometry).area / 1e6 < MIN_CLIPPED_AREA_SQKM:
+            dropped.append({"id": feature["id"], "name": feature["properties"]["name"]})
+            continue
+        feature["geometry"] = json.loads(to_geojson(geometry))
+        feature["bbox"] = list(geometry.bounds)
+        # the unclipped center can fall outside what is left, so use a point known to be inside
+        label = feature["properties"]["labelPoint"]
+        if not geometry.contains(shape({"type": "Point", "coordinates": label})):
+            point = geometry.representative_point()
+            feature["properties"]["labelPoint"] = [round(point.x, 5), round(point.y, 5)]
+        clipped.append(feature)
+    return clipped, dropped
+
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--only", nargs="*"); ap.add_argument("--output", type=Path, default=OUT)
     args = ap.parse_args(); args.output.mkdir(parents=True, exist_ok=True)
@@ -138,6 +177,9 @@ def main():
         payload, query, digest = fetch(url, where, fields, COUNTY_PARAMS if kind == "county" else None)
         result = normalize(payload, dtype, layer, query, digest)
         if kind == "national-forest":
+            result["features"], outside = clip_to_project_boundary(result["features"], dtype)
+            result["metadata"]["clippedTo"] = "data/or-wa-boundary.geojson"
+            result["metadata"]["excludedOutsideBoundaryFeatures"] = outside
             result["features"].insert(0, combined_feature(result["features"], dtype))
         (args.output / f"{kind}.geojson").write_text(json.dumps(result, ensure_ascii=False, separators=(",",":"))+"\n", encoding="utf-8")
         print(f"{kind}: {len(result['features'])} features")
