@@ -15,6 +15,7 @@ import {
   layerPresetForFilter,
   unmatchedFilterOptions,
   visibleFilterTypes,
+  nestedFilterParent,
   visibleLegendItems,
 } from './config.js';
 import { VISIBLE_FILTERS, VISIBLE_LAYERS } from './visible-content.js';
@@ -364,7 +365,9 @@ const resultsControl = initResultsPanel({
   onClose: () => filterControl.clearSelection(),
 });
 const filterControl = initFilterPanel({
-  types: FILTER_TYPES.map(({ value, label, group }) => ({ value, label, group })),
+  types: FILTER_TYPES.map(({ value, label, group }) => ({
+    value, label, group, parent: nestedFilterParent(value, FILTER_TYPES),
+  })),
   loadOptions: loadFilterOptions,
   onTypeSelected: typeSelected,
   onSelection: optionSelected,

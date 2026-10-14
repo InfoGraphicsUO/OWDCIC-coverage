@@ -12,7 +12,7 @@ KINDS = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
 
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
-    'utility': 3, 'national-forest': 23, 'national-park': 14,
+    'utility': 3, 'national-forest': 24, 'national-park': 14,
     'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
 }
 
@@ -105,6 +105,19 @@ class SelectionDataTests(unittest.TestCase):
         for key in ('landAreaSqKm', 'cameraViewshedAreaSqKm'):
             self.assertAlmostEqual(combined[0]['properties'][key],
                                    sum(f['properties'][key] for f in members), delta=0.1)
+
+    def test_all_national_forests_combines_every_forest(self):
+        data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
+        combined = [f for f in data['features'] if 'memberDivisionIds' in f['properties']]
+        self.assertEqual([f['properties']['name'] for f in combined], ['All National Forests'])
+        members = [f for f in data['features'] if f not in combined]
+        self.assertEqual(sorted(combined[0]['properties']['memberDivisionIds']),
+                         sorted(f['id'] for f in members))
+        # forest boundaries barely overlap, so the union is close to their sum
+        for key in ('landAreaSqKm', 'cameraViewshedAreaSqKm'):
+            total = sum(f['properties'][key] for f in members)
+            self.assertLessEqual(combined[0]['properties'][key], total)
+            self.assertGreater(combined[0]['properties'][key], total * 0.99)
 
     def test_national_forest_drops_idaho_only_unit(self):
         data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
