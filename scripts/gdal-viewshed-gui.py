@@ -83,7 +83,31 @@ QGIS_PROJECT_BUILDER = PROJECT_ROOT / "scripts/build-qgis-viewshed-project.py"
 DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
+DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest"
+# test runs merge into whatever folder they write to, so they get their own
+TEST_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_test"
 PROGRESS_PREFIX = "@@PROGRESS@@"
+
+# each preset starts from the launch values and changes only these settings
+PRESETS = (
+    ("test", "Test run",
+        "Builds up to 3 random cameras into a separate test folder without publishing anything, "
+        "so you can check them in QGIS with Open review map in QGIS.",
+        {"mode": "sample", "products": None, "combined": False,
+         "publish_sites": False, "publish_metrics": False}),
+    ("live", "Live site",
+        "Builds every camera that is missing a viewshed, then rebuilds the provider's and the "
+        "combined tilesets, publishes the site data, and reruns the coverage metrics so the "
+        "outputs are ready to upload.",
+        {"mode": "production", "products": None, "combined": True,
+         "publish_sites": True, "publish_metrics": True}),
+    ("gis", "GIS analysis",
+        "Writes an exact 10 m shapefile for every camera, ready for ArcGIS or QGIS analysis. "
+        "Nothing is published to the map.",
+        {"mode": "production", "products": "exact", "combined": False,
+         "publish_sites": False, "publish_metrics": False}),
+)
+CUSTOM_DESCRIPTION = "Settings have been changed from the presets; check every tab before starting."
 
 # keep the native controls, with dark gray surfaces and yellow accents
 WINDOW_STYLE = """
@@ -155,23 +179,45 @@ def apply_dark_theme(app: QApplication) -> None:
     app.setPalette(palette)
 
 
+def control_value(widget: QWidget):
+    if isinstance(widget, QLineEdit):
+        return widget.text()
+    if isinstance(widget, QComboBox):
+        return widget.currentData()
+    if isinstance(widget, QCheckBox):
+        return widget.isChecked()
+    return widget.value()
+
+
+def set_control_value(widget: QWidget, value) -> None:
+    if isinstance(widget, QLineEdit):
+        widget.setText(value)
+    elif isinstance(widget, QComboBox):
+        # findData cannot look up None, which marks the full run
+        index = next(i for i in range(widget.count()) if widget.itemData(i) == value)
+        widget.setCurrentIndex(index)
+    elif isinstance(widget, QCheckBox):
+        widget.setChecked(value)
+    else:
+        widget.setValue(value)
+
+
+def control_changed(widget: QWidget):
+    if isinstance(widget, QComboBox):
+        return widget.currentIndexChanged
+    if isinstance(widget, QCheckBox):
+        return widget.toggled
+    return widget.valueChanged
+
+
 def reset_button(section: str, widgets: list[QWidget]) -> QPushButton:
     """captures the initial values so reset stays in sync with the defaults shown at launch"""
 
-    restore = []
-    for widget in widgets:
-        if isinstance(widget, QLineEdit):
-            restore.append((widget.setText, widget.text()))
-        elif isinstance(widget, QComboBox):
-            restore.append((widget.setCurrentIndex, widget.currentIndex()))
-        elif isinstance(widget, QCheckBox):
-            restore.append((widget.setChecked, widget.isChecked()))
-        else:
-            restore.append((widget.setValue, widget.value()))
+    restore = [(widget, control_value(widget)) for widget in widgets]
 
     def reset() -> None:
-        for setter, value in restore:
-            setter(value)
+        for widget, value in restore:
+            set_control_value(widget, value)
 
     button = QPushButton("Reset to defaults")
     button.setAccessibleName(f"Reset {section} to defaults")
@@ -319,6 +365,7 @@ class ViewshedWindow(QMainWindow):
         title = QLabel("Camera viewshed generation")
         title.setObjectName("title")
         root.addWidget(title)
+        root.addWidget(self.build_presets())
 
         # scroll only the settings, so progress and the run controls stay within reach
         self.settings = QTabWidget()
@@ -353,7 +400,82 @@ class ViewshedWindow(QMainWindow):
         root.addLayout(self.build_buttons())
         self.setCentralWidget(central)
         self.output.edit.textChanged.connect(lambda: self.set_idle(self.process.state() == PROCESS_NOT_RUNNING))
+        self.sync_finishing_options()
+        self.track_preset_controls()
         self.set_idle(True)
+
+    def build_presets(self) -> QGroupBox:
+        group = QGroupBox("Preset")
+        form = QFormLayout(group)
+        form.setSpacing(10)
+        form.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
+        self.preset = QComboBox()
+        for key, label, _description, _values in PRESETS:
+            self.preset.addItem(label, key)
+        self.preset.addItem("Custom", None)
+        self.preset.setAccessibleName("Preset")
+        self.preset.activated.connect(self.apply_preset)
+        self.preset_description = QLabel(PRESETS[0][2])
+        self.preset_description.setWordWrap(True)
+        self.preset_description.setObjectName("elapsed")
+        form.addRow(with_help("Run type", self.preset,
+            "Fills in the settings on every tab for a common kind of run. Changing a setting "
+            "afterwards switches this to Custom."), self.preset)
+        form.addRow("", self.preset_description)
+        return group
+
+    def track_preset_controls(self) -> None:
+        """remembers the launch values that every preset starts from"""
+
+        self.preset_controls = {
+            name: getattr(self, name)
+            for name in (
+                "mode", "products", "combined", "publish_sites", "publish_metrics",
+                "radius", "cell_size", "jobs", "web_resolution", "simplify",
+                "smooth_iterations", "patch_cells", "web_majority", "web_clip",
+                "exact", "keep_dems", "overwrite",
+            )
+        }
+        self.launch_values = {
+            name: control_value(widget) for name, widget in self.preset_controls.items()
+        }
+        self.applying_preset = False
+        for widget in self.preset_controls.values():
+            control_changed(widget).connect(self.sync_preset)
+        self.sync_preset()
+
+    def preset_values(self, values: dict) -> dict:
+        return {**self.launch_values, **values}
+
+    def apply_preset(self) -> None:
+        key = self.preset.currentData()
+        preset = next((preset for preset in PRESETS if preset[0] == key), None)
+        if preset is None:
+            self.preset_description.setText(CUSTOM_DESCRIPTION)
+            return
+        self.applying_preset = True
+        for name, value in self.preset_values(preset[3]).items():
+            set_control_value(self.preset_controls[name], value)
+        self.applying_preset = False
+        # keep the real output folder to return to after a test run
+        if key == "test" and self.output.path() != TEST_OUTPUT:
+            self.saved_output = self.output.edit.text()
+            self.output.edit.setText(str(TEST_OUTPUT))
+        elif key != "test" and self.output.path() == TEST_OUTPUT:
+            self.output.edit.setText(self.saved_output)
+        self.sync_preset()
+
+    def sync_preset(self) -> None:
+        """shows the preset the settings match, or Custom once any of them has changed"""
+
+        if self.applying_preset:
+            return
+        current = {name: control_value(widget) for name, widget in self.preset_controls.items()}
+        match = next(
+            (preset for preset in PRESETS if self.preset_values(preset[3]) == current), None
+        )
+        self.preset.setCurrentIndex(self.preset.findData(match[0]) if match else len(PRESETS))
+        self.preset_description.setText(match[2] if match else CUSTOM_DESCRIPTION)
 
     def build_inputs(self) -> QGroupBox:
         group = QGroupBox("Inputs and outputs")
@@ -362,7 +484,9 @@ class ViewshedWindow(QMainWindow):
         form.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
         self.sites = PathRow(PROJECT_ROOT / "data/alertwest-sites.geojson", False)
         self.dems = PathRow(PROJECT_ROOT / "data/dems", True)
-        self.output = PathRow(PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest", True)
+        # the window opens on the test run preset
+        self.output = PathRow(TEST_OUTPUT, True)
+        self.saved_output = str(DEFAULT_OUTPUT)
         form.addRow(with_help("Camera sites", self.sites,
             "The GeoJSON file containing the camera locations to process."), self.sites)
         form.addRow(with_help("DEM folder", self.dems,
@@ -379,7 +503,9 @@ class ViewshedWindow(QMainWindow):
         self.mode = QComboBox()
         self.mode.addItem("1 camera (Portland)", "pilot")
         self.mode.addItem("3 cameras", "validation")
+        self.mode.addItem("3 random cameras", "sample")
         self.mode.addItem("All cameras", "production")
+        self.mode.setCurrentIndex(self.mode.findData("sample"))
 
         self.products = QComboBox()
         self.products.addItem("Full run (polygons, Mapbox products, manifest)", None)
@@ -392,7 +518,6 @@ class ViewshedWindow(QMainWindow):
 
         self.combined = QCheckBox("Also rebuild the combined coverage tileset")
         self.publish_sites = QCheckBox("Publish the manifest and site data to the map")
-        self.publish_sites.setChecked(True)
         # off by default: the rebuild is the slowest step and a test run does not need it
         self.publish_metrics = QCheckBox("Rebuild coverage metrics for the results panel")
         # shapefiles-only runs make no coverage to combine or publish
@@ -454,7 +579,7 @@ class ViewshedWindow(QMainWindow):
         self.overwrite = QCheckBox("Rebuild completed cameras instead of resuming")
 
         form.addRow(with_help("Camera set", self.mode,
-            "Choose a small test run or process every camera in the selected sites file."), self.mode)
+            "Choose a small test run or process every camera in the selected sites file. Random cameras are picked from the selected sites file each run."), self.mode)
         form.addRow(with_help("Outputs", self.products,
             "Full run creates combined coverage files and web map files. Shapefiles only creates a separate file for each camera; choose exact edges or smoother web edges."), self.products)
         form.addRow(with_help(self.combined, self.combined,
@@ -686,6 +811,8 @@ class ViewshedWindow(QMainWindow):
             self.overall.setValue(1000)
             if self.products.currentData():
                 self.status.setText("Run complete — shapefiles are in the output folder")
+            elif self.mode.currentData() == "sample":
+                self.status.setText("Run complete — open the review map in QGIS to check the test cameras")
             elif self.publish_sites.isChecked():
                 self.status.setText("Run complete — outputs are ready and site data is published")
             else:

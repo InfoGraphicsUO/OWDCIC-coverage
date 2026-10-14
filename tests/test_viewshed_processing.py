@@ -506,6 +506,25 @@ class ProgressTests(unittest.TestCase):
         self.assertAlmostEqual(emitter.percent(), 50.0)
 
 
+class SampleSelectionTests(unittest.TestCase):
+    @staticmethod
+    def site(index: int, height_ft: float | None = 100.0):
+        return viewsheds.Site(index, f"camera-{index}", f"Camera {index}", -122.0, 45.0, height_ft, ())
+
+    def test_sample_picks_three_cameras_with_heights(self):
+        sites = [self.site(index, None if index % 2 else 100.0) for index in range(10)]
+        args = SimpleNamespace(mode="sample", site_names=None)
+        selected = viewsheds.select_sites(sites, args)
+        self.assertEqual(len(selected), 3)
+        self.assertEqual(len(set(selected)), 3)
+        self.assertTrue(all(site.height_m is not None for site in selected))
+
+    def test_sample_takes_every_camera_from_a_small_file(self):
+        sites = [self.site(0), self.site(1, None)]
+        args = SimpleNamespace(mode="sample", site_names=None)
+        self.assertCountEqual(viewsheds.select_sites(sites, args), sites)
+
+
 class ProductNameTests(unittest.TestCase):
     def test_queue_file_keeps_its_provider(self):
         args = SimpleNamespace(product_name=None, sites=Path("data/alertwest-sites-needing-viewsheds.geojson"))
