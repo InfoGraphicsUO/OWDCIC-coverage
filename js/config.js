@@ -52,6 +52,9 @@ export const CAMERA_PROVIDER_COLORS = Object.freeze({
   enviroVision: '#4fa83d',
 });
 
+// below this zoom, official camera markers shrink to plain colored squares so dense areas stay readable
+export const CAMERA_ICON_MIN_ZOOM = 9;
+
 // marker artwork rasterized by js/marker-icons.js and shown in the legend
 export const MARKER_ICON_URLS = Object.freeze({
   camera: 'img/camera-marker.svg',

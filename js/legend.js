@@ -130,6 +130,12 @@ export function initLegend(items) {
       swatch.classList.toggle('legend-swatch--dark-outline', darkOutline && !image);
     },
 
+    // swaps a row's marker image when the map changes symbology
+    setIcon(label, iconUrl) {
+      const icon = findBinding(label)?.visual.querySelector('.legend-icon');
+      if (icon) icon.src = iconUrl;
+    },
+
     setLoading(label, loading) {
       // keep slow provider loads visible in the layer list
       const visual = findBinding(label)?.visual;
