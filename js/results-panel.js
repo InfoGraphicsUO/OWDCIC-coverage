@@ -1034,7 +1034,7 @@ function drawReportPage({ title, date, pageCount }, pageNumber, drawBody) {
   const footerY = REPORT_PAGE_HEIGHT - REPORT_MARGIN + 16;
   ctx.fillStyle = REPORT_MUTED;
   ctx.font = `8px ${EXPORT_FONT}`;
-  ctx.fillText(`UO InfoGraphics Lab | OHAZ · ${REPORT_SITE_URL}`, REPORT_MARGIN, footerY);
+  ctx.fillText(`UO InfoGraphics Lab | OHAZ | ${REPORT_SITE_URL}`, REPORT_MARGIN, footerY);
   ctx.textAlign = 'right';
   ctx.fillText(`Page ${pageNumber} of ${pageCount}`, right, footerY);
   ctx.textAlign = 'left';
