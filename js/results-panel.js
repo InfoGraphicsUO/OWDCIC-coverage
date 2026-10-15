@@ -48,7 +48,7 @@ const LAND_MIX_COLORS = Object.freeze({
 // cycle these colors for source labels outside the named category palette
 const LAND_MIX_FALLBACK_COLORS = ['#3b7d4f', '#f6d94a', '#3c6b03', '#8154BD', '#727272', '#008fb3'];
 
-// filter groups whose "All" option offers the summary report, named for report wording
+// filter groups whose "All" option offers the summary report and CSV, named for report wording
 // add a group here to give its "All" option the same export choices
 const SUMMARY_REPORT_GROUPS = Object.freeze({
   'odf-protection-district': { unit: 'district', units: 'districts' },
@@ -185,6 +185,12 @@ export function initResultsPanel({
       onReport: () => {
         closeExportModal();
         openSummaryReport(selection, members, exportTitle);
+      },
+      onCsv: () => {
+        downloadBlob(
+          new Blob([summaryCsv(selection, members)], { type: 'text/csv;charset=utf-8' }),
+          `owdcic-${slugify(exportTitle)}-summary.csv`,
+        );
       },
       onMap: () => {
         closeExportModal();
@@ -480,8 +486,8 @@ function createExportModal({
   return { close, status, overlay };
 }
 
-// "All" options pick between the full report and the single map export
-function createExportChooserModal({ group, onReport, onMap, onClose }) {
+// "All" options pick between the full report, its data, and the single map export
+function createExportChooserModal({ group, onReport, onCsv, onMap, onClose }) {
   const { dialog, close } = openModal({
     id: 'results-export-chooser',
     title: 'Export as…',
@@ -504,6 +510,16 @@ function createExportChooserModal({ group, onReport, onMap, onClose }) {
       label: 'Full summary report (PDF)',
       detail: `Overview map, a table comparing every ${group.unit}, and coverage and land status for each ${group.unit}. Ready to print.`,
       run: onReport,
+    },
+    {
+      key: 'csv',
+      icon: 'fa-file-csv',
+      label: 'Summary data (CSV)',
+      detail: `Coverage, area, and mapped land status for every ${group.unit}, for spreadsheets and analysis.`,
+      run: () => {
+        onCsv();
+        status.textContent = 'CSV downloaded.';
+      },
     },
     {
       key: 'map',
@@ -1210,6 +1226,52 @@ function coverageRanks(members) {
     .filter((properties) => coverageFor(properties) != null)
     .sort((a, b) => coverageFor(b) - coverageFor(a));
   return new Map(ranked.map((properties, index) => [properties.divisionId, index + 1]));
+}
+
+// one row per member area and a final row for the combined option, with unrounded source values
+function summaryCsv(selection, members) {
+  const group = SUMMARY_REPORT_GROUPS[selection.type];
+  const rows = [...members.map((feature) => feature.properties || {}), selection.properties];
+  const present = new Set(rows.flatMap((row) => (Array.isArray(row.landMix) ? row.landMix : []).map((item) => item.label)));
+  // named categories keep the panel's order, and any new source labels follow
+  const labels = [
+    ...Object.keys(LAND_MIX_COLORS).filter((label) => present.has(label)),
+    ...[...present].filter((label) => label && !(label in LAND_MIX_COLORS)),
+  ];
+  const header = [
+    capitalize(group.unit), 'Coverage (%)', 'Covered area (sq mi)', 'Total area (sq mi)',
+    'Covered area (sq km)', 'Total area (sq km)',
+    ...labels.flatMap((label) => [`${label} (%)`, `${label} (sq mi)`]),
+  ];
+  const lines = rows.map((row) => {
+    const mix = new Map((Array.isArray(row.landMix) ? row.landMix : []).map((item) => [item.label, item]));
+    const covered = finite(row.cameraViewshedAreaSqKm);
+    const area = finite(row.landAreaSqKm);
+    return [
+      row.name || row.label || '',
+      csvNumber(coverageFor(row)),
+      csvNumber(covered == null ? null : covered * SQMI_PER_SQKM),
+      csvNumber(area == null ? null : area * SQMI_PER_SQKM),
+      csvNumber(covered),
+      csvNumber(area),
+      ...labels.flatMap((label) => {
+        const item = mix.get(label);
+        const share = finite(item?.areaSqKm);
+        // a category missing from an area's mix is none of its land, not unknown
+        return [csvNumber(finite(item?.percentage) ?? 0), csvNumber(share == null ? 0 : share * SQMI_PER_SQKM)];
+      }),
+    ];
+  });
+  return [header, ...lines].map((line) => line.map(csvCell).join(',')).join('\r\n');
+}
+
+function csvNumber(value) {
+  return value == null ? '' : String(Math.round(value * 100) / 100);
+}
+
+function csvCell(value) {
+  const text = String(value ?? '');
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 function capitalize(value) {
