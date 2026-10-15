@@ -48,6 +48,12 @@ const LAND_MIX_COLORS = Object.freeze({
 // cycle these colors for source labels outside the named category palette
 const LAND_MIX_FALLBACK_COLORS = ['#3b7d4f', '#f6d94a', '#3c6b03', '#8154BD', '#727272', '#008fb3'];
 
+// filter groups whose "All" option offers the summary report, named for report wording
+// add a group here to give its "All" option the same export choices
+const SUMMARY_REPORT_GROUPS = Object.freeze({
+  'odf-protection-district': { unit: 'district', units: 'districts' },
+});
+
 const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
 
 /**
@@ -56,7 +62,8 @@ const numberFormat = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }
  * keeps chart and dialog state local to this panel instance
  */
 export function initResultsPanel({
-  getMapCanvas, getMap, getBasemap, getLegendItems, getSelectionLegendItems, onClose = () => {},
+  getMapCanvas, getMap, getBasemap, getLegendItems, getSelectionLegendItems, getMemberFeatures,
+  onClose = () => {},
 } = {}) {
   const element = document.querySelector('#results-panel');
   const title = element.querySelector('[data-results-title]');
@@ -159,10 +166,39 @@ export function initResultsPanel({
       status.textContent = 'Select a result before exporting.';
       return;
     }
+    const members = summaryReportMembers(current);
+    // only an "All" option with its member areas loaded offers the report choices
+    if (members.length) {
+      openExportChooser(current, members);
+      return Promise.resolve();
+    }
     return openMapExport();
   }
 
-  // composes the map, legend, and results card shown in the export preview
+  function openExportChooser(selection, members) {
+    const group = SUMMARY_REPORT_GROUPS[selection.type];
+    const exportTitle = title.textContent;
+    exportButton.disabled = true;
+    status.textContent = '';
+    exportModal = createExportChooserModal({
+      group,
+      onReport: () => {
+        closeExportModal();
+        openSummaryReport(selection, members, exportTitle);
+      },
+      onMap: () => {
+        closeExportModal();
+        openMapExport();
+      },
+      onClose: () => {
+        exportModal = null;
+        exportButton.disabled = !current;
+        exportButton.focus();
+      },
+    });
+  }
+
+  // composes the map, legend, and results card that both the map export and the report open with
   async function composeSelectionMap(selection, exportTitle) {
     // wait for the current chart before asking Plotly for its image
     await chartReady.catch(() => {});
@@ -228,12 +264,58 @@ export function initResultsPanel({
     }
   }
 
+  async function openSummaryReport(selection, members, exportTitle) {
+    if (current !== selection) return;
+    exportButton.disabled = true;
+    element.setAttribute('aria-busy', 'true');
+    status.textContent = 'Preparing report…';
+    try {
+      const mapImage = await composeSelectionMap(selection, exportTitle);
+      if (!mapImage || current !== selection) return;
+      const pages = await composeSummaryPages({
+        title: exportTitle,
+        group: SUMMARY_REPORT_GROUPS[selection.type],
+        total: selection.properties,
+        members: members.map((feature) => feature.properties || {}),
+        mapImage,
+      });
+      if (current !== selection) return;
+      status.textContent = '';
+      const pdfDownloadName = `owdcic-${slugify(exportTitle)}-summary-report.pdf`;
+      exportModal = createExportModal({
+        title: 'Summary report preview',
+        previewSrcs: pages,
+        downloadName: pdfDownloadName,
+        onDownloadPdf: async () => {
+          const modal = exportModal;
+          const pdf = await createPdfFromImages(pages);
+          if (!modal?.overlay.isConnected || current !== selection) return false;
+          downloadBlob(pdf, pdfDownloadName);
+          return true;
+        },
+        onClose: closeToExportButton,
+      });
+    } catch (error) {
+      if (current !== selection) return;
+      status.textContent = 'Summary report failed. Try again after the map finishes loading.';
+      console.error('OWDCIC summary report failed', error);
+      exportButton.disabled = false;
+      element.removeAttribute('aria-busy');
+    }
+  }
+
   function closeToExportButton() {
     // return keyboard focus to the control that opened the dialog
     exportModal = null;
     exportButton.disabled = !current;
     element.removeAttribute('aria-busy');
     exportButton.focus();
+  }
+
+  function summaryReportMembers(selection) {
+    const ids = selection?.properties?.memberDivisionIds;
+    if (selection?.kind !== 'polygon' || !SUMMARY_REPORT_GROUPS[selection.type] || !Array.isArray(ids)) return [];
+    return typeof getMemberFeatures === 'function' ? getMemberFeatures(selection.type, ids) : [];
   }
 
   async function shareLink() {
@@ -396,6 +478,63 @@ function createExportModal({
   });
 
   return { close, status, overlay };
+}
+
+// "All" options pick between the full report and the single map export
+function createExportChooserModal({ group, onReport, onMap, onClose }) {
+  const { dialog, close } = openModal({
+    id: 'results-export-chooser',
+    title: 'Export as…',
+    closeLabel: 'Close export options',
+    className: 'results-export-chooser',
+    onClose,
+  });
+  const body = document.createElement('div');
+  body.className = 'modal__body results-export-chooser__options';
+  const status = document.createElement('p');
+  status.className = 'modal__status';
+  status.dataset.exportStatus = '';
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite');
+
+  const choices = [
+    {
+      key: 'report',
+      icon: 'fa-file-pdf',
+      label: 'Full summary report (PDF)',
+      detail: `Overview map, a table comparing every ${group.unit}, and coverage and land status for each ${group.unit}. Ready to print.`,
+      run: onReport,
+    },
+    {
+      key: 'map',
+      icon: 'fa-map',
+      label: 'Map report',
+      detail: `The map, legend, and results for all ${group.units} on one page, as PNG or PDF.`,
+      run: onMap,
+    },
+  ];
+  for (const choice of choices) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'results-export-chooser__option';
+    button.dataset.exportOption = choice.key;
+    const icon = document.createElement('i');
+    icon.className = `fa-solid ${choice.icon}`;
+    icon.setAttribute('aria-hidden', 'true');
+    const text = document.createElement('span');
+    const label = document.createElement('strong');
+    label.textContent = choice.label;
+    const detail = document.createElement('span');
+    detail.className = 'results-export-chooser__detail';
+    detail.textContent = choice.detail;
+    text.append(label, detail);
+    button.append(icon, text);
+    button.addEventListener('click', choice.run);
+    body.append(button);
+  }
+  body.append(status);
+  dialog.append(body);
+  return { close, status };
 }
 
 function downloadBlob(blob, filename) {
@@ -802,6 +941,279 @@ async function createPdfFromImages(pngDataUrls) {
   const xrefOffset = byteOffset;
   const xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map((offset) => `${String(offset).padStart(10, '0')} 00000 n `).join('\n')}\ntrailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
   return new Blob([header, ...objects, encode(xref)], { type: 'application/pdf' });
+}
+
+// summary report pages are landscape letter, laid out in PDF points and rasterized at REPORT_SCALE
+const REPORT_PAGE_WIDTH = 792;
+const REPORT_PAGE_HEIGHT = 612;
+const REPORT_SCALE = 2.5;
+const REPORT_MARGIN = 36;
+const REPORT_TEXT = '#2f2e2e';
+const REPORT_MUTED = '#686868';
+const REPORT_RULE = '#d6d6d6';
+const REPORT_STRIPE = '#f4f4f4';
+const REPORT_ACCENT = '#f8e109';
+// covered bars use the shared viewshed orange from the map
+const REPORT_COVERAGE_COLOR = '#F28D05';
+const REPORT_BAR_TRACK = '#e8e8e8';
+const REPORT_CARDS_PER_PAGE = 4;
+const REPORT_SITE_URL = 'infographicsuo.github.io/OWDCIC-coverage';
+const reportDateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'long' });
+
+// overview map, a comparison table, then four area cards per page
+async function composeSummaryPages({ title, group, total, members, mapImage }) {
+  // canvas text falls back silently if Merriweather has not finished loading
+  await document.fonts?.ready;
+  const map = await loadImage(mapImage);
+  const ranks = coverageRanks(members);
+  const cardPages = [];
+  for (let index = 0; index < members.length; index += REPORT_CARDS_PER_PAGE) {
+    cardPages.push(members.slice(index, index + REPORT_CARDS_PER_PAGE));
+  }
+  const header = { title, date: reportDateFormat.format(new Date()), pageCount: 2 + cardPages.length };
+  return [
+    drawReportPage(header, 1, (ctx, top, bottom) => drawReportMap(ctx, map, top, bottom)),
+    drawReportPage(header, 2, (ctx, top, bottom) => drawReportTable(ctx, { group, total, members, top, bottom })),
+    ...cardPages.map((cards, index) => drawReportPage(header, index + 3, (ctx, top, bottom) =>
+      drawReportCards(ctx, { cards, ranks, count: ranks.size, top, bottom }))),
+  ];
+}
+
+function drawReportPage({ title, date, pageCount }, pageNumber, drawBody) {
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(REPORT_PAGE_WIDTH * REPORT_SCALE);
+  canvas.height = Math.round(REPORT_PAGE_HEIGHT * REPORT_SCALE);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(REPORT_SCALE, REPORT_SCALE);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, REPORT_PAGE_WIDTH, REPORT_PAGE_HEIGHT);
+  const right = REPORT_PAGE_WIDTH - REPORT_MARGIN;
+
+  ctx.fillStyle = REPORT_TEXT;
+  ctx.font = `700 18px ${EXPORT_FONT}`;
+  ctx.fillText(`${title}: camera coverage summary`, REPORT_MARGIN, REPORT_MARGIN + 14);
+  ctx.fillStyle = REPORT_MUTED;
+  ctx.font = `10px ${EXPORT_FONT}`;
+  ctx.fillText('OWDCIC Camera Coverage Map', REPORT_MARGIN, REPORT_MARGIN + 31);
+  ctx.textAlign = 'right';
+  ctx.fillText(date, right, REPORT_MARGIN + 31);
+  ctx.textAlign = 'left';
+  ctx.fillStyle = REPORT_ACCENT;
+  ctx.fillRect(REPORT_MARGIN, REPORT_MARGIN + 40, right - REPORT_MARGIN, 3);
+
+  const footerY = REPORT_PAGE_HEIGHT - REPORT_MARGIN + 16;
+  ctx.fillStyle = REPORT_MUTED;
+  ctx.font = `8px ${EXPORT_FONT}`;
+  ctx.fillText(`UO InfoGraphics Lab | OHAZ · ${REPORT_SITE_URL}`, REPORT_MARGIN, footerY);
+  ctx.textAlign = 'right';
+  ctx.fillText(`Page ${pageNumber} of ${pageCount}`, right, footerY);
+  ctx.textAlign = 'left';
+
+  drawBody(ctx, REPORT_MARGIN + 58, REPORT_PAGE_HEIGHT - REPORT_MARGIN - 4);
+  return canvas.toDataURL('image/png');
+}
+
+function drawReportMap(ctx, image, top, bottom) {
+  // the map export already carries its legend, results card, and attribution
+  const boxWidth = REPORT_PAGE_WIDTH - REPORT_MARGIN * 2;
+  const boxHeight = bottom - top;
+  const scale = Math.min(boxWidth / image.width, boxHeight / image.height);
+  const width = image.width * scale;
+  const height = image.height * scale;
+  const x = REPORT_MARGIN + (boxWidth - width) / 2;
+  ctx.drawImage(image, x, top, width, height);
+  ctx.strokeStyle = REPORT_RULE;
+  ctx.lineWidth = 0.75;
+  ctx.strokeRect(x, top, width, height);
+}
+
+function drawReportTable(ctx, { group, total, members, top, bottom }) {
+  const right = REPORT_PAGE_WIDTH - REPORT_MARGIN;
+  const coverage = coverageFor(total);
+  const covered = finite(total.cameraViewshedAreaSqKm);
+  const area = finite(total.landAreaSqKm);
+  ctx.fillStyle = REPORT_TEXT;
+  ctx.font = `700 14px ${EXPORT_FONT}`;
+  ctx.fillText(`Coverage by ${group.unit}`, REPORT_MARGIN, top + 4);
+  ctx.font = `11px ${EXPORT_FONT}`;
+  if (coverage != null && covered != null && area != null) {
+    ctx.fillText(
+      `${formatPercent(coverage)}% of all ${group.units} is covered by fire detection cameras: ${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${formatNumber(area * SQMI_PER_SQKM)} mi²`,
+      REPORT_MARGIN, top + 22,
+    );
+  }
+
+  // column positions in points; numbers are right aligned to their column edge
+  const columns = {
+    name: REPORT_MARGIN + 6,
+    bar: 214,
+    barWidth: 130,
+    covered: 470,
+    total: 552,
+    land: 572,
+  };
+  const headerY = top + 50;
+  const notesHeight = 26;
+  const rows = [...members, { ...total, name: `All ${group.units}` }];
+  const rowHeight = Math.min(28, (bottom - headerY - notesHeight - 8) / rows.length);
+
+  ctx.fillStyle = REPORT_MUTED;
+  ctx.font = `700 9px ${EXPORT_FONT}`;
+  ctx.fillText(capitalize(group.unit), columns.name, headerY);
+  ctx.fillText('Camera coverage', columns.bar, headerY);
+  ctx.textAlign = 'right';
+  ctx.fillText('Covered (mi²)', columns.covered, headerY);
+  ctx.fillText('Total (mi²)', columns.total, headerY);
+  ctx.textAlign = 'left';
+  ctx.fillText('Largest mapped land status', columns.land, headerY);
+  ctx.strokeStyle = REPORT_TEXT;
+  ctx.lineWidth = 0.75;
+  ctx.beginPath();
+  ctx.moveTo(REPORT_MARGIN, headerY + 7);
+  ctx.lineTo(right, headerY + 7);
+  ctx.stroke();
+
+  rows.forEach((row, index) => {
+    const isTotal = index === rows.length - 1;
+    const rowTop = headerY + 8 + index * rowHeight;
+    const textY = rowTop + rowHeight / 2 + 3.5;
+    if (isTotal) {
+      ctx.strokeStyle = REPORT_TEXT;
+      ctx.beginPath();
+      ctx.moveTo(REPORT_MARGIN, rowTop);
+      ctx.lineTo(right, rowTop);
+      ctx.stroke();
+    } else if (index % 2 === 1) {
+      ctx.fillStyle = REPORT_STRIPE;
+      ctx.fillRect(REPORT_MARGIN, rowTop, right - REPORT_MARGIN, rowHeight);
+    }
+    const rowCoverage = coverageFor(row);
+    const rowCovered = finite(row.cameraViewshedAreaSqKm);
+    const rowArea = finite(row.landAreaSqKm);
+    const weight = isTotal ? '700 ' : '';
+    ctx.fillStyle = REPORT_TEXT;
+    ctx.font = `${weight}10px ${EXPORT_FONT}`;
+    ctx.fillText(row.name || row.label || '', columns.name, textY);
+    drawCoverageBar(ctx, columns.bar, rowTop + rowHeight / 2 - 4, columns.barWidth, 8, rowCoverage);
+    ctx.fillStyle = REPORT_TEXT;
+    ctx.fillText(rowCoverage == null ? 'n/a' : `${formatPercent(rowCoverage)}%`, columns.bar + columns.barWidth + 8, textY);
+    ctx.textAlign = 'right';
+    ctx.fillText(rowCovered == null ? '' : formatNumber(rowCovered * SQMI_PER_SQKM), columns.covered, textY);
+    ctx.fillText(rowArea == null ? '' : formatNumber(rowArea * SQMI_PER_SQKM), columns.total, textY);
+    ctx.textAlign = 'left';
+    const largest = usableLandMix(row.landMix)[0];
+    ctx.font = `${weight}9px ${EXPORT_FONT}`;
+    if (largest) ctx.fillText(`${formatPercent(largest.percentage)}% ${largest.label}`, columns.land, textY);
+  });
+
+  ctx.fillStyle = REPORT_MUTED;
+  ctx.font = `8px ${EXPORT_FONT}`;
+  ctx.fillText(
+    'Covered area is land inside at least one fire detection camera viewshed. Land status shares come from mapped ownership parcels;',
+    REPORT_MARGIN, bottom - 12,
+  );
+  ctx.fillText('unclassified includes unmapped private land. Shares under 1% are not shown.', REPORT_MARGIN, bottom - 2);
+}
+
+function drawReportCards(ctx, { cards, ranks, count, top, bottom }) {
+  const gap = 16;
+  const width = (REPORT_PAGE_WIDTH - REPORT_MARGIN * 2 - gap) / 2;
+  const height = (bottom - top - gap) / 2;
+  cards.forEach((properties, index) => {
+    const x = REPORT_MARGIN + (index % 2) * (width + gap);
+    const y = top + Math.floor(index / 2) * (height + gap);
+    drawReportCard(ctx, x, y, width, height, properties, ranks.get(properties.divisionId), count);
+  });
+}
+
+function drawReportCard(ctx, x, y, width, height, properties, rank, count) {
+  const pad = 14;
+  const coverage = coverageFor(properties);
+  const covered = finite(properties.cameraViewshedAreaSqKm);
+  const area = finite(properties.landAreaSqKm);
+  ctx.strokeStyle = REPORT_RULE;
+  ctx.lineWidth = 0.75;
+  strokeRoundedRect(ctx, x, y, width, height, 6);
+
+  ctx.fillStyle = REPORT_TEXT;
+  ctx.font = `700 13px ${EXPORT_FONT}`;
+  ctx.fillText(properties.name || properties.label || '', x + pad, y + 24);
+  if (rank) {
+    ctx.fillStyle = REPORT_MUTED;
+    ctx.font = `9px ${EXPORT_FONT}`;
+    ctx.textAlign = 'right';
+    ctx.fillText(`Coverage rank ${rank} of ${count}`, x + width - pad, y + 24);
+    ctx.textAlign = 'left';
+  }
+  ctx.fillStyle = REPORT_TEXT;
+  ctx.font = `600 11px ${EXPORT_FONT}`;
+  ctx.fillText(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`, x + pad, y + 44);
+  drawCoverageBar(ctx, x + pad, y + 51, width - pad * 2, 8, coverage);
+  if (covered != null && area != null) {
+    ctx.fillStyle = REPORT_MUTED;
+    ctx.font = `10px ${EXPORT_FONT}`;
+    ctx.fillText(`${formatNumber(covered * SQMI_PER_SQKM)} mi² covered of ${formatNumber(area * SQMI_PER_SQKM)} mi² total`, x + pad, y + 76);
+  }
+
+  const landMix = usableLandMix(properties.landMix);
+  if (!landMix.length) return;
+  ctx.fillStyle = REPORT_TEXT;
+  ctx.font = `700 10px ${EXPORT_FONT}`;
+  ctx.fillText(LAND_MIX_TITLE, x + pad, y + 100);
+  const radius = Math.min(52, (height - 116) / 2);
+  drawLandMixDonut(ctx, x + pad + radius, y + 110 + radius, radius, landMix);
+  const rowsX = x + pad + radius * 2 + 20;
+  const rowStep = 14;
+  const maxRows = Math.floor((height - 118) / rowStep);
+  landMix.slice(0, maxRows).forEach((item, index) => {
+    const rowY = y + 124 + index * rowStep;
+    ctx.fillStyle = landMixColor(item.label, index);
+    ctx.fillRect(rowsX, rowY - 8, 9, 9);
+    ctx.fillStyle = REPORT_TEXT;
+    ctx.font = `10px ${EXPORT_FONT}`;
+    ctx.fillText(`${formatPercent(item.percentage)}% ${item.label}`, rowsX + 15, rowY);
+  });
+}
+
+function drawCoverageBar(ctx, x, y, width, height, coverage) {
+  ctx.fillStyle = REPORT_BAR_TRACK;
+  ctx.fillRect(x, y, width, height);
+  if (coverage == null) return;
+  ctx.fillStyle = REPORT_COVERAGE_COLOR;
+  ctx.fillRect(x, y, width * Math.max(0, Math.min(100, coverage)) / 100, height);
+}
+
+function drawLandMixDonut(ctx, cx, cy, radius, landMix) {
+  // shares are normalized like the Plotly donut, which also drops entries under 1%
+  const sum = landMix.reduce((total, item) => total + finite(item.percentage), 0);
+  if (!(sum > 0)) return;
+  let angle = -Math.PI / 2;
+  landMix.forEach((item, index) => {
+    const sweep = finite(item.percentage) / sum * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, angle, angle + sweep);
+    ctx.closePath();
+    ctx.fillStyle = landMixColor(item.label, index);
+    ctx.fill();
+    angle += sweep;
+  });
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius * 0.6, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+}
+
+// rank 1 is the best covered area; areas without coverage get no rank
+function coverageRanks(members) {
+  const ranked = members
+    .filter((properties) => coverageFor(properties) != null)
+    .sort((a, b) => coverageFor(b) - coverageFor(a));
+  return new Map(ranked.map((properties, index) => [properties.divisionId, index + 1]));
+}
+
+function capitalize(value) {
+  return value ? value[0].toUpperCase() + value.slice(1) : '';
 }
 
 function drawExportMap(ctx, image, width, height, mapCanvas, map, current) {

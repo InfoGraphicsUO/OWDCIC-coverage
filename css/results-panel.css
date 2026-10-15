@@ -409,6 +409,53 @@
     margin-top: 12px;
 }
 
+.results-export-chooser__options {
+    display: grid;
+    gap: 10px;
+}
+
+.results-export-chooser__option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    color: #fff;
+    background: #3a3939;
+    border: 1px solid #555;
+    border-radius: var(--ui-radius-sm, 6px);
+    font: 13px/1.4 "Merriweather", sans-serif;
+    text-align: left;
+    cursor: pointer;
+}
+
+.results-export-chooser__option:hover,
+.results-export-chooser__option:focus-visible {
+    border-color: var(--ohaz-yellow, #f8e109);
+}
+
+.results-export-chooser__option:focus-visible {
+    outline: 2px solid var(--ohaz-yellow, #f8e109);
+    outline-offset: 2px;
+}
+
+.results-export-chooser__option > i {
+    width: 20px;
+    margin-top: 2px;
+    color: var(--ohaz-yellow, #f8e109);
+    font-size: 18px;
+    text-align: center;
+}
+
+.results-export-chooser__option strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.results-export-chooser__detail {
+    color: #c8c8c8;
+    font-size: 12px;
+}
+
 @media (max-width: 900px) {
     body:has(#control-sidebar:not(.is-collapsed)) #results-panel {
         display: none;
