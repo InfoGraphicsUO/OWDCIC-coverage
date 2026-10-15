@@ -169,12 +169,13 @@ const DIGITIZED_CAMERA_COLORS = Object.freeze({
 });
 
 const NO_VIEWSHED_SELECTED = '__none__';
-// plain colored square shown in place of a provider's camera marker at low zoom
+// colored square with a center dot shown in place of a provider's camera marker at low zoom
 function cameraSquareUrl(color) {
   const svg =
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
     '<rect x="1" y="1" width="22" height="22" rx="3.5" fill="#000000"/>' +
-    `<rect x="3.5" y="3.5" width="17" height="17" rx="2" fill="${color}"/></svg>`;
+    `<rect x="3.5" y="3.5" width="17" height="17" rx="2" fill="${color}"/>` +
+    '<circle cx="12" cy="12" r="4" fill="#000000"/></svg>';
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 const cameraSquareIconId = (iconId) => `${iconId}-square`;
