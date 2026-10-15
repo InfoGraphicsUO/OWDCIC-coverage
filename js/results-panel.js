@@ -1082,9 +1082,8 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
     total: REPORT_PAGE_WIDTH - REPORT_MARGIN - 6,
   };
   const headerY = top + 50;
-  const notesHeight = 26;
   const rows = [...members, { ...total, name: `All ${group.units}` }];
-  const rowHeight = Math.min(28, (bottom - headerY - notesHeight - 8) / rows.length);
+  const rowHeight = Math.min(28, (bottom - headerY - 8) / rows.length);
 
   ctx.fillStyle = REPORT_MUTED;
   ctx.font = `700 9px ${EXPORT_FONT}`;
@@ -1130,6 +1129,19 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
     ctx.fillText(rowArea == null ? '' : formatNumber(rowArea * SQMI_PER_SQKM), columns.total, textY);
     ctx.textAlign = 'left';
   });
+}
+
+function drawReportCards(ctx, { cards, top, bottom }) {
+  const gap = 16;
+  // the notes under the cards explain the coverage and land status figures they show
+  const notesHeight = 28;
+  const width = (REPORT_PAGE_WIDTH - REPORT_MARGIN * 2 - gap) / 2;
+  const height = (bottom - top - gap - notesHeight) / 2;
+  cards.forEach((properties, index) => {
+    const x = REPORT_MARGIN + (index % 2) * (width + gap);
+    const y = top + Math.floor(index / 2) * (height + gap);
+    drawReportCard(ctx, x, y, width, height, properties);
+  });
 
   ctx.fillStyle = REPORT_MUTED;
   ctx.font = `8px ${EXPORT_FONT}`;
@@ -1138,17 +1150,6 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
     REPORT_MARGIN, bottom - 12,
   );
   ctx.fillText('unclassified includes unmapped private land. Shares under 1% are not shown.', REPORT_MARGIN, bottom - 2);
-}
-
-function drawReportCards(ctx, { cards, top, bottom }) {
-  const gap = 16;
-  const width = (REPORT_PAGE_WIDTH - REPORT_MARGIN * 2 - gap) / 2;
-  const height = (bottom - top - gap) / 2;
-  cards.forEach((properties, index) => {
-    const x = REPORT_MARGIN + (index % 2) * (width + gap);
-    const y = top + Math.floor(index / 2) * (height + gap);
-    drawReportCard(ctx, x, y, width, height, properties);
-  });
 }
 
 function drawReportCard(ctx, x, y, width, height, properties) {
