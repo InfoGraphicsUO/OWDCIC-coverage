@@ -984,22 +984,28 @@ const REPORT_CARDS_PER_PAGE = 4;
 const REPORT_SITE_URL = 'infographicsuo.github.io/OWDCIC-coverage';
 const reportDateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'long' });
 
-// overview map, a comparison table, then four area cards per page
+// overview map, a comparison table in list order, the same table from most to least covered,
+// then four area cards per page
 async function composeSummaryPages({ title, group, total, members, mapImage }) {
   // canvas text falls back silently if Merriweather has not finished loading
   await document.fonts?.ready;
   const map = await loadImage(mapImage);
-  const ranks = coverageRanks(members);
+  const ranked = rankByCoverage(members);
   const cardPages = [];
   for (let index = 0; index < members.length; index += REPORT_CARDS_PER_PAGE) {
     cardPages.push(members.slice(index, index + REPORT_CARDS_PER_PAGE));
   }
-  const header = { title, date: reportDateFormat.format(new Date()), pageCount: 2 + cardPages.length };
+  const header = { title, date: reportDateFormat.format(new Date()), pageCount: 3 + cardPages.length };
   return [
     drawReportPage(header, 1, (ctx, top, bottom) => drawReportMap(ctx, map, top, bottom)),
-    drawReportPage(header, 2, (ctx, top, bottom) => drawReportTable(ctx, { group, total, members, top, bottom })),
-    ...cardPages.map((cards, index) => drawReportPage(header, index + 3, (ctx, top, bottom) =>
-      drawReportCards(ctx, { cards, ranks, count: ranks.size, top, bottom }))),
+    drawReportPage(header, 2, (ctx, top, bottom) => drawReportTable(ctx, {
+      heading: `Coverage by ${group.unit}`, group, total, members, top, bottom,
+    })),
+    drawReportPage(header, 3, (ctx, top, bottom) => drawReportTable(ctx, {
+      heading: `${capitalize(group.units)} from most to least covered`, group, total, members: ranked, top, bottom,
+    })),
+    ...cardPages.map((cards, index) => drawReportPage(header, index + 4, (ctx, top, bottom) =>
+      drawReportCards(ctx, { cards, top, bottom }))),
   ];
 }
 
@@ -1051,14 +1057,14 @@ function drawReportMap(ctx, image, top, bottom) {
   ctx.strokeRect(x, top, width, height);
 }
 
-function drawReportTable(ctx, { group, total, members, top, bottom }) {
+function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
   const right = REPORT_PAGE_WIDTH - REPORT_MARGIN;
   const coverage = coverageFor(total);
   const covered = finite(total.cameraViewshedAreaSqKm);
   const area = finite(total.landAreaSqKm);
   ctx.fillStyle = REPORT_TEXT;
   ctx.font = `700 14px ${EXPORT_FONT}`;
-  ctx.fillText(`Coverage by ${group.unit}`, REPORT_MARGIN, top + 4);
+  ctx.fillText(heading, REPORT_MARGIN, top + 4);
   ctx.font = `11px ${EXPORT_FONT}`;
   if (coverage != null && covered != null && area != null) {
     ctx.fillText(
@@ -1139,18 +1145,18 @@ function drawReportTable(ctx, { group, total, members, top, bottom }) {
   ctx.fillText('unclassified includes unmapped private land. Shares under 1% are not shown.', REPORT_MARGIN, bottom - 2);
 }
 
-function drawReportCards(ctx, { cards, ranks, count, top, bottom }) {
+function drawReportCards(ctx, { cards, top, bottom }) {
   const gap = 16;
   const width = (REPORT_PAGE_WIDTH - REPORT_MARGIN * 2 - gap) / 2;
   const height = (bottom - top - gap) / 2;
   cards.forEach((properties, index) => {
     const x = REPORT_MARGIN + (index % 2) * (width + gap);
     const y = top + Math.floor(index / 2) * (height + gap);
-    drawReportCard(ctx, x, y, width, height, properties, ranks.get(properties.divisionId), count);
+    drawReportCard(ctx, x, y, width, height, properties);
   });
 }
 
-function drawReportCard(ctx, x, y, width, height, properties, rank, count) {
+function drawReportCard(ctx, x, y, width, height, properties) {
   const pad = 14;
   const coverage = coverageFor(properties);
   const covered = finite(properties.cameraViewshedAreaSqKm);
@@ -1162,14 +1168,6 @@ function drawReportCard(ctx, x, y, width, height, properties, rank, count) {
   ctx.fillStyle = REPORT_TEXT;
   ctx.font = `700 13px ${EXPORT_FONT}`;
   ctx.fillText(properties.name || properties.label || '', x + pad, y + 24);
-  if (rank) {
-    ctx.fillStyle = REPORT_MUTED;
-    ctx.font = `9px ${EXPORT_FONT}`;
-    ctx.textAlign = 'right';
-    ctx.fillText(`Coverage rank ${rank} of ${count}`, x + width - pad, y + 24);
-    ctx.textAlign = 'left';
-  }
-  ctx.fillStyle = REPORT_TEXT;
   ctx.font = `600 11px ${EXPORT_FONT}`;
   ctx.fillText(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`, x + pad, y + 44);
   drawCoverageBar(ctx, x + pad, y + 51, width - pad * 2, 8, coverage);
@@ -1228,12 +1226,11 @@ function drawLandMixDonut(ctx, cx, cy, radius, landMix) {
   ctx.fill();
 }
 
-// rank 1 is the best covered area; areas without coverage get no rank
-function coverageRanks(members) {
-  const ranked = members
-    .filter((properties) => coverageFor(properties) != null)
+// most covered first; areas without coverage keep their list order at the end
+function rankByCoverage(members) {
+  const covered = members.filter((properties) => coverageFor(properties) != null)
     .sort((a, b) => coverageFor(b) - coverageFor(a));
-  return new Map(ranked.map((properties, index) => [properties.divisionId, index + 1]));
+  return [...covered, ...members.filter((properties) => coverageFor(properties) == null)];
 }
 
 // one row per member area and a final row for the combined option, with unrounded source values

@@ -526,7 +526,7 @@ chooser.querySelector('button.modal__close').click();
 assert.equal(body.querySelector('.results-export-chooser'), null, 'close should remove the chooser');
 assert.equal(exportButton.disabled, false, 'closing the chooser should re-enable export');
 
-// the report opens a page-by-page preview: overview map, table, then four district cards per page
+// the report opens a page-by-page preview: overview map, two tables, then four district cards per page
 await exportButton._listeners.click[0]();
 const canvasesBeforeReport = exportCanvases.length;
 exportOption('report').click();
@@ -537,15 +537,22 @@ const reportModal = body.querySelector('.results-export-modal');
 assert.ok(reportModal, 'report option should open the report preview');
 assert.equal(body.querySelector('.results-export-chooser'), null, 'the chooser should close when the report opens');
 assert.equal(textOf(reportModal.querySelector('h2')), 'Summary report preview');
-assert.equal(reportModal.querySelectorAll('[data-export-preview]').length, 4, '5 districts should make 4 pages');
+assert.equal(reportModal.querySelectorAll('[data-export-preview]').length, 5, '5 districts should make 5 pages');
 assert.equal(reportModal.querySelector('[data-export-download]'), null, 'the report has no PNG download');
-const reportText = exportCanvases.slice(canvasesBeforeReport).flatMap((node) => node.drawnText || []);
+const reportPages = exportCanvases.slice(canvasesBeforeReport).filter((node) => node.drawnText?.length);
+const reportText = reportPages.flatMap((node) => node.drawnText);
+const pageWith = (heading) => reportPages.find((node) => node.drawnText.includes(heading)).drawnText;
+const districtOrder = (text) => odfMembers.map(({ name }) => name).filter((name) => text.includes(name))
+  .sort((a, b) => text.indexOf(a) - text.indexOf(b));
 assert.ok(reportText.includes('All ODF districts: camera coverage summary'), 'pages should carry the report title');
-assert.ok(reportText.includes('Coverage by district'), 'page 2 should hold the district table');
-assert.ok(reportText.includes('All districts'), 'the table should end with a total row');
-assert.ok(reportText.includes('Coverage rank 1 of 4'), 'cards should rank districts with coverage');
-assert.ok(!reportText.some((text) => /rank \d of 5/.test(text)), 'districts without coverage are not ranked');
-assert.ok(reportText.includes('Page 4 of 4'));
+// page 2 keeps list order, page 3 goes from most to least covered with unavailable coverage last
+assert.deepEqual(districtOrder(pageWith('Coverage by district')),
+  ['Alpha District', 'Beta FPA, North', 'Gamma District', 'Delta District', 'Epsilon District']);
+assert.deepEqual(districtOrder(pageWith('Districts from most to least covered')),
+  ['Alpha District', 'Gamma District', 'Beta FPA, North', 'Epsilon District', 'Delta District']);
+assert.ok(pageWith('Districts from most to least covered').includes('All districts'), 'the ranked table should keep its total row');
+assert.ok(!reportText.some((text) => /rank/i.test(text)), 'district cards should not show a coverage rank');
+assert.ok(reportText.includes('Page 5 of 5'));
 
 // the PDF holds one page per preview image
 reportModal.querySelector('[data-export-pdf-download]').click();
@@ -555,8 +562,8 @@ for (let tries = 0; tries < 50 && downloads.at(-1).download !== 'owdcic-all-odf-
 assert.equal(downloads.at(-1).download, 'owdcic-all-odf-districts-summary-report.pdf');
 const pdfText = Buffer.from(await blobs.at(-1).arrayBuffer()).toString('latin1');
 assert.equal(blobs.at(-1).type, 'application/pdf');
-assert.match(pdfText, /\/Kids \[3 0 R 6 0 R 9 0 R 12 0 R\] \/Count 4/);
-assert.equal(pdfText.match(/\/Type \/Page \/Parent/g).length, 4);
+assert.match(pdfText, /\/Kids \[3 0 R 6 0 R 9 0 R 12 0 R 15 0 R\] \/Count 5/);
+assert.equal(pdfText.match(/\/Type \/Page \/Parent/g).length, 5);
 reportModal.querySelector('[data-export-close]').click();
 
 // the map report option is the existing single-page export
