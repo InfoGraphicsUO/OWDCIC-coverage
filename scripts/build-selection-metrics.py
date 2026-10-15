@@ -44,9 +44,19 @@ TYPES = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
          'odf-protection-district')
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
-    'utility': 3, 'national-forest': 23, 'national-park': 14,
+    'utility': 3, 'national-forest': 20, 'national-park': 14,
     'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
 }
+# names shown in the viewshed runner while each metric builds
+LABELS = {
+    'state': 'states', 'county': 'counties', 'house': 'state house districts',
+    'us-house': 'U.S. house districts', 'senate': 'state senate districts',
+    'utility': 'utilities', 'national-forest': 'national forests',
+    'national-park': 'national parks', 'federal-land': 'federal land',
+    'tribal-land': 'tribal land', 'odf-protection-district': 'ODF protection districts',
+}
+CAMERA_LABEL = 'camera viewsheds'
+PROGRESS_PREFIX = '@@METRICS@@'
 TO_5070 = Transformer.from_crs(4326, 5070, always_xy=True).transform
 UNAVAILABLE_COVERAGE = 'Coverage unavailable'
 SIMPLIFY_TOLERANCE_M = 2.0
@@ -396,6 +406,13 @@ def coverage_metrics(selection, dissolved_coverage):
     }
 
 
+def report(args, step, total, label, done, count):
+    """tells the viewshed runner which metric is building and how far along it is"""
+    if args.json_progress:
+        print(PROGRESS_PREFIX + json.dumps({'step': step, 'total': total, 'label': label,
+                                            'done': done, 'count': count}), flush=True)
+
+
 def run(args):
     coverage, individual = load_all_viewsheds(args.viewsheds)
     print('loaded viewsheds:', len(individual), flush=True)
@@ -445,16 +462,21 @@ def run(args):
               },
               'padusFeeSha256': digest(args.padus_fee_cache)}
     kinds = tuple(args.only) if args.only else TYPES
+    divisions = []
     for kind in kinds:
         path = DIVISIONS / f'{kind}.geojson'
         if not path.exists():
             continue
         data = json.loads(path.read_text())
-        if not data['features']:
-            continue
+        if data['features']:
+            divisions.append((kind, path, data))
+    # every division type plus the per-camera metrics
+    steps = len(divisions) + 1
+    for step, (kind, path, data) in enumerate(divisions, start=1):
         retained = []
         skipped = []
         for i, feature in enumerate(data['features']):
+            report(args, step, steps, LABELS[kind], i + 1, len(data['features']))
             repair_feature_geometry(feature)
             assert_valid_polygon(feature)
             polygon = project(feature['geometry'])
@@ -483,6 +505,13 @@ def run(args):
         if skipped:
             print(f'{kind} skipped empty-land features: {skipped}', flush=True)
             data.setdefault('metadata', {})['excludedEmptyLandFeatures'] = skipped
+            # a combined option only lists the members that are still in the data
+            dropped = {row['id'] for row in skipped}
+            for feature in retained:
+                members = feature['properties'].get('memberDivisionIds')
+                if members is not None:
+                    feature['properties']['memberDivisionIds'] = [
+                        member for member in members if member not in dropped]
         expected = EXPECTED_COUNTS.get(kind)
         if expected is not None and len(retained) != expected:
             raise RuntimeError(
@@ -507,7 +536,8 @@ def run(args):
         print(kind, 'complete', len(retained), flush=True)
     camera_data = json.loads(CAMERA_OUT.read_text()) if CAMERA_OUT.exists() else {'viewsheds': {}}
     viewsheds = camera_data.setdefault('viewsheds', {})
-    for identifier, geometry in individual.items():
+    for i, (identifier, geometry) in enumerate(individual.items()):
+        report(args, steps, steps, CAMERA_LABEL, i + 1, len(individual))
         selection = geometry.intersection(land)
         area = selection.area
         if not math.isfinite(area) or area <= 0:
@@ -564,6 +594,8 @@ def main():
     parser.add_argument('--padus-fee-cache', type=Path, default=PADUS_FEE_CACHE)
     parser.add_argument('--only', nargs='*', choices=TYPES,
                         help='limit division types; camera metrics still run')
+    parser.add_argument('--json-progress', action='store_true',
+                        help='print machine-readable step progress for the viewshed runner')
     run(parser.parse_args())
 
 

@@ -12,7 +12,7 @@ KINDS = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
 
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
-    'utility': 3, 'national-forest': 23, 'national-park': 14,
+    'utility': 3, 'national-forest': 20, 'national-park': 14,
     'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
 }
 
@@ -106,14 +106,38 @@ class SelectionDataTests(unittest.TestCase):
             self.assertAlmostEqual(combined[0]['properties'][key],
                                    sum(f['properties'][key] for f in members), delta=0.1)
 
-    def test_national_forest_drops_idaho_only_unit(self):
+    def test_all_national_forests_combines_every_forest(self):
+        data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
+        combined = [f for f in data['features'] if 'memberDivisionIds' in f['properties']]
+        self.assertEqual([f['properties']['name'] for f in combined], ['All National Forests'])
+        members = [f for f in data['features'] if f not in combined]
+        self.assertEqual(sorted(combined[0]['properties']['memberDivisionIds']),
+                         sorted(f['id'] for f in members))
+        # forest boundaries barely overlap, so the union is close to their sum
+        for key in ('landAreaSqKm', 'cameraViewshedAreaSqKm'):
+            total = sum(f['properties'][key] for f in members)
+            self.assertLessEqual(combined[0]['properties'][key], total)
+            self.assertGreater(combined[0]['properties'][key], total * 0.99)
+
+    def test_national_forest_is_clipped_to_the_project_boundary(self):
         data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
         names = {feature['properties']['name'] for feature in data['features']}
-        self.assertNotIn('Nez Perce-Clearwater National Forest', names)
         self.assertIn('Malheur National Forest', names)
         self.assertIn('Gifford Pinchot National Forest', names)
-        excluded = data['metadata'].get('excludedEmptyLandFeatures') or []
-        self.assertTrue(any('Nez Perce-Clearwater' in str(row) for row in excluded))
+        # units with next to nothing inside OR/WA are dropped, not kept as slivers
+        outside = {row['name'] for row in data['metadata']['excludedOutsideBoundaryFeatures']}
+        for name in ('Nez Perce-Clearwater National Forest', 'Humboldt-Toiyabe National Forest',
+                     'Payette National Forest', 'Six Rivers National Forest', 'Modoc National Forest'):
+            self.assertIn(name, outside)
+            self.assertNotIn(name, names)
+        # what is kept lies inside the project boundary
+        west, south, east, north = -124.85, 41.99, -116.46, 49.01
+        for feature in data['features']:
+            minx, miny, maxx, maxy = feature['bbox']
+            self.assertGreaterEqual(minx, west)
+            self.assertGreaterEqual(miny, south)
+            self.assertLessEqual(maxx, east)
+            self.assertLessEqual(maxy, north)
 
     def test_tribal_land_keeps_hoh_reservation(self):
         data = json.loads((ROOT / 'data/divisions/tribal-land.geojson').read_text())

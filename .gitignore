@@ -17,3 +17,4 @@ __pycache__/
 *.qgs~
 *.qgz~
 symbology-style.db
+.claude/
