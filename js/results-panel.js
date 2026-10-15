@@ -781,6 +781,8 @@ function renderDonut(host, landMix) {
 const EXPORT_MARGIN = 16;
 const EXPORT_STATS_WIDTH = 360;
 const EXPORT_LEGEND_WIDTH = 320;
+// legend and results cards draw at this share of their design size so more of the map shows
+const EXPORT_CARD_SCALE = 0.7;
 const EXPORT_FONT = 'Merriweather, "Segoe UI", sans-serif';
 const EXPORT_LEGEND_SWATCH_SIZE = 20;
 const EXPORT_LEGEND_SWATCH_GAP = 10;
@@ -881,15 +883,21 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   const legendLayout = layoutLegendPanel({ ctx, width: EXPORT_LEGEND_WIDTH, rows: legendRows });
   const attributionHeight = 18;
   const stackGap = 12;
-  const maxPanelBottom = frameHeight - EXPORT_MARGIN - attributionHeight - stackGap;
+  // the cards draw in their own smaller frame; margins and attribution keep the full scale
+  const cardFrameWidth = frameWidth / EXPORT_CARD_SCALE;
+  const cardMargin = EXPORT_MARGIN / EXPORT_CARD_SCALE;
+  const maxPanelBottom = (frameHeight - EXPORT_MARGIN - attributionHeight - stackGap) / EXPORT_CARD_SCALE;
   // align both cards to the same bottom edge while keeping each above attribution
-  const statsX = frameWidth - EXPORT_MARGIN - EXPORT_STATS_WIDTH;
-  const statsY = Math.max(EXPORT_MARGIN, maxPanelBottom - statsLayout.height);
-  const legendX = EXPORT_MARGIN;
-  const legendY = Math.max(EXPORT_MARGIN, maxPanelBottom - legendLayout.height);
+  const statsX = cardFrameWidth - cardMargin - EXPORT_STATS_WIDTH;
+  const statsY = Math.max(cardMargin, maxPanelBottom - statsLayout.height);
+  const legendX = cardMargin;
+  const legendY = Math.max(cardMargin, maxPanelBottom - legendLayout.height);
 
+  ctx.save();
+  ctx.scale(EXPORT_CARD_SCALE, EXPORT_CARD_SCALE);
   drawLegendOverlay(ctx, legendX, legendY, legendLayout);
   drawStatsOverlay(ctx, statsX, statsY, statsLayout, chartImage);
+  ctx.restore();
   drawExportAttribution(ctx, frameWidth, frameHeight, basemap);
   ctx.restore();
   return canvas.toDataURL('image/png');
