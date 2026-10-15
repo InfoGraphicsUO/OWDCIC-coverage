@@ -508,14 +508,14 @@ function createExportChooserModal({ group, onReport, onCsv, onMap, onClose }) {
       key: 'report',
       icon: 'fa-file-pdf',
       label: 'Full summary report (PDF)',
-      detail: `Overview map, a table comparing every ${group.unit}, and coverage and land status for each ${group.unit}. Ready to print.`,
+      detail: `A full summary report including an overview map, a table comparing every ${group.unit}, and coverage and land status for each ${group.unit}`,
       run: onReport,
     },
     {
       key: 'csv',
       icon: 'fa-file-csv',
       label: 'Summary data (CSV)',
-      detail: `Coverage, area, and mapped land status for every ${group.unit}, for spreadsheets and analysis.`,
+      detail: `Coverage, area, and mapped land status for every ${group.unit}`,
       run: () => {
         onCsv();
         status.textContent = 'CSV downloaded.';
@@ -525,7 +525,7 @@ function createExportChooserModal({ group, onReport, onCsv, onMap, onClose }) {
       key: 'map',
       icon: 'fa-map',
       label: 'Map report',
-      detail: `The map, legend, and results for all ${group.units} on one page, as PNG or PDF.`,
+      detail: `The map, legend, and results for all ${group.units} on one page, as PNG or PDF`,
       run: onMap,
     },
   ];
