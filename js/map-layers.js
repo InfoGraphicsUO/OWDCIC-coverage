@@ -2,6 +2,7 @@ import { fetchArcGISGeoJSON } from './arcgis-requests.js';
 import {
   BURN_PROBABILITY_MIN,
   CAMERA_API,
+  CAMERA_ICON_MIN_ZOOM,
   CAMERA_PROVIDER_COLORS,
   DATA_URLS,
   DIGITIZED_CAMERA_ICON_URLS,
@@ -168,6 +169,15 @@ const DIGITIZED_CAMERA_COLORS = Object.freeze({
 });
 
 const NO_VIEWSHED_SELECTED = '__none__';
+// plain colored square shown in place of a provider's camera marker at low zoom
+function cameraSquareUrl(color) {
+  const svg =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">' +
+    '<rect x="1" y="1" width="22" height="22" rx="3.5" fill="#000000"/>' +
+    `<rect x="3.5" y="3.5" width="17" height="17" rx="2" fill="${color}"/></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+const cameraSquareIconId = (iconId) => `${iconId}-square`;
 
 // each official provider is its own camera layer, viewshed tileset, and pair of legend rows
 // later providers only need another entry here plus their config ids
@@ -451,6 +461,7 @@ const INTERACTIVE_LAYER_IDS = Object.freeze([...MARKER_LAYER_IDS, LAYER_IDS.tran
 
 // marker sizes use CSS pixels
 const CAMERA_MARKER_SIZE = 20;
+const CAMERA_SQUARE_SIZE = 10;
 const PRESCRIBED_MARKER_SIZE = 18;
 
 // each [minimum acres, size] pair selects a prerendered fire marker
@@ -594,6 +605,7 @@ async function loadMapLayers(map) {
     for (const layerId of layerIds) setLayerVisible(map, layerId, false);
   }
 
+  bindCameraLegendIcons(map);
   bindDigitizedCameraUnlock(map);
   // a filter preset may have switched a row on before the map connected
   legendControl.onChange(() => loadDeferredLayers(map));
@@ -1957,12 +1969,32 @@ async function loadAlertWestCameras() {
   return camerasToGeoJSON(await fetchJson(CAMERA_API, 'Camera API'));
 }
 
+// keeps the legend rows matching the camera symbology the map is drawing at this zoom
+function bindCameraLegendIcons(map) {
+  let simplified;
+  const sync = () => {
+    const next = map.getZoom() < CAMERA_ICON_MIN_ZOOM;
+    if (next === simplified) return;
+    simplified = next;
+    for (const { cameraLabel, color, iconUrl } of CAMERA_PROVIDERS) {
+      legendControl.setIcon(cameraLabel, next ? cameraSquareUrl(color) : iconUrl);
+    }
+  };
+  map.on('zoom', sync);
+  sync();
+}
+
 async function addCameraLayers(map) {
   // register images before adding symbol layers that reference them
   await Promise.all(
-    CAMERA_PROVIDERS.flatMap(({ iconId, iconUrl, privateIconId, privateIconUrl }) => [
+    CAMERA_PROVIDERS.flatMap(({ iconId, iconUrl, privateIconId, privateIconUrl, color }) => [
       registerMarkerIcon(map, { id: iconId, url: iconUrl, size: CAMERA_MARKER_SIZE }),
       privateIconId && registerMarkerIcon(map, { id: privateIconId, url: privateIconUrl, size: CAMERA_MARKER_SIZE }),
+      registerMarkerIcon(map, {
+        id: cameraSquareIconId(iconId),
+        url: cameraSquareUrl(color),
+        size: CAMERA_SQUARE_SIZE,
+      }),
     ])
   );
 
@@ -1980,9 +2012,14 @@ async function addCameraLayers(map) {
       type: 'symbol',
       source: cameraLayerId,
       layout: {
-        ...markerLayout(privateIconId
-          ? ['case', ['==', ['get', 'outsideApi'], true], privateIconId, iconId]
-          : iconId),
+        // zoomed out, cameras are small squares; the full camera marker returns at the threshold
+        ...markerLayout([
+          'step',
+          ['zoom'],
+          cameraSquareIconId(iconId),
+          CAMERA_ICON_MIN_ZOOM,
+          privateIconId ? ['case', ['==', ['get', 'outsideApi'], true], privateIconId, iconId] : iconId,
+        ]),
         'icon-offset': [
           'case',
           ['==', ['get', 'sharesAlertWestSite'], true],
