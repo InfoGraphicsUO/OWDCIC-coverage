@@ -462,7 +462,7 @@ const INTERACTIVE_LAYER_IDS = Object.freeze([...MARKER_LAYER_IDS, LAYER_IDS.tran
 
 // marker sizes use CSS pixels
 const CAMERA_MARKER_SIZE = 20;
-const CAMERA_SQUARE_SIZE = 10;
+const CAMERA_SQUARE_SIZE = 13;
 const PRESCRIBED_MARKER_SIZE = 18;
 
 // each [minimum acres, size] pair selects a prerendered fire marker
