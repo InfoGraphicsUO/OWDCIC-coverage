@@ -1076,11 +1076,10 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
   // column positions in points; numbers are right aligned to their column edge
   const columns = {
     name: REPORT_MARGIN + 6,
-    bar: 214,
-    barWidth: 130,
-    covered: 470,
-    total: 552,
-    land: 572,
+    bar: 260,
+    barWidth: 240,
+    covered: 640,
+    total: REPORT_PAGE_WIDTH - REPORT_MARGIN - 6,
   };
   const headerY = top + 50;
   const notesHeight = 26;
@@ -1095,7 +1094,6 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
   ctx.fillText('Covered (mi²)', columns.covered, headerY);
   ctx.fillText('Total (mi²)', columns.total, headerY);
   ctx.textAlign = 'left';
-  ctx.fillText('Largest mapped land status', columns.land, headerY);
   ctx.strokeStyle = REPORT_TEXT;
   ctx.lineWidth = 0.75;
   ctx.beginPath();
@@ -1131,9 +1129,6 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
     ctx.fillText(rowCovered == null ? '' : formatNumber(rowCovered * SQMI_PER_SQKM), columns.covered, textY);
     ctx.fillText(rowArea == null ? '' : formatNumber(rowArea * SQMI_PER_SQKM), columns.total, textY);
     ctx.textAlign = 'left';
-    const largest = usableLandMix(row.landMix)[0];
-    ctx.font = `${weight}9px ${EXPORT_FONT}`;
-    if (largest) ctx.fillText(`${formatPercent(largest.percentage)}% ${largest.label}`, columns.land, textY);
   });
 
   ctx.fillStyle = REPORT_MUTED;
