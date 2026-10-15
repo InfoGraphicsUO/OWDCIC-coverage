@@ -153,12 +153,38 @@ export function initResultsPanel({
     presentResult(properties.name || 'Camera', renderCamera(properties, metrics), location);
   }
 
-  async function openExportModal() {
+  function openExportModal() {
     if (!current) {
       // this guard also covers a keyboard activation during a pending selection change
       status.textContent = 'Select a result before exporting.';
       return;
     }
+    return openMapExport();
+  }
+
+  // composes the map, legend, and results card shown in the export preview
+  async function composeSelectionMap(selection, exportTitle) {
+    // wait for the current chart before asking Plotly for its image
+    await chartReady.catch(() => {});
+    if (current !== selection) return null;
+    return composeExport({
+      // resolve live map and legend state only when the user asks to export
+      mapCanvas: await resolveCanvas(getMapCanvas),
+      map: typeof getMap === 'function' ? getMap() : null,
+      basemap: typeof getBasemap === 'function' ? getBasemap() : null,
+      legendItems: placeSelectedViewshedRow(
+        await resolveLegendRowsForExport(getLegendItems, typeof getBasemap === 'function' ? getBasemap() : null),
+        // selection symbols have no layer row, so the map reports them for this export
+        normalizeLegendRows(typeof getSelectionLegendItems === 'function' ? getSelectionLegendItems(selection) : []),
+      ),
+      title: exportTitle,
+      current: selection,
+      chart,
+    });
+  }
+
+  async function openMapExport() {
+    if (!current) return;
     const selection = current;
     const exportTitle = title.textContent;
     // hold the panel busy until the preview is ready or export fails
@@ -166,29 +192,13 @@ export function initResultsPanel({
     element.setAttribute('aria-busy', 'true');
     status.textContent = 'Preparing preview…';
     try {
-      // wait for the current chart before asking Plotly for its image
-      await chartReady.catch(() => {});
-      if (current !== selection) return;
-      const image = await composeExport({
-        // resolve live map and legend state only when the user asks to export
-        mapCanvas: await resolveCanvas(getMapCanvas),
-        map: typeof getMap === 'function' ? getMap() : null,
-        basemap: typeof getBasemap === 'function' ? getBasemap() : null,
-        legendItems: placeSelectedViewshedRow(
-          await resolveLegendRowsForExport(getLegendItems, typeof getBasemap === 'function' ? getBasemap() : null),
-          // selection symbols have no layer row, so the map reports them for this export
-          normalizeLegendRows(typeof getSelectionLegendItems === 'function' ? getSelectionLegendItems(selection) : []),
-        ),
-        title: exportTitle,
-        current: selection,
-        chart,
-      });
-      if (current !== selection) return;
+      const image = await composeSelectionMap(selection, exportTitle);
+      if (!image || current !== selection) return;
       status.textContent = '';
       const downloadName = `owdcic-${slugify(exportTitle)}.png`;
       const pdfDownloadName = `owdcic-${slugify(exportTitle)}.pdf`;
       exportModal = createExportModal({
-        previewSrc: image,
+        previewSrcs: [image],
         downloadName,
         onDownload: () => {
           // use the rendered preview so download and preview always match
@@ -201,23 +211,12 @@ export function initResultsPanel({
         onDownloadPdf: async () => {
           // convert the same preview image so PDF and PNG contain identical results
           const modal = exportModal;
-          const pdf = await createPdfFromImage(image);
+          const pdf = await createPdfFromImages([image]);
           if (!modal?.overlay.isConnected || current !== selection) return false;
-          const url = URL.createObjectURL(pdf);
-          const anchor = document.createElement('a');
-          anchor.download = pdfDownloadName;
-          anchor.href = url;
-          anchor.click();
-          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+          downloadBlob(pdf, pdfDownloadName);
           return true;
         },
-        onClose: () => {
-          // return keyboard focus to the control that opened the dialog
-          exportModal = null;
-          exportButton.disabled = !current;
-          element.removeAttribute('aria-busy');
-          exportButton.focus();
-        },
+        onClose: closeToExportButton,
       });
     } catch (error) {
       if (current !== selection) return;
@@ -227,6 +226,14 @@ export function initResultsPanel({
       exportButton.disabled = false;
       element.removeAttribute('aria-busy');
     }
+  }
+
+  function closeToExportButton() {
+    // return keyboard focus to the control that opened the dialog
+    exportModal = null;
+    exportButton.disabled = !current;
+    element.removeAttribute('aria-busy');
+    exportButton.focus();
   }
 
   async function shareLink() {
@@ -314,11 +321,14 @@ export function initResultsPanel({
 }
 
 // builds the export preview inside the shared modal shell
-function createExportModal({ previewSrc, downloadName, onDownload, onDownloadPdf, onClose }) {
+// reports pass several page images; leaving out onDownload hides the PNG button
+function createExportModal({
+  title = 'Export preview', previewSrcs, downloadName, onDownload, onDownloadPdf, onClose,
+}) {
   const { overlay, backdrop, dialog, closeButton, close } = openModal({
     id: 'results-export',
-    title: 'Export preview',
-    closeLabel: 'Close export preview',
+    title,
+    closeLabel: `Close ${title.toLowerCase()}`,
     className: 'results-export-modal',
     onClose,
   });
@@ -327,20 +337,26 @@ function createExportModal({ previewSrc, downloadName, onDownload, onDownloadPdf
 
   const previewWrap = document.createElement('div');
   previewWrap.className = 'results-export-modal__preview-wrap';
-  const preview = document.createElement('img');
-  preview.className = 'results-export-modal__preview';
-  preview.dataset.exportPreview = '';
-  preview.src = previewSrc;
-  preview.alt = `PNG export preview for ${downloadName}`;
-  previewWrap.append(preview);
+  previewSrcs.forEach((src, index) => {
+    const preview = document.createElement('img');
+    preview.className = 'results-export-modal__preview';
+    preview.dataset.exportPreview = '';
+    preview.src = src;
+    preview.alt = previewSrcs.length > 1
+      ? `Page ${index + 1} of ${previewSrcs.length} preview for ${downloadName}`
+      : `PNG export preview for ${downloadName}`;
+    previewWrap.append(preview);
+  });
 
   const actions = document.createElement('div');
   actions.className = 'modal__footer';
-  const downloadButton = document.createElement('button');
-  downloadButton.type = 'button';
-  downloadButton.className = 'modal__button';
-  downloadButton.dataset.exportDownload = '';
-  downloadButton.textContent = 'Download PNG';
+  const downloadButton = onDownload ? document.createElement('button') : null;
+  if (downloadButton) {
+    downloadButton.type = 'button';
+    downloadButton.className = 'modal__button';
+    downloadButton.dataset.exportDownload = '';
+    downloadButton.textContent = 'Download PNG';
+  }
   const pdfDownloadButton = document.createElement('button');
   pdfDownloadButton.type = 'button';
   pdfDownloadButton.className = 'modal__button';
@@ -353,16 +369,16 @@ function createExportModal({ previewSrc, downloadName, onDownload, onDownloadPdf
   status.setAttribute('aria-live', 'polite');
   const buttons = document.createElement('div');
   buttons.className = 'modal__buttons';
-  buttons.append(downloadButton, pdfDownloadButton);
+  buttons.append(...[downloadButton, pdfDownloadButton].filter(Boolean));
   actions.append(buttons, status);
 
   dialog.append(previewWrap, actions);
 
-  downloadButton.addEventListener('click', () => {
+  downloadButton?.addEventListener('click', () => {
     onDownload();
   });
   pdfDownloadButton.addEventListener('click', async () => {
-    downloadButton.disabled = true;
+    if (downloadButton) downloadButton.disabled = true;
     pdfDownloadButton.disabled = true;
     status.textContent = 'Preparing PDF…';
     try {
@@ -373,13 +389,22 @@ function createExportModal({ previewSrc, downloadName, onDownload, onDownloadPdf
       console.error('OWDCIC PDF export failed', error);
     } finally {
       if (overlay.isConnected) {
-        downloadButton.disabled = false;
+        if (downloadButton) downloadButton.disabled = false;
         pdfDownloadButton.disabled = false;
       }
     }
   });
 
   return { close, status, overlay };
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.download = filename;
+  anchor.href = url;
+  anchor.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function emptyState() {
@@ -715,27 +740,10 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   return canvas.toDataURL('image/png');
 }
 
-async function createPdfFromImage(pngDataUrl) {
-  // preserve the composed PNG artwork while placing it on a printable letter page
-  const image = await loadImage(pngDataUrl);
-  const canvas = document.createElement('canvas');
-  canvas.width = image.naturalWidth || image.width;
-  canvas.height = image.naturalHeight || image.height;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('PDF image canvas unavailable');
-  ctx.drawImage(image, 0, 0);
-
-  // JPEG is embedded directly in the PDF so no PDF library or extra request is needed
-  const jpegData = canvas.toDataURL('image/jpeg', 0.98).split(',')[1];
-  const jpegBinary = atob(jpegData);
-  const jpegBytes = Uint8Array.from(jpegBinary, (character) => character.charCodeAt(0));
+async function createPdfFromImages(pngDataUrls) {
+  // each composed image becomes one landscape letter page, fit inside the page
   const pageWidth = 792;
   const pageHeight = 612;
-  const scale = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
-  const imageWidth = canvas.width * scale;
-  const imageHeight = canvas.height * scale;
-  const imageX = (pageWidth - imageWidth) / 2;
-  const imageY = (pageHeight - imageHeight) / 2;
   const encoder = new TextEncoder();
   const encode = (text) => encoder.encode(text);
   const joinBytes = (parts) => {
@@ -748,18 +756,42 @@ async function createPdfFromImage(pngDataUrl) {
     }
     return result;
   };
-  const imageCommand = `q\n${imageWidth.toFixed(3)} 0 0 ${imageHeight.toFixed(3)} ${imageX.toFixed(3)} ${imageY.toFixed(3)} cm\n/Im0 Do\nQ\n`;
+  // objects 1 and 2 are the catalog and page tree; each page then adds a page, image, and content object
+  const pageObjectIds = pngDataUrls.map((_, index) => 3 + index * 3);
   const objects = [
     encode('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n'),
-    encode('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n'),
-    encode(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`),
-    joinBytes([
-      encode(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`),
-      jpegBytes,
-      encode('\nendstream\nendobj\n'),
-    ]),
-    encode(`5 0 obj\n<< /Length ${encoder.encode(imageCommand).length} >>\nstream\n${imageCommand}endstream\nendobj\n`),
+    encode(`2 0 obj\n<< /Type /Pages /Kids [${pageObjectIds.map((id) => `${id} 0 R`).join(' ')}] /Count ${pageObjectIds.length} >>\nendobj\n`),
   ];
+  for (const [index, pngDataUrl] of pngDataUrls.entries()) {
+    const image = await loadImage(pngDataUrl);
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('PDF image canvas unavailable');
+    ctx.drawImage(image, 0, 0);
+
+    // JPEG is embedded directly in the PDF so no PDF library or extra request is needed
+    const jpegData = canvas.toDataURL('image/jpeg', 0.98).split(',')[1];
+    const jpegBinary = atob(jpegData);
+    const jpegBytes = Uint8Array.from(jpegBinary, (character) => character.charCodeAt(0));
+    const scale = Math.min(pageWidth / canvas.width, pageHeight / canvas.height);
+    const imageWidth = canvas.width * scale;
+    const imageHeight = canvas.height * scale;
+    const imageX = (pageWidth - imageWidth) / 2;
+    const imageY = (pageHeight - imageHeight) / 2;
+    const imageCommand = `q\n${imageWidth.toFixed(3)} 0 0 ${imageHeight.toFixed(3)} ${imageX.toFixed(3)} ${imageY.toFixed(3)} cm\n/Im0 Do\nQ\n`;
+    const pageId = pageObjectIds[index];
+    objects.push(
+      encode(`${pageId} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /XObject << /Im0 ${pageId + 1} 0 R >> >> /Contents ${pageId + 2} 0 R >>\nendobj\n`),
+      joinBytes([
+        encode(`${pageId + 1} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`),
+        jpegBytes,
+        encode('\nendstream\nendobj\n'),
+      ]),
+      encode(`${pageId + 2} 0 obj\n<< /Length ${encoder.encode(imageCommand).length} >>\nstream\n${imageCommand}endstream\nendobj\n`),
+    );
+  }
   const header = encode('%PDF-1.4\n');
   const offsets = [0];
   let byteOffset = header.length;

@@ -404,6 +404,11 @@
     border: 1px solid #444;
 }
 
+/* report pages stack with a gap, like pages in a PDF viewer */
+.results-export-modal__preview + .results-export-modal__preview {
+    margin-top: 12px;
+}
+
 @media (max-width: 900px) {
     body:has(#control-sidebar:not(.is-collapsed)) #results-panel {
         display: none;
