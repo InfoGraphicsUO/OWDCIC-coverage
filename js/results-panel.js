@@ -174,11 +174,11 @@ export function initResultsPanel({
         mapCanvas: await resolveCanvas(getMapCanvas),
         map: typeof getMap === 'function' ? getMap() : null,
         basemap: typeof getBasemap === 'function' ? getBasemap() : null,
-        legendItems: [
-          ...await resolveLegendRowsForExport(getLegendItems),
+        legendItems: placeSelectedViewshedRow(
+          await resolveLegendRowsForExport(getLegendItems, typeof getBasemap === 'function' ? getBasemap() : null),
           // selection symbols have no layer row, so the map reports them for this export
-          ...normalizeLegendRows(typeof getSelectionLegendItems === 'function' ? getSelectionLegendItems(selection) : []),
-        ],
+          normalizeLegendRows(typeof getSelectionLegendItems === 'function' ? getSelectionLegendItems(selection) : []),
+        ),
         title: exportTitle,
         current: selection,
         chart,
@@ -633,6 +633,15 @@ const EXPORT_PROVIDER_VIEWSHED_LABELS = Object.freeze({
   [LEGEND_LAYERS.panoViewsheds]: 'Pano AI viewsheds',
   [LEGEND_LAYERS.enviroVisionViewsheds]: 'EnviroVision viewsheds',
 });
+// rows drawn in the shared viewshed color get a sample viewshed instead of a flat swatch
+const EXPORT_SHARED_COLOR_VIEWSHED_LABELS = new Set([
+  EXPORT_SHARED_VIEWSHED_LABEL,
+  EXPORT_PROVIDER_VIEWSHED_LABELS[LEGEND_LAYERS.alertWestViewsheds],
+]);
+const EXPORT_VIEWSHED_ICONS = Object.freeze({
+  outdoors: 'img/orange_portland_tower_viewshed.png',
+  satellite: 'img/grey_portland_tower_viewshed.png',
+});
 
 async function composeExport({ mapCanvas, map, basemap, legendItems, title, current, chart }) {
   // fail early before creating a blank or misleading preview
@@ -917,14 +926,18 @@ function drawLegendOverlay(ctx, x, y, layout) {
     ctx.fillText('No visible layers', x + layout.padX, textY + 17);
     return;
   }
+  // text is drawn from its baseline, so capital height locates the middle of a line
+  const capHeight = ctx.measureText('H').actualBoundingBoxAscent || 11;
   // draw each visible layer with the same visual parsed from the map legend
   layout.rows.forEach((row, index) => {
     textY += layout.rowHeight;
     const swatchX = x + layout.padX;
-    const swatchY = textY - 17;
+    // the swatch centers on the whole label, including wrapped lines
+    const lineCount = layout.labelLines[index].length;
+    const labelMiddle = textY + (lineCount - 1) * EXPORT_LEGEND_LINE_HEIGHT / 2 - capHeight / 2;
+    const swatchY = labelMiddle - EXPORT_LEGEND_SWATCH_SIZE / 2;
     drawLegendVisual(ctx, row.visual, swatchX, swatchY);
     ctx.fillStyle = '#f0f0f0';
-    // the swatch stays beside the first line of a wrapped label
     layout.labelLines[index].forEach((line, lineIndex) => {
       if (lineIndex) textY += EXPORT_LEGEND_LINE_HEIGHT;
       ctx.fillText(line, swatchX + layout.textOffset, textY);
@@ -940,7 +953,7 @@ function drawLegendVisual(ctx, visual, x, y) {
       drawExportLegendSwatch(ctx, visual, x, y);
       break;
     case 'icon':
-      if (visual.image) ctx.drawImage(visual.image, x, y, EXPORT_LEGEND_SWATCH_SIZE, EXPORT_LEGEND_SWATCH_SIZE);
+      drawExportLegendIcon(ctx, visual, x, y);
       break;
     case 'markers':
       drawExportLegendMarkers(ctx, visual, x, y);
@@ -951,6 +964,22 @@ function drawLegendVisual(ctx, visual, x, y) {
     default:
       break;
   }
+}
+
+function drawExportLegendIcon(ctx, { image, size = EXPORT_LEGEND_SWATCH_SIZE, outline }, x, y) {
+  if (!image) return;
+  // larger icons grow evenly around the normal slot so centering holds
+  const inset = (EXPORT_LEGEND_SWATCH_SIZE - size) / 2;
+  // large raster icons such as the viewshed samples blur with the default low-quality scaling
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(image, x + inset, y + inset, size, size);
+  if (!outline) return;
+  // round outline follows the circular sample viewshed
+  ctx.strokeStyle = outline;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(x + EXPORT_LEGEND_SWATCH_SIZE / 2, y + EXPORT_LEGEND_SWATCH_SIZE / 2, size / 2 - 0.5, 0, Math.PI * 2);
+  ctx.stroke();
 }
 
 function drawExportLegendSwatch(ctx, { style, color }, x, y) {
@@ -1315,15 +1344,33 @@ function safeCameraFeedUrl(value, isPano) {
   }
 }
 
-async function resolveLegendRowsForExport(getLegendItems) {
+async function resolveLegendRowsForExport(getLegendItems, basemap) {
   // current DOM state wins so hidden and unchecked layers stay out of the image
   const domRows = readLegendRowsFromDom();
   const rows = domRows.length
     ? domRows
     : normalizeLegendRows(typeof getLegendItems === 'function' ? getLegendItems() : []);
-  return condenseCameraLegendRows(rows, {
+  const condensed = condenseCameraLegendRows(rows, {
     separateViewshedColors: Boolean(getSetting('separateViewshedColors')),
   });
+  const viewshedIcon = EXPORT_VIEWSHED_ICONS[basemap] ?? EXPORT_VIEWSHED_ICONS.outdoors;
+  return condensed.map((row) => (EXPORT_SHARED_COLOR_VIEWSHED_LABELS.has(row.label)
+    ? { ...row, visual: { type: 'icon', src: viewshedIcon, outline: '#808080', size: 22 } }
+    : row));
+}
+
+// a selected camera's viewshed sits under the viewshed rows; other selection rows follow the layers
+function placeSelectedViewshedRow(layerRows, selectionRows) {
+  const viewshedLabels = [EXPORT_SHARED_VIEWSHED_LABEL, ...Object.values(EXPORT_PROVIDER_VIEWSHED_LABELS)];
+  const lastViewshedIndex = layerRows.findLastIndex(({ label }) => viewshedLabels.includes(label));
+  const selectedViewsheds = selectionRows.filter(({ label }) => label.endsWith(' viewshed'));
+  if (lastViewshedIndex < 0 || !selectedViewsheds.length) return [...layerRows, ...selectionRows];
+  return [
+    ...layerRows.slice(0, lastViewshedIndex + 1),
+    ...selectedViewsheds,
+    ...layerRows.slice(lastViewshedIndex + 1),
+    ...selectionRows.filter((row) => !selectedViewsheds.includes(row)),
+  ];
 }
 
 // the map legend nests provider rows under group checkboxes; the export lists each symbol once

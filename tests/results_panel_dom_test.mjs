@@ -428,6 +428,10 @@ assert.ok(exportCanvas.drawnText.includes('Confederated Tribes Lookout') &&
   'export legend should wrap a long highlighted viewshed label');
 assert.ok(exportCanvas.drawnText.indexOf('Viewsheds') < exportCanvas.drawnText.indexOf('State House District 1 border'),
   'selection rows should follow the layer rows');
+// the selected camera viewshed moves up under the viewshed rows while the border stays at the end
+assert.ok(exportCanvas.drawnText.indexOf('Viewsheds') < exportCanvas.drawnText.indexOf('Camera viewshed') &&
+  exportCanvas.drawnText.indexOf('Camera viewshed') < exportCanvas.drawnText.indexOf('State House District 1 border'),
+  'a selected camera viewshed should sit right after the viewshed rows');
 // the preview is a modal dialog and its download reuses the exact composed PNG
 assert.equal(modal.querySelector('[role="dialog"]')?.getAttribute('aria-modal'), 'true');
 assert.ok(modal.querySelector('[data-export-preview]'), 'modal should include preview image');

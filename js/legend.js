@@ -117,13 +117,17 @@ export function initLegend(items) {
       infoTooltip.refresh(infoButton);
     },
 
-    updateSwatchColor(label, color, { darkOutline = false } = {}) {
+    updateSwatchColor(label, color, { darkOutline = false, image = null } = {}) {
       // viewshed colors change with the selected basemap
       const swatch = findBinding(label)?.swatch;
       if (!swatch) return;
       // CSS variables let one swatch style follow runtime basemap changes
       swatch.style.setProperty('--legend-swatch-color', color);
-      swatch.classList.toggle('legend-swatch--dark-outline', darkOutline);
+      // an inline url resolves from the page, where a CSS variable would resolve from the stylesheet
+      swatch.style.backgroundImage = image ? `url("${image}")` : '';
+      swatch.classList.toggle('legend-swatch--image', Boolean(image));
+      // the image has its own edges, so only flat swatches take the satellite outline
+      swatch.classList.toggle('legend-swatch--dark-outline', darkOutline && !image);
     },
 
     setLoading(label, loading) {
