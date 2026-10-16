@@ -205,6 +205,7 @@ async function initializeMap() {
     'top-left'
   );
   map.addControl(new HomeControl(), 'top-left');
+  initLocationSearch(map);
   map.addControl(new mapboxgl.AttributionControl({
     customAttribution: '<a href="https://infographics.uoregon.edu/" target="_blank" rel="noopener noreferrer">UO InfoGraphics Lab</a> | <a href="https://ohaz.uoregon.edu/" target="_blank" rel="noopener noreferrer">OHAZ</a>'
   }));
@@ -285,6 +286,43 @@ class HomeControl {
     this.container?.remove();
     this.map = undefined;
   }
+}
+
+function initLocationSearch(map) {
+  const searchBox = new MapboxSearchBox();
+  searchBox.accessToken = mapboxgl.accessToken;
+  searchBox.placeholder = 'Zoom to a location...';
+  searchBox.options = {
+    types: 'city,district,region,place,locality',
+    proximity: DEFAULT_VIEW.center,
+    // southwest then northeast corners keep results around Oregon and Washington
+    bbox: [-127, 41, -115, 50],
+  };
+  searchBox.marker = false;
+  searchBox.mapboxgl = mapboxgl;
+  searchBox.theme = {
+    variables: {
+      fontFamily: 'inherit',
+      colorBackground: '#2b2a2a',
+      colorText: '#ffffff',
+      colorBackgroundHover: '#3a3939',
+      colorBackgroundActive: '#3a3939',
+      borderRadius: 'var(--ui-radius)',
+    },
+  };
+  map.addControl(searchBox, 'top-left');
+
+  searchBox.addEventListener('retrieve', (event) => {
+    const feature = event.detail?.features?.[0];
+    if (!feature) return;
+    const [west, south, east, north] = feature.properties?.bbox ?? [];
+    const options = { padding: mapPanelPadding(map), duration: motionDuration(700) };
+    if (west === undefined) {
+      map.easeTo({ ...options, center: feature.geometry.coordinates, zoom: 9 });
+    } else {
+      map.fitBounds([[west, south], [east, north]], { ...options, maxZoom: 11 });
+    }
+  });
 }
 
 function resetMapView(map) {

@@ -534,6 +534,22 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     filter: brightness(0) invert(1);
 }
 
+.mapboxgl-ctrl-top-left mapbox-search-box {
+    width: 260px;
+}
+
+.mapboxgl-ctrl-top-left div[class*="--SearchBox"] {
+    margin: 0;
+    border: 1px solid var(--control-chrome-border);
+    border-radius: var(--ui-radius);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
+}
+
+.mapboxgl-ctrl-top-left div[class*="--SearchBox"] input::placeholder {
+    color: var(--control-chrome-text);
+    opacity: .7;
+}
+
 .mapboxgl-ctrl-bottom-left {
     left: var(--panel-gap) !important;
     bottom: 0 !important;
