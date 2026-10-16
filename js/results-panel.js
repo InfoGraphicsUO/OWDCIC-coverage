@@ -621,7 +621,7 @@ function renderCamera(properties, metrics) {
   preview.setAttribute('aria-label', 'Camera preview');
   const unavailable = document.createElement('span');
   unavailable.className = 'results-panel__camera-placeholder';
-  unavailable.textContent = isPano ? `Camera view available on ${viewer.name}, provided by Pano.ai` : 'Camera preview unavailable';
+  unavailable.textContent = isPano ? `Camera view available on ${viewer.name}, provided by Pano AI` : 'Camera preview unavailable';
   if (imageUrl) {
     // remove failed remote thumbnails instead of showing a broken image
     const image = document.createElement('img');
