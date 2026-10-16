@@ -544,7 +544,7 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 }
 
 .mapboxgl-ctrl-top-left .location-search.is-expanded {
-    width: 260px;
+    width: 300px;
 }
 
 .location-search .mapboxgl-ctrl,
@@ -553,13 +553,14 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     margin: 0;
 }
 
-.location-search__toggle {
+.mapboxgl-ctrl-top-left .location-search .location-search__toggle {
     position: absolute;
     top: 0;
     left: 0;
     z-index: 1;
     width: var(--location-search-size);
     height: var(--location-search-size);
+    border-radius: calc(var(--ui-radius) - 1px);
 }
 
 .location-search__toggle i {
@@ -575,12 +576,21 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     height: var(--location-search-size);
     margin: 0;
     overflow: hidden;
+    background: transparent;
+    border: 0;
+    border-radius: calc(var(--ui-radius) - 1px);
     box-shadow: none;
 }
 
 .location-search div[class*="--SearchBox"] input {
     height: 100%;
     padding: 0 8px 0 36px;
+    color: var(--control-chrome-text);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    outline: 0;
+    box-shadow: none;
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--sidebar-duration) var(--sidebar-ease);

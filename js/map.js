@@ -303,12 +303,29 @@ function initLocationSearch(map) {
   searchBox.theme = {
     variables: {
       fontFamily: 'inherit',
-      colorBackground: '#2b2a2a',
+      colorBackground: '#2f2e2e',
       colorText: '#ffffff',
       colorBackgroundHover: '#3a3939',
       colorBackgroundActive: '#3a3939',
-      borderRadius: 'var(--ui-radius)',
+      borderRadius: '10px',
     },
+    // the dropdown renders in a shadow root, so its chrome is set here instead of in map.css
+    cssText: `
+      [class*="--MapboxSearch"] { --width: 300px !important; }
+      [class*="--Results"] {
+        box-sizing: border-box;
+        width: 100% !important;
+        margin-top: 6px;
+        border: 1px solid rgba(255, 255, 255, .18);
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
+        overflow: hidden;
+      }
+      [class*="--ResultsList"], [class*="--ResultsAttribution"] {
+        border: 0; border-radius: 0; box-shadow: none; background: transparent;
+      }
+      [class*="--ResultsAttribution"] { border-top: 1px solid rgba(255, 255, 255, .18); }
+    `,
   };
 
   const container = document.createElement('div');
