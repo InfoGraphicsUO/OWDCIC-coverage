@@ -1490,7 +1490,7 @@ function loadLayerData() {
     ),
 
     regionFocus: safelyLoad(
-      'Oregon and Washington boundary',
+      'Service area boundary',
       loadRegionFocusData
     ),
 
