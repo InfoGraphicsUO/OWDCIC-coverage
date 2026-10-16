@@ -107,19 +107,27 @@ const BURN_PROBABILITY_COLOR = '#d7191c';
 const TRANSMISSION_LINE_COLOR = '#c2188f';
 // relative line widths by the source's VOLT_CLASS; DC and NOT AVAILABLE borrow another class's width
 const TRANSMISSION_LINE_WIDTHS = Object.freeze({
-  'UNDER 100': 1,
-  '100-161': 1.75,
-  '220-287': 2.75,
-  '345': 4,
-  '500': 5.5,
-  'DC': 2.75,
-  'NOT AVAILABLE': 1,
+  'UNDER 100': 0.8,
+  '100-161': 1.4,
+  '220-287': 2.2,
+  '345': 3.2,
+  '500': 4.4,
+  'DC': 2.2,
+  'NOT AVAILABLE': 0.8,
 });
+// the 1000 kV DC line to Nevada is drawn wider than every voltage class
+const TRANSMISSION_LINE_TOP_VOLTAGE = 1000;
+const TRANSMISSION_LINE_TOP_WIDTH = 7;
 const TRANSMISSION_LINE_WIDTH = [
-  'match',
-  ['get', 'VOLT_CLASS'],
-  ...Object.entries(TRANSMISSION_LINE_WIDTHS).flat(),
-  TRANSMISSION_LINE_WIDTHS['UNDER 100'],
+  'case',
+  ['>=', ['to-number', ['get', 'VOLTAGE'], 0], TRANSMISSION_LINE_TOP_VOLTAGE],
+  TRANSMISSION_LINE_TOP_WIDTH,
+  [
+    'match',
+    ['get', 'VOLT_CLASS'],
+    ...Object.entries(TRANSMISSION_LINE_WIDTHS).flat(),
+    TRANSMISSION_LINE_WIDTHS['UNDER 100'],
+  ],
 ];
 const DIGITIZED_CAMERA_COLORS = Object.freeze({
   enviroVision: '#6eaa00',
