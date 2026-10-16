@@ -245,6 +245,8 @@ const divisionLoads = new Map();
 const divisionFeatures = new Map();
 let activeMap;
 let activeFilterType = null;
+// an area result is showing, as opposed to a polygon type with nothing picked
+let polygonSelected = false;
 let cameraFeatures = [];
 // names the camera whose viewshed is highlighted, for the export legend
 let highlightedCameraName = '';
@@ -934,7 +936,7 @@ function cameraFeatureById(cameraId) {
 }
 
 function polygonFilterIsActive() {
-  return Boolean(activeFilterType && activeFilterType !== 'camera');
+  return polygonSelected && Boolean(activeFilterType && activeFilterType !== 'camera');
 }
 
 // show or hide one legend layer by label through the checkbox path
@@ -983,6 +985,7 @@ function hidePresetLayers() {
 function typeSelected(type) {
   // invalidate pending camera metrics before the old result panel is cleared
   cameraResultRequest += 1;
+  polygonSelected = false;
   // dropping the picked option reselects the same type, which keeps its layers
   if ((type || null) !== activeFilterType) hidePresetLayers();
   activeFilterType = type || null;
@@ -1014,6 +1017,7 @@ function optionSelected(type, id) {
   // area results replace any camera request still waiting on coverage metrics
   // a new area selection drops any camera viewshed highlight
   cameraResultRequest += 1;
+  polygonSelected = true;
   selectCameraViewshed(activeMap, null);
   selectDivision(activeMap, type, id);
   writeAnchor(type, id);
@@ -1066,6 +1070,7 @@ function cameraHovered(cameraId, event) {
 function clearFilter() {
   // prevent a late metrics response from refilling the cleared panel
   cameraResultRequest += 1;
+  polygonSelected = false;
   activeFilterType = null;
   hidePresetLayers();
   if (activeMap) {
