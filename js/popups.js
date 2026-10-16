@@ -6,10 +6,6 @@ const ACRES_FORMAT = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 0,
 });
-const PERCENT_FORMAT = new Intl.NumberFormat('en-US', {
-  maximumFractionDigits: 1,
-  minimumFractionDigits: 0,
-});
 const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
@@ -24,22 +20,6 @@ const POPUP_MARKER_GAP = 14;
 
 // unique ids connect each dialog to its generated title
 let popupTitleId = 0;
-
-export function showCameraPopup(map, event) {
-  const feature = event.features?.[0];
-  if (!feature) return;
-
-  const active = ACTIVE_POPUPS.get(map);
-  const key = featureKey(feature);
-
-  // upgrading the hover preview in place avoids a close and reopen flash
-  if (key != null && active?.isPreview && active.featureKey === key) {
-    active.promote(createCameraPopup(feature.properties || {}));
-    return;
-  }
-
-  showPopup(map, event, createCameraPopup);
-}
 
 export function showDigitizedCameraPopup(map, event, symbol) {
   showPopup(map, event, createDigitizedCameraPopup, { symbol });
@@ -82,23 +62,6 @@ export function showTransmissionLinePopup(map, event, symbol) {
   showPopup(map, event, createTransmissionLinePopup, { symbol });
 }
 
-export function showDivisionPopup(map, properties) {
-  const coordinates = properties?.labelPoint;
-  if (!validCoordinates(coordinates)) return;
-
-  showPopupAt(
-    map,
-    coordinates,
-    createDivisionPopup(properties),
-    { closeOnMapClick: false, kind: 'division' }
-  );
-}
-
-export function hideDivisionPopup(map) {
-  const active = ACTIVE_POPUPS.get(map);
-  if (active?.kind === 'division') active.close({ immediate: true });
-}
-
 function showPopup(map, event, createContent, options = {}) {
   const feature = event.features?.[0];
   if (!feature) return;
@@ -109,24 +72,14 @@ function showPopup(map, event, createContent, options = {}) {
 
   // symbol is the layer's legend symbol, drawn beside the popup title
   const { symbol, ...popupOptions } = options;
-  showPopupAt(map, coordinates, createContent(feature.properties || {}, symbol), popupOptions);
-}
+  const content = createContent(feature.properties || {}, symbol);
 
-function showPopupAt(map, coordinates, content, options = {}) {
   // replacing in place prevents overlapping dialogs and stale listeners
   ACTIVE_POPUPS.get(map)?.close({ immediate: true });
 
-  const popup = new FeaturePopup(map, coordinates, content, options);
+  const popup = new FeaturePopup(map, coordinates, content, popupOptions);
   ACTIVE_POPUPS.set(map, popup);
   popup.open();
-}
-
-function validCoordinates(coordinates) {
-  return (
-    Array.isArray(coordinates) &&
-    coordinates.length === 2 &&
-    coordinates.every(Number.isFinite)
-  );
 }
 
 // identifies a hovered feature so its preview can be matched on click
@@ -136,23 +89,11 @@ function featureKey(feature) {
 
 /** owns a popup DOM element along with its map listeners and screen position */
 class FeaturePopup {
-  constructor(
-    map,
-    coordinates,
-    content,
-    {
-      closeOnMapClick = true,
-      featureKey = null,
-      kind = 'feature',
-      preview = false,
-    } = {}
-  ) {
+  constructor(map, coordinates, content, { featureKey = null, preview = false } = {}) {
     this.map = map;
     this.coordinates = coordinates;
-    this.closeOnMapClick = closeOnMapClick;
     this.isPreview = preview;
     this.featureKey = featureKey;
-    this.kind = kind;
     this.element = createPopupElement(content, { preview });
     this.animationFrame = null;
     this.mapClickTimer = null;
@@ -180,24 +121,10 @@ class FeaturePopup {
     });
   }
 
-  /** swaps preview content for the full dialog without reopening it */
-  promote(content) {
-    if (!this.isPreview) return;
-
-    this.isPreview = false;
-    this.element.classList.remove('feature-popup--preview');
-    this.element.replaceChildren(createCloseButton(), content);
-    labelPopup(this.element, content);
-    this.enableDismissal();
-    this.schedulePositionUpdate();
-  }
-
   enableDismissal() {
     this.element
       .querySelector('.feature-popup__close')
       .addEventListener('click', this.handleCloseClick);
-
-    if (!this.closeOnMapClick) return;
 
     // wait for the feature click to finish before map clicks can dismiss it
     this.mapClickTimer = window.setTimeout(() => {
@@ -358,42 +285,6 @@ function createCameraPreview({ name, state, county, owner }, symbol) {
   return popup;
 }
 
-function createCameraPopup({ name, id, pan, image, state, county, owner }) {
-  const popup = createPopupContainer(name || 'Camera');
-
-  const location = cameraLocation({ county, state });
-  if (location) popup.append(createMetaLine(location));
-  if (owner) popup.append(createMetaLine(`Owner: ${owner}`));
-
-  const numericPan = Number(pan);
-  const formattedPan = Number.isFinite(numericPan) ? `${numericPan}\u00b0` : '\u2014';
-  popup.append(createMetaLine(`Pan: ${formattedPan}`));
-
-  const imageUrl = getHttpsUrl(image);
-  if (imageUrl) {
-    const thumbnail = document.createElement('img');
-    thumbnail.className = 'cam-thumb';
-    thumbnail.src = imageUrl;
-    thumbnail.alt = name || 'Camera';
-    thumbnail.width = 240;
-    thumbnail.height = 135;
-    thumbnail.loading = 'lazy';
-    thumbnail.decoding = 'async';
-    thumbnail.addEventListener('error', () => thumbnail.remove(), { once: true });
-    popup.append(thumbnail);
-  }
-
-  if (id) {
-    appendExternalLink(
-      popup,
-      `https://alertwest.live/cam-console/${encodeURIComponent(id)}`,
-      'Open camera feed'
-    );
-  }
-
-  return popup;
-}
-
 function createDigitizedCameraPopup({
   name,
   operator,
@@ -519,17 +410,6 @@ function createPrescribedPopup(properties, symbol) {
   const watchDutyUrl = getHttpsUrl(properties.watchduty_url);
   if (watchDutyUrl) appendExternalLink(popup, watchDutyUrl, 'Open in Watch Duty');
 
-  return popup;
-}
-
-function createDivisionPopup({ name, stateName, cameraViewshedCoveragePct }) {
-  const popup = createPopupContainer(name || 'County');
-  if (stateName) popup.append(createMetaLine(stateName));
-
-  const coverage = formatNumber(cameraViewshedCoveragePct, PERCENT_FORMAT);
-  if (coverage != null) {
-    popup.append(createMetaLine(`Camera viewshed coverage: ${coverage}%`));
-  }
   return popup;
 }
 

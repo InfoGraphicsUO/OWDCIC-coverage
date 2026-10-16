@@ -348,12 +348,6 @@
     background-image: url("../img/basemaps/simple.png");
 }
 
-.basemap-picker__option--disabled { cursor: not-allowed; }
-.basemap-picker__option--disabled .basemap-picker__row {
-    color: var(--control-chrome-muted);
-    opacity: .72;
-}
-
 .basemap-picker__option input:checked + .basemap-picker__row {
     background: rgba(248, 225, 9, .14);
     box-shadow: inset 3px 0 0 var(--ohaz-yellow);
