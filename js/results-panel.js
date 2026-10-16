@@ -621,7 +621,11 @@ function renderCamera(properties, metrics) {
   preview.setAttribute('aria-label', 'Camera preview');
   const unavailable = document.createElement('span');
   unavailable.className = 'results-panel__camera-placeholder';
-  unavailable.textContent = isPano ? `Camera view available on ${viewer.name}, provided by Pano AI` : 'Camera preview unavailable';
+  // EnviroVision ForestWatch imagery goes to fire agencies and responders, with no public viewer
+  const isEnviroVision = properties.provider === 'envirovision' || /^EnviroVision/.test(properties.operator || '');
+  unavailable.textContent = isPano
+    ? `Camera view available on ${viewer.name}, provided by Pano AI`
+    : isEnviroVision ? 'No public camera view. EnviroVision ForestWatch imagery is limited to fire agencies' : 'Camera preview unavailable';
   if (imageUrl) {
     // remove failed remote thumbnails instead of showing a broken image
     const image = document.createElement('img');
