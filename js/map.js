@@ -1,5 +1,6 @@
 import { restoreMarkerIcons } from './marker-icons.js';
 import { registerOutsideHatch } from './states-highlight.js';
+import { REGION_DATA_BOUNDS } from './config.js';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiaW5mb2dyYXBoaWNzIiwiYSI6ImNqaTR0eHhnODBjeTUzdmx0N3U2dWU5NW8ifQ.fVbTCmIrqILIzv5QGtVJ2Q';
@@ -205,6 +206,7 @@ async function initializeMap() {
     'top-left'
   );
   map.addControl(new HomeControl(), 'top-left');
+  initLocationSearch(map);
   map.addControl(new mapboxgl.AttributionControl({
     customAttribution: '<a href="https://infographics.uoregon.edu/" target="_blank" rel="noopener noreferrer">UO InfoGraphics Lab</a> | <a href="https://ohaz.uoregon.edu/" target="_blank" rel="noopener noreferrer">OHAZ</a>'
   }));
@@ -285,6 +287,90 @@ class HomeControl {
     this.container?.remove();
     this.map = undefined;
   }
+}
+
+function initLocationSearch(map) {
+  const searchBox = new MapboxSearchBox();
+  searchBox.accessToken = mapboxgl.accessToken;
+  searchBox.placeholder = 'Zoom to a location...';
+  searchBox.options = {
+    types: 'region,place,locality',
+    proximity: DEFAULT_VIEW.center,
+    country: 'US',
+    // southwest then northeast corners of the Oregon and Washington data area
+    bbox: REGION_DATA_BOUNDS.flat(),
+  };
+  searchBox.marker = false;
+  searchBox.mapboxgl = mapboxgl;
+  searchBox.theme = {
+    variables: {
+      fontFamily: 'inherit',
+      colorBackground: '#2f2e2e',
+      colorText: '#ffffff',
+      colorBackgroundHover: '#3a3939',
+      colorBackgroundActive: '#3a3939',
+      borderRadius: '10px',
+    },
+    // the dropdown renders in a shadow root, so its chrome is set here instead of in map.css
+    cssText: `
+      [class*="--MapboxSearch"] { --width: 300px !important; }
+      [class*="--Results"] {
+        box-sizing: border-box;
+        width: 100% !important;
+        margin-top: 6px;
+        border: 1px solid rgba(255, 255, 255, .18);
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
+        overflow: hidden;
+      }
+      [class*="--ResultsList"], [class*="--ResultsAttribution"] {
+        border: 0; border-radius: 0; box-shadow: none; background: transparent;
+      }
+      [class*="--ResultsAttribution"] { border-top: 1px solid rgba(255, 255, 255, .18); }
+    `,
+  };
+
+  const container = document.createElement('div');
+  container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group location-search';
+
+  const button = document.createElement('button');
+  button.className = 'location-search__toggle';
+  button.type = 'button';
+  button.title = 'Zoom to a location';
+  button.setAttribute('aria-label', button.title);
+  button.setAttribute('aria-expanded', 'false');
+  const icon = document.createElement('i');
+  icon.className = 'fa-solid fa-magnifying-glass';
+  icon.setAttribute('aria-hidden', 'true');
+  button.append(icon);
+
+  const setExpanded = (expanded) => {
+    container.classList.toggle('is-expanded', expanded);
+    button.setAttribute('aria-expanded', String(expanded));
+    if (expanded) container.querySelector('input')?.focus();
+  };
+  button.addEventListener('click', () => {
+    setExpanded(!container.classList.contains('is-expanded'));
+  });
+  container.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setExpanded(false);
+  });
+
+  container.append(searchBox.onAdd(map), button);
+  map.addControl({ onAdd: () => container, onRemove: () => container.remove() }, 'top-left');
+
+  searchBox.addEventListener('retrieve', (event) => {
+    setExpanded(false);
+    const feature = event.detail?.features?.[0];
+    if (!feature) return;
+    const [west, south, east, north] = feature.properties?.bbox ?? [];
+    const options = { padding: mapPanelPadding(map), duration: motionDuration(700) };
+    if (west === undefined) {
+      map.easeTo({ ...options, center: feature.geometry.coordinates, zoom: 9 });
+    } else {
+      map.fitBounds([[west, south], [east, north]], { ...options, maxZoom: 11 });
+    }
+  });
 }
 
 function resetMapView(map) {
