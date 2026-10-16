@@ -1,5 +1,5 @@
 import { openModal } from './modal.js';
-import { LEGEND_LAYERS, PGE_WILDFIREWATCH_URL } from './config.js';
+import { LEGEND_LAYERS, PANO_VIEWERS } from './config.js';
 import { attachInfoTooltip } from './info-tooltip.js';
 import { getSetting } from './settings.js';
 
@@ -609,9 +609,11 @@ function renderPolygon(type, properties) {
 function renderCamera(properties, metrics) {
   const wrapper = document.createElement('div');
   wrapper.className = 'results-panel__body results-panel__camera';
-  // PGE's public viewer only carries PGE's own Pano AI cameras
-  const isPano = (properties.operator === 'Pano AI' || properties.provider === 'pano') &&
-    (!properties.owner || properties.owner === 'Portland General Electric');
+  // each owner's public viewer only carries that owner's own Pano AI cameras
+  const viewer = properties.operator === 'Pano AI' || properties.provider === 'pano'
+    ? PANO_VIEWERS[properties.owner || 'Portland General Electric']
+    : null;
+  const isPano = Boolean(viewer);
   const imageUrl = safeHttpsUrl(properties.image);
   const preview = document.createElement('div');
   preview.className = 'results-panel__camera-preview';
@@ -619,7 +621,7 @@ function renderCamera(properties, metrics) {
   preview.setAttribute('aria-label', 'Camera preview');
   const unavailable = document.createElement('span');
   unavailable.className = 'results-panel__camera-placeholder';
-  unavailable.textContent = isPano ? 'Camera view available on PGE Wildfire Watch' : 'Camera preview unavailable';
+  unavailable.textContent = isPano ? `Camera view available on ${viewer.name}` : 'Camera preview unavailable';
   if (imageUrl) {
     // remove failed remote thumbnails instead of showing a broken image
     const image = document.createElement('img');
@@ -639,10 +641,10 @@ function renderCamera(properties, metrics) {
   const pan = formatPan(properties.pan);
   const overlay = document.createElement('div');
   overlay.className = 'results-panel__camera-overlay';
-  const fallbackFeed = isPano ? PGE_WILDFIREWATCH_URL : properties.id == null ? '' : `https://alertwest.live/cam-console/${encodeURIComponent(String(properties.id))}`;
-  const feed = safeCameraFeedUrl(properties.feed || properties.url || properties.link || fallbackFeed, isPano);
+  const fallbackFeed = isPano ? viewer.url : properties.id == null ? '' : `https://alertwest.live/cam-console/${encodeURIComponent(String(properties.id))}`;
+  const feed = safeCameraFeedUrl(properties.feed || properties.url || properties.link || fallbackFeed, viewer);
   // a Pano camera without its own page still opens the viewer's front page
-  const feedLabel = isPano && feed === PGE_WILDFIREWATCH_URL ? 'Open PGE Wildfire Watch' : 'Open live camera feed';
+  const feedLabel = isPano && feed === viewer.url ? `Open ${viewer.name}` : 'Open live camera feed';
   if (feed) {
     // links open separately and cannot reach the parent window through window.opener
     const a = document.createElement('a');
@@ -1830,11 +1832,11 @@ function safeHttpsUrl(value) {
   }
 }
 
-function safeCameraFeedUrl(value, isPano) {
+function safeCameraFeedUrl(value, viewer) {
   try {
     const url = new URL(value);
-    const allowedHost = isPano
-      ? url.hostname === new URL(PGE_WILDFIREWATCH_URL).hostname
+    const allowedHost = viewer
+      ? url.hostname === new URL(viewer.url).hostname
       : url.hostname === 'alertwest.live' || url.hostname === 'alertwest.com' || url.hostname.endsWith('.alertwest.com');
     return url.protocol === 'https:' && allowedHost
       ? url.href
