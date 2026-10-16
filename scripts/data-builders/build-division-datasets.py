@@ -10,13 +10,11 @@ step is run against the local EPSG:5070 product.
 """
 from __future__ import annotations
 
-import argparse, hashlib, json, math
+import argparse, json
 from pathlib import Path
-from urllib.parse import urlencode
-from urllib.request import urlopen
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "data" / "divisions"
+from division_common import OUT, ROOT, arcgis_query, bbox, feature_collection, pending_metrics, write_collection
+
 ORWA = "(STATE IN ('41','53'))"
 STATES = {"41": ("OR", "Oregon"), "53": ("WA", "Washington")}
 CENSUS = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb"
@@ -38,21 +36,7 @@ COUNTY_PARAMS = {"maxAllowableOffset": "0.0005", "f": "geojson", "orderByFields"
 
 def fetch(url, where, fields, extra=None):
     params = {"where": where, "outFields": fields, "returnGeometry": "true", "outSR": "4326", "geometryPrecision": "5", "f": "json", "orderByFields": "OBJECTID", **(extra or {})}
-    full = url.rstrip("/") + "/query?" + urlencode(params)
-    with urlopen(full, timeout=120) as response:
-        raw = response.read()
-    payload = json.loads(raw.decode("utf-8"))
-    if "error" in payload: raise RuntimeError(f"{full}: {payload['error']}")
-    return payload, full, hashlib.sha256(raw).hexdigest()
-
-def positions(value):
-    if isinstance(value, list) and len(value) >= 2 and all(isinstance(v, (int,float)) for v in value[:2]):
-        yield value[:2]; return
-    for item in value or []: yield from positions(item)
-
-def bbox(geometry):
-    pts = list(positions(geometry.get("coordinates")))
-    return [min(p[0] for p in pts), min(p[1] for p in pts), max(p[0] for p in pts), max(p[1] for p in pts)]
+    return arcgis_query(url.rstrip("/") + "/query", params)
 
 def arcgis_geometry(geometry):
     """Convert ArcGIS rings to GeoJSON, retaining holes and disjoint parts."""
@@ -97,19 +81,15 @@ def normalize(payload, division_type, service_name, url, source_hash):
         features.append({"type":"Feature", "id":did, "geometry":geom, "bbox":b, "properties":{
             "divisionId": did, "divisionType": division_type, "name": name,
             "label": name, "labelPoint":[lon,lat],
-            "state": state, "sourceFeatureId": geoid,
-            "landAreaSqKm": None, "cameraViewshedAreaSqKm": None,
-            "cameraViewshedCoveragePct": None, "landMix": []
+            "state": state, "sourceFeatureId": geoid, **pending_metrics()
         }})
         if division_type == "county":
             short = name.removesuffix(" County")
             features[-1]["properties"].update({"geoid": geoid, "stateName": state_name, "shortName": short, "label": short})
     features.sort(key=lambda f: f["id"])
-    return {"type":"FeatureCollection", "features":features, "metadata":{
-        "schemaVersion": 1, "divisionType": division_type, "source": url,
-        "sourceLayer": service_name, "vintage": "2026" if division_type in {"house","senate"} else ("119th Congress" if division_type == "us-house" else "current"),
-        "sourceSha256": source_hash, "areaCrs":"EPSG:5070", "metricsStatus":"pending-gdal-coverage-build"
-    }}
+    vintage = "2026" if division_type in {"house","senate"} else ("119th Congress" if division_type == "us-house" else "current")
+    return feature_collection(division_type, features, source=url, sourceLayer=service_name,
+                              vintage=vintage, sourceSha256=source_hash)
 
 def polygons(geometry):
     return [geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"]
@@ -122,16 +102,14 @@ def combined_feature(features, division_type):
     return {"type":"Feature", "id":did, "geometry":geom, "bbox":b, "properties":{
         "divisionId": did, "divisionType": division_type, "name": ALL_FORESTS_NAME,
         "label": ALL_FORESTS_NAME, "labelPoint":[(b[0]+b[2])/2, (b[1]+b[3])/2],
-        "state": None, "sourceFeatureId": "all",
-        "landAreaSqKm": None, "cameraViewshedAreaSqKm": None,
-        "cameraViewshedCoveragePct": None, "landMix": [],
+        "state": None, "sourceFeatureId": "all", **pending_metrics(),
         "memberDivisionIds": [f["id"] for f in features]
     }}
 
 # what is left of a unit after clipping can be a sliver where the two boundaries disagree by a hair
 MIN_CLIPPED_AREA_SQKM = 10
 
-def clip_to_project_boundary(features, division_type):
+def clip_to_project_boundary(features):
     """Cut each feature to the OR/WA project boundary and drop those with next to nothing inside it.
 
     Forest Service units run into CA, ID and NV, so each is clipped to
@@ -177,11 +155,11 @@ def main():
         payload, query, digest = fetch(url, where, fields, COUNTY_PARAMS if kind == "county" else None)
         result = normalize(payload, dtype, layer, query, digest)
         if kind == "national-forest":
-            result["features"], outside = clip_to_project_boundary(result["features"], dtype)
+            result["features"], outside = clip_to_project_boundary(result["features"])
             result["metadata"]["clippedTo"] = "data/or-wa-boundary.geojson"
             result["metadata"]["excludedOutsideBoundaryFeatures"] = outside
             result["features"].insert(0, combined_feature(result["features"], dtype))
-        (args.output / f"{kind}.geojson").write_text(json.dumps(result, ensure_ascii=False, separators=(",",":"))+"\n", encoding="utf-8")
+        write_collection(args.output / f"{kind}.geojson", result)
         print(f"{kind}: {len(result['features'])} features")
 
 if __name__ == "__main__": main()

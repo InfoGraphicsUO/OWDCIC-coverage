@@ -11,16 +11,12 @@ Run with the QGIS bundled Python for the GDAL bindings.
 
 from __future__ import annotations
 
-import hashlib
 import json
-from pathlib import Path
-from urllib.parse import urlencode
-from urllib.request import urlopen
 
 from osgeo import ogr
 
-ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "data" / "divisions"
+from division_common import OUT, arcgis_query, feature_collection, pending_metrics, write_collection
+
 UTILITY_QUERY = (
     "https://services.arcgis.com/uUvqNMGPm7axC2dD/arcgis/rest/services/"
     "Oregon_Natural_Gas_and_Electric_Utility_Incentive_Layer_Update_13Dec2024_v01/"
@@ -59,14 +55,8 @@ def fetch(url: str, where: str, fields: str) -> tuple[list[dict], str]:
         "outSR": "4326",
         "f": "json",
     }
-    with urlopen(f"{url}?{urlencode(params)}", timeout=180) as response:
-        raw = response.read()
-    payload = json.loads(raw.decode("utf-8"))
-    if "error" in payload:
-        raise RuntimeError(f"{url}: {payload['error']}")
-    if payload.get("exceededTransferLimit"):
-        raise RuntimeError(f"{url}: query was truncated by the service")
-    return payload["features"], hashlib.sha256(raw).hexdigest()
+    payload, _, digest = arcgis_query(url, params, timeout=180)
+    return payload["features"], digest
 
 
 def polygon_geometry(feature: dict):
@@ -94,29 +84,14 @@ def division_feature(division_type: str, source_id: str, name: str, geometry, ex
             "label": name,
             "labelPoint": [(west + east) / 2, (south + north) / 2],
             **(extra or {}),
-            "landAreaSqKm": None,
-            "cameraViewshedAreaSqKm": None,
-            "cameraViewshedCoveragePct": None,
-            "landMix": [],
+            **pending_metrics(),
         },
     }
 
 
-def write_collection(division_type: str, features: list[dict], metadata: dict) -> None:
-    collection = {
-        "type": "FeatureCollection",
-        "features": features,
-        "metadata": {
-            "schemaVersion": 1,
-            "divisionType": division_type,
-            **metadata,
-            "areaCrs": "EPSG:5070",
-            "metricsStatus": "pending-gdal-coverage-build",
-        },
-    }
-    path = OUT / f"{division_type}.geojson"
-    path.write_text(json.dumps(collection, ensure_ascii=False, separators=(",", ":")) + "\n",
-                    encoding="utf-8")
+def write_division_type(division_type: str, features: list[dict], metadata: dict) -> None:
+    write_collection(OUT / f"{division_type}.geojson",
+                     feature_collection(division_type, features, **metadata))
     print(f"{division_type}: {len(features)} features")
 
 
@@ -137,7 +112,7 @@ def build_utilities() -> None:
         ))
     if len(features) != len(UTILITY_ABBREVIATIONS):
         raise RuntimeError(f"expected {len(UTILITY_ABBREVIATIONS)} utilities, received {len(features)}")
-    write_collection("utility", features, {
+    write_division_type("utility", features, {
         "source": UTILITY_QUERY,
         "vintage": "2024",
         "sourceSha256": digest,
@@ -166,7 +141,7 @@ def build_federal_land() -> None:
     for code in INTERIOR_MANAGERS:
         interior = interior.Union(by_manager[code]) if interior else by_manager[code]
     features.append(division_feature("federal-land", "DOI", INTERIOR_NAME, interior))
-    write_collection("federal-land", features, {
+    write_division_type("federal-land", features, {
         "source": FEDERAL_QUERY,
         "vintage": "PAD-US authoritative",
         "sourceSha256": digest,
