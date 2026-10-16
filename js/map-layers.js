@@ -366,6 +366,10 @@ const resultsControl = initResultsPanel({
     .map((row) => row.querySelector('.legend-label')?.textContent?.trim())
     .filter(Boolean),
   getSelectionLegendItems: selectionLegendItems,
+  // the summary report lists each area inside a combined option, e.g. every ODF district
+  getMemberFeatures: (type, ids) => ids
+    .map((id) => divisionFeatures.get(type)?.get(id))
+    .filter(Boolean),
   // clears the picked option but keeps the filter panel on its current type
   onClose: () => filterControl.clearSelection(),
 });
