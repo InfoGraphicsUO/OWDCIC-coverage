@@ -1454,12 +1454,15 @@ function bindApplicationSourceErrors(map) {
 
 // group provider requests so every layer can hydrate from its own result
 function loadLayerData() {
+  // live AlertWest cameras are kept to the service area outline
+  const regionFocus = safelyLoad('Service area boundary', loadRegionFocusData);
+
   // launch the requests now before returning the bundle to map setup
   return {
     cameras: safelyLoadLegend(
       'ALERTWest cameras',
       LEGEND_LAYERS.alertWestCameras,
-      loadAlertWestCameras
+      () => loadAlertWestCameras(regionFocus)
     ),
 
     panoSites: safelyLoadLegend('Pano AI cameras', LEGEND_LAYERS.panoCameras, () =>
@@ -1489,10 +1492,7 @@ function loadLayerData() {
       })
     ),
 
-    regionFocus: safelyLoad(
-      'Oregon and Washington boundary',
-      loadRegionFocusData
-    ),
+    regionFocus,
 
     perimeters: safelyLoadLegend('NIFC perimeters', 'Fires (NIFC)', () =>
       fetchArcGISGeoJSON(
@@ -1721,8 +1721,12 @@ async function fetchJson(url, label) {
 }
 
 // adapt ALERTWest records to the GeoJSON contract used by map sources
-async function loadAlertWestCameras() {
-  return camerasToGeoJSON(await fetchJson(CAMERA_API, 'Camera API'));
+async function loadAlertWestCameras(regionFocus) {
+  const [cameras, focus] = await Promise.all([
+    fetchJson(CAMERA_API, 'Camera API'),
+    regionFocus,
+  ]);
+  return camerasToGeoJSON(cameras, focus);
 }
 
 async function addCameraLayers(map) {

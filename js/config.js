@@ -23,10 +23,8 @@ export const DATA_URLS = Object.freeze({
   standingLookouts: 'data/standing-lookouts.geojson',
   countyDivisions: 'data/divisions/county.geojson',
   transmissionLines: 'data/transmission-lines.geojson',
-  censusStateBoundaries:
-    'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/10',
-  worldCountries:
-    'https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0',
+  // Oregon and Washington plus a 30-mile buffer into neighboring states
+  serviceAreaFocus: 'data/service-area-focus.geojson',
   nifcFires:
     'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Incident_Locations_Current/FeatureServer/0',
   nifcPerimeters:
