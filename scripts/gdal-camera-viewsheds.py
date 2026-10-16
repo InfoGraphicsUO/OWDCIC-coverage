@@ -1323,7 +1323,7 @@ def build_web_polygon(
     return filter_summary
 
 
-def process_site(site: Site, site_index: int, config: RunConfig, reporter: SiteReporter) -> dict[str, Any]:
+def process_site(site: Site, config: RunConfig, reporter: SiteReporter) -> dict[str, Any]:
     """runs or resumes every stage for one camera and returns its state document"""
     if config.shapefiles_only:
         return build_shapefile(site, config, reporter)
@@ -1444,7 +1444,7 @@ def run_site(site: Site, site_index: int, config: RunConfig) -> dict[str, Any]:
     reporter = SiteReporter(site_index, _WORKER["sink"], _WORKER["cancel"])
     try:
         reporter.check_cancel()
-        state = process_site(site, site_index, config, reporter)
+        state = process_site(site, config, reporter)
         return {"site_index": site_index, "status": "ok", "state": state}
     except Exception as error:
         if reporter.cancelled():

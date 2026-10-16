@@ -121,7 +121,7 @@ export function initResultsPanel({
     element.setAttribute('aria-busy', 'true');
     title.textContent = label;
     subtitle.textContent = '';
-    replaceContent(messageState('Loading coverage statistics…', 'results-panel__loading'));
+    replaceContent(selfLine('Loading coverage statistics…', 'results-panel__loading'));
     status.textContent = '';
     exportButton.disabled = true;
     shareButton.disabled = true;
@@ -139,7 +139,7 @@ export function initResultsPanel({
     element.removeAttribute('aria-busy');
     title.textContent = 'Coverage unavailable';
     subtitle.textContent = '';
-    replaceContent(messageState(message || 'Coverage statistics could not be loaded.', 'results-panel__error'));
+    replaceContent(selfLine(message || 'Coverage statistics could not be loaded.', 'results-panel__error'));
     status.textContent = message || 'Coverage statistics could not be loaded.';
     exportButton.disabled = true;
     shareButton.disabled = true;
@@ -563,14 +563,7 @@ function downloadBlob(blob, filename) {
 }
 
 function emptyState() {
-  return messageState('Choose a coverage area or camera to view coverage and land information.', 'results-panel__empty');
-}
-
-function messageState(text, className) {
-  const p = document.createElement('p');
-  p.className = className;
-  p.textContent = text;
-  return p;
+  return selfLine('Choose a coverage area or camera to view coverage and land information.', 'results-panel__empty');
 }
 
 function selfLine(text, className = 'results-panel__line') {

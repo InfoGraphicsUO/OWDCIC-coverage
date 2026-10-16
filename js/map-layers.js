@@ -1090,12 +1090,7 @@ async function showCameraResult(map, feature) {
   writeAnchor('camera', cameraOptionId(feature));
 
   // share one metrics request across camera picks
-  cameraMetricsLoad ??= fetch('data/camera-coverage.json')
-    .then((response) => {
-      // reject HTTP errors before attempting JSON parsing
-      if (!response.ok) throw new Error(`Camera coverage HTTP ${response.status}`);
-      return response.json();
-    })
+  cameraMetricsLoad ??= fetchJson('data/camera-coverage.json', 'Camera coverage')
     .catch((error) => {
       cameraMetricsLoad = null;
       console.error('Failed to load camera coverage:', error);
@@ -1132,13 +1127,7 @@ function showDivisionType(map, typeValue) {
 function loadDivisionData(division) {
   if (!divisionLoads.has(division.value)) {
     // share one request per category across menu and map interactions
-    const load = fetch(division.dataUrl)
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`${division.label} data HTTP ${response.status}`);
-        }
-        return response.json();
-      })
+    const load = fetchJson(division.dataUrl, `${division.label} data`)
       .then((data) => {
         if (data?.type !== 'FeatureCollection' || !Array.isArray(data.features)) {
           throw new Error(`${division.label} data is not a FeatureCollection`);
