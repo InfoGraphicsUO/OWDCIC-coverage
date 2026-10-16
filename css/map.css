@@ -534,20 +534,70 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     filter: brightness(0) invert(1);
 }
 
-.mapboxgl-ctrl-top-left mapbox-search-box {
+.mapboxgl-ctrl-top-left .location-search {
+    position: relative;
+    overflow: visible;
+    width: var(--location-search-size);
+    height: var(--location-search-size);
+    --location-search-size: 32px;
+    transition: width var(--sidebar-duration) var(--sidebar-ease);
+}
+
+.mapboxgl-ctrl-top-left .location-search.is-expanded {
     width: 260px;
 }
 
-.mapboxgl-ctrl-top-left div[class*="--SearchBox"] {
+.location-search .mapboxgl-ctrl,
+.location-search mapbox-search-box {
+    width: 100% !important;
     margin: 0;
-    border: 1px solid var(--control-chrome-border);
-    border-radius: var(--ui-radius);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
 }
 
-.mapboxgl-ctrl-top-left div[class*="--SearchBox"] input::placeholder {
+.location-search__toggle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: var(--location-search-size);
+    height: var(--location-search-size);
+}
+
+.location-search__toggle i {
+    display: block;
+    margin: auto;
+    font-size: 15px;
+    line-height: 20px;
+}
+
+/* collapsed, only the toggle button shows; expanding reveals the input */
+.location-search div[class*="--SearchBox"] {
+    width: 100% !important;
+    height: var(--location-search-size);
+    margin: 0;
+    overflow: hidden;
+    box-shadow: none;
+}
+
+.location-search div[class*="--SearchBox"] input {
+    height: 100%;
+    padding: 0 8px 0 36px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--sidebar-duration) var(--sidebar-ease);
+}
+
+.location-search.is-expanded div[class*="--SearchBox"] input {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.location-search div[class*="--SearchBox"] input::placeholder {
     color: var(--control-chrome-text);
     opacity: .7;
+}
+
+.location-search div[class*="--SearchIcon"] {
+    display: none;
 }
 
 .mapboxgl-ctrl-bottom-left {
@@ -615,7 +665,9 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     .control-rail,
     .control-shell__collapse,
     .mapboxgl-ctrl-top-left,
-    .mapboxgl-ctrl-bottom-left {
+    .mapboxgl-ctrl-bottom-left,
+    .location-search,
+    .location-search div[class*="--SearchBox"] input {
         transition: none;
     }
 

@@ -310,9 +310,38 @@ function initLocationSearch(map) {
       borderRadius: 'var(--ui-radius)',
     },
   };
-  map.addControl(searchBox, 'top-left');
+
+  const container = document.createElement('div');
+  container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group location-search';
+
+  const button = document.createElement('button');
+  button.className = 'location-search__toggle';
+  button.type = 'button';
+  button.title = 'Zoom to a location';
+  button.setAttribute('aria-label', button.title);
+  button.setAttribute('aria-expanded', 'false');
+  const icon = document.createElement('i');
+  icon.className = 'fa-solid fa-magnifying-glass';
+  icon.setAttribute('aria-hidden', 'true');
+  button.append(icon);
+
+  const setExpanded = (expanded) => {
+    container.classList.toggle('is-expanded', expanded);
+    button.setAttribute('aria-expanded', String(expanded));
+    if (expanded) container.querySelector('input')?.focus();
+  };
+  button.addEventListener('click', () => {
+    setExpanded(!container.classList.contains('is-expanded'));
+  });
+  container.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setExpanded(false);
+  });
+
+  container.append(searchBox.onAdd(map), button);
+  map.addControl({ onAdd: () => container, onRemove: () => container.remove() }, 'top-left');
 
   searchBox.addEventListener('retrieve', (event) => {
+    setExpanded(false);
     const feature = event.detail?.features?.[0];
     if (!feature) return;
     const [west, south, east, north] = feature.properties?.bbox ?? [];
