@@ -14,6 +14,8 @@
         <!-- mapboxgl global must exist before js/map.js initializes the map -->
         <link href="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.css" rel="stylesheet">
         <script defer src="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.js"></script>
+        <!-- search-js keeps the fetch it finds on load, so the filter has to run first -->
+        <script defer src="js/search-region-filter.js"></script>
         <script defer src="https://api.mapbox.com/search-js/v1.5.0/web.js"></script>
         <script defer src="https://kit.fontawesome.com/be4ea184d4.js" crossorigin="anonymous"></script>
         <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>

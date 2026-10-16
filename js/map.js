@@ -1,5 +1,6 @@
 import { restoreMarkerIcons } from './marker-icons.js';
 import { registerOutsideHatch } from './states-highlight.js';
+import { REGION_DATA_BOUNDS } from './config.js';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiaW5mb2dyYXBoaWNzIiwiYSI6ImNqaTR0eHhnODBjeTUzdmx0N3U2dWU5NW8ifQ.fVbTCmIrqILIzv5QGtVJ2Q';
@@ -293,10 +294,11 @@ function initLocationSearch(map) {
   searchBox.accessToken = mapboxgl.accessToken;
   searchBox.placeholder = 'Zoom to a location...';
   searchBox.options = {
-    types: 'city,district,region,place,locality',
+    types: 'region,place,locality',
     proximity: DEFAULT_VIEW.center,
-    // southwest then northeast corners keep results around Oregon and Washington
-    bbox: [-127, 41, -115, 50],
+    country: 'US',
+    // southwest then northeast corners of the Oregon and Washington data area
+    bbox: REGION_DATA_BOUNDS.flat(),
   };
   searchBox.marker = false;
   searchBox.mapboxgl = mapboxgl;
