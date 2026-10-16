@@ -625,7 +625,7 @@ function renderCamera(properties, metrics) {
   const isEnviroVision = properties.provider === 'envirovision' || /^EnviroVision/.test(properties.operator || '');
   unavailable.textContent = isPano
     ? `Camera view available on ${viewer.name}, provided by Pano AI`
-    : isEnviroVision ? 'No public camera view. EnviroVision ForestWatch imagery is limited to fire agencies' : 'Camera preview unavailable';
+    : isEnviroVision ? 'No public camera preview is available. EnviroVision ForestWatch imagery is limited to approved agencies.' : 'Camera preview unavailable';
   if (imageUrl) {
     // remove failed remote thumbnails instead of showing a broken image
     const image = document.createElement('img');
