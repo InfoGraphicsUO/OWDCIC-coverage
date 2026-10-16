@@ -1,23 +1,28 @@
 const REGION_STATE_CODES = new Set(['OR', 'WA']);
 
-// converts Oregon and Washington AlertWest camera records into GeoJSON points
-export function camerasToGeoJSON(cameras) {
+// converts AlertWest camera records inside the service area into GeoJSON points
+// without a loaded service area outline, falls back to Oregon and Washington state codes
+export function camerasToGeoJSON(cameras, regionFocus) {
   if (!Array.isArray(cameras)) {
     throw new TypeError('Camera API returned an unexpected payload');
   }
 
+  const rings = serviceAreaRings(regionFocus);
   const features = [];
 
   for (const camera of cameras) {
-    // source nests location under site and may vary state-code casing
-    if (!REGION_STATE_CODES.has(String(camera.site?.state || '').toUpperCase())) {
-      continue;
-    }
-
     const latitude = toFiniteNumber(camera.site?.latitude);
     const longitude = toFiniteNumber(camera.site?.longitude);
 
     if (latitude == null || longitude == null) {
+      continue;
+    }
+
+    if (rings.length > 0) {
+      // cameras just over the state line still look into Oregon and Washington
+      if (!pointInRings([longitude, latitude], rings)) continue;
+    } else if (!REGION_STATE_CODES.has(String(camera.site?.state || '').toUpperCase())) {
+      // source nests location under site and may vary state-code casing
       continue;
     }
 
@@ -40,6 +45,29 @@ export function camerasToGeoJSON(cameras) {
   }
 
   return { type: 'FeatureCollection', features };
+}
+
+// the outline holds every service area ring, including island and hole rings
+function serviceAreaRings(regionFocus) {
+  const outline = regionFocus?.features?.find(
+    (feature) => feature.properties?.kind === 'outline'
+  );
+  return outline?.geometry?.type === 'MultiLineString' ? outline.geometry.coordinates : [];
+}
+
+// even-odd ray casting, so holes and separate islands need no polygon nesting
+function pointInRings([x, y], rings) {
+  let inside = false;
+  for (const ring of rings) {
+    for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index++) {
+      const [x1, y1] = ring[index];
+      const [x2, y2] = ring[previous];
+      if ((y1 > y) !== (y2 > y) && x < ((x2 - x1) * (y - y1)) / (y2 - y1) + x1) {
+        inside = !inside;
+      }
+    }
+  }
+  return inside;
 }
 
 // converts a provider sites file into camera points already linked to their viewsheds
