@@ -20,14 +20,18 @@ OUT = ROOT / "data" / "divisions"
 def arcgis_query(url: str, params: dict[str, str], timeout: int = 120) -> tuple[dict, str, str]:
     """Return an ArcGIS query's payload, its full request URL and a hash of the raw response."""
     source = f"{url}?{urlencode(params)}"
+
     with urlopen(source, timeout=timeout) as response:
         raw = response.read()
+
     payload = json.loads(raw.decode("utf-8"))
     if "error" in payload:
         raise RuntimeError(f"{source}: {payload['error']}")
+
     # f=json flags truncation at the top level, f=geojson under properties
     if payload.get("exceededTransferLimit") or payload.get("properties", {}).get("exceededTransferLimit"):
         raise RuntimeError(f"{url}: query was truncated by the service")
+
     return payload, source, hashlib.sha256(raw).hexdigest()
 
 
@@ -76,13 +80,16 @@ def repaired_geometry(geometry: dict):
                 collect(child)
 
     collect(make_valid(shape(geometry)))
+
     if not polygons:
         raise ValueError("Source feature has no positive-area polygon after make_valid")
+
     return polygons[0] if len(polygons) == 1 else MultiPolygon(polygons)
 
 
 def coordinates(geometry: dict):
     """Yield every position in a GeoJSON geometry."""
+
     def walk(value):
         if isinstance(value, (list, tuple)) and value and isinstance(value[0], (int, float)):
             yield value

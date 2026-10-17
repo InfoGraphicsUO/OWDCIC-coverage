@@ -40,6 +40,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--providers", type=Path, nargs="+", default=list(DEFAULT_PROVIDERS))
     parser.add_argument("--output-dir", type=Path, default=viewsheds.DEFAULT_COMBINED_OUTPUT)
     parser.add_argument("--qgis-app", type=Path, default=viewsheds.DEFAULT_QGIS_ROOT)
+
     return parser.parse_args()
 
 
@@ -48,6 +49,7 @@ def main() -> int:
     viewsheds.apply_qgis_environment(args.qgis_app)
     viewsheds.require_gdal()
     viewsheds.build_combined_coverage(args.providers, args.output_dir, lambda message: print(message, flush=True))
+
     return 0
 
 

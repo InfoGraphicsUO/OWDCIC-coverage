@@ -23,11 +23,13 @@ function buttonFrom(target) {
 
 function ensureTooltip() {
   if (tooltip || !document.body?.append) return tooltip;
+
   tooltip = document.createElement('div');
   tooltip.className = 'info-tooltip';
   tooltip.id = 'info-tooltip';
   tooltip.setAttribute('role', 'tooltip');
   tooltip.hidden = true;
+
   // fixed positioning lets the tooltip escape clipped and scrolling containers
   document.body.append(tooltip);
   return tooltip;
@@ -46,6 +48,7 @@ function refresh(button) {
   tooltip.textContent = button.dataset.tooltip || '';
   tooltip.hidden = false;
   const buttonRect = button.getBoundingClientRect();
+
   // open toward the map when the trigger sits too close to the right viewport edge
   const spaceRight = window.innerWidth - buttonRect.right - gap - margin;
   const spaceLeft = buttonRect.left - gap - margin;
@@ -66,6 +69,7 @@ function refresh(button) {
       window.innerHeight - tooltipRect.height - margin,
     ),
   );
+
   tooltip.style.left = `${left}px`;
   tooltip.style.top = `${top}px`;
 }
@@ -73,6 +77,7 @@ function refresh(button) {
 function attachGlobalListeners() {
   if (globalListenersAttached) return;
   globalListenersAttached = true;
+
   // partial DOMs such as static render tests may lack global event targets
   window.addEventListener?.('resize', () => {
     // keep the fixed tooltip aligned if its trigger moves with the viewport
@@ -90,6 +95,7 @@ function bindRoot(root) {
     const button = buttonFrom(event.target);
     if (button) refresh(button);
   });
+
   root.addEventListener('pointerout', (event) => {
     const button = buttonFrom(event.target);
     // movement between the icon and button contents is still inside one trigger
@@ -97,16 +103,19 @@ function bindRoot(root) {
     // retain the message while keyboard focus or the pointer still owns the trigger
     if (!button.matches(':hover, :focus')) hide();
   });
+
   root.addEventListener('focusin', (event) => {
     const button = buttonFrom(event.target);
     if (button) refresh(button);
   });
+
   root.addEventListener('focusout', (event) => {
     const button = buttonFrom(event.target);
     if (!button || button.contains(event.relatedTarget)) return;
     // a pointer hover can outlive keyboard focus
     if (!button.matches(':hover')) hide();
   });
+
   // scroll does not bubble, so this only tracks roots that scroll themselves
   root.addEventListener('scroll', () => {
     if (activeButton) refresh(activeButton);
@@ -130,6 +139,7 @@ export function attachInfoTooltip(root) {
   if (!document.body?.append) return noopTooltip;
   ensureTooltip();
   attachGlobalListeners();
+
   if (root && !boundRoots.has(root)) {
     boundRoots.add(root);
     bindRoot(root);

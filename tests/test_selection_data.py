@@ -48,6 +48,7 @@ class SelectionDataTests(unittest.TestCase):
                 self.assertTrue(hashes['padusFeeSha256'])
                 self.assertIn('mapped fee parcels', meta['designationNote'])
                 ids = set()
+
                 for feature in data['features']:
                     props = feature['properties']
                     self.assertEqual(feature['id'], props['divisionId'])
@@ -88,8 +89,10 @@ class SelectionDataTests(unittest.TestCase):
         self.assertTrue(any('Portland General Electric' in name for name in names))
         self.assertTrue(any('Pacific Power' in name for name in names))
         self.assertTrue(any('Eugene Water' in name for name in names))
+
         for feature in utility['features']:
             self.assertIn('Approximate', feature['properties']['boundaryQualifier'])
+
         meta = utility['metadata']
         self.assertIn('Oregon', meta['coverageNote'])
         self.assertIn('Washington', meta['coverageNote'])
@@ -101,6 +104,7 @@ class SelectionDataTests(unittest.TestCase):
         self.assertEqual([f['properties']['name'] for f in combined], ['All ODF districts'])
         members = [f for f in data['features'] if f not in combined]
         self.assertEqual(combined[0]['properties']['memberDivisionIds'], [f['id'] for f in members])
+
         # districts do not overlap, so the union measures the same land as their sum
         for key in ('landAreaSqKm', 'cameraViewshedAreaSqKm'):
             self.assertAlmostEqual(combined[0]['properties'][key],
@@ -113,6 +117,7 @@ class SelectionDataTests(unittest.TestCase):
         members = [f for f in data['features'] if f not in combined]
         self.assertEqual(sorted(combined[0]['properties']['memberDivisionIds']),
                          sorted(f['id'] for f in members))
+
         # forest boundaries barely overlap, so the union is close to their sum
         for key in ('landAreaSqKm', 'cameraViewshedAreaSqKm'):
             total = sum(f['properties'][key] for f in members)
@@ -126,12 +131,15 @@ class SelectionDataTests(unittest.TestCase):
         self.assertIn('Gifford Pinchot National Forest', names)
         # units with next to nothing inside OR/WA are dropped, not kept as slivers
         outside = {row['name'] for row in data['metadata']['excludedOutsideBoundaryFeatures']}
+
         for name in ('Nez Perce-Clearwater National Forest', 'Humboldt-Toiyabe National Forest',
                      'Payette National Forest', 'Six Rivers National Forest', 'Modoc National Forest'):
             self.assertIn(name, outside)
             self.assertNotIn(name, names)
+
         # what is kept lies inside the project boundary
         west, south, east, north = -124.85, 41.99, -116.46, 49.01
+
         for feature in data['features']:
             minx, miny, maxx, maxy = feature['bbox']
             self.assertGreaterEqual(minx, west)
@@ -156,6 +164,7 @@ class SelectionDataTests(unittest.TestCase):
         self.assertEqual(len(available), 240)
         self.assertEqual(sum(key.startswith('pano-') for key in available), 68)
         self.assertEqual(len(unavailable), 0)
+
         for result in data['viewsheds'].values():
             if result['coverageAvailable']:
                 self.assertGreaterEqual(result['landAreaSqKm'], 0)

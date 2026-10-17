@@ -61,6 +61,7 @@ class SelectionMetricsTests(unittest.TestCase):
             ('PVT', box(3000, 0, 4000, 1000)),
             ('FED', box(4000, 0, 5000, 1000)),
         ]
+
         with tempfile.NamedTemporaryFile(mode='w+', suffix='.geojsonl') as cache:
             for owner_type, geometry in features:
                 cache.write(json.dumps({
@@ -70,6 +71,7 @@ class SelectionMetricsTests(unittest.TestCase):
                 }) + '\n')
             cache.flush()
             categories = dict(self.module.load_padus_fee_categories(Path(cache.name)))
+
         selected = box(0, 0, 6000, 1000)
         self.assertEqual(categories['State land'].intersection(selected).area, 1_000_000)
         self.assertEqual(categories['Local government land'].intersection(selected).area, 2_000_000)
@@ -87,11 +89,13 @@ class SelectionMetricsTests(unittest.TestCase):
             {'properties': {'divisionId': f'federal-land:{code}'}, 'geometry': geometry}
             for code in ('NPS', 'USFS', 'BLM', 'DOD', 'OTHF', 'DOI')
         ]
+
         with tempfile.NamedTemporaryFile(mode='w+', suffix='.geojson') as source:
             source.write(json.dumps({'features': features}))
             source.flush()
             categories = dict(self.module.load_federal_categories(
                 Path(source.name), box(-5_000_000, 0, 5_000_000, 5_000_000)))
+
         self.assertGreater(categories['National Park Service land'].area, 0)
         self.assertGreater(categories['U.S. Forest Service land'].area, 0)
         self.assertEqual(categories['Other federal land'].area,
@@ -107,10 +111,13 @@ class SelectionMetricsTests(unittest.TestCase):
                 (Path(directory) / f'{provider}-viewshed-manifest.json').write_text(
                     json.dumps({'viewsheds': entries}))
             published = self.module.published_viewshed_ids(Path(directory))
+
         self.assertEqual(published, {'a', 'pano-b'})
         self.module.check_published_viewsheds({'a': None, 'pano-b': None}, published)
+
         with self.assertRaisesRegex(RuntimeError, r"missing from --viewsheds: \['pano-b'\]"):
             self.module.check_published_viewsheds({'a': None}, published)
+
         with self.assertRaisesRegex(RuntimeError, r"not in a data/ manifest: \['new'\]"):
             self.module.check_published_viewsheds({'a': None, 'pano-b': None, 'new': None}, published)
 

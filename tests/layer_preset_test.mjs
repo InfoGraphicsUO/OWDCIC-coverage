@@ -33,6 +33,7 @@ globalThis.document = {
 assert.equal(layerPresetForFilter('county'), null);
 assert.equal(layerPresetForFilter('toString'), null);
 assert.deepEqual(layerPresetForFilter('utility').layersOn, [LEGEND_LAYERS.transmissionLines]);
+
 const labels = new Set(Object.values(LEGEND_LAYERS));
 for (const preset of Object.values(FILTER_LAYER_PRESETS)) {
   for (const label of [...(preset.layersOn ?? []), ...(preset.layersOff ?? [])]) {
@@ -46,6 +47,7 @@ const map = {
   getLayer: () => true,
   setLayoutProperty: (id, _prop, value) => { visibility[id] = value; },
 };
+
 const control = initLegend([
   { label: 'Solo', visible: false, layerIds: ['solo'] },
   {

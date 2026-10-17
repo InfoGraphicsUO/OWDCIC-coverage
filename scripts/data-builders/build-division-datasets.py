@@ -34,32 +34,41 @@ ALL_FORESTS_NAME = "All National Forests"
 # counties are generalized server-side because the map draws all 75 outlines at once
 COUNTY_PARAMS = {"maxAllowableOffset": "0.0005", "f": "geojson", "orderByFields": "GEOID"}
 
+
 def fetch(url, where, fields, extra=None):
     params = {"where": where, "outFields": fields, "returnGeometry": "true", "outSR": "4326", "geometryPrecision": "5", "f": "json", "orderByFields": "OBJECTID", **(extra or {})}
     return arcgis_query(url.rstrip("/") + "/query", params)
+
 
 def arcgis_geometry(geometry):
     """Convert ArcGIS rings to GeoJSON, retaining holes and disjoint parts."""
     if "type" in geometry: return geometry
     rings = geometry.get("rings") or []
+
     def area(r): return sum(r[i][0]*r[(i+1)%len(r)][1]-r[(i+1)%len(r)][0]*r[i][1] for i in range(len(r)))/2
+
     def inside(p, r):
         hit=False
         for i, q in enumerate(r):
             z=r[i-1]
             if (q[1]>p[1]) != (z[1]>p[1]) and p[0] < (z[0]-q[0])*(p[1]-q[1])/(z[1]-q[1])+q[0]: hit=not hit
         return hit
+
     outer=[r for r in rings if area(r)<0] or rings
     polys=[[r] for r in outer]
+
     for r in rings:
         if r in outer: continue
         for poly in polys:
             if inside(r[0], poly[0]): poly.append(r); break
+
     return {"type":"Polygon" if len(polys)==1 else "MultiPolygon", "coordinates":polys[0] if len(polys)==1 else polys}
+
 
 def number(value):
     try: return float(value)
     except (TypeError, ValueError): return None
+
 
 def normalize(payload, division_type, service_name, url, source_hash):
     features = []
@@ -83,22 +92,28 @@ def normalize(payload, division_type, service_name, url, source_hash):
             "label": name, "labelPoint":[lon,lat],
             "state": state, "sourceFeatureId": geoid, **pending_metrics()
         }})
+
         if division_type == "county":
             short = name.removesuffix(" County")
             features[-1]["properties"].update({"geoid": geoid, "stateName": state_name, "shortName": short, "label": short})
+
     features.sort(key=lambda f: f["id"])
     vintage = "2026" if division_type in {"house","senate"} else ("119th Congress" if division_type == "us-house" else "current")
+
     return feature_collection(division_type, features, source=url, sourceLayer=service_name,
                               vintage=vintage, sourceSha256=source_hash)
 
+
 def polygons(geometry):
     return [geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"]
+
 
 def combined_feature(features, division_type):
     """Every member's polygons in one shape; the coverage step repairs shared edges into a union."""
     geom = {"type": "MultiPolygon", "coordinates": [poly for f in features for poly in polygons(f["geometry"])]}
     b = bbox(geom)
     did = f"{division_type}:all"
+
     return {"type":"Feature", "id":did, "geometry":geom, "bbox":b, "properties":{
         "divisionId": did, "divisionType": division_type, "name": ALL_FORESTS_NAME,
         "label": ALL_FORESTS_NAME, "labelPoint":[(b[0]+b[2])/2, (b[1]+b[3])/2],
@@ -106,8 +121,10 @@ def combined_feature(features, division_type):
         "memberDivisionIds": [f["id"] for f in features]
     }}
 
+
 # what is left of a unit after clipping can be a sliver where the two boundaries disagree by a hair
 MIN_CLIPPED_AREA_SQKM = 10
+
 
 def clip_to_project_boundary(features):
     """Cut each feature to the OR/WA project boundary and drop those with next to nothing inside it.
@@ -124,17 +141,21 @@ def clip_to_project_boundary(features):
     to_equal_area = Transformer.from_crs(4326, 5070, always_xy=True).transform
     boundary = shape(json.loads((ROOT / "data" / "or-wa-boundary.geojson").read_text())["features"][0]["geometry"])
     clipped, dropped = [], []
+
     for feature in features:
         inside = make_valid(shape(feature["geometry"])).intersection(boundary)
         parts = [part for part in getattr(inside, "geoms", [inside]) if isinstance(part, (Polygon, MultiPolygon)) and part.area > 0]
         polygons = [poly for part in parts for poly in getattr(part, "geoms", [part])]
+
         if not polygons:
             dropped.append({"id": feature["id"], "name": feature["properties"]["name"]})
             continue
+
         geometry = set_precision(MultiPolygon(polygons), 1e-5)
         if geometry.is_empty or transform(to_equal_area, geometry).area / 1e6 < MIN_CLIPPED_AREA_SQKM:
             dropped.append({"id": feature["id"], "name": feature["properties"]["name"]})
             continue
+
         feature["geometry"] = json.loads(to_geojson(geometry))
         feature["bbox"] = list(geometry.bounds)
         # the unclipped center can fall outside what is left, so use a point known to be inside
@@ -142,24 +163,31 @@ def clip_to_project_boundary(features):
         if not geometry.contains(shape({"type": "Point", "coordinates": label})):
             point = geometry.representative_point()
             feature["properties"]["labelPoint"] = [round(point.x, 5), round(point.y, 5)]
+
         clipped.append(feature)
+
     return clipped, dropped
+
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--only", nargs="*"); ap.add_argument("--output", type=Path, default=OUT)
     args = ap.parse_args(); args.output.mkdir(parents=True, exist_ok=True)
     wanted = args.only or list(SOURCES)
+
     for kind in wanted:
         if kind not in SOURCES: raise SystemExit(f"unknown division type: {kind}")
         url, where, fields, dtype, layer = SOURCES[kind]
         payload, query, digest = fetch(url, where, fields, COUNTY_PARAMS if kind == "county" else None)
         result = normalize(payload, dtype, layer, query, digest)
+
         if kind == "national-forest":
             result["features"], outside = clip_to_project_boundary(result["features"])
             result["metadata"]["clippedTo"] = "data/or-wa-boundary.geojson"
             result["metadata"]["excludedOutsideBoundaryFeatures"] = outside
             result["features"].insert(0, combined_feature(result["features"], dtype))
+
         write_collection(args.output / f"{kind}.geojson", result)
         print(f"{kind}: {len(result['features'])} features")
+
 
 if __name__ == "__main__": main()

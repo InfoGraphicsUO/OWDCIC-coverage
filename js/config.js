@@ -201,23 +201,27 @@ function isFilterGroup(value) {
 // group is the names of the groups the type sits inside, outermost first, [] at the top level
 export function visibleFilterTypes(visibleFilters, types = FILTER_TYPES, warn = console.warn, group = []) {
   const visible = [];
+
   for (const [name, options] of Object.entries(visibleFilters)) {
     if (isFilterGroup(options)) {
       // a group with nothing visible inside adds nothing, so it never shows empty
       visible.push(...visibleFilterTypes(options, types, warn, [...group, name]));
       continue;
     }
+
     const type = types.find(([value, label]) =>
       normalizeName(label) === normalizeName(name) || value === name);
     if (!type) {
       warn(`Unknown filter group in VISIBLE_FILTERS: ${name}`);
       continue;
     }
+
     // 'none' or a blank value removes the whole group rather than leaving it empty
     if (filterGroupIsBlank(options)) continue;
     if (options !== 'all' && !Array.isArray(options)) {
       warn(`VISIBLE_FILTERS['${name}'] must be 'all', 'none', or a list of options; showing all`);
     }
+
     visible.push({
       value: type[0],
       label: type[1],
@@ -225,6 +229,7 @@ export function visibleFilterTypes(visibleFilters, types = FILTER_TYPES, warn = 
       group,
     });
   }
+
   return visible;
 }
 
@@ -261,12 +266,14 @@ export function unmatchedFilterOptions(type, features) {
 // rows that start hidden are revealed by code rather than listed, so they always stay
 export function visibleLegendItems(items, visibleLayers, warn = console.warn) {
   const listed = [];
+
   for (const name of visibleLayers) {
     const item = items.find(({ label, hidden }) =>
       !hidden && normalizeName(label) === normalizeName(name));
     if (!item) warn(`Unknown map layer in VISIBLE_LAYERS: ${name}`);
     else if (!listed.includes(item)) listed.push(item);
   }
+
   return {
     visible: [...listed, ...items.filter(({ hidden }) => hidden)],
     removed: items.filter((item) => !item.hidden && !listed.includes(item)),

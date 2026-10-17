@@ -47,6 +47,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("source", type=Path, help="EVS_DetectionCameraLocations.gdb or its .zip")
     parser.add_argument("--sites", type=Path, default=DATA / "envirovision-sites.geojson")
     parser.add_argument("--cameras", type=Path, default=DATA / "envirovision-cameras.csv")
+
     return parser.parse_args()
 
 
@@ -55,6 +56,7 @@ def load_converter():
     spec = importlib.util.spec_from_file_location("csv_to_geojson", SITE_DATA_BUILDER)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
+
     return module
 
 
@@ -75,6 +77,7 @@ def read_cameras(source: Path) -> list[dict]:
     to_wgs84 = osr.CoordinateTransformation(source_srs, wgs84)
 
     cameras = []
+
     for feature in layer:
         geometry = feature.GetGeometryRef()
         # the point is authoritative; a few Latitude/Longitude attributes are stale or missing a sign
@@ -90,10 +93,13 @@ def read_cameras(source: Path) -> list[dict]:
             "cameraHeightFt": feature.GetField("Offset"),
             "siteId": feature.GetField("Site_ID"),
         }
+
         for field, name in DOMAIN_FIELDS.items():
             code = feature.GetField(field)
             camera[name] = None if code is None else domains[field].get(str(code), str(code))
+
         cameras.append(camera)
+
     return cameras
 
 
@@ -101,19 +107,23 @@ def site_name(names: list[str]) -> str:
     """the words every camera at the site shares, e.g. Tallowbox East + Tallowbox West"""
     words = [name.split() for name in names]
     shared = []
+
     for parts in zip(*words):
         if len(set(parts)) > 1:
             break
         shared.append(parts[0])
+
     return " ".join(shared) or names[0]
 
 
 def build_sites(cameras: list[dict], converter) -> list[dict]:
     groups: dict[tuple, list[dict]] = {}
+
     for camera in cameras:
         groups.setdefault(camera["key"], []).append(camera)
 
     sites = []
+
     for members in groups.values():
         heights = sorted({camera["cameraHeightFt"] for camera in members if camera["cameraHeightFt"] is not None})
         sites.append({
@@ -121,10 +131,13 @@ def build_sites(cameras: list[dict], converter) -> list[dict]:
             "members": members,
             "heights": heights,
         })
+
     # two unrelated sites can share a name, e.g. Elk Mountain; their protection unit tells them apart
     counts: dict[str, int] = {}
+
     for site in sites:
         counts[site["name"]] = counts.get(site["name"], 0) + 1
+
     for site in sites:
         if counts[site["name"]] > 1:
             site["name"] = f"{site['name']} ({site['members'][0]['protectionUnit']})"
@@ -132,6 +145,7 @@ def build_sites(cameras: list[dict], converter) -> list[dict]:
     counties = converter.load_counties(converter.DEFAULT_COUNTIES)
     alertwest = json.loads((DATA / "alertwest-sites.geojson").read_text(encoding="utf-8"))["features"]
     features = []
+
     for site in sorted(sites, key=lambda site: site["name"]):
         first = site["members"][0]
         point = [first["longitude"], first["latitude"]]
@@ -145,28 +159,36 @@ def build_sites(cameras: list[dict], converter) -> list[dict]:
             "viewshedId": f"{PROVIDER}-{converter.slugify(site['name'])}",
             "provider": PROVIDER,
         }
+
         if len(site["heights"]) > 1:
             properties["cameraHeightsFt"] = site["heights"]
+
         if height == ASSUMED_HEIGHT_FT:
             properties["cameraHeightEstimated"] = True
+
         for name in DOMAIN_FIELDS.values():
             properties[name] = first[name]
+
         if any(
             converter.distance_m(*point, *other["geometry"]["coordinates"]) <= SHARED_SITE_RADIUS_M
             for other in alertwest
         ):
             properties["sharesAlertWestSite"] = True
+
         county = converter.county_at(point, counties)
         if county:
             properties["county"] = county["name"]
             properties["state"] = county["state"]
+
         features.append({
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": point},
             "properties": properties,
         })
+
         for camera in site["members"]:
             camera["site"] = site["name"]
+
     return features
 
 

@@ -59,6 +59,7 @@ def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
     input_path = args.input
     output_path = args.output
+
     if output_path is None:
         output_path = DEFAULT_OUTPUT if input_path == DEFAULT_INPUT else input_path.with_suffix(".geojson")
 
@@ -67,12 +68,15 @@ def main(argv: list[str] | None = None) -> None:
         digitized = load_digitized(Path(args.digitized)) if args.digitized else []
         counties = load_counties(Path(args.counties)) if args.counties else []
         by_provider = sites_csv_to_geojson(text, digitized, counties)
+
         if input_path.resolve() == DEFAULT_INPUT.resolve():
             # project-only additions keep generic CSV conversion independent
             import sys
             from camera_site_supplements import supplement_sites
             supplement_sites(by_provider, text, sys.modules[__name__])
+
         geojson = by_provider.pop(ALERTWEST)
+
         for provider, provider_geojson in by_provider.items():
             provider_output = PROVIDER_OUTPUTS.get(provider) or output_path.with_name(f"{provider}-sites.geojson")
             write_geojson(provider_output, provider_geojson)
@@ -137,29 +141,37 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Do not merge camera-site rows, even if the CSV looks like the sites sheet",
     )
+
     return parser.parse_args(argv)
 
 
 def use_sites_mode(text: str, *, force_sites: bool, force_generic: bool) -> bool:
     if force_sites and force_generic:
         raise ValueError("use either --sites or --generic, not both")
+
     if force_sites:
         return True
+
     if force_generic:
         return False
+
     rows = list(csv.reader(text.splitlines()))
     if not rows:
         return False
+
     try:
         col = sites_column_index(rows[0])
     except ValueError:
         return False
+
     height_index = col["height"]
+
     for row in rows[1:]:
         if len(row) <= height_index:
             continue
         if AW_LIVE.match((row[height_index] or "").strip()):
             return True
+
     return False
 
 
@@ -173,26 +185,31 @@ def csv_to_geojson(
     """Turn any lat/lon CSV into Point features; remaining columns become properties."""
     reader = csv.DictReader(text.splitlines())
     fieldnames = list(reader.fieldnames or [])
+
     if not any(name and name.strip() for name in fieldnames):
         raise ValueError("CSV is empty or has no header")
 
     lat_field = resolve_field(fieldnames, LAT_ALIASES, lat_column, "latitude", required=False)
     lon_field = resolve_field(fieldnames, LON_ALIASES, lon_column, "longitude", required=False)
     coord_field = resolve_field(fieldnames, COORD_ALIASES, None, "coordinates", required=False)
+
     if not ((lat_field and lon_field) or coord_field):
         raise ValueError(
             "could not find latitude/longitude columns; pass --lat and --lon"
         )
+
     name_field = resolve_field(fieldnames, NAME_ALIASES, name_column, "name", required=False)
     skip = {field for field in (lat_field, lon_field, coord_field) if field}
 
     features = []
+
     for row in reader:
         latitude, longitude = row_coordinates(row, lat_field, lon_field, coord_field)
         if latitude is None or longitude is None:
             continue
 
         properties: dict = {}
+
         if name_field:
             name = (row.get(name_field) or "").strip()
             if name:
@@ -201,12 +218,15 @@ def csv_to_geojson(
         for key, raw in row.items():
             if key is None or key in skip or key == name_field:
                 continue
+
             header = key.strip()
             if not header:
                 continue
+
             value = (raw or "").strip()
             if value == "":
                 continue
+
             properties[header] = coerce_value(value)
 
         features.append(
@@ -248,12 +268,14 @@ def sites_csv_to_geojson(
             provider = ALERTWEST
             owner = None
             continue
+
         if len(row) <= max(col.values()):
             continue
 
         name = (row[col["name"]] or "").strip()
         latitude = to_finite_number(row[col["latitude"]])
         longitude = to_finite_number(row[col["longitude"]])
+
         if latitude is None or longitude is None:
             started = section_provider(name)
             if started:
@@ -292,6 +314,7 @@ def sites_csv_to_geojson(
         provider_sites[key] = site
 
     alertwest_sites = list(sites[ALERTWEST].values())
+
     return {
         provider: {
             "type": "FeatureCollection",
@@ -327,18 +350,23 @@ def site_feature(
         "aliases": site["aliases"],
         "cameraHeightFt": site["cameraHeightFt"],
     }
+
     if site.get("heightEstimated"):
         properties["cameraHeightEstimated"] = True
+
     if provider == ALERTWEST:
         properties["alertWestLive"] = site["alertWestLive"]
     else:
         properties["viewshedId"] = PROVIDER_VIEWSHED_PREFIXES.get(provider, f"{provider}-") + slugify(site["name"])
+
     properties["provider"] = provider
+
     if site.get("owner"):
         properties["owner"] = site["owner"]
 
     coordinates = reported
     match = match_digitized(site, provider, digitized)
+
     if match:
         coordinates = match["coordinates"]
         properties["locationSource"] = "digitized"
@@ -348,8 +376,10 @@ def site_feature(
         if sheet_site:
             coordinates = [sheet_site["longitude"], sheet_site["latitude"]]
             properties["locationSource"] = "alertwest-site"
+
     if coordinates is not reported:
         properties["reportedCoordinates"] = reported
+
     # provider sites become map markers, so they carry the locality ALERTWest's API provides
     if provider != ALERTWEST:
         county = county_at(coordinates, counties)
@@ -374,8 +404,10 @@ def load_counties(path: Path) -> list[dict]:
             "Polygon": [geometry.get("coordinates")],
             "MultiPolygon": geometry.get("coordinates"),
         }.get(geometry.get("type"))
+
         if not polygons:
             continue
+
         counties.append(
             {
                 # short names match the ALERTWest API's county field, e.g. "Chelan"
@@ -414,8 +446,10 @@ def load_digitized(path: Path) -> list[dict]:
     for feature in payload.get("features", []):
         properties = feature.get("properties") or {}
         coordinates = (feature.get("geometry") or {}).get("coordinates") or []
+
         if len(coordinates) < 2:
             continue
+
         names = {
             normalize_site_name(properties.get(field))
             for field in ("name", "pointSourceName", "altPointSourceName")
@@ -437,12 +471,14 @@ def match_digitized(site: dict, provider: str, digitized: list[dict]) -> dict | 
     names = site_names(site)
     best = None
     best_distance = DIGITIZED_MATCH_RADIUS_M
+
     for camera in digitized:
         if camera["operator"] not in operators or not names & camera["names"]:
             continue
         distance = distance_m(site["longitude"], site["latitude"], *camera["coordinates"])
         if distance <= best_distance:
             best, best_distance = camera, distance
+
     return best
 
 
@@ -497,15 +533,20 @@ def parse_latlon_pair(value: str) -> tuple[float | None, float | None]:
     parts = [part.strip() for part in str(value).split(",")]
     if len(parts) != 2:
         return None, None
+
     first = to_finite_number(parts[0])
     second = to_finite_number(parts[1])
+
     if first is None or second is None:
         return None, None
+
     # "lat, lon" unless the first number cannot be a latitude
     if abs(first) > 90 and abs(second) <= 90:
         return second, first
+
     if abs(first) > 90 or abs(second) > 180:
         return None, None
+
     return first, second
 
 
@@ -558,9 +599,11 @@ def coerce_value(value: str):
     numeric = to_finite_number(value)
     if numeric is None:
         return value
+
     stripped = value.strip()
     if re.search(r"[.eE]", stripped):
         return numeric
+
     return int(numeric)
 
 

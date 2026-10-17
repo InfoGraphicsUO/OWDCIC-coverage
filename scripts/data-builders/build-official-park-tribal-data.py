@@ -55,6 +55,7 @@ def point_in_ring(point: tuple[float, float], ring: list[list[float]]) -> bool:
         x1, y1 = current
         x2, y2 = previous
         crosses = (y1 > y) != (y2 > y)
+
         if crosses and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
             inside = not inside
     return inside
@@ -124,6 +125,7 @@ def main():
     }
     parks = fetch_json(PARK_QUERY, park_params)
     park_features = []
+
     for feature in parks["features"]:
         props = feature["properties"]
         label_point = [
@@ -135,6 +137,7 @@ def main():
                 feature, "national-park", props["UNIT_CODE"], props["UNIT_NAME"], label_point
             )
         )
+
     park_source = f"{PARK_QUERY}?{urlencode(park_params)}"
     print("national parks:", write_division_type(
         OUT / "national-park.geojson",
@@ -147,6 +150,7 @@ def main():
 
     tribal_features = []
     tribal_payloads = []
+
     # layer 2 is Federal American Indian Reservations, layer 3 is Off-Reservation Trust Lands
     for layer in (2, 3):
         params = {
@@ -164,8 +168,10 @@ def main():
         tribal_payloads.append(response)
         for feature in response["features"]:
             props = feature["properties"]
+
             if not in_or_wa(representative_point(feature["geometry"]), mask):
                 continue
+
             source_id = props["GEOID"]
             point = [
                 props.get("INTPTLON") or representative_point(feature["geometry"])[0],
@@ -174,6 +180,7 @@ def main():
             tribal_features.append(
                 normalized_feature(feature, "tribal-land", source_id, props["NAME"], point)
             )
+
     tribal_source = f"{TRIBAL_QUERY.format(layer='2')} and layer 3; {urlencode({'where': '1=1', 'geometryType': 'esriGeometryEnvelope', 'outSR': '4326'})}"
     print("tribal lands:", write_division_type(
         OUT / "tribal-land.geojson",

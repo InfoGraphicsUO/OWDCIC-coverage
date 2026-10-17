@@ -34,9 +34,11 @@ class CameraSiteDataTests(unittest.TestCase):
 
     def test_new_models_published_and_queue_cleared(self):
         entries = {e['site_name']: e for e in read('alertwest-viewshed-manifest.json')['viewsheds']}
+
         for name, height in [('Phoenix Water Tank', 25), ('Mt Defiance', 95), ('Halfway', 56.75), ('Jim Creek Butte', 32.8),
                              ('Satus', 32.8), ('Elephant', 10), ('Two Rivers', 130), ('Round Mountain Chelan', 80)]:
             self.assertEqual((entries[name]['status'], entries[name]['height_ft']), ('complete', height))
+
         blocked = {r['name'] for r in read('camera-viewsheds-blocked.json')}
         self.assertTrue({'Natapoc Ridge', 'Natapoc Ridge North', 'Anderson', 'Midnight Gulch'} <= blocked)
         self.assertNotIn('Phoenix Water Tank', blocked)
@@ -52,9 +54,11 @@ class CameraSiteDataTests(unittest.TestCase):
         alertwest = {f['properties']['name']: f['properties'] for f in read('alertwest-sites.geojson')['features']}
         self.assertEqual(alertwest['Monument Mountain']['cameraHeightFt'], 43.33)
         self.assertTrue(alertwest['Gold Hill']['cameraHeightEstimated'])
+
         # every site with a height and location is modeled, so nothing waits in the GDAL queue
         for provider in ['alertwest', 'pano']:
             self.assertEqual(read(f'{provider}-sites-needing-viewsheds.geojson')['features'], [])
+
         modeled = {e['site_name'] for provider in ['alertwest', 'pano']
                    for e in read(f'{provider}-viewshed-manifest.json')['viewsheds'] if e['status'] == 'complete'}
         self.assertTrue({'Gold Hill', 'Dry Mountain', 'Sycan Substation', 'Takilma'} <= modeled)
