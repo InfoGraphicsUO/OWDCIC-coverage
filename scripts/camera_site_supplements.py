@@ -11,7 +11,12 @@ from pathlib import Path
 
 # built by scripts/data-builders/build-envirovision-sites.py from ODF's geodatabase
 EXTERNAL_PROVIDERS = ('envirovision',)
-PANO_STATION_URL = 'https://portlandgeneral.wildfirewatch.com/station/'
+# each Pano owner's public viewer; its station pages live under /station/<id>
+PANO_VIEWERS = {
+    'Portland General Electric': 'https://portlandgeneral.wildfirewatch.com/',
+    'Pacific Power': 'https://pacificpower.wildfirewatch.com/',
+    'Washington DNR': 'https://wadnr.wildfirewatch.com/',
+}
 
 
 def supplement_sites(by_provider, text, converter):
@@ -105,8 +110,9 @@ def supplement_sites(by_provider, text, converter):
             if name not in pano:
                 raise ValueError(f"Unknown Pano site in {links_path.name}: {name}")
 
-            if not link.startswith(PANO_STATION_URL):
-                raise ValueError(f"Expected a {PANO_STATION_URL} link for {name}: {link}")
+            station_url = PANO_VIEWERS[pano[name]['owner']] + 'station/'
+            if not link.startswith(station_url):
+                raise ValueError(f"Expected a {station_url} link for {name}: {link}")
 
             pano[name]['feed'] = link
 

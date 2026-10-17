@@ -1060,7 +1060,8 @@
           42.25847
         ],
         "county": "Josephine",
-        "state": "OR"
+        "state": "OR",
+        "feed": "https://pacificpower.wildfirewatch.com/station/fc34703b6b514cbd8bb1acd493f33dcb"
       }
     },
     {
@@ -1080,7 +1081,8 @@
         "provider": "pano",
         "owner": "Pacific Power",
         "county": "Jackson",
-        "state": "OR"
+        "state": "OR",
+        "feed": "https://pacificpower.wildfirewatch.com/station/316b7e58f1ce41b6bede05772c8a8ae9"
       }
     },
     {
@@ -1100,7 +1102,8 @@
         "provider": "pano",
         "owner": "Pacific Power",
         "county": "Josephine",
-        "state": "OR"
+        "state": "OR",
+        "feed": "https://pacificpower.wildfirewatch.com/station/4597aa6e8126429189765a17666821f6"
       }
     },
     {
@@ -1120,7 +1123,8 @@
         "provider": "pano",
         "owner": "Pacific Power",
         "county": "Josephine",
-        "state": "OR"
+        "state": "OR",
+        "feed": "https://pacificpower.wildfirewatch.com/station/d5560976c9b84fe79637c60a6aa12876"
       }
     },
     {
@@ -1141,6 +1145,7 @@
         "owner": "Pacific Power",
         "county": "Josephine",
         "state": "OR",
+        "feed": "https://pacificpower.wildfirewatch.com/station/0600984faa8e464496ee945509cfd5ad",
         "viewshedStatus": "pending"
       }
     },
@@ -1161,7 +1166,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Spokane",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/0c2ec2cc7e074062962e013060f0662b"
       }
     },
     {
@@ -1181,7 +1187,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Stevens",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/8984f9f9661241cd9e287dac8c824b90"
       }
     },
     {
@@ -1201,7 +1208,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Clark",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/fdb6a4f54548466c94610d10d49b755a"
       }
     },
     {
@@ -1221,7 +1229,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Okanogan",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/b6cd4381759d49abb54f09ad3a622748"
       }
     },
     {
@@ -1241,7 +1250,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Asotin",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/fd5c61b6e3db441d97978b8fa37a4b2e"
       }
     },
     {
@@ -1261,7 +1271,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Stevens",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/72ff9ca36b7845a2b6221c0d7e1e8361"
       }
     },
     {
@@ -1281,7 +1292,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Cowlitz",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/15ca826857e44e1cbc9ac464edb0cc2d"
       }
     },
     {
@@ -1301,7 +1313,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Skagit",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/5270fe45b5474432b7ba0e255fd0d0a8"
       }
     },
     {
@@ -1321,7 +1334,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Skagit",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/d02208fe160c4cfbbe70c90776f21613"
       }
     },
     {
@@ -1341,7 +1355,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Lewis",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/68299e5b2b78459c855448808bad7ec1"
       }
     },
     {
@@ -1361,7 +1376,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Yakima",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/5230bc4ff1394d4eadcb2fa7cdafbf96"
       }
     },
     {
@@ -1381,7 +1397,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Chelan",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/57b922a5a322467fb15f7c193f3d007a"
       }
     },
     {
@@ -1401,7 +1418,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Pierce",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/60f8348b613e40689ec3c07ed5169055"
       }
     },
     {
@@ -1421,7 +1439,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Cowlitz",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/95a252fbec234348b8367c7051d9c6d6"
       }
     },
     {
@@ -1441,7 +1460,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Okanogan",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/08aadc487864413998fad4e8e918311e"
       }
     },
     {
@@ -1461,7 +1481,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Chelan",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/3290b7ab65ec4cc28b5d81308c04bc82"
       }
     },
     {
@@ -1481,7 +1502,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Kittitas",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/872d649e374345e98e423838bea9478f"
       }
     },
     {
@@ -1501,7 +1523,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Thurston",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/581c90c4afff4ba1b9c51441cf0b6646"
       }
     },
     {
@@ -1521,7 +1544,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Klickitat",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/3a84fabf080143ae9501ea7d5ab7f313"
       }
     },
     {
@@ -1541,7 +1565,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "King",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/e6b3b412a38e4a2289425e521fda947f"
       }
     },
     {
@@ -1561,7 +1586,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Mason",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/333a1030927941519c65ff291d02f3ff"
       }
     },
     {
@@ -1581,7 +1607,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "San Juan",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/e0515d8714094f3fb476fb277ed8b74c"
       }
     },
     {
@@ -1601,7 +1628,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Lewis",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/1a8272e81ae04580b0704e6e66a26bd9"
       }
     },
     {
@@ -1621,7 +1649,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Thurston",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/7e508d6fe3744bebbcc38c692af988fb"
       }
     },
     {
@@ -1641,7 +1670,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Stevens",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/5b7c9bada68f4843805b69ada5bafbc0"
       }
     },
     {
@@ -1661,7 +1691,8 @@
         "provider": "pano",
         "owner": "Washington DNR",
         "county": "Grays Harbor",
-        "state": "WA"
+        "state": "WA",
+        "feed": "https://wadnr.wildfirewatch.com/station/c5160588d3424bd29d55e54c19e881e7"
       }
     }
   ]
