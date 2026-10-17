@@ -632,7 +632,7 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     :root {
         --rail-width: 64px;
         --panel-gap: 8px;
-        /* Keep the body, collapse tab, and visible rail inside the viewport. */
+        /* keep the body, collapse tab, and visible rail inside the viewport */
         --sidebar-width: calc(100vw - var(--rail-width) - var(--panel-gap) * 2);
     }
 

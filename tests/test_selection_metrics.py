@@ -1,4 +1,4 @@
-"""Small geometry cases for the land coverage and designation contract."""
+"""small geometry cases for the land coverage and designation contract"""
 import importlib.util
 import json
 import tempfile
@@ -49,6 +49,7 @@ class SelectionMetricsTests(unittest.TestCase):
         self.assertAlmostEqual(sum(shares.values()), 100)
 
     def test_positive_area_does_not_round_to_zero_sqkm(self):
+        # 400 m² is 0.0004 km², which has to show as the smallest nonzero value
         self.assertEqual(self.module.area_sqkm(400), 0.001)
         self.assertEqual(self.module.area_sqkm(1_500_000), 1.5)
         self.assertEqual(self.module.area_sqkm(0), 0.0)

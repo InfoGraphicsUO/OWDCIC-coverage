@@ -148,6 +148,8 @@ def main() -> int:
             if layer:
                 project.addMapLayer(layer, False)
 
+        # inserting at index 0 stacks each layer above the previous ones; the basemap goes last at the bottom
+        # the heavy exact and individual layers start hidden
         root = project.layerTreeRoot()
 
         if exact:
@@ -168,6 +170,7 @@ def main() -> int:
 
         extent_layer = coverage or individuals or exact
         extent = extent_layer.extent()
+        # 4% margin so the coverage doesn't touch the window edge
         extent.grow(max(extent.width(), extent.height()) * 0.04)
         project.viewSettings().setDefaultViewExtent(
             QgsReferencedRectangle(extent, extent_layer.crs())

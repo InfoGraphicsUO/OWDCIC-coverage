@@ -1,15 +1,15 @@
-"""Fill incomplete installation rows from reviewed local/network source references.
+"""fills incomplete installation rows from reviewed local/network source references
 
-The original CSV stays untouched. Digitized ids resolve against the current local
-data; archived API/PGE coordinates are the fallback. Separate provider records
-remain separate even at a shared tower because their observer heights can differ.
+the original CSV stays untouched. digitized ids resolve against the current local
+data, with archived API/PGE coordinates as the fallback. separate provider records
+stay separate even at a shared tower because their observer heights can differ
 """
 import csv
 import json
 from pathlib import Path
 
 
-# Built by scripts/data-builders/build-envirovision-sites.py from ODF's geodatabase.
+# built by scripts/data-builders/build-envirovision-sites.py from ODF's geodatabase
 EXTERNAL_PROVIDERS = ('envirovision',)
 PANO_STATION_URL = 'https://portlandgeneral.wildfirewatch.com/station/'
 
@@ -20,7 +20,7 @@ def supplement_sites(by_provider, text, converter):
     digitized = {f['properties']['id']: f for f in json.loads((data / 'digitized-camera-sources.geojson').read_text())['features']}
     counties = converter.load_counties(converter.DEFAULT_COUNTIES)
     supplements = json.loads((data / 'camera-site-supplements.json').read_text())
-    # Rows held out of the map until the sheet is clarified.
+    # rows held out of the map until the sheet is clarified
     excluded = {(r['provider'], r['sheetName']) for r in supplements.get('excluded', [])}
 
     for provider, collection in by_provider.items():
@@ -52,14 +52,14 @@ def supplement_sites(by_provider, text, converter):
                 props.update(county=county['name'], state=county['state'])
 
         features = by_provider[provider]['features']
-        # Collapse aliases of the same provider/site, not neighboring towers.
+        # collapse aliases of the same provider/site, not neighboring towers (match is by name or within 1 m)
         existing = next((f for f in features if f['properties']['name'] in (record['name'], record.get('sheetName')) or
                          converter.distance_m(*point, *f['geometry']['coordinates']) < 1), None)
 
         if existing:
             old = existing['properties']
             if old['name'] == record.get('sheetName'):
-                # The sheet now locates this row; the reviewed name and point still win.
+                # the sheet now locates this row; the reviewed name and point still win
                 if existing['geometry']['coordinates'] != point:
                     old.setdefault('reportedCoordinates', existing['geometry']['coordinates'])
                     existing['geometry']['coordinates'] = point
@@ -82,7 +82,7 @@ def supplement_sites(by_provider, text, converter):
 
         features.append({'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': point}, 'properties': props})
 
-    # Hand-collected viewer pages; rows without a link keep the panel's general viewer link.
+    # hand-collected viewer pages; rows without a link keep the panel's general viewer link
     links_path = data / 'pano-camera-links.csv'
     if links_path.exists():
 
@@ -110,10 +110,10 @@ def supplement_sites(by_provider, text, converter):
 
             pano[name]['feed'] = link
 
-    # A height alone does not mean published coverage exists. Queue only missing
-    # or stale models, and keep unresolved observer heights out of runnable files.
+    # a height alone does not mean published coverage exists, so queue only missing
+    # or stale models and keep unresolved observer heights out of runnable files
     blocked = []
-    # Providers built outside the sheet keep their own site file; only its queue state is refreshed.
+    # providers built outside the sheet keep their own site file; only its queue state is refreshed
     external = {}
 
     for provider in EXTERNAL_PROVIDERS:
@@ -154,6 +154,6 @@ def supplement_sites(by_provider, text, converter):
     for provider, collection in external.items():
         converter.write_geojson(data / f'{provider}-sites.geojson', collection)
 
-    # Sheet rows with no usable location never become features, so list them here.
+    # sheet rows with no usable location never become features, so list them here
     blocked += [{'provider': r['provider'], 'name': r['sheetName'], 'reason': r['reason']} for r in supplements.get('unmapped', [])]
     (data / 'camera-viewsheds-blocked.json').write_text(json.dumps(blocked, indent=2) + '\n', encoding='utf-8')

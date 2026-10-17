@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Build the Census and Forest Service OR/WA division GeoJSON products.
+"""build the Census and Forest Service OR/WA division GeoJSON products
 
-Parks and tribal lands, ODF districts, and utility and federal land have their
-own builders in this folder.  All geometries come from the listed public
-ArcGIS services.  The builder keeps
-the raw service response hash in each collection so a refresh is auditable.
-Area and viewshed metrics are intentionally nullable until the GDAL coverage
-step is run against the local EPSG:5070 product.
+parks and tribal lands, ODF districts, and utility and federal land have their
+own builders in this folder. all geometries come from the listed public
+ArcGIS services. the raw service response hash is kept in each collection so
+a refresh is auditable. area and viewshed metrics stay null until the GDAL
+coverage step is run against the local EPSG:5070 product
 """
 from __future__ import annotations
 
@@ -41,7 +40,7 @@ def fetch(url, where, fields, extra=None):
 
 
 def arcgis_geometry(geometry):
-    """Convert ArcGIS rings to GeoJSON, retaining holes and disjoint parts."""
+    """converts ArcGIS rings to GeoJSON, keeping holes and disjoint parts"""
     if "type" in geometry: return geometry
     rings = geometry.get("rings") or []
 
@@ -109,7 +108,7 @@ def polygons(geometry):
 
 
 def combined_feature(features, division_type):
-    """Every member's polygons in one shape; the coverage step repairs shared edges into a union."""
+    """every member's polygons in one shape; the coverage step repairs shared edges into a union"""
     geom = {"type": "MultiPolygon", "coordinates": [poly for f in features for poly in polygons(f["geometry"])]}
     b = bbox(geom)
     did = f"{division_type}:all"
@@ -127,10 +126,11 @@ MIN_CLIPPED_AREA_SQKM = 10
 
 
 def clip_to_project_boundary(features):
-    """Cut each feature to the OR/WA project boundary and drop those with next to nothing inside it.
+    """cuts each feature to the OR/WA project boundary and drops those with next to nothing inside it
 
     Forest Service units run into CA, ID and NV, so each is clipped to
-    data/or-wa-boundary.geojson, which keeps the shown area and the coverage metrics to the project region.
+    data/or-wa-boundary.geojson, which keeps the shown area and the coverage
+    metrics to the project region
     """
     from pyproj import Transformer
     from shapely import set_precision, to_geojson
@@ -138,11 +138,13 @@ def clip_to_project_boundary(features):
     from shapely.geometry import MultiPolygon, Polygon, shape
     from shapely.validation import make_valid
 
+    # areas are measured in EPSG:5070 (equal area, meters), not in degrees
     to_equal_area = Transformer.from_crs(4326, 5070, always_xy=True).transform
     boundary = shape(json.loads((ROOT / "data" / "or-wa-boundary.geojson").read_text())["features"][0]["geometry"])
     clipped, dropped = [], []
 
     for feature in features:
+        # source rings can self-intersect, so repair before intersecting
         inside = make_valid(shape(feature["geometry"])).intersection(boundary)
         parts = [part for part in getattr(inside, "geoms", [inside]) if isinstance(part, (Polygon, MultiPolygon)) and part.area > 0]
         polygons = [poly for part in parts for poly in getattr(part, "geoms", [part])]
@@ -151,7 +153,9 @@ def clip_to_project_boundary(features):
             dropped.append({"id": feature["id"], "name": feature["properties"]["name"]})
             continue
 
+        # snap to 5 decimals, matching the precision the service returns
         geometry = set_precision(MultiPolygon(polygons), 1e-5)
+        # / 1e6 turns square meters into square km
         if geometry.is_empty or transform(to_equal_area, geometry).area / 1e6 < MIN_CLIPPED_AREA_SQKM:
             dropped.append({"id": feature["id"], "name": feature["properties"]["name"]})
             continue

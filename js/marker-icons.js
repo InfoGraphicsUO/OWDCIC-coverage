@@ -1,12 +1,12 @@
 /**
  * rasterization pipeline shared by every SVG map marker in img/
  *
- * Mapbox samples its icon atlas with bilinear filtering and no mipmaps, so an
- * image only looks sharp when its pixels line up with physical screen pixels.
- * Each marker file is therefore rasterized at the reported device pixel ratio
- * and drawn at icon-size 1 so Mapbox never rescales it.
+ * Mapbox samples icons with bilinear filtering and no mipmaps, so an image is
+ * only sharp when its pixels line up with screen pixels
+ * each marker is rasterized at the device pixel ratio and drawn at icon-size 1
  */
 
+// caps atlas size on very dense screens
 const MAX_PIXEL_RATIO = 4;
 const registeredIcons = new Map();
 const svgSources = new Map();

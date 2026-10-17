@@ -1,4 +1,4 @@
-"""Validate the shipped map selection products as a set."""
+"""validates the shipped map selection products as a set"""
 import json
 import math
 from pathlib import Path

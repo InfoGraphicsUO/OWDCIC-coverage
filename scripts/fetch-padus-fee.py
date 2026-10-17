@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cache Oregon and Washington PAD-US 4.1 fee parcels in EPSG:5070."""
+"""caches Oregon and Washington PAD-US 4.1 fee parcels in EPSG:5070"""
 from __future__ import annotations
 
 import argparse
@@ -19,6 +19,7 @@ OUTPUT = ROOT / 'outputs/source-cache/padus-4.1-or-wa-fee-5070.geojsonl'
 
 def query(params):
     body = urlencode({'f': 'geojson', **params}).encode()
+    # the service drops requests now and then, so retry with 1, 2, 4, 8 s waits
     for attempt in range(5):
         try:
             with urlopen(Request(URL, body), timeout=180) as response:
@@ -43,14 +44,17 @@ def main():
         raise RuntimeError('PAD-US returned no Oregon/Washington fee parcels')
 
     ids = sorted(ids)
+    # written to a partial file first so a failed run never leaves a truncated cache
     pending = args.output.with_suffix('.partial')
     seen = set()
 
     with pending.open('w') as stream:
+        # fetching by object id in batches of 100 keeps each response small
         for start in range(0, len(ids), 100):
             batch = ids[start:start + 100]
             data = query({'objectIds': ','.join(map(str, batch)),
                           'outFields': FIELDS, 'returnGeometry': 'true',
+                          # 5070 is the equal-area CRS the metrics use; precision 1 is whole meters
                           'outSR': '5070', 'geometryPrecision': '1'})
 
             if data.get('crs', {}).get('properties', {}).get('name') != 'EPSG:5070':
