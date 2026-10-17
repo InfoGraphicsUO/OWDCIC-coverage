@@ -22,6 +22,7 @@ const BASEMAP_STYLE_IDS = Object.freeze({
   outdoors: MAPBOX_STYLE,
   simple: SIMPLE_MAPBOX_STYLE,
 });
+
 // listeners receive the startup selection and every later picker change
 const basemapChangeListeners = [];
 let activeBasemap = DEFAULT_BASEMAP;
@@ -30,6 +31,7 @@ let activeBaseLayerIds = new Set();
 let activeBaseSourceIds = new Set();
 let basemapRequest = 0;
 let basemapStylePending = false;
+
 // set once the picker is bound so programmatic changes follow the picker path
 let basemapPicker;
 let basemapMap;
@@ -91,10 +93,12 @@ export function mapPanelPadding(map) {
   ) || 0;
   const shellWidth = railWidth + panelGap +
     (sidebar?.classList.contains('is-collapsed') ? 0 : bodyWidth);
+
   // hidden panels should not reserve space in the camera viewport
   const resultsVisible = Boolean(
     results && !results.hidden && results.getAttribute('aria-hidden') !== 'true'
   );
+
   // each desktop panel may use at most two-fifths of the map width
   const widthCap = container.clientWidth * 0.4;
   // reserve 120px of map height when the viewport allows it
@@ -175,6 +179,7 @@ async function initializeMap() {
         'tileSize': 512,
         'maxzoom': 14
     });
+
     map.setTerrain({ 
         'source': 'mapbox-dem', 
         'exaggeration': [
@@ -185,11 +190,11 @@ async function initializeMap() {
           12, 1.6
         ]
     });
+
     map.setFog({
       range: [1, 5], // first value starts opacity, second reaches full opacity
     })
   });
-
 
   // attach the style error listener before asking Mapbox to install the JSON
   // style installation can emit errors while the map is still initializing
@@ -200,17 +205,21 @@ async function initializeMap() {
       console.error('Failed to restore map marker icons:', error);
     });
   });
+
   map.setStyle(style, { diff: false });
+
   map.addControl(
     new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }),
     'top-left'
   );
   map.addControl(new HomeControl(), 'top-left');
   initLocationSearch(map);
+
   map.addControl(new mapboxgl.AttributionControl({
     customAttribution: '<a href="https://infographics.uoregon.edu/" target="_blank" rel="noopener noreferrer">UO InfoGraphics Lab</a> | <a href="https://ohaz.uoregon.edu/" target="_blank" rel="noopener noreferrer">OHAZ</a>'
   }));
   initZoomViewer(map);
+
   map.once('load', () => {
     initBasemapPicker(map);
     initControlShellSync(map);
@@ -240,6 +249,7 @@ function initControlShellSync(map) {
   sidebar.querySelector('.control-shell__collapse')?.addEventListener('click', () => {
     requestAnimationFrame(refreshPadding);
   });
+
   for (const tab of sidebar.querySelectorAll('[data-control-tab]')) {
     tab.addEventListener('click', () => requestAnimationFrame(refreshPadding));
   }
@@ -339,6 +349,7 @@ function initLocationSearch(map) {
   button.title = 'Zoom to a location';
   button.setAttribute('aria-label', button.title);
   button.setAttribute('aria-expanded', 'false');
+
   const icon = document.createElement('i');
   icon.className = 'fa-solid fa-magnifying-glass';
   icon.setAttribute('aria-hidden', 'true');
@@ -349,6 +360,7 @@ function initLocationSearch(map) {
     button.setAttribute('aria-expanded', String(expanded));
     if (expanded) container.querySelector('input')?.focus();
   };
+
   button.addEventListener('click', () => {
     setExpanded(!container.classList.contains('is-expanded'));
   });
@@ -365,6 +377,7 @@ function initLocationSearch(map) {
     if (!feature) return;
     const [west, south, east, north] = feature.properties?.bbox ?? [];
     const options = { padding: mapPanelPadding(map), duration: motionDuration(700) };
+
     if (west === undefined) {
       map.easeTo({ ...options, center: feature.geometry.coordinates, zoom: 9 });
     } else {
@@ -396,6 +409,7 @@ function initBasemapPicker(map) {
   // reset browser-restored input state to match the style loaded at startup
   resetBasemapPicker();
   updateBasemapPreview(selectedBasemap());
+
   // satellite imagery is an overlay; outdoors stays supplied by the base style
   map.setLayoutProperty(SATELLITE_ID, 'visibility', 'none');
 
@@ -430,6 +444,7 @@ async function changeBasemap(map, picker, basemap) {
     const nextBaseSourceIds = new Set(
       Object.keys(style.sources).filter((id) => id !== SATELLITE_ID)
     );
+
     preserveApplicationLayers(map, style);
 
     map.once('style.load', () => {
@@ -440,6 +455,7 @@ async function changeBasemap(map, picker, basemap) {
       setSatelliteVisibility(map, basemap);
       notifyBasemapChange(basemap);
     });
+
     activeBaseStyle = styleName;
     activeBaseLayerIds = nextBaseLayerIds;
     activeBaseSourceIds = nextBaseSourceIds;
@@ -448,6 +464,7 @@ async function changeBasemap(map, picker, basemap) {
   } catch (error) {
     if (request !== basemapRequest) return;
     basemapStylePending = false;
+
     const activeInput = picker.querySelector(
       `input[name="basemap"][value="${activeBasemap}"]`
     );
@@ -523,6 +540,7 @@ function preserveApplicationLayers(map, style) {
 
   style.sources ||= {};
   style.layers ||= [];
+
   for (const [id, source] of Object.entries(currentStyle.sources || {})) {
     if (id === SATELLITE_ID || activeBaseSourceIds.has(id) || style.sources[id]) continue;
     style.sources[id] = source;

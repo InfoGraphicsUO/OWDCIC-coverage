@@ -76,35 +76,43 @@ const CAMERA_ICON_ID = 'camera-marker';
 const PANO_CAMERA_ICON_ID = 'pano-camera-marker';
 const ENVIROVISION_CAMERA_ICON_ID = 'envirovision-camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
+
 const DIGITIZED_CAMERA_GROUP_LABEL = 'Digitized Camera Sources';
 const DIGITIZED_CAMERA_UNLOCK_SEQUENCE = Object.freeze(['1', '2', '3', '4']); // key sequence reveals digitized camera layer
 // all four keys must arrive within this many milliseconds
 const DIGITIZED_CAMERA_UNLOCK_TIMEOUT_MS = 2_000;
+
 const BOUNDARY_COLOR = '#494949';
 const BOUNDARY_FILL_COLOR = '#929292';
 const SELECTED_BOUNDARY_COLOR = '#f8e109';
+
 const PANO_OPERATOR = 'Pano AI';
 const ENVIROVISION_OPERATOR = 'EnviroVision';
+
 // every provider shares this fill unless the viewer turns on per-provider colors
 // satellite imagery needs a light viewshed fill for contrast
 const VIEWSHED_FILL_COLOR = Object.freeze({
   outdoors: '#F28D05',
   satellite: '#F4F1EA',
 });
+
 // layer list rows in the shared color show a sample viewshed instead of a flat swatch
 const VIEWSHED_LEGEND_IMAGES = Object.freeze({
   outdoors: 'img/orange_portland_tower_viewshed.png',
   satellite: 'img/grey_portland_tower_viewshed.png',
 });
+
 const SEPARATE_VIEWSHED_COLORS_SETTING = 'separateViewshedColors';
 const VIEWSHED_HIGHLIGHT_COLOR = '#ffee00';
 const VIEWSHED_FILL_OPACITY = 0.5;
 const VIEWSHED_HIGHLIGHT_OPACITY = 0.55;
+
 const LOOKOUT_COLOR = '#8154BD';
 const NATIONAL_FOREST_COLOR = '#3b7d4f';
 const BLM_LAND_COLOR = '#f6d94a';
 const BURN_PROBABILITY_COLOR = '#d7191c';
 const TRANSMISSION_LINE_COLOR = '#c2188f';
+
 // relative line widths by the source's VOLT_CLASS; DC and NOT AVAILABLE borrow another class's width
 const TRANSMISSION_LINE_WIDTHS = Object.freeze({
   'UNDER 100': 0.8,
@@ -115,6 +123,7 @@ const TRANSMISSION_LINE_WIDTHS = Object.freeze({
   'DC': 2.2,
   'NOT AVAILABLE': 0.8,
 });
+
 // the 1000 kV DC line to Nevada is drawn wider than every voltage class
 const TRANSMISSION_LINE_TOP_VOLTAGE = 1000;
 const TRANSMISSION_LINE_TOP_WIDTH = 7;
@@ -129,13 +138,16 @@ const TRANSMISSION_LINE_WIDTH = [
     TRANSMISSION_LINE_WIDTHS['UNDER 100'],
   ],
 ];
+
 const DIGITIZED_CAMERA_COLORS = Object.freeze({
   enviroVision: '#6eaa00',
   alertWest: '#a80000',
   pano: '#004ca9',
   joint: '#f8e109',
 });
+
 const NO_VIEWSHED_SELECTED = '__none__';
+
 // each official provider is its own camera layer, viewshed tileset, and pair of legend rows
 // later providers only need another entry here plus their config ids
 const CAMERA_PROVIDERS = Object.freeze([
@@ -191,6 +203,7 @@ const CAMERA_PROVIDERS = Object.freeze([
     sharedSiteIconOffset: Object.freeze([-14, 0]),
   }),
 ]);
+
 // providers whose cameras and viewshed ids come from a sites file in data/
 const SITE_FILE_PROVIDERS = Object.freeze([
   Object.freeze({
@@ -210,17 +223,21 @@ const SITE_FILE_PROVIDERS = Object.freeze([
     viewshedTileset: DATA_URLS.enviroVisionCameraViewsheds,
   }),
 ]);
+
 const CAMERA_LAYER_IDS = Object.freeze(
   CAMERA_PROVIDERS.map(({ cameraLayerId }) => cameraLayerId)
 );
+
 // markers on a shared ALERTWest site sit beside its marker instead of on top,
 // each provider on its own side (sharedSiteIconOffset above)
 const NO_DIVISION_SELECTED = '__none__';
+
 // only the groups listed in js/visible-content.js reach the filter menu and the map
 const FILTER_TYPES = Object.freeze(visibleFilterTypes(VISIBLE_FILTERS));
 if (FILTER_TYPES.some(({ value, options }) => value === 'camera' && options)) {
   console.warn('The Camera filter group cannot list single options; showing all');
 }
+
 // cameras use point selection; every other type builds polygon layers
 const DIVISION_TYPES = Object.freeze(FILTER_TYPES
   .filter(({ value }) => value !== 'camera')
@@ -240,33 +257,43 @@ const DIVISION_TYPES = Object.freeze(FILTER_TYPES
       dataUrl: `data/divisions/${value}.geojson`,
     });
   }));
+
 // cache in-flight requests separately from parsed features used for selection
 const divisionLoads = new Map();
 const divisionFeatures = new Map();
+
 let activeMap;
 let activeFilterType = null;
+
 // an area result is showing, as opposed to a polygon type with nothing picked
 let polygonSelected = false;
 let cameraFeatures = [];
+
 // names the camera whose viewshed is highlighted, for the export legend
 let highlightedCameraName = '';
 let resolveCameraFeatures;
+
 // camera options wait for the provider data while division sources wait for map setup
 const cameraFeaturesReady = new Promise((resolve) => {
   resolveCameraFeatures = resolve;
 });
+
 let resolveFilterSources;
 const filterSourcesReady = new Promise((resolve) => {
   resolveFilterSources = resolve;
 });
+
 let cameraMetricsLoad;
+
 // option slugs per filter type, filled as each type's options load
 const anchorSlugsByType = new Map();
 let anchorRequest = 0;
+
 // incremented whenever another selection or clear action takes ownership of results
 let cameraResultRequest = 0;
 let digitizedCameraLoad;
 let transmissionLinesLoad;
+
 // legend rows a filter preset switched on, hidden again when that filter is left
 // a row the user toggles themselves drops out and stays as they set it
 const presetLayersOn = new Set();
@@ -315,10 +342,12 @@ const DIGITIZED_CAMERA_OPERATORS = Object.freeze([
     markerShapes: ['square'],
   }),
 ]);
+
 // operator metadata drives both symbol filters and grouped legend rows
 const DIGITIZED_CAMERA_LAYER_IDS = Object.freeze(
   DIGITIZED_CAMERA_OPERATORS.map(({ layerId }) => layerId)
 );
+
 // legend symbols that the layer's popups repeat beside their titles
 const LAYER_SYMBOLS = Object.freeze({
   lookouts: Object.freeze({ swatchColor: LOOKOUT_COLOR, swatchShape: 'circle' }),
@@ -329,6 +358,7 @@ const LAYER_SYMBOLS = Object.freeze({
   fires: Object.freeze({ iconUrl: MARKER_ICON_URLS.fire }),
   prescribed: Object.freeze({ iconUrl: MARKER_ICON_URLS.prescribed }),
 });
+
 // features that take a click ahead of whatever lies under them
 const MARKER_LAYER_IDS = Object.freeze([
   ...CAMERA_LAYER_IDS,
@@ -356,16 +386,19 @@ const FIRE_MARKER_SIZES = [
 
 // render control shells before Mapbox and providers finish loading
 initSettings();
+
 // rows left out of js/visible-content.js are kept aside so their layers stay off
 const legendRows = visibleLegendItems(legendItems(), VISIBLE_LAYERS);
 const REMOVED_LAYER_LABELS = new Set(legendRows.removed.map(({ label }) => label));
 const legendControl = initLegend(legendRows.visible);
+
 // a preset row found unchecked was switched off by the user, so it is theirs now
 legendControl.onChange(() => {
   for (const label of presetLayersOn) {
     if (!legendControl.isChecked(label)) presetLayersOn.delete(label);
   }
 });
+
 const resultsControl = initResultsPanel({
   getMap: () => activeMap,
   getBasemap,
@@ -383,6 +416,7 @@ const resultsControl = initResultsPanel({
   // clears the picked option but keeps the filter panel on its current type
   onClose: () => filterControl.clearSelection(),
 });
+
 const filterControl = initFilterPanel({
   types: FILTER_TYPES.map(({ value, label, group }) => ({
     value, label, group, parent: nestedFilterParent(value, FILTER_TYPES),
@@ -427,12 +461,14 @@ async function loadMapLayers(map) {
   resolveFilterSources();
   // a link that names a filter opens it as soon as its options can load
   applyAnchor();
+
   // home fires before its camera animation starts
   map.on(MAP_HOME_EVENT, home);
   bindApplicationSourceErrors(map);
   addViewshedLayers(map);
   addPerimeterLayers(map);
   addLookoutLayer(map);
+
   await Promise.all([
     addFireLayer(map),
     addCameraLayers(map),
@@ -449,10 +485,12 @@ async function loadMapLayers(map) {
 
   // Mapbox visibility can now follow the startup legend
   legendControl.connect(map);
+
   // removed layers have no checkbox to follow, so switch them off here
   for (const { layerIds } of legendRows.removed) {
     for (const layerId of layerIds) setLayerVisible(map, layerId, false);
   }
+
   bindDigitizedCameraUnlock(map);
   // a filter preset may have switched the row on before the map connected
   legendControl.onChange(() => loadTransmissionLines(map));
@@ -629,6 +667,7 @@ function addContextLayers(map) {
       ],
     },
   }, beforeId);
+
   // the drawn lines are too thin to click, so an unseen wider copy takes the pointer
   map.addLayer({
     id: LAYER_IDS.transmissionLinesHit,
@@ -841,9 +880,11 @@ async function applyAnchor() {
     console.error('Unable to open anchor link:', error);
     return;
   }
+
   // a newer link or selection owns the page if these options loaded late
   if (request !== anchorRequest) return;
   const id = anchorOptionValue(anchorSlugsByType.get(type.value), anchor.option);
+
   // an option that no longer exists still lands on its filter type
   if (id == null || !(await filterControl.select(type.value, id))) {
     await filterControl.selectType(type.value);
@@ -856,12 +897,14 @@ async function writeAnchor(type, id) {
   // filter types left out of js/visible-content.js have no link
   const typeSlug = anchorSlug(FILTER_TYPES.find(({ value }) => value === type)?.label);
   let optionSlug = null;
+
   if (typeSlug && id != null) {
     // a map click can pick an option before its filter list has ever loaded
     if (!anchorSlugsByType.has(type)) await loadFilterOptions(type).catch(() => {});
     if (request !== anchorRequest) return;
     optionSlug = anchorSlugsByType.get(type)?.get(`${id}`) ?? null;
   }
+
   // a pick with no link of its own must not leave another selection's link behind
   const linkable = id == null || optionSlug || activeFilterType === type;
   if (linkable) setAnchor(typeSlug, optionSlug);
@@ -881,10 +924,12 @@ async function loadDivisionOptions(map, typeValue) {
   if (!division) throw new Error(`Unknown division type: ${typeValue}`);
 
   const data = await loadDivisionData(division);
+
   // a combined option has no shape of its own on the map, so clicks and labels land on its members
   const drawn = data.features.filter((feature) => !isCombinedDivision(feature));
   // keep full geometry for hit testing and selection, labels use compact points
   setSourceData(map, division.sourceId, { ...data, features: drawn });
+
   // precomputed label points keep text placement independent of polygon geometry
   setSourceData(map, division.labelSourceId, {
     type: 'FeatureCollection',
@@ -967,6 +1012,7 @@ function applyLayerPresetForFilter(filterType) {
     const wasOff = !legendControl.isChecked(label);
     if (setLayerVisibility(label, true) && wasOff) presetLayersOn.add(label);
   }
+
   if (preset.basemap) {
     setBasemap(preset.basemap).catch((error) => {
       console.error('Failed to apply preset basemap:', error);
@@ -986,17 +1032,21 @@ function typeSelected(type) {
   // invalidate pending camera metrics before the old result panel is cleared
   cameraResultRequest += 1;
   polygonSelected = false;
+
   // dropping the picked option reselects the same type, which keeps its layers
   if ((type || null) !== activeFilterType) hidePresetLayers();
   activeFilterType = type || null;
   if (type) applyLayerPresetForFilter(type);
+
   // null is the brief gap while options load, so the link waits for the real type
   if (type) writeAnchor(type);
+
   if (activeMap) {
     clearDivisionFilter(activeMap);
     if (type && type !== 'camera') showDivisionType(activeMap, type);
     selectCameraViewshed(activeMap, null);
   }
+
   resultsControl.clear();
 }
 
@@ -1073,11 +1123,13 @@ function clearFilter() {
   polygonSelected = false;
   activeFilterType = null;
   hidePresetLayers();
+
   if (activeMap) {
     clearDivisionFilter(activeMap);
     selectCameraViewshed(activeMap, null);
     hideCameraPreview(activeMap);
   }
+
   filterControl.setClearEnabled?.(false);
   resultsControl.clear();
   writeAnchor(null);
@@ -1109,6 +1161,7 @@ async function showCameraResult(map, feature) {
       console.error('Failed to load camera coverage:', error);
       return {};
     });
+
   const metricsById = await cameraMetricsLoad;
   // a newer pick owns the panel if this request finished late
   if (request !== cameraResultRequest) return;
@@ -1150,6 +1203,7 @@ function loadDivisionData(division) {
         if (unmatched.length) {
           console.warn(`VISIBLE_FILTERS lists unknown ${division.label} options:`, unmatched);
         }
+
         // options left out of js/visible-content.js are dropped before the menu, map, and selection see them
         const visible = data.features.filter((feature) =>
           filterOptionIsVisible(division, feature.properties));
@@ -1212,6 +1266,7 @@ function clearDivisionFilter(map) {
     setDivisionLayerFilter(map, division, NO_DIVISION_SELECTED);
     setDivisionHoverFilter(map, division, NO_DIVISION_SELECTED);
   }
+
   map.getCanvas().style.cursor = '';
 }
 
@@ -1380,6 +1435,7 @@ function featureBounds(feature) {
   let south = Infinity;
   let east = -Infinity;
   let north = -Infinity;
+
   for (const [lng, lat] of coords) {
     // invalid pairs should not poison the running extrema
     if (!Number.isFinite(lng) || !Number.isFinite(lat)) continue;
@@ -1388,6 +1444,7 @@ function featureBounds(feature) {
     if (lng > east) east = lng;
     if (lat > north) north = lat;
   }
+
   if (!Number.isFinite(west) || !Number.isFinite(south)) return null;
   return [[west, south], [east, north]];
 }
@@ -1399,6 +1456,7 @@ function collectCoordinates(node, out) {
     out.push(node);
     return;
   }
+
   for (const child of node) collectCoordinates(child, out);
 }
 
@@ -1415,6 +1473,7 @@ function bindApplicationSourceErrors(map) {
   map.on('error', (event) => {
     const sourceId = event.sourceId;
     const label = viewshedLabels.get(sourceId);
+
     // vector tiles fail asynchronously, so there is no fetch promise to catch
     if (label) {
       const tileId = event.tile?.tileID?.canonical;
@@ -1685,6 +1744,7 @@ function safelyLoadLegend(label, legendLabel, loader, fallback) {
   if (REMOVED_LAYER_LABELS.has(legendLabel)) {
     return Promise.resolve(fallback ?? emptyFeatureCollection());
   }
+
   return safelyLoad(label, loader, fallback, (error) => {
     legendControl.setError(
       legendLabel,
@@ -1760,6 +1820,7 @@ async function addCameraLayers(map) {
       },
       hide: () => cameraHovered(null),
     });
+
     map.on('click', cameraLayerId, (event) => {
       const feature = event.features?.[0];
       if (!feature) return;
@@ -1918,6 +1979,7 @@ function applyViewshedSymbology(map, basemap) {
   const darkOutline = basemap === 'satellite';
   const sharedColor = basemapColor(VIEWSHED_FILL_COLOR, basemap);
   const sharedImage = basemapColor(VIEWSHED_LEGEND_IMAGES, basemap);
+
   legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, sharedColor, { darkOutline, image: sharedImage });
   if (map.getLayer(LAYER_IDS.combinedViewshedsFill)) {
     map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color', sharedColor);
@@ -1926,9 +1988,11 @@ function applyViewshedSymbology(map, basemap) {
   for (const provider of CAMERA_PROVIDERS) {
     const colors = viewshedColors(provider);
     const fillColor = basemapColor(colors, basemap);
+
     if (map.getLayer(provider.viewshedFillLayerId)) {
       map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', fillColor);
     }
+
     // providers in their own color keep a flat swatch
     const image = colors === VIEWSHED_FILL_COLOR ? sharedImage : null;
     legendControl.updateSwatchColor(provider.viewshedLabel, fillColor, { darkOutline, image });
@@ -1945,6 +2009,7 @@ function basemapColor(colors, basemap) {
 
 function selectCameraViewshed(map, viewshedId, cameraName = '') {
   highlightedCameraName = viewshedId ? cameraName || 'Camera' : '';
+
   // provider viewshed ids are unique, so each highlight layer can share one filter
   // the sentinel produces an empty match while no camera is selected
   const filter = viewshedFilter(viewshedId || NO_VIEWSHED_SELECTED);
@@ -1962,6 +2027,7 @@ function viewshedFilter(viewshedId) {
 // export legend rows for selection symbols, which have no layer row of their own
 function selectionLegendItems(selection) {
   const items = [];
+
   if (selection?.kind === 'polygon') {
     const name = selection.properties?.name || selection.properties?.label || 'Selected area';
     items.push({
@@ -1970,6 +2036,7 @@ function selectionLegendItems(selection) {
       visual: { type: 'swatch', style: 'border', color: SELECTED_BOUNDARY_COLOR },
     });
   }
+
   if (highlightedCameraName && highlightedViewshedIsRendered(activeMap)) {
     items.push({
       label: `${highlightedCameraName} viewshed`,
@@ -1977,6 +2044,7 @@ function selectionLegendItems(selection) {
       visual: { type: 'icon', src: 'img/yellow_portland_tower_viewshed.png', outline: '#808080', size: 22 },
     });
   }
+
   return items;
 }
 

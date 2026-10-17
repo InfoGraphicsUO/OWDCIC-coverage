@@ -45,6 +45,7 @@ class Node {
 }
 
 const legend = new Node('aside');
+
 // keep the fixture scoped to the legend root expected by initLegend
 globalThis.document = {
   getElementById(id) { return id === 'legend' ? legend : null; },

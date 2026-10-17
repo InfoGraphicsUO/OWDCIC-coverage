@@ -14,12 +14,15 @@ export function initLegend(items) {
 
   // rebuild the visible list before providers and map layers finish loading
   legend.replaceChildren();
+
   // keep a flat label lookup for row updates and a separate ordered list for DOM placement
   const bindings = [];
   const topLevelBindings = [];
+
   // one delegated tooltip controller handles buttons added with each row
   const infoTooltip = attachInfoTooltip(legend);
   let activeMap;
+
   // map code that derives layers from several rows listens for any toggle
   const changeListeners = new Set();
   const notifyChange = () => {
@@ -40,6 +43,7 @@ export function initLegend(items) {
       groupBindings.push(group);
       group.element.hidden = item.hidden === true;
       topLevelBindings.push({ item, element: group.element });
+
       // omitted rows can be inserted later at their original position
       if (!group.element.hidden) legend.append(group.element);
       continue;
@@ -49,6 +53,7 @@ export function initLegend(items) {
     bindings.push(binding);
     binding.row.hidden = item.hidden === true;
     topLevelBindings.push({ item, element: binding.row });
+
     // keep initially hidden controls out of layout and accessibility navigation
     if (!binding.row.hidden) legend.append(binding.row);
   }
@@ -64,6 +69,7 @@ export function initLegend(items) {
       for (const { checkbox, item } of bindings) {
         setLayersVisible(map, item.layerIds, checkbox.checked);
       }
+
       for (const group of groupBindings) group.syncParent();
       notifyChange();
     },
@@ -94,10 +100,12 @@ export function initLegend(items) {
       if (hidden) {
         // a detached row cannot keep a tooltip visible at its old screen position
         if (infoTooltip.isFor(binding.element)) infoTooltip.hide();
+
         // remove from layout and accessibility navigation until explicitly revealed
         binding.element.remove();
         return;
       }
+
       if (binding.element.parentElement === legend) return;
 
       // reinsert before the next visible sibling to preserve the configured layer order
@@ -111,6 +119,7 @@ export function initLegend(items) {
       // only rows with provider notes get a tooltip trigger
       const infoButton = findBinding(label)?.infoButton;
       if (!infoButton) return;
+
       // keep the accessible name and hover text sourced from the same provider message
       infoButton.dataset.tooltip = text;
       infoButton.setAttribute('aria-label', text);
@@ -121,11 +130,14 @@ export function initLegend(items) {
       // viewshed colors change with the selected basemap
       const swatch = findBinding(label)?.swatch;
       if (!swatch) return;
+
       // CSS variables let one swatch style follow runtime basemap changes
       swatch.style.setProperty('--legend-swatch-color', color);
+
       // an inline url resolves from the page, where a CSS variable would resolve from the stylesheet
       swatch.style.backgroundImage = image ? `url("${image}")` : '';
       swatch.classList.toggle('legend-swatch--image', Boolean(image));
+
       // the image has its own edges, so only flat swatches take the satellite outline
       swatch.classList.toggle('legend-swatch--dark-outline', darkOutline && !image);
     },
@@ -154,6 +166,7 @@ export function initLegend(items) {
 
       visual.classList.remove('legend-visual--loading');
       visual.classList.add('legend-visual--error');
+
       // the visual is keyboard reachable because its tooltip contains the failure detail
       visual.dataset.tooltip = message;
       visual.setAttribute('aria-label', message);
@@ -190,6 +203,7 @@ function createLegendGroup(item, getMap, notifyChange) {
 
       if (map) setLayersVisible(map, child.item.layerIds, checked);
     }
+
     syncParent();
   }, notifyChange);
   
@@ -232,6 +246,7 @@ function createLegendGroup(item, getMap, notifyChange) {
     childContainer.append(child.row);
     return child;
   });
+
   element.append(childContainer);
 
   // expose every child toggle through the parent checkbox's controlled-elements list
@@ -242,6 +257,7 @@ function createLegendGroup(item, getMap, notifyChange) {
 
   function syncParent() {
     const checkedCount = children.filter(({ checkbox }) => checkbox.checked).length;
+
     // indeterminate communicates a partial child selection to both sighted and screen-reader users
     parent.checkbox.checked = checkedCount === children.length;
     parent.checkbox.indeterminate = checkedCount > 0 && checkedCount < children.length;
@@ -267,12 +283,16 @@ function createLegendRow(item, getMap, onToggle, notifyChange) {
     } else if (map) {
       setLayersVisible(map, item.layerIds, checkbox.checked);
     }
+
     notifyChange?.();
   };
+
   checkbox.addEventListener('change', applyToggle);
+
   // programmatic toggles reuse the manual path because set checked fires no change event
   const setChecked = (checked) => {
     checkbox.checked = checked;
+
     // a programmatic set clears any partial-group state left on the box
     checkbox.indeterminate = false;
     applyToggle();
@@ -299,6 +319,7 @@ function createLegendRow(item, getMap, onToggle, notifyChange) {
     infoButton = document.createElement('button');
     infoButton.type = 'button';
     infoButton.className = 'info-button legend-info';
+
     // the button label supplies the provider note to assistive technology
     infoButton.innerHTML = '<i class="fa-regular fa-circle-info" aria-hidden="true"></i>';
     infoButton.dataset.tooltip = item.infoText;
@@ -322,6 +343,7 @@ function createCameraLegendIcon(item) {
       colorBlock.style.background = color;
       icon.append(colorBlock);
     }
+
     return icon;
   }
 
@@ -338,6 +360,7 @@ function createCameraLegendIcon(item) {
     symbol.className = `legend-camera-symbol legend-camera-symbol--${shape}`;
     icon.append(symbol);
   }
+
   return icon;
 }
 
@@ -347,12 +370,14 @@ function createLegendVisual(icon, loading, label) {
 
   const loader = document.createElement('span');
   loader.className = 'legend-loader';
+
   // decorative indicator; the visual wrapper carries the status text
   loader.setAttribute('aria-hidden', 'true');
 
   const error = document.createElement('span');
   error.className = 'legend-error';
   error.textContent = '!';
+
   // error text is repeated in the wrapper's accessible label
   error.setAttribute('aria-hidden', 'true');
 
@@ -375,6 +400,7 @@ function createLegendIcon(iconUrl) {
   const icon = document.createElement('img');
   icon.className = 'legend-icon';
   icon.src = iconUrl;
+
   // checkbox and visible label already name the layer
   icon.alt = '';
   return icon;
@@ -383,6 +409,7 @@ function createLegendIcon(iconUrl) {
 function createLegendSwatch(item) {
   const swatch = document.createElement('span');
   const classes = ['legend-swatch'];
+
   // shape, border and extra classes let CSS distinguish fills from point marks
   if (item.swatchShape === 'circle') classes.push('legend-swatch--circle');
   if (item.swatchBorder === false) classes.push('legend-swatch--fill');

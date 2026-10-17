@@ -28,8 +28,10 @@ assert.deepEqual(parseAnchor('?coverage=county&selection='), { type: 'county', o
 assert.equal(parseAnchor(''), null);
 assert.equal(parseAnchor('?'), null);
 assert.equal(parseAnchor('?selection=or-lane'), null);
+
 // a broken escape matches nothing instead of throwing
 assert.doesNotThrow(() => parseAnchor('?coverage=%E0%A4%A'));
+
 // links shared before the rename still open, and are rewritten with the new name
 assert.deepEqual(parseAnchor('?filter=county&selection=or-lane'), { type: 'county', option: 'or-lane' });
 assert.equal(formatAnchor('county', 'or-lane', '?filter=state'), '?coverage=county&selection=or-lane');
@@ -66,8 +68,10 @@ const districts = anchorOptionSlugs([
   { value: 'odf:all', label: 'All ODF districts', state: 'OR' },
 ]);
 assert.equal(districts.get('odf:1'), 'central-oregon');
+
 // the combined option keeps its own words, so existing district links do not change
 assert.equal(districts.get('odf:all'), 'all-odf-districts');
+
 const parks = anchorOptionSlugs([
   { value: 'park:1', label: 'Deschutes National Forest' },
   { value: 'park:2', label: 'Oregon Caves National Monument and Preserve' },
@@ -87,6 +91,7 @@ const agencies = anchorOptionSlugs([
 assert.equal(agencies.get('federal-land:USFS'), 'forest-service');
 assert.equal(agencies.get('federal-land:NPS'), 'national-park-service');
 assert.equal(agencies.get('federal-land:BLM'), 'bureau-of-land-management');
+
 // a label made only of filler words keeps them
 assert.equal(anchorOptionSlugs([{ value: 1, label: 'State Forest' }]).get('1'), 'state-forest');
 
@@ -99,12 +104,14 @@ const counties = anchorOptionSlugs([
 assert.equal(counties.get('county:41003'), 'or-benton');
 assert.equal(counties.get('county:53005'), 'wa-benton');
 assert.equal(counties.get('county:41039'), 'or-lane');
+
 const houses = anchorOptionSlugs([
   { value: 'house:41010', label: 'State House District 10', state: 'OR' },
   { value: 'house:53010', label: 'Legislative (House) District 10', state: 'WA' },
 ]);
 assert.equal(houses.get('house:41010'), 'or-10');
 assert.equal(houses.get('house:53010'), 'wa-10');
+
 // the prefix is dropped when the names are already unique without it
 const states = anchorOptionSlugs([
   { value: 'state:41', label: 'Oregon', state: 'OR' },

@@ -97,6 +97,7 @@
     outline: 2px solid var(--ohaz-yellow);
     outline-offset: 1px;
 }
+
 .control-rail__button.is-active {
     color: var(--ohaz-yellow);
     border-color: var(--ohaz-yellow);
@@ -210,6 +211,7 @@
     outline: 2px solid var(--ohaz-yellow, #f8e109);
     outline-offset: 2px;
 }
+
 .control-shell__clear:disabled {
     cursor: not-allowed;
     opacity: .55;

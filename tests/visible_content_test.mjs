@@ -16,6 +16,7 @@ import { VISIBLE_FILTERS, VISIBLE_LAYERS } from '../js/visible-content.js';
 const shippedWarnings = [];
 const shipped = visibleFilterTypes(VISIBLE_FILTERS, FILTER_TYPES, (text) => shippedWarnings.push(text));
 assert.deepEqual(shippedWarnings, []);
+
 const shippedPaths = shipped.map(({ group, label }) => [...group, label].join(' > '));
 assert.deepEqual(shippedPaths, [
   'Federal land',
@@ -30,11 +31,13 @@ assert.deepEqual(shippedPaths, [
   'Other > County',
   'National Forest',
 ]);
+
 // National Forest opens from the Federal land option rather than listing on its own
 assert.deepEqual(nestedFilterParent('national-forest', shipped),
   { type: 'federal-land', option: 'federal-land:USFS' });
 assert.equal(nestedFilterParent('national-forest', shipped.filter(({ value }) => value !== 'federal-land')), null);
 assert.equal(nestedFilterParent('federal-land', shipped), null);
+
 const legendLabels = new Set(Object.values(LEGEND_LAYERS));
 for (const label of VISIBLE_LAYERS) {
   assert.ok(legendLabels.has(label), `${label} must be a LEGEND_LAYERS value`);
@@ -106,6 +109,7 @@ assert.equal(filterOptionRank(shippedFederal, { label: 'National Forest' }), 0);
 assert.equal(filterOptionRank(shippedFederal, { label: 'Dept of Interior (BLM, USFWS, NPS)' }), 1);
 assert.equal(filterOptionRank(shippedFederal, { label: 'Other' }), 2);
 assert.equal(filterOptionRank(state, { label: 'Oregon' }), 0);
+
 const [county] = visibleFilterTypes({ County: ['Baker County', 'county:41009'] });
 assert.ok(filterOptionIsVisible(county, { label: 'Baker', name: 'Baker County', divisionId: 'county:41001' }));
 assert.ok(filterOptionIsVisible(county, { label: 'Columbia', divisionId: 'county:41009' }));
@@ -125,6 +129,7 @@ const items = [
   { label: 'B', layerIds: ['b'] },
   { label: 'C', layerIds: ['c'] },
 ];
+
 const layerWarnings = [];
 const rows = visibleLegendItems(items, ['c', 'A', 'Secret', 'Missing'], (text) => layerWarnings.push(text));
 assert.deepEqual(rows.visible.map(({ label }) => label), ['C', 'A', 'Secret']);

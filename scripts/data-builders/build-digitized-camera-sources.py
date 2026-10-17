@@ -33,6 +33,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="also write .csv and .xlsx next to the GeoJSON output",
     )
+
     return parser.parse_args()
 
 
@@ -49,6 +50,7 @@ def read_dbf(path: Path) -> list[dict[str, str]]:
             descriptor = stream.read(32)
             if not descriptor:
                 raise ValueError(f"Unexpected end of DBF header: {path}")
+
             if descriptor[0] == 0x0D:
                 break
 
@@ -57,15 +59,18 @@ def read_dbf(path: Path) -> list[dict[str, str]]:
 
         stream.seek(header_length)
         rows = []
+
         for _ in range(record_count):
             record = stream.read(record_length)
             if len(record) != record_length:
                 raise ValueError(f"Unexpected end of DBF records: {path}")
+
             if record[:1] == b"*":
                 continue
 
             offset = 1
             row = {}
+
             for name, length in fields:
                 raw_value = record[offset : offset + length]
                 offset += length
@@ -74,6 +79,7 @@ def read_dbf(path: Path) -> list[dict[str, str]]:
                     .replace("\x00", "")
                     .strip()
                 )
+
             rows.append(row)
 
     return rows
@@ -98,12 +104,14 @@ def read_point_z_shapes(path: Path) -> list[tuple[float, float]]:
 
             _, content_length_words = struct.unpack(">2i", record_header)
             content = stream.read(content_length_words * 2)
+
             if len(content) != content_length_words * 2:
                 raise ValueError(f"Unexpected end of shapefile records: {path}")
 
             record_type = struct.unpack("<i", content[:4])[0]
             if record_type == 0:
                 continue
+
             if record_type != 11:
                 raise ValueError(f"Expected PointZ record type 11, found {record_type}")
 
@@ -157,6 +165,7 @@ def inverse_oregon_lambert(x_feet: float, y_feet: float) -> tuple[float, float]:
 
     # recover geodetic latitude from conformal latitude by fixed-point iteration
     latitude = math.pi / 2 - 2 * math.atan(conformal_t)
+
     for _ in range(12):
         ratio = (1 - eccentricity * math.sin(latitude)) / (
             1 + eccentricity * math.sin(latitude)
@@ -170,6 +179,7 @@ def inverse_oregon_lambert(x_feet: float, y_feet: float) -> tuple[float, float]:
         latitude = updated
 
     longitude = longitude_0 + theta / cone_constant
+
     return math.degrees(longitude), math.degrees(latitude)
 
 
@@ -276,6 +286,7 @@ def write_xlsx(path: Path, features: list[dict]) -> None:
     # minimal dependency-free workbook: one sheet, inline strings, numeric cells
     all_rows = [CSV_FIELDS, *feature_rows(features)]
     sheet_rows = []
+
     for row_index, row in enumerate(all_rows, start=1):
         cells = []
         for column_index, value in enumerate(row):
@@ -314,6 +325,7 @@ def write_xlsx(path: Path, features: list[dict]) -> None:
         "xl/worksheets/sheet1.xml": head
         + f'<worksheet xmlns="{ns}"><sheetData>{"".join(sheet_rows)}</sheetData></worksheet>',
     }
+
     with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
         for name, content in parts.items():
             archive.writestr(name, content)

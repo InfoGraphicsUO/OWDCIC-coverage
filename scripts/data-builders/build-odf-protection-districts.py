@@ -93,8 +93,10 @@ def main():
     payload, source, digest = arcgis_query(QUERY, PARAMS)
     districts = sorted((normalized_feature(feature) for feature in payload["features"]),
                        key=lambda item: item["id"])
+
     if len({feature["id"] for feature in districts}) != len(districts):
         raise ValueError("ODF district names must be unique")
+
     # listed first; the page also pins it to the top of the option list
     features = [combined_feature(districts), *districts]
     write_collection(OUT / f"{DIVISION_TYPE}.geojson", feature_collection(

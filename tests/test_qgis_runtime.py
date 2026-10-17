@@ -24,6 +24,7 @@ class QgisRuntimeTests(unittest.TestCase):
             root = Path(temporary) / "QGIS 4.2.1"
             bin_directory = root / "bin"
             prefix = root / "apps/qgis"
+
             for directory in (
                 bin_directory,
                 prefix / "bin",

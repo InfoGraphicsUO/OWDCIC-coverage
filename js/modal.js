@@ -8,6 +8,7 @@
 export function openModal({ id, title, closeLabel, className = '', onClose }) {
   // remember the opener before moving focus into the modal
   const previousFocus = document.activeElement;
+
   const overlay = document.createElement('div');
   overlay.className = classNames('modal', className);
 
@@ -26,11 +27,13 @@ export function openModal({ id, title, closeLabel, className = '', onClose }) {
   const heading = document.createElement('h2');
   heading.id = `${id}-title`;
   heading.textContent = title;
+
   const closeButton = document.createElement('button');
   closeButton.type = 'button';
   closeButton.className = 'modal__close';
   closeButton.setAttribute('aria-label', closeLabel);
   closeButton.textContent = '×';
+
   header.append(heading, closeButton);
 
   dialog.append(header);
@@ -56,12 +59,16 @@ export function openModal({ id, title, closeLabel, className = '', onClose }) {
       close();
       return;
     }
+
     if (event.key !== 'Tab') return;
+
     // cycle keyboard focus within the modal
     const items = focusables();
     if (!items.length) return;
+
     const first = items[0];
     const last = items[items.length - 1];
+
     if (event.shiftKey && document.activeElement === first) {
       event.preventDefault();
       last.focus();
@@ -75,6 +82,7 @@ export function openModal({ id, title, closeLabel, className = '', onClose }) {
   closeButton.addEventListener('click', close);
   backdrop.addEventListener('click', close);
   document.addEventListener('keydown', onKeyDown);
+
   // defer focus until the dialog has been attached to the document
   requestAnimationFrame(() => dialog.focus());
 

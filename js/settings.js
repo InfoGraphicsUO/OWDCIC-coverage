@@ -5,6 +5,7 @@ const STORAGE_KEY = 'owdcic-settings';
 const DEFAULT_SETTINGS = Object.freeze({
   separateViewshedColors: false,
 });
+
 // each row is one boolean preference shown in the settings popup
 const SETTING_FIELDS = Object.freeze([
   Object.freeze({
@@ -26,6 +27,7 @@ export function onSettingChange(key, callback) {
   const listener = (changedKey, value) => {
     if (changedKey === key) callback(value);
   };
+
   listeners.add(listener);
   callback(settings[key]);
   return () => listeners.delete(listener);
@@ -34,6 +36,7 @@ export function onSettingChange(key, callback) {
 export function initSettings() {
   const button = document.getElementById('settings-button');
   if (!button) return;
+
   button.addEventListener('click', () => {
     button.setAttribute('aria-expanded', 'true');
     openSettingsModal(() => button.setAttribute('aria-expanded', 'false'));
@@ -42,6 +45,7 @@ export function initSettings() {
 
 function setSetting(key, value) {
   if (settings[key] === value) return;
+
   settings[key] = value;
   writeStoredSettings();
   for (const listener of listeners) listener(key, value);
@@ -79,10 +83,12 @@ function settingRow({ key, label, description }) {
   title.htmlFor = id;
   title.className = 'settings-modal__label';
   title.textContent = label;
+
   const hint = document.createElement('p');
   hint.id = `${id}-description`;
   hint.className = 'settings-modal__description';
   hint.textContent = description;
+
   text.append(title, hint);
 
   row.append(checkbox, text);

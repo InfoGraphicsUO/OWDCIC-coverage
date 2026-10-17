@@ -9,8 +9,10 @@ const LAND_MIX_INFO = 'Tribal areas follow reservation and trust boundaries. Oth
 // square-kilometer to square-mile conversion for displayed area values
 const SQMI_PER_SQKM = 0.3861021585;
 const UTILITY_QUALIFIER = 'Approximate service area boundary';
+
 // the utility filter switches this layer on, so its panel keys the line color too
 const TRANSMISSION_LINES_QUALIFIER = 'Transmission lines';
+
 // names what the yellow selection outline traces for each filter group
 const BOUNDARY_QUALIFIERS = Object.freeze({
   state: 'State boundary',
@@ -25,13 +27,17 @@ const BOUNDARY_QUALIFIERS = Object.freeze({
   'tribal-land': 'Tribal land boundary',
   'odf-protection-district': 'ODF protection district boundary',
 });
+
 const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | UO InfoGraphics Lab | OHAZ';
+
 // Mapbox satellite imagery carries its own provider credit
 const SATELLITE_MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | Maxar | UO InfoGraphics Lab | OHAZ';
+
 // only these polygon selections include mapped land shares
 const POLYGON_DONUT_TYPES = new Set([
   'house', 'us-house', 'senate', 'utility', 'odf-protection-district',
 ]);
+
 // shared category colors keep chart slices and text swatches in sync
 const LAND_MIX_COLORS = Object.freeze({
   'Tribal reservation/trust area': '#8154BD',
@@ -45,6 +51,7 @@ const LAND_MIX_COLORS = Object.freeze({
   'Mapped private open space': '#aa6a52',
   'Other/unclassified': '#727272',
 });
+
 // cycle these colors for source labels outside the named category palette
 const LAND_MIX_FALLBACK_COLORS = ['#3b7d4f', '#f6d94a', '#3c6b03', '#8154BD', '#727272', '#008fb3'];
 
@@ -71,6 +78,7 @@ export function initResultsPanel({
   const content = element.querySelector('[data-results-content]');
   const exportButton = element.querySelector('[data-results-export]');
   const shareButton = element.querySelector('[data-results-share]');
+
   // touch devices get the OS share sheet; everything else copies the link
   const useShareSheet = typeof navigator.share === 'function' && window.matchMedia('(pointer: coarse)').matches;
   const shareIcon = document.createElement('i');
@@ -79,6 +87,7 @@ export function initResultsPanel({
   const shareLabel = document.createElement('span');
   const shareText = useShareSheet ? 'Share' : 'Copy link';
   shareLabel.textContent = shareText;
+
   // the label itself confirms a copy, so screen readers need to hear it change
   shareLabel.setAttribute('aria-live', 'polite');
   let shareLabelTimer = null;
@@ -87,6 +96,7 @@ export function initResultsPanel({
   const infoTooltip = attachInfoTooltip(content);
   let chart = null;
   let chartReady = Promise.resolve();
+
   // stale plot promises must not restore a chart after the selection changes
   let chartGeneration = 0;
   let current = null;
@@ -97,6 +107,7 @@ export function initResultsPanel({
     current = null;
     destroyChart();
     closeExportModal();
+
     // keep an empty panel out of both visual and accessibility navigation
     title.textContent = 'Select an area or camera';
     subtitle.textContent = '';
@@ -155,6 +166,7 @@ export function initResultsPanel({
   function showCamera(properties = {}, metrics = null, feature = null) {
     // camera location comes from geometry while descriptive fields stay in properties
     current = { kind: 'camera', properties, metrics, geometry: feature?.geometry };
+
     // provider cameras without a locality show their operator instead
     const location = [properties.county, properties.state].filter(Boolean).join(', ') || properties.operator || '';
     presentResult(properties.name || 'Camera', renderCamera(properties, metrics), location);
@@ -166,12 +178,15 @@ export function initResultsPanel({
       status.textContent = 'Select a result before exporting.';
       return;
     }
+
     const members = summaryReportMembers(current);
+
     // only an "All" option with its member areas loaded offers the report choices
     if (members.length) {
       openExportChooser(current, members);
       return Promise.resolve();
     }
+
     return openMapExport();
   }
 
@@ -229,6 +244,7 @@ export function initResultsPanel({
     if (!current) return;
     const selection = current;
     const exportTitle = title.textContent;
+
     // hold the panel busy until the preview is ready or export fails
     exportButton.disabled = true;
     element.setAttribute('aria-busy', 'true');
@@ -262,6 +278,7 @@ export function initResultsPanel({
       });
     } catch (error) {
       if (current !== selection) return;
+
       // keep the result available for a retry and expose failure in the panel status
       status.textContent = 'Export preview failed. Try again after the map finishes loading.';
       console.error('OWDCIC export preview failed', error);
@@ -285,6 +302,7 @@ export function initResultsPanel({
         members: members.map((feature) => feature.properties || {}),
         mapImage,
       });
+
       if (current !== selection) return;
       status.textContent = '';
       const pdfDownloadName = `owdcic-${slugify(exportTitle)}-summary-report.pdf`;
@@ -327,6 +345,7 @@ export function initResultsPanel({
   async function shareLink() {
     if (!current) return;
     const selection = current;
+
     // the map keeps the URL query string on the current selection, so the address is the link
     const url = window.location.href;
     if (useShareSheet) {
@@ -338,8 +357,10 @@ export function initResultsPanel({
         if (error?.name === 'AbortError') return;
       }
     }
+
     try {
       await navigator.clipboard.writeText(url);
+
       // confirm in place, then hand the button its label back
       shareLabel.textContent = 'Link copied!';
       window.clearTimeout(shareLabelTimer);
@@ -351,6 +372,7 @@ export function initResultsPanel({
 
   exportButton.addEventListener('click', openExportModal);
   shareButton.addEventListener('click', shareLink);
+
   // the caller owns clearing so the filter panel and map reset together
   element.querySelector('[data-results-close]').addEventListener('click', () => onClose());
   clear();
@@ -375,6 +397,7 @@ export function initResultsPanel({
     subtitle.textContent = detail;
     replaceContent(body);
     const chartHost = content.querySelector('[data-results-chart]');
+
     // a Plotly promise may settle after a newer selection has replaced this host
     const generation = chartGeneration;
     chartReady = chartHost
@@ -397,6 +420,7 @@ export function initResultsPanel({
     if (chart && typeof window.Plotly?.purge === 'function') {
       try { window.Plotly.purge(chart); } catch (_) { /* purge can fail during chart teardown */ }
     }
+
     chart = null;
     chartReady = Promise.resolve();
   }
@@ -420,6 +444,7 @@ function createExportModal({
     className: 'results-export-modal',
     onClose,
   });
+
   backdrop.dataset.exportBackdrop = '';
   closeButton.dataset.exportClose = '';
 
@@ -445,6 +470,7 @@ function createExportModal({
     downloadButton.dataset.exportDownload = '';
     downloadButton.textContent = 'Download PNG';
   }
+
   const pdfDownloadButton = document.createElement('button');
   pdfDownloadButton.type = 'button';
   pdfDownloadButton.className = 'modal__button';
@@ -465,6 +491,7 @@ function createExportModal({
   downloadButton?.addEventListener('click', () => {
     onDownload();
   });
+
   pdfDownloadButton.addEventListener('click', async () => {
     if (downloadButton) downloadButton.disabled = true;
     pdfDownloadButton.disabled = true;
@@ -495,6 +522,7 @@ function createExportChooserModal({ group, onReport, onCsv, onMap, onClose }) {
     className: 'results-export-chooser',
     onClose,
   });
+
   const body = document.createElement('div');
   body.className = 'modal__body results-export-chooser__options';
   const status = document.createElement('p');
@@ -548,6 +576,7 @@ function createExportChooserModal({ group, onReport, onCsv, onMap, onClose }) {
     button.addEventListener('click', choice.run);
     body.append(button);
   }
+
   body.append(status);
   dialog.append(body);
   return { close, status };
@@ -580,6 +609,7 @@ function renderPolygon(type, properties) {
   const covered = finite(properties.cameraViewshedAreaSqKm);
   const name = properties.name || properties.label || 'selected area';
   wrapper.className = 'results-panel__body';
+
   // source-specific caveats keep approximate or administrative boundaries clear
   const qualifier = type === 'federal-land' && /Department of Defense|Other federal fee manager/.test(name)
     ? 'This source boundary may include planning areas without federal fee ownership.'
@@ -591,7 +621,9 @@ function renderPolygon(type, properties) {
       'results-panel__qualifier results-panel__qualifier--transmission-lines',
     ));
   }
+
   wrapper.append(selfLine(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`, 'results-panel__lead'));
+
   // area totals need valid source values; missing coverage must stay unavailable, not zero
   if (coverage != null && covered != null && total != null) {
     wrapper.append(selfLine(
@@ -600,15 +632,18 @@ function renderPolygon(type, properties) {
   } else if (total != null) {
     wrapper.append(selfLine(`${formatNumber(total * SQMI_PER_SQKM)} mi² total area`));
   }
+
   if (polygonShowsDonut(type, properties)) {
     wrapper.append(landMixSection(properties.landMix, 'Mapped land status breakdown'));
   }
+
   return wrapper;
 }
 
 function renderCamera(properties, metrics) {
   const wrapper = document.createElement('div');
   wrapper.className = 'results-panel__body results-panel__camera';
+
   // each owner's public viewer only carries that owner's own Pano AI cameras
   const viewer = properties.operator === 'Pano AI' || properties.provider === 'pano'
     ? PANO_VIEWERS[properties.owner || 'Portland General Electric']
@@ -642,11 +677,13 @@ function renderCamera(properties, metrics) {
   } else {
     preview.append(unavailable);
   }
+
   const pan = formatPan(properties.pan);
   const overlay = document.createElement('div');
   overlay.className = 'results-panel__camera-overlay';
   const fallbackFeed = isPano ? viewer.url : properties.id == null ? '' : `https://alertwest.live/cam-console/${encodeURIComponent(String(properties.id))}`;
   const feed = safeCameraFeedUrl(properties.feed || properties.url || properties.link || fallbackFeed, viewer);
+
   // a Pano camera without its own page still opens the viewer's front page
   const feedLabel = isPano && feed === viewer.url ? `Open ${viewer.name}` : 'Open live camera feed';
   if (feed) {
@@ -660,25 +697,30 @@ function renderCamera(properties, metrics) {
     a.innerHTML = `<span>${feedLabel}</span><i class="fa-solid fa-up-right-from-square" aria-hidden="true"></i>`;
     overlay.append(a);
   }
+
   if (pan) {
     const panLabel = document.createElement('span');
     panLabel.className = 'results-panel__camera-pan';
     panLabel.textContent = `Pan ${pan}`;
     overlay.append(panLabel);
   }
+
   if (overlay.children.length) preview.append(overlay);
   wrapper.append(preview);
   if (!cameraCoverageAvailable(metrics)) {
     wrapper.append(selfLine(cameraUnavailableMessage(properties, metrics), 'results-panel__lead'));
     return wrapper;
   }
+
   const area = finite(metrics.landAreaSqKm);
   if (area != null) {
     wrapper.append(selfLine(`${formatNumber(area * SQMI_PER_SQKM)} mi² camera viewshed`, 'results-panel__lead'));
   }
+
   if (Array.isArray(metrics.landMix) && metrics.landMix.length > 0) {
     wrapper.append(landMixSection(metrics.landMix, 'Viewshed mapped land status breakdown'));
   }
+
   return wrapper;
 }
 
@@ -703,6 +745,7 @@ function landMixSection(landMix, chartLabel) {
   chart.dataset.resultsChart = '';
   chart.setAttribute('role', 'img');
   chart.setAttribute('aria-label', chartLabel);
+
   // stat rows remain the readable source of truth if chart rendering is unavailable
   const stats = document.createElement('div');
   stats.className = 'results-panel__land-stats';
@@ -743,12 +786,15 @@ function renderDonut(host, landMix) {
     host.textContent = 'Mapped land status data unavailable.';
     return host;
   }
+
   if (typeof window.Plotly?.newPlot !== 'function') {
     host.textContent = 'Chart unavailable. Land shares are listed below.';
     return host;
   }
+
   // reduced motion keeps the chart static and non-interactive
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   // keep data order stable so slice colors match the adjacent text swatches
   return window.Plotly.newPlot(host, [{
     type: 'pie',
@@ -780,16 +826,19 @@ function renderDonut(host, landMix) {
 const EXPORT_MARGIN = 16;
 const EXPORT_STATS_WIDTH = 360;
 const EXPORT_LEGEND_WIDTH = 320;
+
 // legend and results cards draw at this share of their design size so more of the map shows
 const EXPORT_CARD_SCALE = 0.7;
 const EXPORT_FONT = 'Merriweather, "Segoe UI", sans-serif';
 const EXPORT_LEGEND_SWATCH_SIZE = 20;
 const EXPORT_LEGEND_SWATCH_GAP = 10;
 const EXPORT_LEGEND_TEXT_OFFSET = EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_SWATCH_GAP;
+
 // selection rows carry place and camera names, which can outgrow one legend line
 const EXPORT_LEGEND_LABEL_CHARS = 30;
 const EXPORT_LEGEND_LINE_HEIGHT = 18;
 const EXPORT_PANEL_FILL = 'rgba(47, 46, 46, 0.9)';
+
 // fallback visuals for integrations that provide labels without DOM swatches
 const EXPORT_LEGEND_VISUALS = Object.freeze({
   'ALERTWest cameras': { type: 'icon', src: 'img/camera-marker.svg' },
@@ -807,6 +856,7 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'Fires (NIFC)': { type: 'icon', src: 'img/fire-marker.svg' },
   'Prescribed fires (Watch Duty)': { type: 'icon', src: 'img/prescribed-marker.svg' },
 });
+
 // the export names viewsheds without repeating "camera" on every row
 const EXPORT_SHARED_VIEWSHED_LABEL = 'Viewsheds';
 const EXPORT_PROVIDER_VIEWSHED_LABELS = Object.freeze({
@@ -814,6 +864,7 @@ const EXPORT_PROVIDER_VIEWSHED_LABELS = Object.freeze({
   [LEGEND_LAYERS.panoViewsheds]: 'Pano AI viewsheds',
   [LEGEND_LAYERS.enviroVisionViewsheds]: 'EnviroVision viewsheds',
 });
+
 // rows drawn in the shared viewshed color get a sample viewshed instead of a flat swatch
 const EXPORT_SHARED_COLOR_VIEWSHED_LABELS = new Set([
   EXPORT_SHARED_VIEWSHED_LABEL,
@@ -829,6 +880,7 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   if (!mapCanvas || typeof mapCanvas.toDataURL !== 'function' || mapCanvas.width < 2 || mapCanvas.height < 2) {
     throw new Error('Map canvas unavailable');
   }
+
   const mapImage = await loadImage(mapCanvas.toDataURL('image/png'));
   let chartImage = null;
   if (chart && typeof window.Plotly?.toImage === 'function') {
@@ -851,6 +903,7 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
       chartImage = await loadImage(await window.Plotly.toImage(figure, { format: 'png', width: 500, height: 300, scale: 2 }));
     } catch (_) { /* text rows still carry the land shares when rasterization fails */ }
   }
+
   // preserve the map aspect ratio while enforcing a readable minimum export width
   const width = Math.max(1000, mapImage.width || 1000);
   const height = Math.round((mapImage.height || 600) * width / (mapImage.width || width));
@@ -870,6 +923,7 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
 
   // resolve legend visuals before layout so loaded icons and labels share one pass
   const legendRows = await preloadLegendVisuals((legendItems || []).filter((row) => row?.label));
+
   // reserve chart space only when Plotly produced a raster image
   const statsContent = exportStatsContent(current);
   const statsLayout = layoutStatsPanel({
@@ -879,13 +933,16 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
     ...statsContent,
     chartHeight: chartImage ? 180 : 0,
   });
+
   const legendLayout = layoutLegendPanel({ ctx, width: EXPORT_LEGEND_WIDTH, rows: legendRows });
   const attributionHeight = 18;
   const stackGap = 12;
+
   // the cards draw in their own smaller frame; margins and attribution keep the full scale
   const cardFrameWidth = frameWidth / EXPORT_CARD_SCALE;
   const cardMargin = EXPORT_MARGIN / EXPORT_CARD_SCALE;
   const maxPanelBottom = (frameHeight - EXPORT_MARGIN - attributionHeight - stackGap) / EXPORT_CARD_SCALE;
+
   // align both cards to the same bottom edge while keeping each above attribution
   const statsX = cardFrameWidth - cardMargin - EXPORT_STATS_WIDTH;
   const statsY = Math.max(cardMargin, maxPanelBottom - statsLayout.height);
@@ -916,8 +973,10 @@ async function createPdfFromImages(pngDataUrls) {
       result.set(part, offset);
       offset += part.length;
     }
+
     return result;
   };
+
   // objects 1 and 2 are the catalog and page tree; each page then adds a page, image, and content object
   const pageObjectIds = pngDataUrls.map((_, index) => 3 + index * 3);
   const objects = [
@@ -954,6 +1013,7 @@ async function createPdfFromImages(pngDataUrls) {
       encode(`${pageId + 2} 0 obj\n<< /Length ${encoder.encode(imageCommand).length} >>\nstream\n${imageCommand}endstream\nendobj\n`),
     );
   }
+
   const header = encode('%PDF-1.4\n');
   const offsets = [0];
   let byteOffset = header.length;
@@ -961,6 +1021,7 @@ async function createPdfFromImages(pngDataUrls) {
     offsets.push(byteOffset);
     byteOffset += object.length;
   }
+
   const xrefOffset = byteOffset;
   const xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.slice(1).map((offset) => `${String(offset).padStart(10, '0')} 00000 n `).join('\n')}\ntrailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
   return new Blob([header, ...objects, encode(xref)], { type: 'application/pdf' });
@@ -976,6 +1037,7 @@ const REPORT_MUTED = '#686868';
 const REPORT_RULE = '#d6d6d6';
 const REPORT_STRIPE = '#f4f4f4';
 const REPORT_ACCENT = '#f8e109';
+
 // covered bars use the shared viewshed orange from the map
 const REPORT_COVERAGE_COLOR = '#F28D05';
 const REPORT_BAR_TRACK = '#e8e8e8';
@@ -994,6 +1056,7 @@ async function composeSummaryPages({ title, group, total, members, mapImage }) {
   for (let index = 0; index < members.length; index += REPORT_CARDS_PER_PAGE) {
     cardPages.push(members.slice(index, index + REPORT_CARDS_PER_PAGE));
   }
+
   const header = { title, date: reportDateFormat.format(new Date()), pageCount: 3 + cardPages.length };
   return [
     drawReportPage(header, 1, (ctx, top, bottom) => drawReportMap(ctx, map, top, bottom)),
@@ -1080,6 +1143,7 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
     covered: 640,
     total: REPORT_PAGE_WIDTH - REPORT_MARGIN - 6,
   };
+
   const headerY = top + 50;
   const rows = [...members, { ...total, name: `All ${group.units}` }];
   const rowHeight = Math.min(28, (bottom - headerY - 8) / rows.length);
@@ -1113,6 +1177,7 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
       ctx.fillStyle = REPORT_STRIPE;
       ctx.fillRect(REPORT_MARGIN, rowTop, right - REPORT_MARGIN, rowHeight);
     }
+
     const rowCoverage = coverageFor(row);
     const rowCovered = finite(row.cameraViewshedAreaSqKm);
     const rowArea = finite(row.landAreaSqKm);
@@ -1132,6 +1197,7 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
 
 function drawReportCards(ctx, { cards, top, bottom }) {
   const gap = 16;
+
   // the notes under the cards explain the coverage and land status figures they show
   const notesHeight = 28;
   const width = (REPORT_PAGE_WIDTH - REPORT_MARGIN * 2 - gap) / 2;
@@ -1148,6 +1214,7 @@ function drawReportCards(ctx, { cards, top, bottom }) {
     'Covered area is land inside at least one fire detection camera viewshed. Land status shares come from mapped ownership parcels;',
     REPORT_MARGIN, bottom - 12,
   );
+
   ctx.fillText('unclassified includes unmapped private land. Shares under 1% are not shown.', REPORT_MARGIN, bottom - 2);
 }
 
@@ -1215,6 +1282,7 @@ function drawLandMixDonut(ctx, cx, cy, radius, landMix) {
     ctx.fill();
     angle += sweep;
   });
+
   ctx.beginPath();
   ctx.arc(cx, cy, radius * 0.6, 0, Math.PI * 2);
   ctx.fillStyle = '#fff';
@@ -1233,6 +1301,7 @@ function summaryCsv(selection, members) {
   const group = SUMMARY_REPORT_GROUPS[selection.type];
   const rows = [...members.map((feature) => feature.properties || {}), selection.properties];
   const present = new Set(rows.flatMap((row) => (Array.isArray(row.landMix) ? row.landMix : []).map((item) => item.label)));
+
   // named categories keep the panel's order, and any new source labels follow
   const labels = [
     ...Object.keys(LAND_MIX_COLORS).filter((label) => present.has(label)),
@@ -1257,11 +1326,13 @@ function summaryCsv(selection, members) {
       ...labels.flatMap((label) => {
         const item = mix.get(label);
         const share = finite(item?.areaSqKm);
+
         // a category missing from an area's mix is none of its land, not unknown
         return [csvNumber(finite(item?.percentage) ?? 0), csvNumber(share == null ? 0 : share * SQMI_PER_SQKM)];
       }),
     ];
   });
+
   return [header, ...lines].map((line) => line.map(csvCell).join(',')).join('\r\n');
 }
 
@@ -1282,6 +1353,7 @@ function drawExportMap(ctx, image, width, height, mapCanvas, map, current) {
   // zoom in slightly and keep the selected feature near the center
   const focus = exportFocusPoint(map, current, mapCanvas, image);
   const scale = 1.18;
+
   // use the same source crop ratio on both axes before stretching to the export frame
   const cropWidth = image.width / scale;
   const cropHeight = image.height / scale;
@@ -1309,8 +1381,10 @@ function exportFocusPoint(map, current, mapCanvas, image) {
     // use the live viewport center when selection geometry is absent or malformed
     coordinates = map.getCenter();
   }
+
   if (!coordinates) return fallback;
   const point = map.project(coordinates);
+
   // convert map-container CSS pixels to the captured canvas pixel grid
   const clientWidth = mapCanvas.clientWidth || image.width;
   const clientHeight = mapCanvas.clientHeight || image.height;
@@ -1323,6 +1397,7 @@ function exportFeatureBounds(current) {
   if (Array.isArray(current.bbox) && current.bbox.length === 4 && current.bbox.every(Number.isFinite)) {
     return current.bbox;
   }
+
   // walk nested GeoJSON coordinates without assuming geometry type
   const bounds = [Infinity, Infinity, -Infinity, -Infinity];
   const visit = (node) => {
@@ -1335,8 +1410,10 @@ function exportFeatureBounds(current) {
       bounds[3] = Math.max(bounds[3], node[1]);
       return;
     }
+
     node.forEach(visit);
   };
+
   visit(current.geometry?.coordinates);
   return bounds.every(Number.isFinite) ? bounds : null;
 }
@@ -1349,6 +1426,7 @@ function layoutLegendPanel({ ctx, width, rows }) {
   const rowHeight = 26;
   const labelLines = rows.map((row) => wrapExportLines([row.label], EXPORT_LEGEND_LABEL_CHARS));
   const extraLines = labelLines.reduce((total, lines) => total + lines.length - 1, 0);
+
   // leave room for the empty-legend fallback label
   const contentHeight = titleHeight + Math.max(rows.length, 1) * rowHeight + extraLines * EXPORT_LEGEND_LINE_HEIGHT;
   return {
@@ -1383,6 +1461,7 @@ function layoutStatsPanel({ ctx, width, title, leadLine, bodyLines, landMixRows,
   ctx.font = `700 ${titleSize}px ${EXPORT_FONT}`;
   const titleLines = wrapExportLines([title], 30);
   ctx.font = `${bodySize}px ${EXPORT_FONT}`;
+
   // wrap land labels with the same width used when drawing the stats panel
   const landLines = landMixRows.map((row) =>
     wrapExportLines([`${formatPercent(row.percentage)}% ${row.label}`], 38));
@@ -1395,6 +1474,7 @@ function layoutStatsPanel({ ctx, width, title, leadLine, bodyLines, landMixRows,
     contentHeight += 12 + landLines.reduce((height, lines) =>
       height + lines.length * (bodySize + 6), 0);
   }
+
   contentHeight += padY;
   return {
     width,
@@ -1420,6 +1500,7 @@ function drawLegendOverlay(ctx, x, y, layout) {
     radius: 12,
     shadow: true,
   });
+
   let textY = y + layout.padY + 18;
   ctx.fillStyle = '#fff';
   ctx.font = `700 18px ${EXPORT_FONT}`;
@@ -1432,12 +1513,15 @@ function drawLegendOverlay(ctx, x, y, layout) {
     ctx.fillText('No visible layers', x + layout.padX, textY + 17);
     return;
   }
+
   // text is drawn from its baseline, so capital height locates the middle of a line
   const capHeight = ctx.measureText('H').actualBoundingBoxAscent || 11;
+
   // draw each visible layer with the same visual parsed from the map legend
   layout.rows.forEach((row, index) => {
     textY += layout.rowHeight;
     const swatchX = x + layout.padX;
+
     // the swatch centers on the whole label, including wrapped lines
     const lineCount = layout.labelLines[index].length;
     const labelMiddle = textY + (lineCount - 1) * EXPORT_LEGEND_LINE_HEIGHT / 2 - capHeight / 2;
@@ -1474,12 +1558,15 @@ function drawLegendVisual(ctx, visual, x, y) {
 
 function drawExportLegendIcon(ctx, { image, size = EXPORT_LEGEND_SWATCH_SIZE, outline }, x, y) {
   if (!image) return;
+
   // larger icons grow evenly around the normal slot so centering holds
   const inset = (EXPORT_LEGEND_SWATCH_SIZE - size) / 2;
+
   // large raster icons such as the viewshed samples blur with the default low-quality scaling
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(image, x + inset, y + inset, size, size);
   if (!outline) return;
+
   // round outline follows the circular sample viewshed
   ctx.strokeStyle = outline;
   ctx.lineWidth = 1;
@@ -1499,6 +1586,7 @@ function drawExportLegendSwatch(ctx, { style, color }, x, y) {
     ctx.fillRect(x, y, size, size);
     return;
   }
+
   if (style === 'circle') {
     // two strokes preserve the white edge and subtle dark halo used on the map
     const radius = 5.5;
@@ -1516,11 +1604,13 @@ function drawExportLegendSwatch(ctx, { style, color }, x, y) {
     ctx.stroke();
     return;
   }
+
   if (style === 'fill') {
     ctx.fillStyle = color || '#777';
     ctx.fillRect(x, y, size, size);
     return;
   }
+
   if (style === 'line') {
     // linear features read as a stroke across the middle of the swatch slot
     ctx.strokeStyle = color || '#777';
@@ -1531,6 +1621,7 @@ function drawExportLegendSwatch(ctx, { style, color }, x, y) {
     ctx.stroke();
     return;
   }
+
   if (style === 'border') {
     // a selected area is drawn as an outline with no fill
     ctx.strokeStyle = color || '#777';
@@ -1538,6 +1629,7 @@ function drawExportLegendSwatch(ctx, { style, color }, x, y) {
     ctx.strokeRect(x + 1.5, y + 1.5, size - 3, size - 3);
     return;
   }
+
   ctx.fillStyle = colorToRgba(color || '#777', 0.24);
   ctx.fillRect(x, y, size, size);
   ctx.strokeStyle = color || '#777';
@@ -1549,6 +1641,7 @@ function drawExportLegendMarkers(ctx, { color, shapes }, x, y) {
   const markerColor = color || '#777';
   const drawShapes = Array.isArray(shapes) && shapes.length ? shapes : ['triangle', 'circle'];
   const slotWidth = EXPORT_LEGEND_SWATCH_SIZE / drawShapes.length;
+
   // split the swatch evenly so mixed camera symbols remain distinct
   drawShapes.forEach((shape, index) => {
     const slotX = x + index * slotWidth + (slotWidth - 7) / 2;
@@ -1563,6 +1656,7 @@ function drawExportLegendMarkers(ctx, { color, shapes }, x, y) {
       ctx.stroke();
       return;
     }
+
     ctx.fillStyle = markerColor;
     ctx.beginPath();
     ctx.moveTo(slotX + 3.5, slotY);
@@ -1579,6 +1673,7 @@ function drawExportLegendGroup(ctx, { colors }, x, y) {
   if (!palette.length) return;
   const cell = 6;
   const gap = 1;
+
   // use a two-column grid like the grouped marker displayed in the map legend
   palette.forEach((color, index) => {
     const col = index % 2;
@@ -1592,6 +1687,7 @@ function drawExportLegendGroup(ctx, { colors }, x, y) {
       0,
       Math.PI * 2,
     );
+
     ctx.fill();
   });
 }
@@ -1603,6 +1699,7 @@ function drawStatsOverlay(ctx, x, y, layout, chartImage) {
     radius: 12,
     shadow: true,
   });
+
   let textY = y + layout.padY + layout.titleSize;
   ctx.fillStyle = '#fff';
   ctx.font = `700 ${layout.titleSize}px ${EXPORT_FONT}`;
@@ -1610,6 +1707,7 @@ function drawStatsOverlay(ctx, x, y, layout, chartImage) {
     ctx.fillText(line, x + layout.padX, textY);
     textY += layout.titleSize + 4;
   });
+
   textY += 4;
   if (layout.leadLine) {
     ctx.fillStyle = '#fff';
@@ -1617,12 +1715,14 @@ function drawStatsOverlay(ctx, x, y, layout, chartImage) {
     ctx.fillText(layout.leadLine, x + layout.padX, textY);
     textY += layout.leadSize + 6;
   }
+
   ctx.font = `${layout.bodySize}px ${EXPORT_FONT}`;
   ctx.fillStyle = '#e8e8e8';
   layout.bodyLines.forEach((line) => {
     ctx.fillText(line, x + layout.padX, textY);
     textY += layout.bodySize + 4;
   });
+
   if (layout.chartHeight && chartImage) {
     // chart sits between the coverage summary and mapped land rows
     textY += 8;
@@ -1631,6 +1731,7 @@ function drawStatsOverlay(ctx, x, y, layout, chartImage) {
     ctx.drawImage(chartImage, chartX, textY, chartW, layout.chartHeight);
     textY += layout.chartHeight + 8;
   }
+
   if (layout.landLines.length) {
     // separate mapped ownership shares from the coverage summary above
     ctx.strokeStyle = '#444';
@@ -1658,6 +1759,7 @@ function drawStatsOverlay(ctx, x, y, layout, chartImage) {
 
 function drawExportAttribution(ctx, width, height, basemap) {
   const attribution = basemap === 'satellite' ? SATELLITE_MAP_ATTRIBUTION : MAP_ATTRIBUTION;
+
   // dark stroke keeps the small attribution readable over light map tiles
   ctx.font = `11px ${EXPORT_FONT}`;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
@@ -1675,6 +1777,7 @@ function drawFloatingPanel(ctx, x, y, width, height, { fill, border, radius, sha
     ctx.shadowBlur = 10;
     ctx.shadowOffsetY = 2;
   }
+
   fillRoundedRect(ctx, x, y, width, height, radius, fill);
   ctx.restore();
   if (border) {
@@ -1725,14 +1828,17 @@ function exportSummary({ kind, type, properties, metrics }) {
       lines.push(cameraUnavailableMessage(properties, metrics));
       return lines;
     }
+
     const area = finite(metrics?.landAreaSqKm);
     if (area != null) lines.push(`${formatNumber(area * SQMI_PER_SQKM)} mi² camera viewshed`);
     return lines;
   }
+
   const coverage = coverageFor(properties);
   const covered = finite(properties.cameraViewshedAreaSqKm);
   const selected = finite(properties.landAreaSqKm);
   const name = properties?.name || properties?.label || 'selected area';
+
   // the export legend names the approximate utility boundary instead of a line here
   const lines = [];
   lines.push(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`);
@@ -1741,6 +1847,7 @@ function exportSummary({ kind, type, properties, metrics }) {
   } else if (selected != null) {
     lines.push(`${formatNumber(selected * SQMI_PER_SQKM)} mi² total area`);
   }
+
   return lines;
 }
 
@@ -1775,9 +1882,11 @@ function cameraUnavailableMessage(properties, metrics) {
   if (!metrics && !properties?.viewshed_id) {
     return 'Coverage unavailable: no viewshed has been generated for this camera.';
   }
+
   if (metrics?.status === 'skipped_missing_height') {
     return 'Coverage unavailable: viewshed not generated because the camera height is missing.';
   }
+
   return 'Coverage unavailable: a viewshed exists but its land coverage could not be calculated.';
 }
 
@@ -1791,6 +1900,7 @@ function cameraCoverageAvailable(metrics) {
 function coverageFor(p) {
   if (!p) return null;
   if (finite(p.cameraViewshedCoveragePct) != null) return p.cameraViewshedCoveragePct;
+
   // derive coverage only when the source did not provide a percentage
   const covered = finite(p.cameraViewshedAreaSqKm);
   const total = finite(p.landAreaSqKm);
@@ -1817,6 +1927,7 @@ function formatPercent(value) {
 
 function formatPan(value) {
   const number = finite(value);
+
   // camera pan values are degrees
   return number == null ? '' : `${numberFormat.format(number)}°`;
 }
@@ -1859,6 +1970,7 @@ async function resolveLegendRowsForExport(getLegendItems, basemap) {
   const condensed = condenseCameraLegendRows(rows, {
     separateViewshedColors: Boolean(getSetting('separateViewshedColors')),
   });
+
   const viewshedIcon = EXPORT_VIEWSHED_ICONS[basemap] ?? EXPORT_VIEWSHED_ICONS.outdoors;
   return condensed.map((row) => (EXPORT_SHARED_COLOR_VIEWSHED_LABELS.has(row.label)
     ? { ...row, visual: { type: 'icon', src: viewshedIcon, outline: '#808080', size: 22 } }
@@ -1907,6 +2019,7 @@ export function condenseCameraLegendRows(rows, { separateViewshedColors = false 
       } else if (!providerViewsheds.length) {
         condensed.push({ ...row, label: EXPORT_SHARED_VIEWSHED_LABEL });
       }
+
       continue;
     }
 
@@ -1918,6 +2031,7 @@ export function condenseCameraLegendRows(rows, { separateViewshedColors = false 
       visual: providerViewsheds[0]?.visual || row.visual,
     });
   }
+
   return condensed;
 }
 
@@ -1925,6 +2039,7 @@ function readLegendRowsFromDom() {
   if (typeof document?.getElementById !== 'function') return [];
   const legend = document.getElementById('legend');
   if (!legend) return [];
+
   // include only rows users can see and have enabled
   return [...legend.querySelectorAll('.legend-row')]
     .filter((row) => row.querySelector('input[type="checkbox"]')?.checked)
@@ -1949,15 +2064,19 @@ function parseLegendVisualFromDom(visualRoot) {
     if (swatch.classList.contains('legend-swatch--burn-probability')) {
       return { type: 'swatch', style: 'burn-probability' };
     }
+
     if (swatch.classList.contains('legend-swatch--line')) {
       return { type: 'swatch', style: 'line', color };
     }
+
     if (swatch.classList.contains('legend-swatch--circle')) {
       return { type: 'swatch', style: 'circle', color };
     }
+
     if (swatch.classList.contains('legend-swatch--fill')) {
       return { type: 'swatch', style: 'fill', color };
     }
+
     return { type: 'swatch', style: 'outline', color };
   }
 
@@ -1994,6 +2113,7 @@ function normalizeLegendRows(items) {
       const label = String(item).trim();
       return label ? { label, visual: exportLegendVisualForLabel(label) } : null;
     }
+
     if (item && typeof item === 'object') {
       const label = String(item.label || item.textContent || item.title || '').trim();
       if (!label) return null;
@@ -2002,6 +2122,7 @@ function normalizeLegendRows(items) {
         visual: item.visual || exportLegendVisualForLabel(label),
       };
     }
+
     return null;
   }).filter(Boolean);
 }
@@ -2032,6 +2153,7 @@ function readCssColor(node, variableName) {
   if (typeof getComputedStyle === 'function') {
     return getComputedStyle(node).getPropertyValue(variableName).trim();
   }
+
   return '';
 }
 
@@ -2056,7 +2178,9 @@ function colorToRgba(color, alpha) {
     const channels = value.match(/\d+/g);
     if (channels?.length >= 3) return `rgba(${channels[0]}, ${channels[1]}, ${channels[2]}, ${alpha})`;
   }
+
   const hex = value.replace('#', '');
+
   // expand shorthand hex and normalize malformed lengths before channel parsing
   const normalized = hex.length === 3
     ? hex.split('').map((char) => char + char).join('')
@@ -2067,6 +2191,7 @@ function colorToRgba(color, alpha) {
   if ([red, green, blue].some((channel) => Number.isNaN(channel))) {
     return `rgba(119, 119, 119, ${alpha})`;
   }
+
   return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
 }
 
@@ -2079,6 +2204,7 @@ function wrapExportLines(lines, maxChars) {
       wrapped.push(text);
       return;
     }
+
     const indent = text.match(/^\s*/)?.[0] || '';
     let remaining = text.trimStart();
     while (remaining.length) {
@@ -2086,14 +2212,17 @@ function wrapExportLines(lines, maxChars) {
         wrapped.push(indent + remaining);
         break;
       }
+
       const slice = remaining.slice(0, maxChars - indent.length);
       const breakAt = slice.lastIndexOf(' ');
+
       // prefer a word boundary unless it would leave an awkward tiny first line
       const take = breakAt > 12 ? slice.slice(0, breakAt) : slice;
       wrapped.push(indent + take);
       remaining = remaining.slice(take.length).trimStart();
     }
   });
+
   return wrapped;
 }
 

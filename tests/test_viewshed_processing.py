@@ -43,6 +43,7 @@ def make_args(directory: Path, **overrides):
         skip_exact_polygons=False,
     )
     values.update(overrides)
+
     return SimpleNamespace(**values), [dem]
 
 
@@ -129,8 +130,10 @@ class BoundaryDataTests(unittest.TestCase):
 class GeometryRepairTests(unittest.TestCase):
     def test_self_intersecting_polygon_is_repaired(self):
         ring = viewsheds.ogr.Geometry(viewsheds.ogr.wkbLinearRing)
+
         for x, y in ((0, 0), (2, 2), (0, 2), (2, 0), (0, 0)):
             ring.AddPoint_2D(x, y)
+
         polygon = viewsheds.ogr.Geometry(viewsheds.ogr.wkbPolygon)
         polygon.AddGeometry(ring)
 
@@ -142,10 +145,13 @@ class GeometryRepairTests(unittest.TestCase):
     def test_overlapping_members_are_repaired_as_a_collection(self):
         def square(x0, y0, x1, y1):
             ring = viewsheds.ogr.Geometry(viewsheds.ogr.wkbLinearRing)
+
             for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0)):
                 ring.AddPoint_2D(x, y)
+
             polygon = viewsheds.ogr.Geometry(viewsheds.ogr.wkbPolygon)
             polygon.AddGeometry(ring)
+
             return polygon
 
         collection = viewsheds.ogr.Geometry(viewsheds.ogr.wkbMultiPolygon)
@@ -161,10 +167,12 @@ class GeometryRepairTests(unittest.TestCase):
 class ResumeTests(unittest.TestCase):
     def make_state(self, root: Path, **overrides):
         outputs = {}
+
         for key, name in (("raster", "camera.tif"), ("exact", "camera.gpkg"), ("web", "camera.geojson")):
             path = root / name
             path.touch()
             outputs[key] = str(path)
+
         state = {
             "status": "complete",
             "analysis_hash": "analysis",
@@ -172,6 +180,7 @@ class ResumeTests(unittest.TestCase):
             "outputs": outputs,
         }
         state.update(overrides)
+
         return state
 
     def test_matching_hashes_reuse_every_stage(self):
@@ -237,10 +246,12 @@ class DatasetMergeTests(unittest.TestCase):
 
     def save_state(self, root: Path, site: dict, analysis_hash: str, web_hash: str) -> Path:
         outputs = {}
+
         for key, suffix in (("raster", "tif"), ("exact", "gpkg"), ("web", "geojson")):
             path = root / f"{site['viewshed_id']}.{suffix}"
             path.touch()
             outputs[key] = str(path)
+
         state = {
             "status": "complete",
             "analysis_hash": analysis_hash,
@@ -250,6 +261,7 @@ class DatasetMergeTests(unittest.TestCase):
         }
         path = root / "state" / f"{site['viewshed_id']}.json"
         viewsheds.write_json(path, state)
+
         return path
 
     def test_other_cameras_do_not_change_a_camera_hash(self):
@@ -295,8 +307,10 @@ class DatasetMergeTests(unittest.TestCase):
             config = viewsheds.config_document(args, dems)
             new = {**self.SITE, "source_id": 2, "viewshed_id": "new-camera", "name": "New Camera", "latitude": 46.0}
             stale = {**self.SITE, "source_id": 3, "viewshed_id": "stale-camera", "name": "Stale Camera"}
+
             for site in (new, self.SITE):
                 self.save_state(root, site, *viewsheds.site_hashes(config["analysis_hash"], config["web_hash"], site))
+
             self.save_state(root, stale, "other-settings", "web")
 
             states, left_out = viewsheds.current_states(root, config)
@@ -376,6 +390,7 @@ class ManifestTests(unittest.TestCase):
             "web_clip": True,
             "web_clip_boundary_sha256": "boundary",
         }
+
         with tempfile.TemporaryDirectory() as directory:
             manifest_path = viewsheds.write_manifest(
                 [],
@@ -423,6 +438,7 @@ class PublishTests(unittest.TestCase):
         path = directory / "pano-viewshed-manifest.json"
         entries = [{"viewshed_id": viewshed_id, "status": "complete"} for viewshed_id in viewshed_ids]
         path.write_text(json.dumps({"viewsheds": entries}), encoding="utf-8")
+
         return path
 
     def test_manifest_replaces_the_published_copy(self):
@@ -446,8 +462,10 @@ class PublishTests(unittest.TestCase):
             published = self.write_manifest(data, "pano-a", "pano-b")
             before = published.read_bytes()
             manifest = self.write_manifest(Path(directory) / "output", "pano-a")
+
             with self.assertRaisesRegex(RuntimeError, "pano-b"):
                 viewsheds.publish_manifest(manifest, data)
+
             self.assertEqual(published.read_bytes(), before)
 
     def test_script_output_reaches_the_log_and_failures_raise(self):
@@ -457,6 +475,7 @@ class PublishTests(unittest.TestCase):
             lines = []
             viewsheds.run_script(script, ["0"], lines.append)
             self.assertEqual(lines, ["step.py: built 0"])
+
             with self.assertRaisesRegex(RuntimeError, r"step\.py failed \(3\)"):
                 viewsheds.run_script(script, ["3"], lines.append)
 

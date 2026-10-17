@@ -6,6 +6,7 @@ const ACRES_FORMAT = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 2,
   minimumFractionDigits: 0,
 });
+
 const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
   month: 'short',
   day: 'numeric',
@@ -14,6 +15,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
 
 // one visible popup per map without retaining discarded map instances
 const ACTIVE_POPUPS = new WeakMap();
+
 // screen-pixel spacing used after projecting the feature onto the map container
 const POPUP_MARGIN = 12;
 const POPUP_MARKER_GAP = 14;
@@ -327,12 +329,14 @@ function createFirePopup(properties, symbol) {
     properties.acres ?? properties.IncidentSize ?? properties.poly_GISAcres,
     ACRES_FORMAT
   );
+
   if (acres != null) popup.append(createMetaLine(`${acres} acres`));
 
   const contained = formatNumber(
     properties.PercentContained ?? properties.attr_PercentContained,
     INTEGER_FORMAT
   );
+
   if (contained != null) popup.append(createMetaLine(`${contained}% contained`));
 
   const location = [
@@ -419,6 +423,7 @@ function createPopupContainer(titleText, symbol) {
 
   const heading = document.createElement('div');
   heading.className = 'cam-title';
+
   // the title already names the feature, so its layer symbol stays decorative
   if (symbol) heading.append(createLegendSymbol(symbol));
 

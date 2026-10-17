@@ -16,6 +16,7 @@
       REGION_CODES.includes(suggestion.context?.region?.region_code)
       || (suggestion.feature_type === 'region' && REGION_NAMES.includes(suggestion.name))
     ));
+
     return new Response(JSON.stringify(data), {
       status: response.status,
       statusText: response.statusText,

@@ -64,7 +64,9 @@ def polygon_geometry(feature: dict):
     rings = (feature.get("geometry") or {}).get("rings")
     if not rings:
         return None
+
     geometry = ogr.CreateGeometryFromJson(json.dumps({"type": "Polygon", "coordinates": rings}))
+
     # multipart source shapes arrive as one ring list and need splitting
     return geometry if geometry.IsValid() else geometry.MakeValid()
 
@@ -99,6 +101,7 @@ def build_utilities() -> None:
     names = ",".join(f"'{name}'" for name in UTILITY_ABBREVIATIONS)
     rows, digest = fetch(UTILITY_QUERY, f"Utility_Name IN ({names})", "OBJECTID,Utility_Name")
     features = []
+
     for row in sorted(rows, key=lambda item: item["attributes"]["OBJECTID"]):
         attributes = row["attributes"]
         name = attributes["Utility_Name"]
@@ -110,8 +113,10 @@ def build_utilities() -> None:
             polygon_geometry(row),
             {"boundaryQualifier": "Approximate service area"},
         ))
+
     if len(features) != len(UTILITY_ABBREVIATIONS):
         raise RuntimeError(f"expected {len(UTILITY_ABBREVIATIONS)} utilities, received {len(features)}")
+
     write_division_type("utility", features, {
         "source": UTILITY_QUERY,
         "vintage": "2024",
@@ -123,6 +128,7 @@ def build_utilities() -> None:
 def build_federal_land() -> None:
     rows, digest = fetch(FEDERAL_QUERY, "State_Nm IN ('OR','WA')", "OBJECTID,Mang_Name")
     by_manager: dict[str, object] = {}
+
     for row in rows:
         code = row["attributes"]["Mang_Name"]
         geometry = polygon_geometry(row)
@@ -130,16 +136,20 @@ def build_federal_land() -> None:
         if code == "TRIB" or geometry is None:
             continue
         by_manager[code] = by_manager[code].Union(geometry) if code in by_manager else geometry
+
     if set(by_manager) != set(FEDERAL_MANAGERS):
         raise RuntimeError(f"unexpected PAD-US manager codes: {sorted(by_manager)}")
+
     features = [
         division_feature("federal-land", code, FEDERAL_MANAGERS[code], by_manager[code])
         for code in sorted(by_manager)
     ]
     # union, not a sum, so land shared between bureaus is counted once
     interior = None
+
     for code in INTERIOR_MANAGERS:
         interior = interior.Union(by_manager[code]) if interior else by_manager[code]
+
     features.append(division_feature("federal-land", "DOI", INTERIOR_NAME, interior))
     write_division_type("federal-land", features, {
         "source": FEDERAL_QUERY,

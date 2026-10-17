@@ -26,10 +26,12 @@ export function formatAnchor(typeSlug, optionSlug, search = '') {
   params.delete(TYPE_PARAM);
   params.delete(LEGACY_TYPE_PARAM);
   params.delete(OPTION_PARAM);
+
   if (typeSlug) {
     params.set(TYPE_PARAM, typeSlug);
     if (optionSlug) params.set(OPTION_PARAM, optionSlug);
   }
+
   const text = params.toString();
   return text ? `?${text}` : '';
 }
@@ -55,6 +57,7 @@ const FILLER_WORDS = new Set([
   'state', 'legislative', 'congressional', 'house', 'senate', 'district',
   'indian', 'reservation', 'off',
 ]);
+
 // joining words that mean nothing once the words beside them are gone
 const JOINING_WORDS = new Set(['and', 'of', 'the']);
 
@@ -69,12 +72,14 @@ function shortLabel(label) {
   // a trailing name in parentheses is the one people know, e.g. Pacific Power (PacifiCorp)
   const alias = text.match(/\(([^()]+)\)\s*$/)?.[1];
   if (alias) return alias;
+
   // apostrophes close up instead of splitting a name, e.g. ebeys-landing
   const words = anchorSlug(text.replace(/['\u2019]/g, ''))
     .split('-')
     .filter((word) => !FILLER_WORDS.has(word));
   while (JOINING_WORDS.has(words[0])) words.shift();
   while (JOINING_WORDS.has(words.at(-1))) words.pop();
+
   // a label made only of filler words keeps them
   return words.join(' ') || text;
 }
@@ -103,6 +108,7 @@ export function anchorOptionSlugs(options, { shorten = true } = {}) {
     const plain = slugsFor(plainLabel);
     base = short.map((slug, index) => (slug && shortCounts.get(slug) === 1 ? slug : plain[index]));
   }
+
   const counts = slugCounts(base);
 
   const slugs = new Map();
