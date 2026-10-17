@@ -1,4 +1,4 @@
-"""Checks the supplemented source data and the GDAL handoff contract."""
+"""checks the supplemented source data and the GDAL handoff contract"""
 import json
 from pathlib import Path
 import sys

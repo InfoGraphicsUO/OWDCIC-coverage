@@ -2,6 +2,7 @@
 .modal {
     position: fixed;
     inset: 0;
+    /* above the site banner (1000) */
     z-index: 1100;
     display: grid;
     place-items: center;

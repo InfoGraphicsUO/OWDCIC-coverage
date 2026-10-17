@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """builds the transmission line GeoJSON drawn by the web map's Transmission lines layer
 
-The source is the OHAZ network folder's archive of the public U.S. Electric
+the source is the OHAZ network folder's archive of the public U.S. Electric
 Power Transmission Lines service (transmission_lines_2024_archive.gpkg), which
-is not in this repo. Needs the QGIS Python for its GDAL bindings.
+is not in this repo. needs the QGIS Python for its GDAL bindings
 """
 
 from __future__ import annotations
