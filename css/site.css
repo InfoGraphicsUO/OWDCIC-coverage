@@ -244,19 +244,13 @@ textarea {
     border-radius: 0 var(--ui-radius-sm) var(--ui-radius-sm) 0;
 }
 
-.about-modal__goal-label {
-    display: block;
-    margin-bottom: 4px;
-    color: var(--ohaz-yellow);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-}
-
 .about-modal__section .about-modal__goal p {
     font-size: 14px;
     font-style: italic;
+}
+
+.about-modal__section .about-modal__closing {
+    margin-top: 14px;
 }
 
 .about-modal__orgs {
