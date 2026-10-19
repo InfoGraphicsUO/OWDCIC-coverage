@@ -269,8 +269,8 @@
     /* slightly larger than other swatches; the centered legend visual lets it spill evenly */
     width: 20px;
     height: 20px;
-    /* round outline follows the circular sample viewshed */
-    border: 1px solid #808080;
+    /* round outline follows the circular sample viewshed in its own color */
+    border: 1px solid var(--legend-swatch-color);
     border-radius: 50%;
     background-color: transparent;
     background-position: center;
