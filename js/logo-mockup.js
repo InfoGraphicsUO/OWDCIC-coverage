@@ -8,3 +8,8 @@ if (logoName && /^[a-z0-9-]+$/.test(logoName)) {
     logo.alt = "OHAZ and University of Oregon";
     logo.classList.add("site-banner__logo--wide");
 }
+
+// mockup only: ?layout=logo-right puts the title and settings on the left and the logo on the right
+if (new URLSearchParams(window.location.search).get("layout") === "logo-right") {
+    document.querySelector(".site-banner").classList.add("site-banner--logo-right");
+}
