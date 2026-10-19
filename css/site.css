@@ -249,6 +249,10 @@ textarea {
     font-style: italic;
 }
 
+.about-modal__side .about-modal__heading {
+    text-decoration: none;
+}
+
 .about-modal__section .about-modal__closing {
     margin-top: 14px;
 }
