@@ -598,7 +598,7 @@ assert.deepEqual(districtOrder(pageWith('Coverage by district')),
   ['Alpha District', 'Beta FPA, North', 'Gamma District', 'Delta District', 'Epsilon District']);
 assert.deepEqual(districtOrder(pageWith('Districts from most to least covered')),
   ['Alpha District', 'Gamma District', 'Beta FPA, North', 'Epsilon District', 'Delta District']);
-assert.ok(pageWith('Districts from most to least covered').includes('All districts'), 'the ranked table should keep its total row');
+assert.ok(pageWith('Districts from most to least covered').includes('All ODF districts'), 'the ranked table should keep its total row, named for the selection');
 assert.ok(!reportText.some((text) => /rank/i.test(text)), 'district cards should not show a coverage rank');
 
 // coverage bars split by provider, so the tables and cards carry a key for the colors

@@ -12,7 +12,7 @@ KINDS = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
 
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
-    'utility': 3, 'national-forest': 20, 'national-park': 14,
+    'utility': 3, 'national-forest': 26, 'national-park': 14,
     'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
 }
 
@@ -113,8 +113,10 @@ class SelectionDataTests(unittest.TestCase):
     def test_all_national_forests_combines_every_forest(self):
         data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
         combined = [f for f in data['features'] if 'memberDivisionIds' in f['properties']]
-        self.assertEqual([f['properties']['name'] for f in combined], ['All National Forests'])
-        members = [f for f in data['features'] if f not in combined]
+        self.assertEqual([f['properties']['name'] for f in combined],
+                         ['All National Forests', 'Oregon National Forests', 'Washington National Forests'])
+        members = [f for f in data['features']
+                   if f not in combined and 'partOfDivisionId' not in f['properties']]
         self.assertEqual(sorted(combined[0]['properties']['memberDivisionIds']),
                          sorted(f['id'] for f in members))
 
@@ -123,6 +125,29 @@ class SelectionDataTests(unittest.TestCase):
             total = sum(f['properties'][key] for f in members)
             self.assertLessEqual(combined[0]['properties'][key], total)
             self.assertGreater(combined[0]['properties'][key], total * 0.99)
+
+    def test_state_national_forests_split_forests_at_the_state_line(self):
+        data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
+        features = {f['id']: f['properties'] for f in data['features']}
+        everything, oregon, washington = (features[f'national-forest:{key}'] for key in ('all', 'or', 'wa'))
+        portions = [p for p in features.values() if 'partOfDivisionId' in p]
+
+        # only forests that cross the line are split, and each split forest has one portion per state
+        self.assertEqual(sorted(p['name'] for p in portions), [
+            'Columbia River Gorge National Scenic Area (Oregon portion)',
+            'Columbia River Gorge National Scenic Area (Washington portion)',
+            'Umatilla National Forest (Oregon portion)',
+            'Umatilla National Forest (Washington portion)',
+        ])
+        split = {p['partOfDivisionId'] for p in portions}
+        for state in (oregon, washington):
+            members = [features[i] for i in state['memberDivisionIds']]
+            self.assertFalse(split & set(state['memberDivisionIds']), 'a split forest joins a state as its portion')
+            self.assertTrue(all(m.get('partOfDivisionId') is None or m['state'] == state['state'] for m in members))
+
+        # no forest land counts toward both states, so the states add up to all forests
+        for key in ('landAreaSqKm', 'cameraViewshedAreaSqKm'):
+            self.assertAlmostEqual(oregon[key] + washington[key], everything[key], delta=everything[key] * 0.005)
 
     def test_national_forest_is_clipped_to_the_project_boundary(self):
         data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())

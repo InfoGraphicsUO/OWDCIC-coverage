@@ -205,6 +205,7 @@ export function initResultsPanel({
     status.textContent = '';
     exportModal = createExportChooserModal({
       group,
+      title: exportTitle,
       onReport: () => {
         closeExportModal();
         openSummaryReport(selection, members, exportTitle);
@@ -522,7 +523,7 @@ function createExportModal({
 }
 
 // "All" options pick between the full report, its data, and the single map export
-function createExportChooserModal({ group, onReport, onCsv, onMap, onClose }) {
+function createExportChooserModal({ group, title, onReport, onCsv, onMap, onClose }) {
   const { dialog, close } = openModal({
     id: 'results-export-chooser',
     title: 'Export as…',
@@ -561,7 +562,7 @@ function createExportChooserModal({ group, onReport, onCsv, onMap, onClose }) {
       key: 'map',
       icon: 'fa-map',
       label: 'Map report',
-      detail: `The map, legend, and results for all ${group.units} on one page, as PNG or PDF`,
+      detail: `The map, legend, and results for ${title} on one page, as PNG or PDF`,
       run: onMap,
     },
   ];
@@ -1142,7 +1143,7 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
   ctx.font = `11px ${EXPORT_FONT}`;
   if (coverage != null && covered != null && area != null) {
     ctx.fillText(
-      `${formatPercent(coverage)}% of all ${group.units} is covered by fire detection cameras: ${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${formatNumber(area * SQMI_PER_SQKM)} mi²`,
+      `${totalName(total, group)}: ${formatPercent(coverage)}% covered by fire detection cameras, ${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${formatNumber(area * SQMI_PER_SQKM)} mi²`,
       REPORT_MARGIN, top + 22,
     );
   }
@@ -1160,7 +1161,7 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
   const split = [total, ...members].some(hasProviderCoverage);
   if (split) drawProviderKey(ctx, REPORT_MARGIN, top + 40);
   const headerY = top + (split ? 62 : 50);
-  const rows = [...members, { ...total, name: `All ${group.units}` }];
+  const rows = [...members, { ...total, name: totalName(total, group) }];
   const rowHeight = Math.min(28, (bottom - headerY - 8) / rows.length);
 
   ctx.fillStyle = REPORT_MUTED;
@@ -1199,7 +1200,16 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
     const weight = isTotal ? '700 ' : '';
     ctx.fillStyle = REPORT_TEXT;
     ctx.font = `${weight}10px ${EXPORT_FONT}`;
-    ctx.fillText(row.name || row.label || '', columns.name, textY);
+
+    // a name too long for its column, like a forest's state portion, wraps onto a second line
+    const nameLines = splitToWidth(ctx, row.name || row.label || '', columns.bar - columns.name - 8);
+    if (nameLines.length > 1) {
+      ctx.font = `${weight}${rowHeight < 24 ? 9 : 10}px ${EXPORT_FONT}`;
+      nameLines.forEach((line, lineIndex) => ctx.fillText(line, columns.name, textY + (lineIndex - 0.5) * 11));
+      ctx.font = `${weight}10px ${EXPORT_FONT}`;
+    } else {
+      ctx.fillText(nameLines[0], columns.name, textY);
+    }
     drawCoverageBar(ctx, columns.bar, rowTop + rowHeight / 2 - 4, columns.barWidth, 8, rowCoverage, coverageSegments(row));
     ctx.fillStyle = REPORT_TEXT;
     ctx.fillText(rowCoverage == null ? 'n/a' : `${formatPercent(rowCoverage)}%`, columns.bar + columns.barWidth + 8, textY);
@@ -1208,6 +1218,11 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
     ctx.fillText(rowArea == null ? '' : formatNumber(rowArea * SQMI_PER_SQKM), columns.total, textY);
     ctx.textAlign = 'left';
   });
+}
+
+// the selected option names the total, e.g. Oregon National Forests rather than every forest
+function totalName(total, group) {
+  return total.name || total.label || `All ${group.units}`;
 }
 
 function drawReportCards(ctx, { cards, top, bottom }) {
@@ -1245,8 +1260,9 @@ function drawReportCard(ctx, x, y, width, height, properties) {
   strokeRoundedRect(ctx, x, y, width, height, 6);
 
   ctx.fillStyle = REPORT_TEXT;
-  ctx.font = `700 13px ${EXPORT_FONT}`;
-  ctx.fillText(properties.name || properties.label || '', x + pad, y + 24);
+  const name = properties.name || properties.label || '';
+  ctx.font = `700 ${fitFontSize(ctx, name, width - pad * 2, 13, 9, '700')}px ${EXPORT_FONT}`;
+  ctx.fillText(name, x + pad, y + 24);
   ctx.font = `600 11px ${EXPORT_FONT}`;
   ctx.fillText(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`, x + pad, y + 44);
   drawCoverageBar(ctx, x + pad, y + 51, width - pad * 2, 8, coverage, coverageSegments(properties));
@@ -1277,6 +1293,28 @@ function drawReportCard(ctx, x, y, width, height, properties) {
 }
 
 // one bar for total coverage; with a provider split it is cut into each provider's segment
+// the text as one line, or split at the last space that lets the first line fit
+function splitToWidth(ctx, text, maxWidth) {
+  if (ctx.measureText(text).width <= maxWidth) return [text];
+  const words = text.split(' ');
+  for (let count = words.length - 1; count > 0; count -= 1) {
+    const first = words.slice(0, count).join(' ');
+    if (ctx.measureText(first).width <= maxWidth) return [first, words.slice(count).join(' ')];
+  }
+  return [text];
+}
+
+// the largest font size from size down to minSize that fits the text in maxWidth
+function fitFontSize(ctx, text, maxWidth, size, minSize, weight = '') {
+  let fitted = size;
+  ctx.font = `${weight} ${fitted}px ${EXPORT_FONT}`;
+  while (fitted > minSize && ctx.measureText(text).width > maxWidth) {
+    fitted -= 0.5;
+    ctx.font = `${weight} ${fitted}px ${EXPORT_FONT}`;
+  }
+  return fitted;
+}
+
 function drawCoverageBar(ctx, x, y, width, height, coverage, segments = null) {
   ctx.fillStyle = REPORT_BAR_TRACK;
   ctx.fillRect(x, y, width, height);
