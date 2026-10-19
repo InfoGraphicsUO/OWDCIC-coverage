@@ -79,7 +79,7 @@
     min-height: 0;
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: 16px 18px 12px;
+    padding: 4px 18px 12px;
 }
 
 .results-panel__footer {
@@ -187,9 +187,23 @@
     border: 2.5px solid var(--ohaz-yellow, #f8e109);
 }
 
-/* stacked keys read as one group above the coverage figures */
+/* the first key row carries the divider under the coverage figures */
+.results-panel__body > :not(.results-panel__qualifier) + .results-panel__qualifier {
+    margin-top: 22px;
+    border-top: 1px solid #444;
+    padding-top: 14px;
+}
+
+/* stacked keys read as one group below the coverage figures */
 .results-panel__qualifier + .results-panel__qualifier {
     margin-top: -8px;
+}
+
+/* the divider already sits above the key, so the land status follows without its own */
+.results-panel__qualifier + .results-panel__land-mix {
+    margin-top: 0;
+    border-top: 0;
+    padding-top: 0;
 }
 
 /* horizontal stroke matches the export legend's line swatch; color matches TRANSMISSION_LINE_COLOR in js/map-layers.js */
