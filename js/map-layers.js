@@ -161,6 +161,7 @@ const CAMERA_PROVIDERS = Object.freeze([
       outdoors: CAMERA_PROVIDER_COLORS.pano,
       satellite: '#a9d4fb',
     }),
+    viewshedLegendImage: 'img/blue_portland_tower_viewshed.png',
     sharedSiteIconOffset: Object.freeze([14, 0]),
   }),
   Object.freeze({
@@ -179,6 +180,7 @@ const CAMERA_PROVIDERS = Object.freeze([
       outdoors: CAMERA_PROVIDER_COLORS.enviroVision,
       satellite: '#b5e3a8',
     }),
+    viewshedLegendImage: 'img/green_portland_tower_viewshed.png',
     sharedSiteIconOffset: Object.freeze([-14, 0]),
   }),
 ]);
@@ -1914,8 +1916,8 @@ function applyViewshedSymbology(map, basemap) {
     if (map.getLayer(provider.viewshedFillLayerId)) {
       map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', fillColor);
     }
-    // providers in their own color keep a flat swatch
-    const image = colors === VIEWSHED_FILL_COLOR ? sharedImage : null;
+    // providers in their own color show a sample viewshed in that color
+    const image = colors === VIEWSHED_FILL_COLOR ? sharedImage : provider.viewshedLegendImage;
     legendControl.updateSwatchColor(provider.viewshedLabel, fillColor, { darkOutline, image });
   }
 }
@@ -2183,6 +2185,8 @@ function legendItems() {
       label: LEGEND_LAYERS.viewsheds,
       swatchColor: VIEWSHED_FILL_COLOR.outdoors,
       swatchBorder: false,
+      // the group row shows only its checkbox and label; the export still reads this swatch
+      swatchClass: 'legend-swatch--hidden',
       layerIds: CAMERA_PROVIDERS.flatMap(viewshedLayerIds),
       children: CAMERA_PROVIDERS.map((provider) => ({
         label: provider.viewshedLabel,
