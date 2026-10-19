@@ -165,11 +165,9 @@ textarea {
 
 .about-modal__heading {
     margin: 0 0 10px;
-    color: #c8c8c8;
-    font-size: 11px;
+    color: var(--ohaz-yellow);
+    font-size: 15px;
     font-weight: 700;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
 }
 
 .about-modal__section p {
@@ -255,39 +253,16 @@ textarea {
 
 .about-modal__orgs {
     display: grid;
-    gap: 6px;
+    gap: 8px;
     margin: 0;
     padding: 0;
     list-style: none;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
-.about-modal__org {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 6px 10px 6px 6px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid #444;
-    border-radius: var(--ui-radius-sm);
-}
-
-.about-modal__badge {
-    display: grid;
-    place-items: center;
-    flex: 0 0 auto;
-    width: 46px;
-    height: 28px;
-    color: var(--ohaz-grey);
-    background: var(--ohaz-yellow);
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-}
-
-.about-modal__org-name {
-    font-size: 12px;
-    line-height: 1.35;
+.about-modal__acronym {
+    color: #9a9a9a;
 }
 
 @media (prefers-reduced-motion: reduce) {

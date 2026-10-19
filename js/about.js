@@ -20,26 +20,27 @@ const GOAL = 'The OWDCIC\'s goal is to define and establish true interoperabilit
 
 const CLOSING = 'Through the work of the OWDCIC and a commitment to collaboration on technology, policy funding opportunities and strengthening relationships between the partners utilizing detection camera platforms in Oregon.';
 
-// short is the badge text, kept to a few letters so every badge is the same size
-const ORGANIZATIONS = Object.freeze({
-  ohaz: Object.freeze({ short: 'OHAZ', name: 'University of Oregon / Oregon Hazards Lab' }),
-  blm: Object.freeze({ short: 'BLM', name: 'Bureau of Land Management' }),
-  usfs: Object.freeze({ short: 'USFS', name: 'USDA Forest Service' }),
-  odf: Object.freeze({ short: 'ODF', name: 'Oregon Department of Forestry' }),
-  pge: Object.freeze({ short: 'PGE', name: 'Portland General Electric' }),
-  pacificPower: Object.freeze({ short: 'PP', name: 'Pacific Power' }),
-  avista: Object.freeze({ short: 'AVA', name: 'Avista Energy' }),
-  pse: Object.freeze({ short: 'PSE', name: 'Puget Sound Energy' }),
-});
-
+// each organization is its full name and an optional acronym shown after it
 const ORGANIZATION_GROUPS = Object.freeze([
   Object.freeze({
     title: 'Founding members',
-    keys: ['ohaz', 'blm', 'usfs', 'odf'],
+    names: [
+      ['University of Oregon / Oregon Hazards Lab', 'UO/OHAZ'],
+      ['Bureau of Land Management', 'BLM'],
+      ['USDA Forest Service', 'USFS'],
+      ['Oregon Department of Forestry', 'ODF'],
+    ],
   }),
   Object.freeze({
     title: 'Data contributors, sponsors, and operators',
-    keys: ['ohaz', 'odf', 'pge', 'pacificPower', 'avista', 'pse'],
+    names: [
+      ['University of Oregon / Oregon Hazards Lab', 'UO/OHAZ'],
+      ['Oregon Department of Forestry', 'ODF'],
+      ['Portland General Electric', 'PGE'],
+      ['Pacific Power'],
+      ['Avista Energy'],
+      ['Puget Sound Energy', 'PSE'],
+    ],
   }),
 ]);
 
@@ -76,7 +77,7 @@ function openAboutModal(onClose) {
   const side = document.createElement('div');
   side.className = 'about-modal__side';
   for (const group of ORGANIZATION_GROUPS) {
-    side.append(section(group.title, organizationList(group.keys)));
+    side.append(section(group.title, organizationList(group.names)));
   }
 
   body.append(main, side);
@@ -105,14 +106,11 @@ function goalCallout() {
   return callout;
 }
 
-function organizationList(keys) {
+function organizationList(names) {
   const list = element('ul', 'about-modal__orgs');
-  for (const key of keys) {
-    const { short, name } = ORGANIZATIONS[key];
-    const item = element('li', 'about-modal__org');
-    const badge = element('span', 'about-modal__badge', short);
-    badge.setAttribute('aria-hidden', 'true');
-    item.append(badge, element('span', 'about-modal__org-name', name));
+  for (const [name, acronym] of names) {
+    const item = element('li', '', name);
+    if (acronym) item.append(' ', element('span', 'about-modal__acronym', acronym));
     list.append(item);
   }
   return list;
