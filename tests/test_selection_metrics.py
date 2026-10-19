@@ -35,6 +35,16 @@ class SelectionMetricsTests(unittest.TestCase):
                 self.assertEqual(got['cameraViewshedCoveragePct'], expected)
                 self.assertAlmostEqual(got['cameraViewshedAreaSqKm'], expected / 100)
 
+    def test_provider_coverage_keeps_overlapping_providers_separate(self):
+        selected = box(0, 0, 1000, 1000)
+        coverages = {'alertwest': box(0, 0, 600, 1000), 'pano': box(400, 0, 1000, 1000)}
+        got = self.module.provider_coverage(selected, coverages)
+        self.assertEqual([row['provider'] for row in got], ['alertwest', 'pano'])
+        self.assertEqual([row['cameraViewshedCoveragePct'] for row in got], [60, 60])
+        self.assertNotIn('landAreaSqKm', got[0])
+        self.assertEqual(self.module.provider_key(
+            Path('outputs/gdal_viewsheds_envirovision/mapbox/camera_viewsheds_web_epsg5070.gpkg')), 'envirovision')
+
     def test_designation_priority_and_remainder_sum_to_100(self):
         selected = box(0, 0, 1000, 1000)
         designations = [

@@ -31,6 +31,8 @@ VIEWSHEDS = (
     ROOT / 'outputs/gdal_viewsheds_pano/mapbox/camera_viewsheds_web_epsg5070.gpkg',
     ROOT / 'outputs/gdal_viewsheds_envirovision/mapbox/camera_viewsheds_web_epsg5070.gpkg',
 )
+# report and CSV split coverage by provider, keyed by the web package's output folder
+PROVIDER_FOLDER_PREFIX = 'gdal_viewsheds_'
 # published manifests name every viewshed the map shows; metrics must cover the same set
 MANIFESTS = ROOT / 'data'
 MASK = ROOT / 'data/pacific-northwest-land-mask.geojson'
@@ -268,8 +270,9 @@ def check_published_viewsheds(individual, published):
 
 
 def load_all_viewsheds(paths):
-    """merges providers into one dissolved coverage and one id -> viewshed lookup"""
-    coverages = []
+    """merges providers into one dissolved coverage and one id -> viewshed lookup,
+    keeping each provider's own coverage for the per-provider split"""
+    coverages = {}
     individual = {}
 
     for path in paths:
@@ -279,10 +282,22 @@ def load_all_viewsheds(paths):
         if duplicates:
             raise ValueError(f'viewshed IDs repeat across providers: {sorted(duplicates)}')
 
-        coverages.append(coverage)
+        coverages[provider_key(path)] = coverage
         individual.update(provider_viewsheds)
 
-    return union_all(coverages), individual
+    return union_all(list(coverages.values())), coverages, individual
+
+
+def provider_key(path: Path):
+    """outputs/gdal_viewsheds_pano/mapbox/x.gpkg -> pano"""
+    return path.parent.parent.name.removeprefix(PROVIDER_FOLDER_PREFIX)
+
+
+def provider_coverage(selection, coverages):
+    """each provider's own coverage of the selection; providers can overlap, so these can add to more than the total"""
+    return [{'provider': provider, **{key: value for key, value in coverage_metrics(selection, coverage).items()
+                                      if key != 'landAreaSqKm'}}
+            for provider, coverage in coverages.items()]
 
 
 def load_viewsheds(path: Path):
@@ -482,7 +497,7 @@ def report(args, step, total, label, done, count):
 
 
 def run(args):
-    coverage, individual = load_all_viewsheds(args.viewsheds)
+    coverage, provider_coverages, individual = load_all_viewsheds(args.viewsheds)
     print('loaded viewsheds:', len(individual), flush=True)
     # checked before anything is written, so a mismatch leaves the data untouched
     check_published_viewsheds(individual, published_viewshed_ids(MANIFESTS))
@@ -577,6 +592,7 @@ def run(args):
 
             p = feature['properties']
             p.update(coverage_metrics(selected, coverage))
+            p['providerCoverage'] = provider_coverage(selected, provider_coverages)
             p['landMix'] = mix_for(selected, area, designation)
             retained.append(feature)
 

@@ -491,8 +491,16 @@ URL.createObjectURL = (blob) => {
   return originalCreateObjectURL(blob);
 };
 
+// providers overlap, so their shares can add to more than the area's total coverage
+const providerCoverage = [
+  { provider: 'alertwest', cameraViewshedCoveragePct: 30, cameraViewshedAreaSqKm: 30 },
+  { provider: 'pano', cameraViewshedCoveragePct: 20, cameraViewshedAreaSqKm: 20 },
+  { provider: 'envirovision', cameraViewshedCoveragePct: 0, cameraViewshedAreaSqKm: 0 },
+];
+
 const odfMembers = [
-  { divisionId: 'odf:a', name: 'Alpha District', cameraViewshedCoveragePct: 40, cameraViewshedAreaSqKm: 40, landAreaSqKm: 100, landMix },
+  { divisionId: 'odf:a', name: 'Alpha District', cameraViewshedCoveragePct: 40, cameraViewshedAreaSqKm: 40, landAreaSqKm: 100,
+    landMix, providerCoverage },
   // the comma checks CSV quoting
   { divisionId: 'odf:b', name: 'Beta FPA, North', cameraViewshedCoveragePct: 10, cameraViewshedAreaSqKm: 20, landAreaSqKm: 200,
     landMix: [{ label: 'State land', percentage: 100, areaSqKm: 200 }] },
@@ -505,7 +513,7 @@ odfMembers.forEach((properties) => memberFeatures.set(properties.divisionId, { p
 
 const allOdf = {
   divisionId: 'odf:all', name: 'All ODF districts', cameraViewshedCoveragePct: 18, cameraViewshedAreaSqKm: 90,
-  landAreaSqKm: 500, landMix, memberDivisionIds: odfMembers.map(({ divisionId }) => divisionId),
+  landAreaSqKm: 500, landMix, providerCoverage, memberDivisionIds: odfMembers.map(({ divisionId }) => divisionId),
 };
 
 // the fake DOM matches data attributes by name only, so pick chooser options by key here
@@ -539,22 +547,27 @@ const csvHeader = csvLines[0].split(',');
 assert.deepEqual(csvHeader.slice(0, 6), ['District', 'Coverage (%)', 'Covered area (sq mi)', 'Total area (sq mi)',
   'Covered area (sq km)', 'Total area (sq km)']);
 
+// provider columns follow the totals in a fixed order
+assert.deepEqual(csvHeader.slice(6, 12), ['ALERTWest coverage (%)', 'ALERTWest covered area (sq mi)',
+  'Pano AI coverage (%)', 'Pano AI covered area (sq mi)', 'EnviroVision coverage (%)', 'EnviroVision covered area (sq mi)']);
+
 // land status columns keep the panel's category order
-assert.deepEqual(csvHeader.slice(6), ['U.S. Forest Service land (%)', 'U.S. Forest Service land (sq mi)',
+assert.deepEqual(csvHeader.slice(12), ['U.S. Forest Service land (%)', 'U.S. Forest Service land (sq mi)',
   'State land (%)', 'State land (sq mi)', 'Other/unclassified (%)', 'Other/unclassified (sq mi)']);
 assert.equal(csvLines.length, odfMembers.length + 2, 'CSV should have a header, every district, and a total row');
-assert.match(csvLines[1], /^Alpha District,40,15\.44,38\.61,40,100,40,0,10,0,50,0$/,
+assert.match(csvLines[1], /^Alpha District,40,15\.44,38\.61,40,100,30,11\.58,20,7\.72,0,0,40,0,10,0,50,0$/,
   'areas convert to sq mi; land shares without an area stay 0 sq mi');
+assert.match(csvLines[2], /^"Beta FPA, North",10,7\.72,77\.22,20,200,,,,,,,/, 'areas without a provider split stay blank');
 assert.match(csvLines[2], /^"Beta FPA, North",10,/, 'names with commas should be quoted');
 assert.match(csvLines[2], /,0,0,100,77\.22,0,0$/, 'categories missing from a district count as 0');
-assert.match(csvLines[4], /^Delta District,,,,,,/, 'unavailable coverage should stay blank, not 0');
+assert.match(csvLines[4], /^Delta District,,,,,,,,,,,,/, 'unavailable coverage should stay blank, not 0');
 assert.match(csvLines.at(-1), /^All ODF districts,18,/);
 
 chooser.querySelector('button.modal__close').click();
 assert.equal(body.querySelector('.results-export-chooser'), null, 'close should remove the chooser');
 assert.equal(exportButton.disabled, false, 'closing the chooser should re-enable export');
 
-// the report opens a page-by-page preview: overview map, two tables, then four district cards per page
+// the report opens a page-by-page preview: overview map, two tables, the provider table, then four district cards per page
 await exportButton._listeners.click[0]();
 const canvasesBeforeReport = exportCanvases.length;
 exportOption('report').click();
@@ -566,7 +579,7 @@ const reportModal = body.querySelector('.results-export-modal');
 assert.ok(reportModal, 'report option should open the report preview');
 assert.equal(body.querySelector('.results-export-chooser'), null, 'the chooser should close when the report opens');
 assert.equal(textOf(reportModal.querySelector('h2')), 'Summary report preview');
-assert.equal(reportModal.querySelectorAll('[data-export-preview]').length, 5, '5 districts should make 5 pages');
+assert.equal(reportModal.querySelectorAll('[data-export-preview]').length, 6, '5 districts should make 6 pages');
 assert.equal(reportModal.querySelector('[data-export-download]'), null, 'the report has no PNG download');
 
 const reportPages = exportCanvases.slice(canvasesBeforeReport).filter((node) => node.drawnText?.length);
@@ -583,7 +596,12 @@ assert.deepEqual(districtOrder(pageWith('Districts from most to least covered'))
   ['Alpha District', 'Gamma District', 'Beta FPA, North', 'Epsilon District', 'Delta District']);
 assert.ok(pageWith('Districts from most to least covered').includes('All districts'), 'the ranked table should keep its total row');
 assert.ok(!reportText.some((text) => /rank/i.test(text)), 'district cards should not show a coverage rank');
-assert.ok(reportText.includes('Page 5 of 5'));
+
+// the provider page names each provider and shows a district without a split as n/a
+const providerPage = pageWith('Coverage by camera provider');
+assert.ok(['ALERTWest', 'Pano AI', 'EnviroVision'].every((label) => providerPage.includes(label)));
+assert.ok(providerPage.includes('30%') && providerPage.includes('n/a'));
+assert.ok(reportText.includes('Page 6 of 6'));
 
 // the PDF holds one page per preview image
 reportModal.querySelector('[data-export-pdf-download]').click();
@@ -594,8 +612,8 @@ assert.equal(downloads.at(-1).download, 'owdcic-all-odf-districts-summary-report
 
 const pdfText = Buffer.from(await blobs.at(-1).arrayBuffer()).toString('latin1');
 assert.equal(blobs.at(-1).type, 'application/pdf');
-assert.match(pdfText, /\/Kids \[3 0 R 6 0 R 9 0 R 12 0 R 15 0 R\] \/Count 5/);
-assert.equal(pdfText.match(/\/Type \/Page \/Parent/g).length, 5);
+assert.match(pdfText, /\/Kids \[3 0 R 6 0 R 9 0 R 12 0 R 15 0 R 18 0 R\] \/Count 6/);
+assert.equal(pdfText.match(/\/Type \/Page \/Parent/g).length, 6);
 
 reportModal.querySelector('[data-export-close]').click();
 
@@ -613,7 +631,7 @@ assert.equal(mapModal.querySelectorAll('[data-export-preview]').length, 1);
 mapModal.querySelector('[data-export-close]').click();
 
 // groups left out of SUMMARY_REPORT_GROUPS keep the map export for their "All" option
-api.showPolygon('national-forest', { properties: { ...allOdf, name: 'All National Forests' } });
+api.showPolygon('national-park', { properties: { ...allOdf, name: 'All National Parks' } });
 await exportButton._listeners.click[0]();
 assert.equal(body.querySelector('.results-export-chooser'), null, 'other groups should not get the chooser');
 assert.ok(body.querySelector('.results-export-modal'), 'other groups should open the map preview');
