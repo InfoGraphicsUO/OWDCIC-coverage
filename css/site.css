@@ -165,9 +165,11 @@ textarea {
 
 .about-modal__heading {
     margin: 0 0 10px;
-    color: var(--ohaz-yellow);
+    color: #fff;
     font-size: 15px;
     font-weight: 700;
+    text-decoration: underline var(--ohaz-yellow) 2px;
+    text-underline-offset: 5px;
 }
 
 .about-modal__section p {
