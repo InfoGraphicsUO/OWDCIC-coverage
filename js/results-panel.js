@@ -1086,7 +1086,7 @@ function drawReportPage({ title, date, pageCount }, pageNumber, drawBody) {
   ctx.fillText(`${title}: camera coverage summary`, REPORT_MARGIN, REPORT_MARGIN + 14);
   ctx.fillStyle = REPORT_MUTED;
   ctx.font = `10px ${EXPORT_FONT}`;
-  ctx.fillText('OWDCIC Camera Coverage Map', REPORT_MARGIN, REPORT_MARGIN + 31);
+  ctx.fillText('Fire Camera Coverage Map, Oregon/Washington', REPORT_MARGIN, REPORT_MARGIN + 31);
   ctx.textAlign = 'right';
   ctx.fillText(date, right, REPORT_MARGIN + 31);
   ctx.textAlign = 'left';
@@ -1504,7 +1504,7 @@ function drawLegendOverlay(ctx, x, y, layout) {
   let textY = y + layout.padY + 18;
   ctx.fillStyle = '#fff';
   ctx.font = `700 18px ${EXPORT_FONT}`;
-  ctx.fillText('OWDCIC Camera Coverage', x + layout.padX, textY);
+  ctx.fillText('Fire Camera Coverage', x + layout.padX, textY);
   textY += layout.titleHeight - 8;
   ctx.font = `15px ${EXPORT_FONT}`;
   ctx.fillStyle = '#f0f0f0';
