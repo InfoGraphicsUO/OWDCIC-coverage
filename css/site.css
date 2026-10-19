@@ -51,6 +51,11 @@ textarea {
     object-fit: contain;
 }
 
+.site-banner__logo--wide {
+    width: auto;
+    max-width: 260px;
+}
+
 .site-banner__title {
     margin: 0 0 0 18px;
     font-size: clamp(21px, 2.3vw, 32px);
@@ -303,6 +308,11 @@ textarea {
     .site-banner__logo {
         width: 52px;
         height: 52px;
+    }
+
+    .site-banner__logo--wide {
+        width: auto;
+        max-width: 180px;
     }
 
     .site-banner__title {
