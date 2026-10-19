@@ -874,6 +874,16 @@ const EXPORT_VIEWSHED_ICONS = Object.freeze({
   outdoors: 'img/orange_portland_tower_viewshed.png',
   satellite: 'img/grey_portland_tower_viewshed.png',
 });
+// rows in a provider's own color get a sample viewshed in that color
+const EXPORT_PROVIDER_VIEWSHED_ICONS = Object.freeze({
+  [EXPORT_PROVIDER_VIEWSHED_LABELS[LEGEND_LAYERS.panoViewsheds]]: 'img/blue_portland_tower_viewshed.png',
+  [EXPORT_PROVIDER_VIEWSHED_LABELS[LEGEND_LAYERS.enviroVisionViewsheds]]: 'img/green_portland_tower_viewshed.png',
+});
+// rings match the shared viewshed fill on each basemap
+const EXPORT_VIEWSHED_OUTLINES = Object.freeze({
+  outdoors: '#F28D05',
+  satellite: '#F4F1EA',
+});
 
 async function composeExport({ mapCanvas, map, basemap, legendItems, title, current, chart }) {
   // fail early before creating a blank or misleading preview
@@ -1972,9 +1982,17 @@ async function resolveLegendRowsForExport(getLegendItems, basemap) {
   });
 
   const viewshedIcon = EXPORT_VIEWSHED_ICONS[basemap] ?? EXPORT_VIEWSHED_ICONS.outdoors;
-  return condensed.map((row) => (EXPORT_SHARED_COLOR_VIEWSHED_LABELS.has(row.label)
-    ? { ...row, visual: { type: 'icon', src: viewshedIcon, outline: '#808080', size: 22 } }
-    : row));
+  const viewshedOutline = EXPORT_VIEWSHED_OUTLINES[basemap] ?? EXPORT_VIEWSHED_OUTLINES.outdoors;
+  return condensed.map((row) => {
+    if (EXPORT_SHARED_COLOR_VIEWSHED_LABELS.has(row.label)) {
+      return { ...row, visual: { type: 'icon', src: viewshedIcon, outline: viewshedOutline, size: 22 } };
+    }
+    // the ring keeps the provider fill the layer list shows for this basemap
+    const providerIcon = EXPORT_PROVIDER_VIEWSHED_ICONS[row.label];
+    return providerIcon
+      ? { ...row, visual: { type: 'icon', src: providerIcon, outline: row.visual?.color, size: 22 } }
+      : row;
+  });
 }
 
 // a selected camera's viewshed sits under the viewshed rows; other selection rows follow the layers

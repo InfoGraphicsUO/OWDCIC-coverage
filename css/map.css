@@ -459,6 +459,11 @@
     display: grid;
 }
 
+/* group rows marked hidden show only the checkbox and label; the empty slot keeps labels aligned */
+.control-menu .legend-group__parent .legend-visual:has(.legend-swatch--hidden) {
+    visibility: hidden;
+}
+
 .control-menu .legend-info {
     color: var(--control-chrome-muted);
 }
