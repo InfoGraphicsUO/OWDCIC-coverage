@@ -135,8 +135,20 @@ textarea {
     line-height: 1.4;
 }
 
-.about-modal__dialog {
-    width: min(640px, 100%);
+.modal__dialog.about-modal__dialog {
+    width: min(1040px, 100%);
+}
+
+.modal__body.about-modal__body {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+    gap: 28px;
+    padding: 18px 22px;
+}
+
+.about-modal__side {
+    padding-left: 24px;
+    border-left: 1px solid #444;
 }
 
 .about-modal__section + .about-modal__section {
@@ -164,6 +176,18 @@ textarea {
     .site-banner__about,
     .site-banner__settings {
         transition: none;
+    }
+}
+
+@media (max-width: 760px) {
+    .modal__body.about-modal__body {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .about-modal__side {
+        padding-left: 0;
+        border-left: 0;
     }
 }
 

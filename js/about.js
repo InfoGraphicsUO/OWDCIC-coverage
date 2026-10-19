@@ -1,6 +1,7 @@
 import { openModal } from './modal.js';
 
 // each section is a heading with paragraphs or a list, in display order
+// the story sections sit in the wide left column and the lists on the right
 const ABOUT_SECTIONS = Object.freeze([
   Object.freeze({
     title: 'About this map',
@@ -19,6 +20,7 @@ const ABOUT_SECTIONS = Object.freeze([
   }),
   Object.freeze({
     title: 'Founding members',
+    side: true,
     items: [
       'University of Oregon / Oregon Hazards Lab (OHAZ)',
       'Bureau of Land Management (BLM)',
@@ -28,6 +30,7 @@ const ABOUT_SECTIONS = Object.freeze([
   }),
   Object.freeze({
     title: 'Data contributors, sponsors, and operators',
+    side: true,
     items: [
       'University of Oregon / Oregon Hazards Lab (OHAZ)',
       'Oregon Department of Forestry (ODF)',
@@ -59,8 +62,16 @@ function openAboutModal(onClose) {
   });
 
   const body = document.createElement('div');
-  body.className = 'modal__body';
-  for (const section of ABOUT_SECTIONS) body.append(aboutSection(section));
+  body.className = 'modal__body about-modal__body';
+
+  const main = document.createElement('div');
+  const side = document.createElement('div');
+  side.className = 'about-modal__side';
+  for (const section of ABOUT_SECTIONS) {
+    (section.side ? side : main).append(aboutSection(section));
+  }
+
+  body.append(main, side);
   dialog.append(body);
 }
 
