@@ -84,6 +84,10 @@ const DIGITIZED_CAMERA_UNLOCK_TIMEOUT_MS = 2_000;
 
 const BOUNDARY_COLOR = '#494949';
 const BOUNDARY_FILL_COLOR = '#929292';
+
+// base fill and outline draw whole areas; portions only appear in a selection outline
+const WHOLE_AREA_FILTER = ['!', ['has', 'partOfDivisionId']];
+
 const SELECTED_BOUNDARY_COLOR = '#f8e109';
 
 const PANO_OPERATOR = 'Pano AI';
@@ -741,6 +745,7 @@ function addBoundaryLayers(map) {
       id: division.fillLayerId,
       type: 'fill',
       source: division.sourceId,
+      filter: WHOLE_AREA_FILTER,
       layout: { visibility: 'none' },
       paint: {
         'fill-color': BOUNDARY_FILL_COLOR,
@@ -766,6 +771,7 @@ function addBoundaryLayers(map) {
       id: division.layerId,
       type: 'line',
       source: division.sourceId,
+      filter: WHOLE_AREA_FILTER,
       layout: { visibility: 'none' },
       paint: {
         'line-color': BOUNDARY_COLOR,
@@ -929,13 +935,15 @@ async function loadDivisionOptions(map, typeValue) {
 
   // a combined option has no shape of its own on the map, so clicks and labels land on its members
   const drawn = data.features.filter((feature) => !isCombinedDivision(feature));
-  // keep full geometry for hit testing and selection, labels use compact points
+  // keep full geometry for hit testing and selection, labels use compact points;
+  // portions stay in the source only so a state option can outline its own side of the line
   setSourceData(map, division.sourceId, { ...data, features: drawn });
+  const labelled = drawn.filter((feature) => !isDivisionPortion(feature));
 
   // precomputed label points keep text placement independent of polygon geometry
   setSourceData(map, division.labelSourceId, {
     type: 'FeatureCollection',
-    features: drawn.flatMap((feature) => {
+    features: labelled.flatMap((feature) => {
       const coordinates = feature.properties?.labelPoint;
       // malformed or missing label points should not block the polygon options
       if (!Array.isArray(coordinates) || coordinates.length !== 2 ||
@@ -951,7 +959,7 @@ async function loadDivisionOptions(map, typeValue) {
     }),
   });
 
-  return data.features.map((feature) => ({
+  return data.features.filter((feature) => !isDivisionPortion(feature)).map((feature) => ({
     value: feature.properties.divisionId,
     label: typeValue === 'utility'
       ? `${feature.properties.label}`
@@ -968,6 +976,11 @@ async function loadDivisionOptions(map, typeValue) {
 // an option that stands for several others, e.g. All ODF districts; it lists them in memberDivisionIds
 function isCombinedDivision(feature) {
   return Array.isArray(feature?.properties?.memberDivisionIds);
+}
+
+// the part of an area inside one state, e.g. Umatilla's Oregon portion in Oregon National Forests
+function isDivisionPortion(feature) {
+  return Boolean(feature?.properties?.partOfDivisionId);
 }
 
 function cameraOptionId(feature) {

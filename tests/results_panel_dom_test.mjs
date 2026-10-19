@@ -491,8 +491,17 @@ URL.createObjectURL = (blob) => {
   return originalCreateObjectURL(blob);
 };
 
+// providers overlap, so their own shares can add to more than the area's total coverage;
+// the parts only one provider sees leave 10% seen by more than one
+const providerCoverage = [
+  { provider: 'alertwest', cameraViewshedCoveragePct: 30, cameraViewshedAreaSqKm: 30, exclusiveCoveragePct: 20, exclusiveAreaSqKm: 20 },
+  { provider: 'pano', cameraViewshedCoveragePct: 20, cameraViewshedAreaSqKm: 20, exclusiveCoveragePct: 10, exclusiveAreaSqKm: 10 },
+  { provider: 'envirovision', cameraViewshedCoveragePct: 0, cameraViewshedAreaSqKm: 0, exclusiveCoveragePct: 0, exclusiveAreaSqKm: 0 },
+];
+
 const odfMembers = [
-  { divisionId: 'odf:a', name: 'Alpha District', cameraViewshedCoveragePct: 40, cameraViewshedAreaSqKm: 40, landAreaSqKm: 100, landMix },
+  { divisionId: 'odf:a', name: 'Alpha District', cameraViewshedCoveragePct: 40, cameraViewshedAreaSqKm: 40, landAreaSqKm: 100,
+    landMix, providerCoverage },
   // the comma checks CSV quoting
   { divisionId: 'odf:b', name: 'Beta FPA, North', cameraViewshedCoveragePct: 10, cameraViewshedAreaSqKm: 20, landAreaSqKm: 200,
     landMix: [{ label: 'State land', percentage: 100, areaSqKm: 200 }] },
@@ -505,7 +514,7 @@ odfMembers.forEach((properties) => memberFeatures.set(properties.divisionId, { p
 
 const allOdf = {
   divisionId: 'odf:all', name: 'All ODF districts', cameraViewshedCoveragePct: 18, cameraViewshedAreaSqKm: 90,
-  landAreaSqKm: 500, landMix, memberDivisionIds: odfMembers.map(({ divisionId }) => divisionId),
+  landAreaSqKm: 500, landMix, providerCoverage, memberDivisionIds: odfMembers.map(({ divisionId }) => divisionId),
 };
 
 // the fake DOM matches data attributes by name only, so pick chooser options by key here
@@ -539,15 +548,23 @@ const csvHeader = csvLines[0].split(',');
 assert.deepEqual(csvHeader.slice(0, 6), ['District', 'Coverage (%)', 'Covered area (sq mi)', 'Total area (sq mi)',
   'Covered area (sq km)', 'Total area (sq km)']);
 
+// provider columns follow the totals in a fixed order, then the land several providers see
+assert.deepEqual(csvHeader.slice(6, 20), [
+  'ALERTWest coverage (%)', 'ALERTWest covered area (sq mi)', 'ALERTWest only (%)', 'ALERTWest only (sq mi)',
+  'Pano AI coverage (%)', 'Pano AI covered area (sq mi)', 'Pano AI only (%)', 'Pano AI only (sq mi)',
+  'EnviroVision coverage (%)', 'EnviroVision covered area (sq mi)', 'EnviroVision only (%)', 'EnviroVision only (sq mi)',
+  'More than one provider (%)', 'More than one provider (sq mi)']);
+
 // land status columns keep the panel's category order
-assert.deepEqual(csvHeader.slice(6), ['U.S. Forest Service land (%)', 'U.S. Forest Service land (sq mi)',
+assert.deepEqual(csvHeader.slice(20), ['U.S. Forest Service land (%)', 'U.S. Forest Service land (sq mi)',
   'State land (%)', 'State land (sq mi)', 'Other/unclassified (%)', 'Other/unclassified (sq mi)']);
 assert.equal(csvLines.length, odfMembers.length + 2, 'CSV should have a header, every district, and a total row');
-assert.match(csvLines[1], /^Alpha District,40,15\.44,38\.61,40,100,40,0,10,0,50,0$/,
+assert.match(csvLines[1], /^Alpha District,40,15\.44,38\.61,40,100,30,11\.58,20,7\.72,20,7\.72,10,3\.86,0,0,0,0,10,3\.86,40,0,10,0,50,0$/,
   'areas convert to sq mi; land shares without an area stay 0 sq mi');
+assert.match(csvLines[2], /^"Beta FPA, North",10,7\.72,77\.22,20,200,,,,,,,,,,,,,,,0,/, 'areas without a provider split stay blank');
 assert.match(csvLines[2], /^"Beta FPA, North",10,/, 'names with commas should be quoted');
 assert.match(csvLines[2], /,0,0,100,77\.22,0,0$/, 'categories missing from a district count as 0');
-assert.match(csvLines[4], /^Delta District,,,,,,/, 'unavailable coverage should stay blank, not 0');
+assert.match(csvLines[4], /^Delta District,,,,,,,,,,,,/, 'unavailable coverage should stay blank, not 0');
 assert.match(csvLines.at(-1), /^All ODF districts,18,/);
 
 chooser.querySelector('button.modal__close').click();
@@ -581,8 +598,14 @@ assert.deepEqual(districtOrder(pageWith('Coverage by district')),
   ['Alpha District', 'Beta FPA, North', 'Gamma District', 'Delta District', 'Epsilon District']);
 assert.deepEqual(districtOrder(pageWith('Districts from most to least covered')),
   ['Alpha District', 'Gamma District', 'Beta FPA, North', 'Epsilon District', 'Delta District']);
-assert.ok(pageWith('Districts from most to least covered').includes('All districts'), 'the ranked table should keep its total row');
+assert.ok(pageWith('Districts from most to least covered').includes('All ODF districts'), 'the ranked table should keep its total row, named for the selection');
 assert.ok(!reportText.some((text) => /rank/i.test(text)), 'district cards should not show a coverage rank');
+
+// coverage bars split by provider, so the tables and cards carry a key for the colors
+const providerKey = ['ALERTWest only', 'Pano AI only', 'EnviroVision only', 'More than one provider'];
+assert.ok(providerKey.every((label) => pageWith('Coverage by district').includes(label)), 'tables should key the provider colors');
+assert.ok(providerKey.every((label) => pageWith('unclassified includes unmapped private land. Shares under 1% are not shown.').includes(label)), 'cards should key the provider colors');
+assert.ok(!reportText.includes('Coverage by camera provider'), 'the split lives in the coverage bars, not its own page');
 assert.ok(reportText.includes('Page 5 of 5'));
 
 // the PDF holds one page per preview image
@@ -613,7 +636,7 @@ assert.equal(mapModal.querySelectorAll('[data-export-preview]').length, 1);
 mapModal.querySelector('[data-export-close]').click();
 
 // groups left out of SUMMARY_REPORT_GROUPS keep the map export for their "All" option
-api.showPolygon('national-forest', { properties: { ...allOdf, name: 'All National Forests' } });
+api.showPolygon('national-park', { properties: { ...allOdf, name: 'All National Parks' } });
 await exportButton._listeners.click[0]();
 assert.equal(body.querySelector('.results-export-chooser'), null, 'other groups should not get the chooser');
 assert.ok(body.querySelector('.results-export-modal'), 'other groups should open the map preview');

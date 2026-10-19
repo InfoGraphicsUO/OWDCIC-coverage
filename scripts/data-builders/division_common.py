@@ -42,6 +42,7 @@ def pending_metrics() -> dict:
         "cameraViewshedAreaSqKm": None,
         "cameraViewshedCoveragePct": None,
         "landMix": [],
+        "providerCoverage": [],
     }
 
 

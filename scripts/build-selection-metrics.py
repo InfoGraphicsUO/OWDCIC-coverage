@@ -31,6 +31,8 @@ VIEWSHEDS = (
     ROOT / 'outputs/gdal_viewsheds_pano/mapbox/camera_viewsheds_web_epsg5070.gpkg',
     ROOT / 'outputs/gdal_viewsheds_envirovision/mapbox/camera_viewsheds_web_epsg5070.gpkg',
 )
+# report and CSV split coverage by provider, keyed by the web package's output folder
+PROVIDER_FOLDER_PREFIX = 'gdal_viewsheds_'
 # published manifests name every viewshed the map shows; metrics must cover the same set
 MANIFESTS = ROOT / 'data'
 MASK = ROOT / 'data/pacific-northwest-land-mask.geojson'
@@ -44,7 +46,7 @@ TYPES = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
          'odf-protection-district')
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
-    'utility': 3, 'national-forest': 20, 'national-park': 14,
+    'utility': 3, 'national-forest': 26, 'national-park': 14,
     'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
 }
 # names shown in the viewshed runner while each metric builds
@@ -268,8 +270,9 @@ def check_published_viewsheds(individual, published):
 
 
 def load_all_viewsheds(paths):
-    """merges providers into one dissolved coverage and one id -> viewshed lookup"""
-    coverages = []
+    """merges providers into one dissolved coverage and one id -> viewshed lookup,
+    keeping each provider's own coverage for the per-provider split"""
+    coverages = {}
     individual = {}
 
     for path in paths:
@@ -279,10 +282,39 @@ def load_all_viewsheds(paths):
         if duplicates:
             raise ValueError(f'viewshed IDs repeat across providers: {sorted(duplicates)}')
 
-        coverages.append(coverage)
+        coverages[provider_key(path)] = coverage
         individual.update(provider_viewsheds)
 
-    return union_all(coverages), individual
+    return union_all(list(coverages.values())), coverages, individual
+
+
+def provider_key(path: Path):
+    """outputs/gdal_viewsheds_pano/mapbox/x.gpkg -> pano"""
+    return path.parent.parent.name.removeprefix(PROVIDER_FOLDER_PREFIX)
+
+
+def exclusive_coverages(coverages):
+    """the part of each provider's coverage no other provider sees"""
+    return {provider: coverage.difference(union_all([other for key, other in coverages.items() if key != provider]))
+            for provider, coverage in coverages.items()}
+
+
+def provider_coverage(selection, coverages, exclusives):
+    """each provider's own coverage of the selection and the part only it covers
+
+    Providers can overlap, so their own coverage can add to more than the total;
+    the exclusive parts plus the overlap add to exactly the total.
+    """
+    rows = []
+    for provider, coverage in coverages.items():
+        own = coverage_metrics(selection, coverage)
+        exclusive = coverage_metrics(selection, exclusives[provider])
+        rows.append({'provider': provider,
+                     'cameraViewshedAreaSqKm': own['cameraViewshedAreaSqKm'],
+                     'cameraViewshedCoveragePct': own['cameraViewshedCoveragePct'],
+                     'exclusiveAreaSqKm': exclusive['cameraViewshedAreaSqKm'],
+                     'exclusiveCoveragePct': exclusive['cameraViewshedCoveragePct']})
+    return rows
 
 
 def load_viewsheds(path: Path):
@@ -482,7 +514,8 @@ def report(args, step, total, label, done, count):
 
 
 def run(args):
-    coverage, individual = load_all_viewsheds(args.viewsheds)
+    coverage, provider_coverages, individual = load_all_viewsheds(args.viewsheds)
+    provider_exclusives = exclusive_coverages(provider_coverages)
     print('loaded viewsheds:', len(individual), flush=True)
     # checked before anything is written, so a mismatch leaves the data untouched
     check_published_viewsheds(individual, published_viewshed_ids(MANIFESTS))
@@ -577,6 +610,7 @@ def run(args):
 
             p = feature['properties']
             p.update(coverage_metrics(selected, coverage))
+            p['providerCoverage'] = provider_coverage(selected, provider_coverages, provider_exclusives)
             p['landMix'] = mix_for(selected, area, designation)
             retained.append(feature)
 
