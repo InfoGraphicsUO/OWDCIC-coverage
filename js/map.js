@@ -1,5 +1,6 @@
 import { restoreMarkerIcons } from './marker-icons.js';
 import { registerOutsideHatch } from './states-highlight.js';
+import { REGION_DATA_BOUNDS } from './config.js';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiaW5mb2dyYXBoaWNzIiwiYSI6ImNqaTR0eHhnODBjeTUzdmx0N3U2dWU5NW8ifQ.fVbTCmIrqILIzv5QGtVJ2Q';
@@ -21,6 +22,7 @@ const BASEMAP_STYLE_IDS = Object.freeze({
   outdoors: MAPBOX_STYLE,
   simple: SIMPLE_MAPBOX_STYLE,
 });
+
 // listeners receive the startup selection and every later picker change
 const basemapChangeListeners = [];
 let activeBasemap = DEFAULT_BASEMAP;
@@ -29,6 +31,7 @@ let activeBaseLayerIds = new Set();
 let activeBaseSourceIds = new Set();
 let basemapRequest = 0;
 let basemapStylePending = false;
+
 // set once the picker is bound so programmatic changes follow the picker path
 let basemapPicker;
 let basemapMap;
@@ -90,10 +93,12 @@ export function mapPanelPadding(map) {
   ) || 0;
   const shellWidth = railWidth + panelGap +
     (sidebar?.classList.contains('is-collapsed') ? 0 : bodyWidth);
+
   // hidden panels should not reserve space in the camera viewport
   const resultsVisible = Boolean(
     results && !results.hidden && results.getAttribute('aria-hidden') !== 'true'
   );
+
   // each desktop panel may use at most two-fifths of the map width
   const widthCap = container.clientWidth * 0.4;
   // reserve 120px of map height when the viewport allows it
@@ -174,6 +179,7 @@ async function initializeMap() {
         'tileSize': 512,
         'maxzoom': 14
     });
+
     map.setTerrain({ 
         'source': 'mapbox-dem', 
         'exaggeration': [
@@ -184,11 +190,11 @@ async function initializeMap() {
           12, 1.6
         ]
     });
+
     map.setFog({
       range: [1, 5], // first value starts opacity, second reaches full opacity
     })
   });
-
 
   // attach the style error listener before asking Mapbox to install the JSON
   // style installation can emit errors while the map is still initializing
@@ -199,16 +205,21 @@ async function initializeMap() {
       console.error('Failed to restore map marker icons:', error);
     });
   });
+
   map.setStyle(style, { diff: false });
+
   map.addControl(
     new mapboxgl.NavigationControl({ showCompass: true, showZoom: true }),
     'top-left'
   );
   map.addControl(new HomeControl(), 'top-left');
+  initLocationSearch(map);
+
   map.addControl(new mapboxgl.AttributionControl({
     customAttribution: '<a href="https://infographics.uoregon.edu/" target="_blank" rel="noopener noreferrer">UO InfoGraphics Lab</a> | <a href="https://ohaz.uoregon.edu/" target="_blank" rel="noopener noreferrer">OHAZ</a>'
   }));
   initZoomViewer(map);
+
   map.once('load', () => {
     initBasemapPicker(map);
     initControlShellSync(map);
@@ -238,6 +249,7 @@ function initControlShellSync(map) {
   sidebar.querySelector('.control-shell__collapse')?.addEventListener('click', () => {
     requestAnimationFrame(refreshPadding);
   });
+
   for (const tab of sidebar.querySelectorAll('[data-control-tab]')) {
     tab.addEventListener('click', () => requestAnimationFrame(refreshPadding));
   }
@@ -287,6 +299,93 @@ class HomeControl {
   }
 }
 
+function initLocationSearch(map) {
+  const searchBox = new MapboxSearchBox();
+  searchBox.accessToken = mapboxgl.accessToken;
+  searchBox.placeholder = 'Zoom to a location...';
+  searchBox.options = {
+    types: 'region,place,locality',
+    proximity: DEFAULT_VIEW.center,
+    country: 'US',
+    // southwest then northeast corners of the Oregon and Washington data area
+    bbox: REGION_DATA_BOUNDS.flat(),
+  };
+  searchBox.marker = false;
+  searchBox.mapboxgl = mapboxgl;
+  searchBox.theme = {
+    variables: {
+      fontFamily: 'inherit',
+      colorBackground: '#2f2e2e',
+      colorText: '#ffffff',
+      colorBackgroundHover: '#3a3939',
+      colorBackgroundActive: '#3a3939',
+      borderRadius: '10px',
+    },
+    // the dropdown renders in a shadow root, so its chrome is set here instead of in map.css
+    cssText: `
+      [class*="--MapboxSearch"] { --width: 300px !important; }
+      [class*="--Results"] {
+        box-sizing: border-box;
+        width: 100% !important;
+        margin-top: 6px;
+        border: 1px solid rgba(255, 255, 255, .18);
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
+        overflow: hidden;
+      }
+      [class*="--ResultsList"], [class*="--ResultsAttribution"] {
+        border: 0; border-radius: 0; box-shadow: none; background: transparent;
+      }
+      [class*="--ResultsAttribution"] { border-top: 1px solid rgba(255, 255, 255, .18); }
+    `,
+  };
+
+  const container = document.createElement('div');
+  container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group location-search';
+
+  const button = document.createElement('button');
+  button.className = 'location-search__toggle';
+  button.type = 'button';
+  button.title = 'Zoom to a location';
+  button.setAttribute('aria-label', button.title);
+  button.setAttribute('aria-expanded', 'false');
+
+  const icon = document.createElement('i');
+  icon.className = 'fa-solid fa-magnifying-glass';
+  icon.setAttribute('aria-hidden', 'true');
+  button.append(icon);
+
+  const setExpanded = (expanded) => {
+    container.classList.toggle('is-expanded', expanded);
+    button.setAttribute('aria-expanded', String(expanded));
+    if (expanded) container.querySelector('input')?.focus();
+  };
+
+  button.addEventListener('click', () => {
+    setExpanded(!container.classList.contains('is-expanded'));
+  });
+  container.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') setExpanded(false);
+  });
+
+  container.append(searchBox.onAdd(map), button);
+  map.addControl({ onAdd: () => container, onRemove: () => container.remove() }, 'top-left');
+
+  searchBox.addEventListener('retrieve', (event) => {
+    setExpanded(false);
+    const feature = event.detail?.features?.[0];
+    if (!feature) return;
+    const [west, south, east, north] = feature.properties?.bbox ?? [];
+    const options = { padding: mapPanelPadding(map), duration: motionDuration(700) };
+
+    if (west === undefined) {
+      map.easeTo({ ...options, center: feature.geometry.coordinates, zoom: 9 });
+    } else {
+      map.fitBounds([[west, south], [east, north]], { ...options, maxZoom: 11 });
+    }
+  });
+}
+
 function resetMapView(map) {
   // listeners clear the active filter before the camera returns home
   map.fire(MAP_HOME_EVENT);
@@ -310,6 +409,7 @@ function initBasemapPicker(map) {
   // reset browser-restored input state to match the style loaded at startup
   resetBasemapPicker();
   updateBasemapPreview(selectedBasemap());
+
   // satellite imagery is an overlay; outdoors stays supplied by the base style
   map.setLayoutProperty(SATELLITE_ID, 'visibility', 'none');
 
@@ -344,6 +444,7 @@ async function changeBasemap(map, picker, basemap) {
     const nextBaseSourceIds = new Set(
       Object.keys(style.sources).filter((id) => id !== SATELLITE_ID)
     );
+
     preserveApplicationLayers(map, style);
 
     map.once('style.load', () => {
@@ -354,6 +455,7 @@ async function changeBasemap(map, picker, basemap) {
       setSatelliteVisibility(map, basemap);
       notifyBasemapChange(basemap);
     });
+
     activeBaseStyle = styleName;
     activeBaseLayerIds = nextBaseLayerIds;
     activeBaseSourceIds = nextBaseSourceIds;
@@ -362,6 +464,7 @@ async function changeBasemap(map, picker, basemap) {
   } catch (error) {
     if (request !== basemapRequest) return;
     basemapStylePending = false;
+
     const activeInput = picker.querySelector(
       `input[name="basemap"][value="${activeBasemap}"]`
     );
@@ -437,6 +540,7 @@ function preserveApplicationLayers(map, style) {
 
   style.sources ||= {};
   style.layers ||= [];
+
   for (const [id, source] of Object.entries(currentStyle.sources || {})) {
     if (id === SATELLITE_ID || activeBaseSourceIds.has(id) || style.sources[id]) continue;
     style.sources[id] = source;

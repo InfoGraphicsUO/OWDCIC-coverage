@@ -88,6 +88,7 @@ export function attachViewshedIds(cameras, manifest, siteLocations) {
   const nameLookup = new Map();
   const sites = [];
   const correctedLocations = new Map();
+
   for (const site of getFeatures(siteLocations)) {
     // only explicit camera ids establish a correction; nearby towers can differ
     if (!featurePoint(site)) continue;
@@ -153,6 +154,7 @@ function nearestViewshedId(point, sites) {
       bestDistance = distance;
     }
   }
+
   return best;
 }
 

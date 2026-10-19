@@ -25,6 +25,7 @@ def default_qgis_root(
     """returns an explicit override or the newest standard QGIS install"""
 
     values = os.environ if environ is None else environ
+
     for variable in (QGIS_ROOT_ENV, "QGIS_ROOT", "OSGEO4W_ROOT"):
         if values.get(variable):
             return Path(values[variable])
@@ -34,13 +35,16 @@ def default_qgis_root(
 
     if platform_name == "win32":
         standalone = []
+
         for variable in ("ProgramFiles", "ProgramW6432"):
             program_files = values.get(variable)
             if program_files:
                 standalone.extend(Path(program_files).glob("QGIS *"))
+
         existing = [path for path in standalone if path.is_dir()]
         if existing:
             return max(existing, key=_version_key)
+
         return next(
             (path for path in (Path("C:/OSGeo4W"), Path("C:/OSGeo4W64")) if path.is_dir()),
             Path("C:/Program Files/QGIS"),
@@ -74,6 +78,7 @@ class QgisRuntime:
 
         env = dict(os.environ if base is None else base)
         separator = ";" if self.platform_name == "win32" else ":"
+
         env[QGIS_ROOT_ENV] = str(self.root)
         env["QGIS_PREFIX_PATH"] = str(self.prefix)
         env["PROJ_DATA"] = str(self.proj_data)
@@ -86,8 +91,10 @@ class QgisRuntime:
             env["PYTHONPATH"] = separator.join(
                 [*(str(path) for path in self.python_paths), env.get("PYTHONPATH", "")]
             ).rstrip(separator)
+
         if self.qt_plugin_paths:
             env["QT_PLUGIN_PATH"] = separator.join(map(str, self.qt_plugin_paths))
+
         return env
 
     def qgis_launch(self, project: Path) -> tuple[str, list[str]]:
@@ -95,8 +102,10 @@ class QgisRuntime:
 
         if self.platform_name == "darwin":
             return "/usr/bin/open", ["-n", "-a", str(self.root), "--args", str(project)]
+
         if self.qgis_executable:
             return str(self.qgis_executable), [str(project)]
+
         raise RuntimeError(f"QGIS desktop executable not found under {self.root}")
 
 
@@ -120,11 +129,13 @@ def qgis_runtime(
             (qgis_root / "apps/qgis", qgis_root / "apps/qgis-ltr"),
             qgis_root,
         )
+
         tools = tuple(
             path
             for path in (qgis_root / "bin", prefix / "bin", qgis_root / "apps/gdal/bin")
             if path.is_dir()
         ) or (qgis_root / "bin",)
+
         proj_data = _first_directory(
             (qgis_root / "share/proj", prefix / "share/proj"),
             qgis_root / "share/proj",
@@ -133,6 +144,7 @@ def qgis_runtime(
             (qgis_root / "share/gdal", prefix / "share/gdal"),
             qgis_root / "share/gdal",
         )
+
         python_paths = tuple(path for path in (prefix / "python",) if path.is_dir())
         qt_plugins = tuple(
             path
@@ -143,6 +155,7 @@ def qgis_runtime(
             )
             if path.is_dir()
         )
+
         executable = _first_file(
             [
                 qgis_root / "bin/qgis-bin.exe",
@@ -152,6 +165,7 @@ def qgis_runtime(
                 prefix / "bin/qgis.exe",
             ]
         )
+
         return QgisRuntime(
             qgis_root,
             prefix,

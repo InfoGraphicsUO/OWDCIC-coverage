@@ -43,11 +43,14 @@ def fetch_country_features() -> list[dict]:
             "f": "geojson",
         }
     )
+
     with urlopen(f"{SOURCE_LAYER}/query?{query}", timeout=60) as response:
         payload = json.load(response)
+
     features = payload.get("features", [])
     if len(features) != 2:
         raise RuntimeError(f"expected US and Canada features; received {len(features)}")
+
     return features
 
 
@@ -55,6 +58,7 @@ def regional_envelope() -> object:
     """returns the outer processing extent as an OGR polygon"""
     west, south, east, north = REGIONAL_BOUNDS
     ring = ogr.Geometry(ogr.wkbLinearRing)
+
     for longitude, latitude in (
         (west, south),
         (east, south),
@@ -63,8 +67,10 @@ def regional_envelope() -> object:
         (west, south),
     ):
         ring.AddPoint_2D(longitude, latitude)
+
     polygon = ogr.Geometry(ogr.wkbPolygon)
     polygon.AddGeometry(ring)
+
     return polygon
 
 
@@ -74,6 +80,7 @@ def build_geometry(features: list[dict]) -> object:
         ogr.CreateGeometryFromJson(json.dumps(feature["geometry"]))
         for feature in features
     ]
+
     if any(geometry is None or not geometry.IsValid() for geometry in geometries):
         raise RuntimeError("source contains an invalid country geometry")
 
@@ -81,8 +88,10 @@ def build_geometry(features: list[dict]) -> object:
     merged = geometries[0].Union(geometries[1])
     regional = merged.Intersection(regional_envelope())
     regional = ogr.ForceToMultiPolygon(regional)
+
     if regional is None or regional.IsEmpty() or not regional.IsValid():
         raise RuntimeError("regional land mask is empty or invalid")
+
     return regional
 
 
@@ -116,6 +125,7 @@ def main() -> int:
     args = parse_args()
     write_mask(args.output.resolve(), build_geometry(fetch_country_features()))
     print(args.output.resolve())
+
     return 0
 
 

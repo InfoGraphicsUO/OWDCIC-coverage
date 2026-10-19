@@ -83,7 +83,31 @@ QGIS_PROJECT_BUILDER = PROJECT_ROOT / "scripts/build-qgis-viewshed-project.py"
 DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
+DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest"
+# test runs merge into whatever folder they write to, so they get their own
+TEST_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_test"
 PROGRESS_PREFIX = "@@PROGRESS@@"
+
+# each preset starts from the launch values and changes only these settings
+PRESETS = (
+    ("test", "Test run",
+        "Builds up to 3 random cameras into a separate test folder without publishing anything, "
+        "so you can check them in QGIS with Open review map in QGIS.",
+        {"mode": "sample", "products": None, "combined": False,
+         "publish_sites": False, "publish_metrics": False}),
+    ("live", "Live site",
+        "Builds every camera that is missing a viewshed, then rebuilds the provider's and the "
+        "combined tilesets, publishes the site data, and reruns the coverage metrics so the "
+        "outputs are ready to upload.",
+        {"mode": "production", "products": None, "combined": True,
+         "publish_sites": True, "publish_metrics": True}),
+    ("gis", "GIS analysis",
+        "Writes an exact 10 m shapefile for every camera, ready for ArcGIS or QGIS analysis. "
+        "Nothing is published to the map.",
+        {"mode": "production", "products": "exact", "combined": False,
+         "publish_sites": False, "publish_metrics": False}),
+)
+CUSTOM_DESCRIPTION = "Settings have been changed from the presets; check every tab before starting."
 
 # keep the native controls, with dark gray surfaces and yellow accents
 WINDOW_STYLE = """
@@ -137,6 +161,7 @@ def apply_dark_theme(app: QApplication) -> None:
 
     app.setStyle("Fusion")
     palette = QPalette()
+
     for role, color in {
         "Window": "#191d21", "WindowText": "#edf0f2",
         "Base": "#242a30", "AlternateBase": "#303840",
@@ -147,36 +172,66 @@ def apply_dark_theme(app: QApplication) -> None:
         "PlaceholderText": "#abb5be",
     }.items():
         palette.setColor(qt_enum(QPalette, "ColorRole", role), QColor(color))
+
     for role in ("WindowText", "Text", "ButtonText"):
         palette.setColor(
             qt_enum(QPalette, "ColorGroup", "Disabled"),
             qt_enum(QPalette, "ColorRole", role), QColor("#89949e"),
         )
+
     app.setPalette(palette)
+
+
+def control_value(widget: QWidget):
+    if isinstance(widget, QLineEdit):
+        return widget.text()
+
+    if isinstance(widget, QComboBox):
+        return widget.currentData()
+
+    if isinstance(widget, QCheckBox):
+        return widget.isChecked()
+
+    return widget.value()
+
+
+def set_control_value(widget: QWidget, value) -> None:
+    if isinstance(widget, QLineEdit):
+        widget.setText(value)
+    elif isinstance(widget, QComboBox):
+        # findData cannot look up None, which marks the full run
+        index = next(i for i in range(widget.count()) if widget.itemData(i) == value)
+        widget.setCurrentIndex(index)
+    elif isinstance(widget, QCheckBox):
+        widget.setChecked(value)
+    else:
+        widget.setValue(value)
+
+
+def control_changed(widget: QWidget):
+    if isinstance(widget, QComboBox):
+        return widget.currentIndexChanged
+
+    if isinstance(widget, QCheckBox):
+        return widget.toggled
+
+    return widget.valueChanged
 
 
 def reset_button(section: str, widgets: list[QWidget]) -> QPushButton:
     """captures the initial values so reset stays in sync with the defaults shown at launch"""
 
-    restore = []
-    for widget in widgets:
-        if isinstance(widget, QLineEdit):
-            restore.append((widget.setText, widget.text()))
-        elif isinstance(widget, QComboBox):
-            restore.append((widget.setCurrentIndex, widget.currentIndex()))
-        elif isinstance(widget, QCheckBox):
-            restore.append((widget.setChecked, widget.isChecked()))
-        else:
-            restore.append((widget.setValue, widget.value()))
+    restore = [(widget, control_value(widget)) for widget in widgets]
 
     def reset() -> None:
-        for setter, value in restore:
-            setter(value)
+        for widget, value in restore:
+            set_control_value(widget, value)
 
     button = QPushButton("Reset to defaults")
     button.setAccessibleName(f"Reset {section} to defaults")
     button.setToolTip(f"Restore only {section.lower()} to the values used at launch.")
     button.clicked.connect(reset)
+
     return button
 
 
@@ -249,6 +304,7 @@ def with_help(label: str | QCheckBox, control: QWidget, explanation: str) -> QWi
     layout = QHBoxLayout(row)
     layout.setContentsMargins(0, 0, 0, 0)
     layout.setSpacing(6)
+
     if isinstance(label, str):
         title = label
         widget = QLabel(label)
@@ -256,11 +312,13 @@ def with_help(label: str | QCheckBox, control: QWidget, explanation: str) -> QWi
     else:
         title = label.text()
         widget = label
+
     control.setToolTip(explanation)
     control.setAccessibleDescription(explanation)
     layout.addWidget(widget)
     layout.addWidget(HelpButton(title, explanation))
     layout.addStretch(1)
+
     return row
 
 
@@ -285,6 +343,7 @@ class PathRow(QWidget):
             selected, _ = QFileDialog.getOpenFileName(
                 self, "Choose sites GeoJSON", self.edit.text(), "GeoJSON (*.geojson *.json)"
             )
+
         if selected:
             self.edit.setText(selected)
 
@@ -319,6 +378,7 @@ class ViewshedWindow(QMainWindow):
         title = QLabel("Camera viewshed generation")
         title.setObjectName("title")
         root.addWidget(title)
+        root.addWidget(self.build_presets())
 
         # scroll only the settings, so progress and the run controls stay within reach
         self.settings = QTabWidget()
@@ -330,6 +390,7 @@ class ViewshedWindow(QMainWindow):
         options_layout = QVBoxLayout(options)
         options_layout.addWidget(self.build_options())
         options_layout.addStretch(1)
+
         for label, page in (
             ("Inputs and outputs", setup),
             ("Run settings", options),
@@ -341,6 +402,7 @@ class ViewshedWindow(QMainWindow):
             scroll.setFrameShape(qt_enum(QScrollArea, "Shape", "NoFrame"))
             scroll.setWidget(page)
             self.settings.addTab(scroll, label)
+
         root.addWidget(self.settings, 3)
         root.addWidget(self.build_progress())
 
@@ -353,7 +415,94 @@ class ViewshedWindow(QMainWindow):
         root.addLayout(self.build_buttons())
         self.setCentralWidget(central)
         self.output.edit.textChanged.connect(lambda: self.set_idle(self.process.state() == PROCESS_NOT_RUNNING))
+        self.sync_finishing_options()
+        self.track_preset_controls()
         self.set_idle(True)
+
+    def build_presets(self) -> QGroupBox:
+        group = QGroupBox("Preset")
+        form = QFormLayout(group)
+        form.setSpacing(10)
+        form.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
+        self.preset = QComboBox()
+
+        for key, label, _description, _values in PRESETS:
+            self.preset.addItem(label, key)
+
+        self.preset.addItem("Custom", None)
+        self.preset.setAccessibleName("Preset")
+        self.preset.activated.connect(self.apply_preset)
+        self.preset_description = QLabel(PRESETS[0][2])
+        self.preset_description.setWordWrap(True)
+        self.preset_description.setObjectName("elapsed")
+        form.addRow(with_help("Run type", self.preset,
+            "Fills in the settings on every tab for a common kind of run. Changing a setting "
+            "afterwards switches this to Custom."), self.preset)
+        form.addRow("", self.preset_description)
+
+        return group
+
+    def track_preset_controls(self) -> None:
+        """remembers the launch values that every preset starts from"""
+
+        self.preset_controls = {
+            name: getattr(self, name)
+            for name in (
+                "mode", "products", "combined", "publish_sites", "publish_metrics",
+                "radius", "cell_size", "jobs", "web_resolution", "simplify",
+                "smooth_iterations", "patch_cells", "web_majority", "web_clip",
+                "exact", "keep_dems", "overwrite",
+            )
+        }
+        self.launch_values = {
+            name: control_value(widget) for name, widget in self.preset_controls.items()
+        }
+        self.applying_preset = False
+
+        for widget in self.preset_controls.values():
+            control_changed(widget).connect(self.sync_preset)
+
+        self.sync_preset()
+
+    def preset_values(self, values: dict) -> dict:
+        return {**self.launch_values, **values}
+
+    def apply_preset(self) -> None:
+        key = self.preset.currentData()
+        preset = next((preset for preset in PRESETS if preset[0] == key), None)
+
+        if preset is None:
+            self.preset_description.setText(CUSTOM_DESCRIPTION)
+            return
+
+        self.applying_preset = True
+
+        for name, value in self.preset_values(preset[3]).items():
+            set_control_value(self.preset_controls[name], value)
+
+        self.applying_preset = False
+
+        # keep the real output folder to return to after a test run
+        if key == "test" and self.output.path() != TEST_OUTPUT:
+            self.saved_output = self.output.edit.text()
+            self.output.edit.setText(str(TEST_OUTPUT))
+        elif key != "test" and self.output.path() == TEST_OUTPUT:
+            self.output.edit.setText(self.saved_output)
+
+        self.sync_preset()
+
+    def sync_preset(self) -> None:
+        """shows the preset the settings match, or Custom once any of them has changed"""
+
+        if self.applying_preset:
+            return
+
+        current = {name: control_value(widget) for name, widget in self.preset_controls.items()}
+        match = next(
+            (preset for preset in PRESETS if self.preset_values(preset[3]) == current), None
+        )
+        self.preset.setCurrentIndex(self.preset.findData(match[0]) if match else len(PRESETS))
+        self.preset_description.setText(match[2] if match else CUSTOM_DESCRIPTION)
 
     def build_inputs(self) -> QGroupBox:
         group = QGroupBox("Inputs and outputs")
@@ -362,13 +511,16 @@ class ViewshedWindow(QMainWindow):
         form.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
         self.sites = PathRow(PROJECT_ROOT / "data/alertwest-sites.geojson", False)
         self.dems = PathRow(PROJECT_ROOT / "data/dems", True)
-        self.output = PathRow(PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest", True)
+        # the window opens on the test run preset
+        self.output = PathRow(TEST_OUTPUT, True)
+        self.saved_output = str(DEFAULT_OUTPUT)
         form.addRow(with_help("Camera sites", self.sites,
             "The GeoJSON file containing the camera locations to process."), self.sites)
         form.addRow(with_help("DEM folder", self.dems,
             "The folder containing terrain elevation files. These describe hills and valleys used to calculate visibility."), self.dems)
         form.addRow("Output folder", self.output)
         form.addRow(reset_button("Inputs and outputs", [self.sites.edit, self.dems.edit, self.output.edit]))
+
         return group
 
     def build_options(self) -> QGroupBox:
@@ -379,7 +531,9 @@ class ViewshedWindow(QMainWindow):
         self.mode = QComboBox()
         self.mode.addItem("1 camera (Portland)", "pilot")
         self.mode.addItem("3 cameras", "validation")
+        self.mode.addItem("3 random cameras", "sample")
         self.mode.addItem("All cameras", "production")
+        self.mode.setCurrentIndex(self.mode.findData("sample"))
 
         self.products = QComboBox()
         self.products.addItem("Full run (polygons, Mapbox products, manifest)", None)
@@ -392,7 +546,6 @@ class ViewshedWindow(QMainWindow):
 
         self.combined = QCheckBox("Also rebuild the combined coverage tileset")
         self.publish_sites = QCheckBox("Publish the manifest and site data to the map")
-        self.publish_sites.setChecked(True)
         # off by default: the rebuild is the slowest step and a test run does not need it
         self.publish_metrics = QCheckBox("Rebuild coverage metrics for the results panel")
         # shapefiles-only runs make no coverage to combine or publish
@@ -454,7 +607,7 @@ class ViewshedWindow(QMainWindow):
         self.overwrite = QCheckBox("Rebuild completed cameras instead of resuming")
 
         form.addRow(with_help("Camera set", self.mode,
-            "Choose a small test run or process every camera in the selected sites file."), self.mode)
+            "Choose a small test run or process every camera in the selected sites file. Random cameras are picked from the selected sites file each run."), self.mode)
         form.addRow(with_help("Outputs", self.products,
             "Full run creates combined coverage files and web map files. Shapefiles only creates a separate file for each camera; choose exact edges or smoother web edges."), self.products)
         form.addRow(with_help(self.combined, self.combined,
@@ -511,6 +664,7 @@ class ViewshedWindow(QMainWindow):
         ]))
         advanced_layout.addWidget(files_group)
         advanced_layout.addStretch(1)
+
         return group
 
     def sync_finishing_options(self) -> None:
@@ -539,6 +693,7 @@ class ViewshedWindow(QMainWindow):
         layout.addLayout(step)
         layout.addWidget(self.overall)
         layout.addWidget(self.elapsed)
+
         return group
 
     def build_buttons(self) -> QHBoxLayout:
@@ -557,6 +712,7 @@ class ViewshedWindow(QMainWindow):
         layout.addStretch(1)
         layout.addWidget(self.open_output_button)
         layout.addWidget(self.open_qgis_button)
+
         return layout
 
     def runner_arguments(self) -> list[str]:
@@ -593,42 +749,57 @@ class ViewshedWindow(QMainWindow):
         )
         arguments.append("--web-clip" if self.web_clip.isChecked() else "--no-web-clip")
         shapefiles = self.products.currentData()
+
         if shapefiles:
             arguments += ["--shapefiles-only", shapefiles]
+
         # exact shapefiles are built from the exact polygons, so the checkbox cannot skip them
         if not self.exact.isChecked() and shapefiles != "exact":
             arguments.append("--skip-exact-polygons")
+
         if self.combined.isChecked() and not shapefiles:
             arguments.append("--combined-coverage")
+
         if self.publish_sites.isChecked() and not shapefiles:
             arguments.append("--publish-site-data")
+
             if self.publish_metrics.isChecked():
                 arguments.append("--publish-metrics")
+
         if self.keep_dems.isChecked():
             arguments.append("--keep-working-dems")
+
         if self.overwrite.isChecked():
             arguments.append("--overwrite")
+
         return arguments
 
     def validate_paths(self) -> bool:
         problems = []
+
         if not self.sites.path().is_file():
             problems.append(f"Sites file not found: {self.sites.path()}")
+
         if not self.dems.path().is_dir():
             problems.append(f"DEM folder not found: {self.dems.path()}")
+
         clip_needed = self.web_clip.isChecked() and self.products.currentData() != "exact"
         if clip_needed and not DEFAULT_CLIP_BOUNDARY.is_file():
             problems.append(f"Web clip boundary not found: {DEFAULT_CLIP_BOUNDARY}")
+
         if not self.qgis_runtime.root.is_dir():
             problems.append(f"QGIS not found: {self.qgis_runtime.root}")
+
         if problems:
             QMessageBox.critical(self, "Cannot start", "\n".join(problems))
             return False
+
         return True
 
     def start_run(self) -> None:
         if not self.validate_paths() or self.process.state() != PROCESS_NOT_RUNNING:
             return
+
         self.log.clear()
         self.output_buffer = ""
         self.started = time.monotonic()
@@ -637,6 +808,7 @@ class ViewshedWindow(QMainWindow):
         self.set_idle(False)
         self.elapsed_timer.start(1000)
         self.process.start(sys.executable, self.runner_arguments())
+
         if not self.process.waitForStarted(5000):
             self.log.appendPlainText(self.process.errorString())
             self.elapsed_timer.stop()
@@ -648,23 +820,27 @@ class ViewshedWindow(QMainWindow):
         self.output_buffer += chunk
         lines = self.output_buffer.split("\n")
         self.output_buffer = lines.pop()
+
         for line in lines:
             self.handle_line(line.rstrip())
 
     def handle_line(self, line: str) -> None:
         if not line:
             return
+
         if line.startswith(PROGRESS_PREFIX):
             try:
                 payload = json.loads(line[len(PROGRESS_PREFIX) :])
             except json.JSONDecodeError:
                 self.log.appendPlainText(line)
                 return
+
             self.overall.setValue(round(float(payload.get("percent", 0)) * 10))
             # GDAL callbacks report a percent with no detail, so the last status stays up
             detail = payload.get("detail")
             if not detail:
                 return
+
             site = payload.get("site_name")
             prefix = (
                 f"Camera {payload.get('site_index')}/{payload.get('site_total')}: {site} — "
@@ -672,7 +848,9 @@ class ViewshedWindow(QMainWindow):
                 else ""
             )
             self.status.setText(prefix + str(detail))
+
             return
+
         self.log.appendPlainText(line)
         scrollbar = self.log.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
@@ -681,11 +859,16 @@ class ViewshedWindow(QMainWindow):
         if self.output_buffer:
             self.handle_line(self.output_buffer)
             self.output_buffer = ""
+
         self.elapsed_timer.stop()
+
         if exit_code == 0:
             self.overall.setValue(1000)
+
             if self.products.currentData():
                 self.status.setText("Run complete — shapefiles are in the output folder")
+            elif self.mode.currentData() == "sample":
+                self.status.setText("Run complete — open the review map in QGIS to check the test cameras")
             elif self.publish_sites.isChecked():
                 self.status.setText("Run complete — outputs are ready and site data is published")
             else:
@@ -694,12 +877,15 @@ class ViewshedWindow(QMainWindow):
             self.status.setText("Run cancelled — completed cameras remain resumable")
         else:
             self.status.setText(f"Run stopped with exit code {exit_code}; review the log")
+
         self.set_idle(True)
 
     def cancel_run(self) -> None:
         if self.process.state() == PROCESS_NOT_RUNNING:
             return
+
         self.status.setText("Cancelling the active GDAL command…")
+
         if sys.platform == "win32":
             # taskkill reaches the active GDAL child process too
             QProcess.startDetached(
@@ -708,6 +894,7 @@ class ViewshedWindow(QMainWindow):
             )
         else:
             self.process.terminate()
+
         QTimer.singleShot(5000, self.kill_if_running)
 
     def kill_if_running(self) -> None:
@@ -718,20 +905,24 @@ class ViewshedWindow(QMainWindow):
         seconds = int(time.monotonic() - self.started)
         minutes, seconds = divmod(seconds, 60)
         hours, minutes = divmod(minutes, 60)
+
         if hours:
             text = f"{hours}h {minutes}m {seconds}s"
         elif minutes:
             text = f"{minutes}m {seconds}s"
         else:
             text = f"{seconds}s"
+
         self.elapsed.setText(f"Elapsed: {text}")
 
     def set_idle(self, idle: bool) -> None:
         self.settings.setEnabled(idle)
+
         if idle:
             self.spinner.stop()
         else:
             self.spinner.start()
+
         self.start_button.setEnabled(idle)
         self.cancel_button.setEnabled(not idle)
         self.open_output_button.setEnabled(idle and self.output.path().exists())
@@ -747,9 +938,11 @@ class ViewshedWindow(QMainWindow):
         combined = self.output.path() / "camera_viewsheds_exact_epsg5070.gpkg"
         web = self.output.path() / "mapbox/camera_viewsheds_web_epsg5070.gpkg"
         review_project = self.output.path() / "camera_viewsheds_review.qgz"
+
         if not combined.exists() and not web.exists():
             QMessageBox.information(self, "No polygons yet", "Run the viewshed workflow first.")
             return
+
         builder = QProcess(self)
         builder.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
         builder.start(
@@ -766,6 +959,7 @@ class ViewshedWindow(QMainWindow):
                 str(review_project),
             ],
         )
+
         if not builder.waitForFinished(15000) or builder.exitCode() != 0:
             message = bytes(builder.readAllStandardOutput()).decode("utf-8", errors="replace")
             QMessageBox.critical(
@@ -774,22 +968,26 @@ class ViewshedWindow(QMainWindow):
                 message or builder.errorString(),
             )
             return
+
         try:
             program, arguments = self.qgis_runtime.qgis_launch(review_project)
         except RuntimeError as error:
             QMessageBox.critical(self, "Could not open QGIS", str(error))
             return
+
         QProcess.startDetached(program, arguments)
 
     def closeEvent(self, event) -> None:  # noqa: N802
         if self.process.state() == PROCESS_NOT_RUNNING:
             event.accept()
             return
+
         answer = QMessageBox.question(
             self,
             "Cancel active run?",
             "Closing the window will cancel the runner. Completed cameras remain resumable.",
         )
+
         if answer == MESSAGE_YES:
             self.cancel_run()
             event.accept()
@@ -803,6 +1001,7 @@ def main() -> int:
     app.setApplicationName("OWDCIC GDAL Viewsheds")
     window = ViewshedWindow()
     window.show()
+
     return app.exec()
 
 

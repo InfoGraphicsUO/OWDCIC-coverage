@@ -6,6 +6,8 @@
  * select(type, id) is the programmatic path used by map feature clicks
  * selectType(type) opens a type without picking an option, used by anchor links
  * option data stays cached after a successful load for the life of this panel
+ * a type with parent { type, option } opens from that option of its parent type
+ * instead of listing on its own, and its back button returns to the parent
  */
 export function initFilterPanel({
   types = [],
@@ -29,6 +31,7 @@ export function initFilterPanel({
   let requestId = 0;
   let globalSearchId = 0;
   const optionsCache = new Map();
+
   // folders (groups of types) the user has open, as joined name paths
   const openFolders = new Set();
 
@@ -38,6 +41,7 @@ export function initFilterPanel({
   const backButton = document.createElement('button');
   backButton.type = 'button';
   backButton.className = 'filter-panel__back';
+
   // icon is decorative; the text label remains available to assistive technology
   backButton.setAttribute('aria-label', 'Back to coverage types');
   backButton.innerHTML = '<i class="fa-solid fa-arrow-left" aria-hidden="true"></i>';
@@ -50,6 +54,7 @@ export function initFilterPanel({
 
   const status = document.createElement('p');
   status.className = 'filter-panel__status';
+
   // loading and empty-state updates are announced without moving focus
   status.setAttribute('aria-live', 'polite');
 
@@ -76,6 +81,7 @@ export function initFilterPanel({
 
   const setStatus = (text, error = false) => {
     status.textContent = text;
+
     // error styling stays on the live region so status text remains readable
     status.classList.toggle('is-error', error);
   };
@@ -85,9 +91,18 @@ export function initFilterPanel({
     optionSearch.input.setAttribute('aria-label', text);
   };
 
+  // the type a nested option opens, e.g. National Forest from Federal land
+  const nestedType = (option) => activeType && types.find(({ parent }) =>
+    parent?.type === activeType.value && `${parent.option}` === `${option.value}`);
+  // the type the active nested type opened from, or null at the top level
+  const parentType = () => (activeType?.parent
+    ? types.find(({ value }) => value === activeType.parent.type) ?? null
+    : null);
+
   const showCategoryView = ({ animate = true } = {}) => {
     title.textContent = 'Coverage by';
     backButton.classList.remove('is-visible');
+
     // render again so the current search term and active type are reflected
     viewFade.show(categoryView, { animate });
     renderCategories();
@@ -95,8 +110,11 @@ export function initFilterPanel({
 
   const showOptionView = ({ animate = true } = {}) => {
     title.textContent = activeType ? `Coverage by ${activeType.label}` : 'Coverage by';
+    const parent = parentType();
+    backButton.setAttribute('aria-label', parent ? `Back to ${parent.label}` : 'Back to coverage types');
     backButton.classList.add('is-visible');
     viewFade.show(optionView, { animate });
+
     // give the search field a useful accessible name for the current category
     setOptionSearchLabel(
       activeType ? `Search ${activeType.label} options...` : 'Search options...'
@@ -105,6 +123,7 @@ export function initFilterPanel({
 
   const ensureOptionsLoaded = async (typeValue) => {
     if (optionsCache.has(typeValue)) return optionsCache.get(typeValue);
+
     // normalize malformed provider responses once and reuse successful results on later views
     const loaded = await loadOptions(typeValue);
     const normalized = Array.isArray(loaded) ? loaded : [];
@@ -116,7 +135,10 @@ export function initFilterPanel({
     const query = categorySearch.input.value.trim().toLowerCase();
     if (!query) {
       // an empty category query keeps the fast, type-only drilldown
-      renderTypeTree(categoryList, types, activeType?.value, openFolders, (type) => chooseType(type));
+      // nested types open from their parent's option list rather than this one
+      const listed = types.filter((type) => !type.parent);
+      const selected = activeType?.parent?.type ?? activeType?.value;
+      renderTypeTree(categoryList, listed, selected, openFolders, (type) => chooseType(type));
       setStatus('');
       return;
     }
@@ -130,6 +152,7 @@ export function initFilterPanel({
     const searchId = ++globalSearchId;
     const matchingTypes = types.filter((type) => `${type.label}`.toLowerCase().includes(query));
     categoryList.replaceChildren();
+
     // keep assistive technology aware that results are being assembled
     categoryList.setAttribute('aria-busy', 'true');
     setStatus('Searching…');
@@ -178,6 +201,7 @@ export function initFilterPanel({
         await chooseType(item.type);
         return;
       }
+
       // option hits skip the intermediate view and apply the exact matching option
       await chooseType(item.type, { focusSearch: false });
       await chooseOption(item.option);
@@ -190,15 +214,19 @@ export function initFilterPanel({
 
   const renderOptions = () => {
     const query = optionSearch.input.value.trim().toLowerCase();
-    const visible = options.filter((option) => optionMatchesQuery(option, query));
+    const visible = options.filter((option) => optionMatchesQuery(option, query))
+      .map((option) => (nestedType(option) ? { ...option, opens: true } : option));
     // district-like datasets carry state prefixes and need separate collapsible buckets
-    if (activeType && STATE_SPLIT_TYPES.has(activeType.value)) {
+    // options that name their own group, like cameras by provider, use the same buckets
+    const grouped = visible.some((option) => option.group);
+    if (activeType && (STATE_SPLIT_TYPES.has(activeType.value) || grouped)) {
       renderGroupedItems(optionList, visible, activeId, (option) => chooseOption(option), {
         query,
       });
     } else {
       renderItems(optionList, visible, activeId, (option) => chooseOption(option));
     }
+
     if (!visible.length && options.length) setStatus('No options match that search.', true);
     else setStatus('');
   };
@@ -217,10 +245,11 @@ export function initFilterPanel({
     activeType = type;
     activeId = null;
     options = [];
+
     // open the folders holding this type so the back button lands on it
     (type.group ?? []).forEach((_, depth) => openFolders.add(folderKey(type.group.slice(0, depth + 1))));
-    groupExpandedState.set('Oregon', false);
-    groupExpandedState.set('Washington', false);
+    groupExpandedState.clear();
+
     // choosing any category makes clearing available, even before an option is picked
     clearButton.disabled = false;
     optionSearch.input.value = '';
@@ -228,15 +257,18 @@ export function initFilterPanel({
     optionList.replaceChildren();
     optionList.setAttribute('aria-busy', 'true');
     setStatus('Loading options…');
+
     // clear the previous map highlight while this category has no usable options
     await onTypeSelected(null);
     try {
       const loaded = await ensureOptionsLoaded(type.value);
+
       // selection may have changed while the provider request was in flight
       if (request !== requestId) return;
       options = loaded;
       renderOptions();
       await onTypeSelected(type.value);
+
       // focus only after the new options exist in the DOM
       if (focusSearch) optionSearch.input.focus();
     } catch (error) {
@@ -253,6 +285,12 @@ export function initFilterPanel({
 
   const chooseOption = async (option) => {
     if (!activeType || !option) return;
+    const child = nestedType(option);
+    if (child) {
+      await chooseType(child);
+      return;
+    }
+
     // update selection styling before the map callback finishes
     activeId = option.value;
     renderOptions();
@@ -267,10 +305,10 @@ export function initFilterPanel({
     activeId = null;
     options = [];
     openFolders.clear();
-    groupExpandedState.set('Oregon', false);
-    groupExpandedState.set('Washington', false);
+    groupExpandedState.clear();
     categorySearch.input.value = '';
     optionSearch.input.value = '';
+
     // reset the category-specific search name with the visible category view
     setOptionSearchLabel('Search options...');
     clearButton.disabled = true;
@@ -278,6 +316,7 @@ export function initFilterPanel({
     categoryList.removeAttribute('aria-busy');
     setStatus('');
     showCategoryView({ animate: false });
+
     // let the caller remove map layers and restore its own dependent controls
     await onClear();
   };
@@ -286,10 +325,19 @@ export function initFilterPanel({
   categorySearch.input.addEventListener('input', renderCategories);
   optionSearch.input.addEventListener('input', renderOptions);
   backButton.addEventListener('click', () => {
+    const parent = parentType();
+    if (parent) {
+      // a nested type steps back to the list it opened from
+      chooseType(parent);
+      return;
+    }
+
     showCategoryView();
+
     // return focus to the search that led into this category
     categorySearch.input.focus();
   });
+
   clearButton.addEventListener('click', reset);
   renderCategories();
 
@@ -303,8 +351,10 @@ export function initFilterPanel({
     } else {
       showOptionView({ animate: false });
     }
+
     // reject a request whose category changed while its options were loading
     if (activeType?.value !== typeValue) return false;
+
     // provider ids may arrive as numbers from map features and strings from option data
     const option = options.find((entry) => `${entry.value}` === `${id}`);
     if (!option) return false;
@@ -315,10 +365,12 @@ export function initFilterPanel({
   const clearSelection = async () => {
     // without a chosen type there is nothing to stay in, so clear everything
     if (!activeType) return reset();
+
     // drop only the picked option and keep the user in the current type
     activeId = null;
     showOptionView({ animate: false });
     renderOptions();
+
     // the type callback restores the map and results to an unselected type
     await onTypeSelected(activeType.value);
   };
@@ -327,11 +379,13 @@ export function initFilterPanel({
     shellApi?.openTab('filter', { expand: false });
     const type = types.find((entry) => entry.value === typeValue);
     if (!type) return false;
+
     // reopening the active type would keep its picked option, so drop that instead
     if (activeType?.value === typeValue && options.length) {
       await clearSelection();
       return true;
     }
+
     await chooseType(type, { focusSearch: false });
     return activeType?.value === typeValue;
   };
@@ -351,16 +405,19 @@ export function initFilterPanel({
 function bindControlShell() {
   const shell = document.getElementById('control-sidebar');
   if (!shell) return null;
+
   // the panel and map layers can both ask for this API during startup
   if (shell.dataset.bound === 'true') {
     return shell._controlShellApi ?? null;
   }
+
   shell.dataset.bound = 'true';
 
   const tabs = [...shell.querySelectorAll('[data-control-tab]')];
   const menus = new Map(
     [...shell.querySelectorAll('.control-menu')].map((menu) => [menu.id.replace('-menu', ''), menu])
   );
+
   const menuFade = createPanelFade([...menus.values()]);
   const rail = shell.querySelector('.control-rail');
   const body = shell.querySelector('.control-shell__body');
@@ -373,6 +430,7 @@ function bindControlShell() {
     rail?.removeAttribute('inert');
     collapse?.setAttribute('aria-expanded', `${!collapsed}`);
     collapse?.setAttribute('aria-label', collapsed ? 'Expand map controls' : 'Collapse map controls');
+
     // move focus to the remaining visible control before collapsing the focused menu
     if (collapsed && (rail?.contains(document.activeElement) || body?.contains(document.activeElement))) {
       collapse?.focus();
@@ -388,12 +446,15 @@ function bindControlShell() {
       candidate.setAttribute('aria-selected', `${active}`);
       candidate.tabIndex = active ? 0 : -1;
     }
+
     // animate the selected menu and keep the class state in sync for layout styles
     menuFade.show(menus.get(selected));
     for (const [name, menu] of menus) {
       menu.classList.toggle('is-open', name === selected);
     }
+
     if (expand) setCollapsed(false);
+
     // clicks keep normal browser focus behavior; keyboard moves request focus explicitly
     if (focus) tab.focus();
   };
@@ -402,6 +463,7 @@ function bindControlShell() {
     tab.addEventListener('click', () => {
       activateTab(tab, { expand: true });
     });
+
     tab.addEventListener('keydown', (event) => {
       const current = tabs.indexOf(tab);
       let next = -1;
@@ -414,6 +476,7 @@ function bindControlShell() {
       } else if (event.key === 'End') {
         next = tabs.length - 1;
       }
+
       // unrelated keys retain the browser's default tab behavior
       if (next < 0) return;
       event.preventDefault();
@@ -434,6 +497,7 @@ function bindControlShell() {
       setCollapsed(true);
     },
   };
+
   shell._controlShellApi = api;
   return api;
 }
@@ -454,6 +518,7 @@ function createPanelFade(panels) {
 
   const hide = (panel) => {
     panel.hidden = true;
+
     // hidden views must stop receiving focus and disappear from the accessibility tree
     panel.inert = true;
     panel.setAttribute('aria-hidden', 'true');
@@ -463,6 +528,7 @@ function createPanelFade(panels) {
   return {
     show(next, { animate = true } = {}) {
       if (!next) return;
+
       // a new transition takes ownership of any pending cleanup timer
       if (timer) clearTimeout(timer);
       timer = null;
@@ -490,8 +556,10 @@ function createPanelFade(panels) {
           hide(previous);
         }
       }
+
       if (fade) {
         next.classList.add('is-entering');
+
         // finish both entering and leaving classes after the matching CSS duration
         timer = setTimeout(() => {
           next.classList.remove('is-entering');
@@ -524,6 +592,7 @@ function makeSearch(label, id) {
   input.placeholder = label;
   input.setAttribute('aria-label', label);
   input.autocomplete = 'off';
+
   // show the mobile keyboard's search action for this field
   input.enterKeyHint = 'search';
   wrapper.append(input);
@@ -536,12 +605,14 @@ function makeList(id, label) {
   list.className = 'filter-panel__list';
   list.setAttribute('role', 'listbox');
   list.setAttribute('aria-label', label);
+
   // one delegated key handler covers options recreated on each search
   list.addEventListener('keydown', (event) => moveListFocus(list, event));
   return list;
 }
 
 const STATE_SPLIT_TYPES = new Set(['county', 'house', 'senate', 'us-house']);
+
 // these source labels carry state prefixes so similarly named districts stay distinct
 const STATE_LABEL_PREFIX = /^(OR|WA)\s•\s*(.+)$/;
 
@@ -553,6 +624,7 @@ function displayOptionLabel(option) {
 function searchResultOptionLabel(option, typeValue) {
   const parsed = parseStateLabel(option);
   if (!parsed.state || !STATE_SPLIT_TYPES.has(typeValue)) return parsed.displayLabel;
+
   // global results drop the source prefix, so add a short state cue back for disambiguation
   return `${parsed.displayLabel} (${parsed.state === 'Oregon' ? 'OR' : 'WA'})`;
 }
@@ -561,6 +633,7 @@ function parseStateLabel(option) {
   // accept either an option object or a bare label from callers
   const label = `${option?.label ?? option ?? ''}`;
   const match = label.match(STATE_LABEL_PREFIX);
+
   // an explicit state field wins when the source also embeds a prefix in its label
   const state = normalizeStateAbbreviation(option?.state) || (match
     ? match[1]
@@ -588,9 +661,10 @@ function renderItems(list, items, selectedValue, onChoose, { stepped = false } =
     const button = document.createElement('button');
     button.type = 'button';
     button.id = `${list.id}-option-${index}`;
-    button.className = stepped ? 'filter-panel__item filter-panel__item--step' : 'filter-panel__item';
+    button.className = stepped || item.opens ? 'filter-panel__item filter-panel__item--step' : 'filter-panel__item';
     button.setAttribute('role', 'option');
     button.setAttribute('aria-selected', `${selected}`);
+
     // keep one option in the tab order, preferring the current selection
     button.tabIndex = selected || (selectedValue == null && index === 0) ? 0 : -1;
     button.textContent = item.displayLabel ?? item.label;
@@ -614,8 +688,10 @@ function renderTypeTree(list, types, selectedValue, openFolders, onChoose) {
         folder = { folder: true, name, path: type.group.slice(0, depth + 1), entries: [] };
         node.entries.push(folder);
       }
+
       node = folder;
     });
+
     node.entries.push({ type });
   }
 
@@ -633,6 +709,7 @@ function renderTypeTree(list, types, selectedValue, openFolders, onChoose) {
         button.className = 'filter-panel__item filter-panel__item--step';
         button.setAttribute('role', 'option');
         button.setAttribute('aria-selected', `${selected}`);
+
         // keep one option in the tab order, preferring the current selection
         const focusable = selected || (selectedValue == null && !firstFocusable);
         button.tabIndex = focusable ? 0 : -1;
@@ -664,11 +741,13 @@ function renderTypeTree(list, types, selectedValue, openFolders, onChoose) {
         if (next) openFolders.add(key);
         else openFolders.delete(key);
       });
+
       group.append(toggle, itemsContainer);
       container.append(group);
       build(entry, itemsContainer);
     }
   };
+
   build(root, list);
 }
 
@@ -683,7 +762,11 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
 
   for (const item of items) {
     const parsed = parseStateLabel(item);
-    if (parsed.state && groups.has(parsed.state)) {
+    if (item.group) {
+      // named groups are added in the order their first option arrives
+      if (!groups.has(item.group)) groups.set(item.group, []);
+      groups.get(item.group).push({ ...item, displayLabel: parsed.displayLabel });
+    } else if (parsed.state && groups.has(parsed.state)) {
       groups.get(parsed.state).push({ ...item, displayLabel: parsed.displayLabel });
     } else {
       ungrouped.push({ ...item, displayLabel: parsed.displayLabel });
@@ -701,7 +784,9 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
     group.className = 'filter-panel__group';
 
     // a search opens each populated bucket so matches arent hidden behind a collapsed group
-    const expanded = Boolean(query) || groupExpandedState.get(stateName) === true;
+    // a selection made from the map also opens its bucket so the picked row is visible
+    const holdsSelection = groupItems.some((item) => `${item.value}` === `${selectedValue}`);
+    const expanded = Boolean(query) || holdsSelection || groupExpandedState.get(stateName) === true;
     if (query) groupExpandedState.set(stateName, true);
 
     const toggle = document.createElement('button');
@@ -709,8 +794,14 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
     toggle.className = 'filter-panel__group-toggle';
     toggle.textContent = stateName;
     toggle.setAttribute('aria-expanded', `${expanded}`);
+
     // connect the disclosure control to the region it expands or collapses
-    toggle.setAttribute('aria-controls', `${list.id}-${stateName.toLowerCase()}-items`);
+    // group names like Pano AI contain spaces, which an id reference cannot
+    toggle.setAttribute(
+      'aria-controls',
+      `${list.id}-${stateName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-items`
+    );
+
     toggle.addEventListener('click', () => {
       const next = toggle.getAttribute('aria-expanded') !== 'true';
       toggle.setAttribute('aria-expanded', `${next}`);
@@ -727,12 +818,14 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
       const selected = `${item.value}` === `${selectedValue}`;
       const button = document.createElement('button');
       button.type = 'button';
+
       // one list-wide counter avoids duplicate ids across the two state buckets
       button.id = `${list.id}-option-${optionIndex}`;
       optionIndex += 1;
-      button.className = 'filter-panel__item';
+      button.className = item.opens ? 'filter-panel__item filter-panel__item--step' : 'filter-panel__item';
       button.setAttribute('role', 'option');
       button.setAttribute('aria-selected', `${selected}`);
+
       // prefer the selected row, otherwise start tab navigation at the first option
       const focusable = selected || (selectedValue == null && !firstFocusable);
       button.tabIndex = focusable ? 0 : -1;
@@ -750,12 +843,14 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
     const selected = `${item.value}` === `${selectedValue}`;
     const button = document.createElement('button');
     button.type = 'button';
+
     // continue the same id sequence after all named state groups
     button.id = `${list.id}-option-${optionIndex}`;
     optionIndex += 1;
-    button.className = 'filter-panel__item';
+    button.className = item.opens ? 'filter-panel__item filter-panel__item--step' : 'filter-panel__item';
     button.setAttribute('role', 'option');
     button.setAttribute('aria-selected', `${selected}`);
+
     // keep unknown or future state labels after the named buckets
     const focusable = selected || (selectedValue == null && !firstFocusable);
     button.tabIndex = focusable ? 0 : -1;
@@ -766,11 +861,8 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
   }
 }
 
-// preserve each state bucket choice while option rows rerender during search
-const groupExpandedState = new Map([
-  ['Oregon', false],
-  ['Washington', false],
-]);
+// preserve each bucket choice while option rows rerender during search
+const groupExpandedState = new Map();
 
 function renderSearchResults(list, items, selectedValue, onChoose) {
   // search results can represent either a category drilldown or a direct option pick
@@ -785,6 +877,7 @@ function renderSearchResults(list, items, selectedValue, onChoose) {
       : 'filter-panel__item';
     button.setAttribute('role', 'option');
     button.setAttribute('aria-selected', `${selected}`);
+
     // selected state belongs only to an option hit in the current category
     button.tabIndex = selected || (selectedValue == null && index === 0) ? 0 : -1;
 
@@ -816,10 +909,12 @@ function optionMatchesQuery(option, query) {
   const label = `${option.label}`.toLowerCase();
   const displayLabel = displayOptionLabel(option).toLowerCase();
   const tokens = [label, displayLabel];
+
   // provider abbreviations arent in source labels, so add aliases only for those known names
   for (const [target, aliases] of Object.entries(OPTION_SEARCH_ALIASES)) {
     if (label.includes(target)) tokens.push(...aliases);
   }
+
   return tokens.join(' ').includes(query);
 }
 
@@ -828,9 +923,11 @@ function moveListFocus(list, event) {
   const items = [...list.querySelectorAll('.filter-panel__item, .filter-panel__group-toggle')]
     .filter((item) => !item.closest('[hidden]'));
   if (!items.length) return;
+
   // use the first result as the arrow-key anchor when focus is on a group toggle
   const current = Math.max(0, items.indexOf(document.activeElement));
   let next = -1;
+
   // arrow keys wrap; home and end jump to the list boundaries
   if (event.key === 'ArrowDown') next = (current + 1) % items.length;
   else if (event.key === 'ArrowUp') next = (current - 1 + items.length) % items.length;
@@ -838,6 +935,7 @@ function moveListFocus(list, event) {
   else if (event.key === 'End') next = items.length - 1;
   if (next < 0) return;
   event.preventDefault();
+
   // keep a single list option in the tab order after arrow-key movement
   for (const item of items) item.tabIndex = -1;
   items[next].tabIndex = 0;

@@ -1,6 +1,11 @@
 // live AlertWest camera metadata and image URLs
 export const CAMERA_API = 'https://api.cdn.prod.alertwest.com/api/firecams/v0/cameras';
-export const PGE_WILDFIREWATCH_URL = 'https://portlandgeneral.wildfirewatch.com/';
+// each Pano AI owner's public viewer; a site with no owner is a PGE site
+export const PANO_VIEWERS = Object.freeze({
+  'Portland General Electric': { url: 'https://portlandgeneral.wildfirewatch.com/', name: 'PGE Wildfire Watch' },
+  'Pacific Power': { url: 'https://pacificpower.wildfirewatch.com/', name: 'Pacific Power Wildfire Watch' },
+  'Washington DNR': { url: 'https://wadnr.wildfirewatch.com/', name: 'WA DNR Wildfire Watch' },
+});
 
 // hosted tilesets and provider endpoints used by the map layers
 export const DATA_URLS = Object.freeze({
@@ -21,7 +26,6 @@ export const DATA_URLS = Object.freeze({
   alertWestCameraSites: 'data/alertwest-sites.geojson',
   digitizedCameraSources: 'data/digitized-camera-sources.geojson',
   standingLookouts: 'data/standing-lookouts.geojson',
-  countyDivisions: 'data/divisions/county.geojson',
   transmissionLines: 'data/transmission-lines.geojson',
   censusStateBoundaries:
     'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/10',
@@ -76,12 +80,6 @@ export const LAYER_IDS = Object.freeze({
   outsideRegionClip: 'outside-region-clip',
   outsideRegionFill: 'outside-region-fill',
   regionOutline: 'region-outline',
-  countyBoundariesSource: 'county-boundaries-source',
-  countyBoundaryFill: 'county-boundary-fill',
-  countyBoundaryHover: 'county-boundary-hover',
-  countyBoundaries: 'county-boundaries',
-  countyBoundaryLabels: 'county-boundary-labels',
-  countyBoundarySelected: 'county-boundary-selected',
   nationalForestsSource: 'national-forests-source',
   nationalForestsFill: 'national-forests-fill',
   nationalForestsLine: 'national-forests-line',
@@ -167,6 +165,19 @@ export const FILTER_LAYER_PRESETS = Object.freeze({
   'federal-land': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.blmLands]) }),
 });
 
+// filter type -> the option of another group that opens it, so it lists as a step inside that group
+// e.g. Federal land > National Forest > [All National Forests, Mt. Hood National Forest, ...]
+// it only nests when the other group is shown too; otherwise it stays a group of its own
+export const NESTED_FILTER_TYPES = Object.freeze({
+  'national-forest': Object.freeze({ type: 'federal-land', option: 'federal-land:USFS' }),
+});
+
+// returns where a visible filter type nests, or null when it lists on its own
+export function nestedFilterParent(typeValue, visibleTypes, nested = NESTED_FILTER_TYPES) {
+  const parent = Object.hasOwn(nested, typeValue) ? nested[typeValue] : null;
+  return parent && visibleTypes.some(({ value }) => value === parent.type) ? parent : null;
+}
+
 // returns the preset for a filter type, or null when it has none
 export function layerPresetForFilter(filterType, presets = FILTER_LAYER_PRESETS) {
   return Object.hasOwn(presets, filterType) ? presets[filterType] : null;
@@ -195,23 +206,27 @@ function isFilterGroup(value) {
 // group is the names of the groups the type sits inside, outermost first, [] at the top level
 export function visibleFilterTypes(visibleFilters, types = FILTER_TYPES, warn = console.warn, group = []) {
   const visible = [];
+
   for (const [name, options] of Object.entries(visibleFilters)) {
     if (isFilterGroup(options)) {
       // a group with nothing visible inside adds nothing, so it never shows empty
       visible.push(...visibleFilterTypes(options, types, warn, [...group, name]));
       continue;
     }
+
     const type = types.find(([value, label]) =>
       normalizeName(label) === normalizeName(name) || value === name);
     if (!type) {
       warn(`Unknown filter group in VISIBLE_FILTERS: ${name}`);
       continue;
     }
+
     // 'none' or a blank value removes the whole group rather than leaving it empty
     if (filterGroupIsBlank(options)) continue;
     if (options !== 'all' && !Array.isArray(options)) {
       warn(`VISIBLE_FILTERS['${name}'] must be 'all', 'none', or a list of options; showing all`);
     }
+
     visible.push({
       value: type[0],
       label: type[1],
@@ -219,6 +234,7 @@ export function visibleFilterTypes(visibleFilters, types = FILTER_TYPES, warn = 
       group,
     });
   }
+
   return visible;
 }
 
@@ -255,12 +271,14 @@ export function unmatchedFilterOptions(type, features) {
 // rows that start hidden are revealed by code rather than listed, so they always stay
 export function visibleLegendItems(items, visibleLayers, warn = console.warn) {
   const listed = [];
+
   for (const name of visibleLayers) {
     const item = items.find(({ label, hidden }) =>
       !hidden && normalizeName(label) === normalizeName(name));
     if (!item) warn(`Unknown map layer in VISIBLE_LAYERS: ${name}`);
     else if (!listed.includes(item)) listed.push(item);
   }
+
   return {
     visible: [...listed, ...items.filter(({ hidden }) => hidden)],
     removed: items.filter((item) => !item.hidden && !listed.includes(item)),

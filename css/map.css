@@ -97,6 +97,7 @@
     outline: 2px solid var(--ohaz-yellow);
     outline-offset: 1px;
 }
+
 .control-rail__button.is-active {
     color: var(--ohaz-yellow);
     border-color: var(--ohaz-yellow);
@@ -123,7 +124,7 @@
     -webkit-text-stroke: 2px #fff;
     paint-order: stroke fill;
     text-shadow: 0 0 2px #fff;
-    border-color: #3a3939;
+    border: 3px solid #3a3939;
 }
 
 .control-rail__button[data-control-tab="basemap"][data-basemap="outdoors"] {
@@ -210,6 +211,7 @@
     outline: 2px solid var(--ohaz-yellow, #f8e109);
     outline-offset: 2px;
 }
+
 .control-shell__clear:disabled {
     cursor: not-allowed;
     opacity: .55;
@@ -346,12 +348,6 @@
 
 .basemap-picker__preview--simple {
     background-image: url("../img/basemaps/simple.png");
-}
-
-.basemap-picker__option--disabled { cursor: not-allowed; }
-.basemap-picker__option--disabled .basemap-picker__row {
-    color: var(--control-chrome-muted);
-    opacity: .72;
 }
 
 .basemap-picker__option input:checked + .basemap-picker__row {
@@ -539,6 +535,82 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     filter: brightness(0) invert(1);
 }
 
+.mapboxgl-ctrl-top-left .location-search {
+    position: relative;
+    overflow: visible;
+    width: var(--location-search-size);
+    height: var(--location-search-size);
+    --location-search-size: 32px;
+    transition: width var(--sidebar-duration) var(--sidebar-ease);
+}
+
+.mapboxgl-ctrl-top-left .location-search.is-expanded {
+    width: 300px;
+}
+
+.location-search .mapboxgl-ctrl,
+.location-search mapbox-search-box {
+    width: 100% !important;
+    margin: 0;
+}
+
+.mapboxgl-ctrl-top-left .location-search .location-search__toggle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: var(--location-search-size);
+    height: var(--location-search-size);
+    border-radius: calc(var(--ui-radius) - 1px);
+}
+
+.location-search__toggle i {
+    display: block;
+    margin: auto;
+    font-size: 15px;
+    line-height: 20px;
+}
+
+/* collapsed, only the toggle button shows; expanding reveals the input */
+.location-search div[class*="--SearchBox"] {
+    width: 100% !important;
+    height: var(--location-search-size);
+    margin: 0;
+    overflow: hidden;
+    background: transparent;
+    border: 0;
+    border-radius: calc(var(--ui-radius) - 1px);
+    box-shadow: none;
+}
+
+.location-search div[class*="--SearchBox"] input {
+    height: 100%;
+    padding: 0 8px 0 36px;
+    color: var(--control-chrome-text);
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    outline: 0;
+    box-shadow: none;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--sidebar-duration) var(--sidebar-ease);
+}
+
+.location-search.is-expanded div[class*="--SearchBox"] input {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.location-search div[class*="--SearchBox"] input::placeholder {
+    color: var(--control-chrome-text);
+    opacity: .7;
+}
+
+.location-search div[class*="--SearchIcon"] {
+    display: none;
+}
+
 .mapboxgl-ctrl-bottom-left {
     left: var(--panel-gap) !important;
     bottom: 0 !important;
@@ -604,7 +676,9 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     .control-rail,
     .control-shell__collapse,
     .mapboxgl-ctrl-top-left,
-    .mapboxgl-ctrl-bottom-left {
+    .mapboxgl-ctrl-bottom-left,
+    .location-search,
+    .location-search div[class*="--SearchBox"] input {
         transition: none;
     }
 

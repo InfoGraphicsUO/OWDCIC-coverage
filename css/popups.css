@@ -145,17 +145,6 @@
     color: #555;
 }
 
-.cam-thumb {
-    display: block;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    max-height: 140px;
-    object-fit: contain;
-    margin: 8px 0;
-    background: #e9edf0;
-    border-radius: var(--ui-radius-sm);
-}
-
 .cam-popup a {
     display: inline-block;
     margin-top: 7px;

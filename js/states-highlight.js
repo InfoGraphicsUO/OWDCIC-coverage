@@ -247,6 +247,7 @@ function pointFallsAlongSegment(point, start, end) {
     ((point[0] - start[0]) * segmentX + (point[1] - start[1]) * segmentY) /
       lengthSquared
   ));
+
   const nearestX = start[0] + projection * segmentX;
   const nearestY = start[1] + projection * segmentY;
 

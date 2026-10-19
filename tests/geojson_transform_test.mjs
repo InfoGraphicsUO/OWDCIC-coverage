@@ -51,32 +51,41 @@ for (const f of attachViewshedIds(halfwayHeads, manifest, newSites).features) {
   assert.deepEqual(f.geometry, halfway.geometry);
   assert.equal(f.properties.viewshed_id, 'halfway');
 }
+
 const pendingHalfway = structuredClone(halfway);
 pendingHalfway.properties.viewshedStatus = 'pending';
 for (const f of attachViewshedIds(halfwayHeads, manifest, { features: [pendingHalfway] }).features) {
   assert.equal(f.properties.viewshed_id, null);
 }
+
 const panoSites = JSON.parse(readFileSync(new URL('../data/pano-sites.geojson', import.meta.url), 'utf8'));
 const panoCameras = providerSitesToCameras(panoSites, 'Pano AI').features;
 assert.equal(panoCameras.length, 69);
 assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 68);
+
 // each owner's table lands in the one Pano layer
 const owners = (name) => panoCameras.filter(f => f.properties.owner === name).length;
 assert.deepEqual(
   ['Portland General Electric', 'Pacific Power', 'Washington DNR'].map(owners),
   [38, 5, 26],
 );
-// only PGE's sites have a page on its public viewer
-const linked = panoCameras.filter(f => f.properties.feed);
-assert.equal(linked.length, 38);
-assert.ok(linked.every(f => f.properties.owner === 'Portland General Electric' &&
-  f.properties.feed.startsWith('https://portlandgeneral.wildfirewatch.com/station/')));
+
+// every site links to its page on its owner's public viewer
+const viewerHosts = {
+  'Portland General Electric': 'portlandgeneral',
+  'Pacific Power': 'pacificpower',
+  'Washington DNR': 'wadnr',
+};
+assert.ok(panoCameras.every(f => f.properties.feed?.startsWith(
+  `https://${viewerHosts[f.properties.owner]}.wildfirewatch.com/station/`)));
+
 // EnviroVision sites flag a shared ALERTWest tower themselves instead of borrowing its point
 const enviroVisionSites = JSON.parse(readFileSync(new URL('../data/envirovision-sites.geojson', import.meta.url), 'utf8'));
 const enviroVisionCameras = providerSitesToCameras(enviroVisionSites, 'EnviroVision').features;
 assert.equal(enviroVisionCameras.length, 87);
 assert.equal(enviroVisionCameras.filter(f => f.properties.viewshed_id).length, 87);
 assert.equal(enviroVisionCameras.filter(f => f.properties.sharesAlertWestSite).length, 5);
+
 const pendingWithHeight = structuredClone(panoSites.features.find(f => f.properties.name === 'Midnight Gulch'));
 pendingWithHeight.properties.cameraHeightFt = 100;
 assert.equal(providerSitesToCameras({ features: [pendingWithHeight] }, 'Pano AI').features[0].properties.viewshed_id, null);

@@ -57,6 +57,12 @@ class FakeNode {
     if (name === 'aria-busy') delete this.attributes['aria-busy'];
     if (name === 'aria-hidden') this.hidden = false;
   }
+  // attached nodes trace their parents back to the document body
+  get isConnected() {
+    let node = this;
+    while (node.parentElement) node = node.parentElement;
+    return node === globalThis.document?.body;
+  }
   querySelector(selector) { return queryAll(this, selector)[0] || null; }
   querySelectorAll(selector) { return queryAll(this, selector); }
   append(...nodes) {
@@ -220,18 +226,22 @@ globalThis.document = {
     globalThis.document._docListeners[type] = list.filter((item) => item !== handler);
   },
 };
+
 // resolve generated images on the next microtask, matching the async export path
 globalThis.Image = class {
   constructor() { this.width = 400; this.height = 240; }
   // let export observe image loading after the src assignment
   set src(value) { this._src = value; queueMicrotask(() => this.onload && this.onload()); }
 };
+
 globalThis.matchMedia = () => ({ matches: false });
+
 const copiedLinks = [];
 // capture the label reset so the test can run it without waiting
 const shareLabelTimers = [];
 const realSetTimeout = globalThis.setTimeout;
 globalThis.setTimeout = (fn, ms, ...args) => (ms === 2500 ? shareLabelTimers.push(fn) : realSetTimeout(fn, ms, ...args));
+
 Object.defineProperty(globalThis, 'navigator', {
   configurable: true,
   value: { clipboard: { writeText: async (text) => { copiedLinks.push(text); } } },
@@ -256,6 +266,7 @@ const mapLegendRows = [
   'Camera viewsheds', 'ALERTWest camera viewsheds', 'Pano AI camera viewsheds',
   'Standing lookouts',
 ].map((label) => ({ label, visual: { type: 'swatch', style: 'fill', color: label } }));
+
 const sharedRows = condenseCameraLegendRows(mapLegendRows);
 assert.deepEqual(sharedRows.map(({ label }) => label),
   ['ALERTWest cameras', 'Pano AI cameras', 'Viewsheds', 'Standing lookouts']);
@@ -264,6 +275,7 @@ assert.equal(sharedRows[2].visual.color, 'ALERTWest camera viewsheds',
 assert.deepEqual(
   condenseCameraLegendRows(mapLegendRows, { separateViewshedColors: true }).map(({ label }) => label),
   ['ALERTWest cameras', 'Pano AI cameras', 'ALERTWest viewsheds', 'Pano AI viewsheds', 'Standing lookouts']);
+
 // one provider switched off still follows the color setting
 const panoOnly = mapLegendRows.filter(({ label }) => !label.startsWith('ALERTWest'));
 assert.deepEqual(condenseCameraLegendRows(panoOnly).map(({ label }) => label),
@@ -287,6 +299,7 @@ assert.deepEqual(
 const canvas = new FakeNode('canvas');
 canvas.width = 1200;
 canvas.height = 720;
+
 // keep generated export canvases available for size and crop assertions
 const exportCanvases = [];
 const originalCreateElement = globalThis.document.createElement.bind(globalThis.document);
@@ -295,8 +308,13 @@ globalThis.document.createElement = (tag) => {
   if (tag === 'canvas') exportCanvases.push(node);
   return node;
 };
+
 const projectedCoordinates = [];
+
+// member areas behind combined options, looked up the way the map's division data is
+const memberFeatures = new Map();
 const api = initResultsPanel({
+  getMemberFeatures: (type, ids) => ids.map((id) => memberFeatures.get(id)).filter(Boolean),
   getMap: () => ({
     project: (coordinates) => {
       // record the requested export center and keep its screen point stable
@@ -336,6 +354,7 @@ assert.doesNotMatch(textOf(content), /CAMERA COVERAGE|Covered area|Selected area
 assert.ok(content.querySelector('[data-results-chart]'), 'house should get a donut host');
 assert.match(textOf(content), /40% U\.S\. Forest Service land/);
 assert.match(textOf(content), /10% State land/);
+
 // the land status explanation lives in the heading's info tooltip
 assert.match(content.querySelector('[data-tooltip]')?.dataset.tooltip || '', /Unclassified includes unmapped private land/);
 assert.match(textOf(content), /Entries under 1% are not shown/);
@@ -351,6 +370,7 @@ assert.ok(content.querySelector('[data-results-chart]'), 'ODF protection distric
 
 content = show('showPolygon', 'state', { properties: { name: 'Oregon', cameraViewshedCoveragePct: 8.93, cameraViewshedAreaSqKm: 22121, landAreaSqKm: 247715, landMix } });
 assert.match(textOf(content), /9% covered by fire detection cameras/);
+
 // every filter group names the boundary its yellow outline traces
 assert.match(textOf(content.querySelector('.results-panel__qualifier')), /^State boundary$/);
 assert.equal(content.querySelector('[data-results-chart]'), null, 'state must not get a donut');
@@ -382,6 +402,7 @@ content = show('showCamera', { name: 'Portland Tower', county: 'Multnomah', stat
 assert.match(textOf(content), /Coverage unavailable/);
 assert.doesNotMatch(textOf(content), /\b0%/);
 assert.equal(content.querySelector('[data-results-chart]'), null);
+
 // camera locality is shown in the panel header rather than the body
 assert.equal(panel.querySelector('[data-results-subtitle]').textContent, 'Multnomah, OR');
 assert.match(textOf(content), /Pan 42°/);
@@ -393,6 +414,7 @@ assert.match(textOf(content), /no viewshed has been generated/);
 // cameras with a viewshed get distinct wording from cameras without one
 content = show('showCamera', { name: 'Phoenix', id: 98, viewshed_id: 'phoenix-water-tank' }, { coverageAvailable: false, status: 'skipped_missing_height', landMix: [] });
 assert.match(textOf(content), /camera height is missing/);
+
 content = show('showCamera', { name: 'Broken', id: 97, viewshed_id: 'x' }, null);
 assert.match(textOf(content), /viewshed exists but/);
 assert.doesNotMatch(textOf(content), /\b0%/);
@@ -407,6 +429,7 @@ api.showPolygon('house', {
   properties: { name: 'State House District 1', cameraViewshedCoveragePct: 5.05, cameraViewshedAreaSqKm: 10, landAreaSqKm: 100, landMix },
   geometry: { type: 'Polygon', coordinates: [[[0, 0], [20, 0], [20, 40], [0, 40], [0, 0]]] },
 });
+
 // export waits for preview composition before attaching its accessible dialog
 await exportButton._listeners.click[0]();
 const modal = body.querySelector('.results-export-modal');
@@ -415,11 +438,13 @@ const exportCanvas = exportCanvases.at(-1);
 assert.ok(exportCanvas, 'export should allocate a canvas');
 assert.equal(exportCanvas.width, 1000, 'export canvas width should scale map to at least 1000px');
 assert.equal(exportCanvas.height, 600, 'export canvas height should match map aspect ratio without a bottom appendix');
+
 // polygon crop center comes from the bounds midpoint, not the ring's first vertex
 assert.deepEqual(projectedCoordinates[0], [10, 20], 'export should center its crop on the selected polygon');
 assert.ok(exportCanvas.drawImageCalls[0][3] < 400, 'export should crop the map for a closer view');
 assert.equal(exportCanvas.fills.filter((fill) => fill === 'rgba(47, 46, 46, 0.9)').length, 2,
   'legend and results should each use one translucent dark panel fill');
+
 // selection rows follow the layer rows, and long names wrap inside the legend card
 assert.ok(exportCanvas.drawnText.includes('State House District 1 border'),
   'export legend should name the selected area border');
@@ -428,10 +453,12 @@ assert.ok(exportCanvas.drawnText.includes('Confederated Tribes Lookout') &&
   'export legend should wrap a long highlighted viewshed label');
 assert.ok(exportCanvas.drawnText.indexOf('Viewsheds') < exportCanvas.drawnText.indexOf('State House District 1 border'),
   'selection rows should follow the layer rows');
+
 // the selected camera viewshed moves up under the viewshed rows while the border stays at the end
 assert.ok(exportCanvas.drawnText.indexOf('Viewsheds') < exportCanvas.drawnText.indexOf('Camera viewshed') &&
   exportCanvas.drawnText.indexOf('Camera viewshed') < exportCanvas.drawnText.indexOf('State House District 1 border'),
   'a selected camera viewshed should sit right after the viewshed rows');
+
 // the preview is a modal dialog and its download reuses the exact composed PNG
 assert.equal(modal.querySelector('[role="dialog"]')?.getAttribute('aria-modal'), 'true');
 assert.ok(modal.querySelector('[data-export-preview]'), 'modal should include preview image');
@@ -448,11 +475,149 @@ api.showCamera({ name: 'Camera One' }, null, {
 // camera exports use the point geometry as the crop focus
 await exportButton._listeners.click[0]();
 assert.deepEqual(projectedCoordinates.at(-1), [-120, 44], 'camera export should center on the camera point');
+
 const modal2 = body.querySelector('.results-export-modal');
 const escHandler = globalThis.document._docListeners.keydown.at(-1);
+
 // escape key follows the same teardown path as the close button
 escHandler({ key: 'Escape', preventDefault() {} });
 assert.equal(body.querySelector('.results-export-modal'), null, 'Escape should close modal');
+
+// record generated files so CSV and PDF contents can be read back
+const blobs = [];
+const originalCreateObjectURL = URL.createObjectURL;
+URL.createObjectURL = (blob) => {
+  blobs.push(blob);
+  return originalCreateObjectURL(blob);
+};
+
+const odfMembers = [
+  { divisionId: 'odf:a', name: 'Alpha District', cameraViewshedCoveragePct: 40, cameraViewshedAreaSqKm: 40, landAreaSqKm: 100, landMix },
+  // the comma checks CSV quoting
+  { divisionId: 'odf:b', name: 'Beta FPA, North', cameraViewshedCoveragePct: 10, cameraViewshedAreaSqKm: 20, landAreaSqKm: 200,
+    landMix: [{ label: 'State land', percentage: 100, areaSqKm: 200 }] },
+  { divisionId: 'odf:c', name: 'Gamma District', cameraViewshedCoveragePct: 25, cameraViewshedAreaSqKm: 25, landAreaSqKm: 100, landMix },
+  { divisionId: 'odf:d', name: 'Delta District', cameraViewshedCoveragePct: null, landMix: [] },
+  { divisionId: 'odf:e', name: 'Epsilon District', cameraViewshedCoveragePct: 5, cameraViewshedAreaSqKm: 5, landAreaSqKm: 100, landMix },
+];
+
+odfMembers.forEach((properties) => memberFeatures.set(properties.divisionId, { properties }));
+
+const allOdf = {
+  divisionId: 'odf:all', name: 'All ODF districts', cameraViewshedCoveragePct: 18, cameraViewshedAreaSqKm: 90,
+  landAreaSqKm: 500, landMix, memberDivisionIds: odfMembers.map(({ divisionId }) => divisionId),
+};
+
+// the fake DOM matches data attributes by name only, so pick chooser options by key here
+const exportOption = (key) => body.querySelectorAll('[data-export-option]')
+  .find((button) => button.dataset.exportOption === key);
+
+const showAllOdf = () => api.showPolygon('odf-protection-district', {
+  properties: allOdf,
+  geometry: { type: 'Polygon', coordinates: [[[0, 0], [20, 0], [20, 40], [0, 40], [0, 0]]] },
+});
+
+// the "All" option of a report group asks what to export instead of opening the map preview
+showAllOdf();
+await exportButton._listeners.click[0]();
+let chooser = body.querySelector('.results-export-chooser');
+assert.ok(chooser, 'All ODF districts should open the export chooser');
+assert.equal(body.querySelector('.results-export-modal'), null, 'the chooser should not open the map preview');
+assert.deepEqual(chooser.querySelectorAll('[data-export-option]').map((button) => button.dataset.exportOption),
+  ['report', 'csv', 'map']);
+assert.equal(exportButton.disabled, true, 'export stays disabled while the chooser is open');
+
+// the CSV downloads straight from the chooser, one row per district and a total row last
+const downloadsBeforeCsv = downloads.length;
+exportOption('csv').click();
+assert.equal(downloads.length, downloadsBeforeCsv + 1, 'CSV option should download a file');
+assert.equal(downloads.at(-1).download, 'owdcic-all-odf-districts-summary.csv');
+assert.equal(textOf(chooser.querySelector('[data-export-status]')), 'CSV downloaded.');
+
+const csvLines = (await blobs.at(-1).text()).split('\r\n');
+const csvHeader = csvLines[0].split(',');
+assert.deepEqual(csvHeader.slice(0, 6), ['District', 'Coverage (%)', 'Covered area (sq mi)', 'Total area (sq mi)',
+  'Covered area (sq km)', 'Total area (sq km)']);
+
+// land status columns keep the panel's category order
+assert.deepEqual(csvHeader.slice(6), ['U.S. Forest Service land (%)', 'U.S. Forest Service land (sq mi)',
+  'State land (%)', 'State land (sq mi)', 'Other/unclassified (%)', 'Other/unclassified (sq mi)']);
+assert.equal(csvLines.length, odfMembers.length + 2, 'CSV should have a header, every district, and a total row');
+assert.match(csvLines[1], /^Alpha District,40,15\.44,38\.61,40,100,40,0,10,0,50,0$/,
+  'areas convert to sq mi; land shares without an area stay 0 sq mi');
+assert.match(csvLines[2], /^"Beta FPA, North",10,/, 'names with commas should be quoted');
+assert.match(csvLines[2], /,0,0,100,77\.22,0,0$/, 'categories missing from a district count as 0');
+assert.match(csvLines[4], /^Delta District,,,,,,/, 'unavailable coverage should stay blank, not 0');
+assert.match(csvLines.at(-1), /^All ODF districts,18,/);
+
+chooser.querySelector('button.modal__close').click();
+assert.equal(body.querySelector('.results-export-chooser'), null, 'close should remove the chooser');
+assert.equal(exportButton.disabled, false, 'closing the chooser should re-enable export');
+
+// the report opens a page-by-page preview: overview map, two tables, then four district cards per page
+await exportButton._listeners.click[0]();
+const canvasesBeforeReport = exportCanvases.length;
+exportOption('report').click();
+for (let tries = 0; tries < 50 && !body.querySelector('.results-export-modal'); tries += 1) {
+  await new Promise((resolve) => realSetTimeout(resolve, 0));
+}
+
+const reportModal = body.querySelector('.results-export-modal');
+assert.ok(reportModal, 'report option should open the report preview');
+assert.equal(body.querySelector('.results-export-chooser'), null, 'the chooser should close when the report opens');
+assert.equal(textOf(reportModal.querySelector('h2')), 'Summary report preview');
+assert.equal(reportModal.querySelectorAll('[data-export-preview]').length, 5, '5 districts should make 5 pages');
+assert.equal(reportModal.querySelector('[data-export-download]'), null, 'the report has no PNG download');
+
+const reportPages = exportCanvases.slice(canvasesBeforeReport).filter((node) => node.drawnText?.length);
+const reportText = reportPages.flatMap((node) => node.drawnText);
+const pageWith = (heading) => reportPages.find((node) => node.drawnText.includes(heading)).drawnText;
+const districtOrder = (text) => odfMembers.map(({ name }) => name).filter((name) => text.includes(name))
+  .sort((a, b) => text.indexOf(a) - text.indexOf(b));
+assert.ok(reportText.includes('All ODF districts: camera coverage summary'), 'pages should carry the report title');
+
+// page 2 keeps list order, page 3 goes from most to least covered with unavailable coverage last
+assert.deepEqual(districtOrder(pageWith('Coverage by district')),
+  ['Alpha District', 'Beta FPA, North', 'Gamma District', 'Delta District', 'Epsilon District']);
+assert.deepEqual(districtOrder(pageWith('Districts from most to least covered')),
+  ['Alpha District', 'Gamma District', 'Beta FPA, North', 'Epsilon District', 'Delta District']);
+assert.ok(pageWith('Districts from most to least covered').includes('All districts'), 'the ranked table should keep its total row');
+assert.ok(!reportText.some((text) => /rank/i.test(text)), 'district cards should not show a coverage rank');
+assert.ok(reportText.includes('Page 5 of 5'));
+
+// the PDF holds one page per preview image
+reportModal.querySelector('[data-export-pdf-download]').click();
+for (let tries = 0; tries < 50 && downloads.at(-1).download !== 'owdcic-all-odf-districts-summary-report.pdf'; tries += 1) {
+  await new Promise((resolve) => realSetTimeout(resolve, 0));
+}
+assert.equal(downloads.at(-1).download, 'owdcic-all-odf-districts-summary-report.pdf');
+
+const pdfText = Buffer.from(await blobs.at(-1).arrayBuffer()).toString('latin1');
+assert.equal(blobs.at(-1).type, 'application/pdf');
+assert.match(pdfText, /\/Kids \[3 0 R 6 0 R 9 0 R 12 0 R 15 0 R\] \/Count 5/);
+assert.equal(pdfText.match(/\/Type \/Page \/Parent/g).length, 5);
+
+reportModal.querySelector('[data-export-close]').click();
+
+// the map report option is the existing single-page export
+await exportButton._listeners.click[0]();
+exportOption('map').click();
+for (let tries = 0; tries < 50 && !body.querySelector('.results-export-modal'); tries += 1) {
+  await new Promise((resolve) => realSetTimeout(resolve, 0));
+}
+
+const mapModal = body.querySelector('.results-export-modal');
+assert.ok(mapModal?.querySelector('[data-export-download]'), 'map report should keep its PNG download');
+assert.equal(mapModal.querySelectorAll('[data-export-preview]').length, 1);
+
+mapModal.querySelector('[data-export-close]').click();
+
+// groups left out of SUMMARY_REPORT_GROUPS keep the map export for their "All" option
+api.showPolygon('national-forest', { properties: { ...allOdf, name: 'All National Forests' } });
+await exportButton._listeners.click[0]();
+assert.equal(body.querySelector('.results-export-chooser'), null, 'other groups should not get the chooser');
+assert.ok(body.querySelector('.results-export-modal'), 'other groups should open the map preview');
+body.querySelector('[data-export-close]').click();
 
 // without a touch share sheet the button copies the current address, hash included
 const shareButton = panel.querySelector('[data-results-share]');
@@ -460,6 +625,7 @@ assert.equal(shareButton.textContent, 'Copy link');
 assert.equal(shareButton.disabled, false, 'a result should enable sharing');
 await shareButton._listeners.click[0]();
 assert.deepEqual(copiedLinks, ['https://example.test/?coverage=county&selection=or-lane'], 'share should copy the anchor link');
+
 // the button confirms the copy in place, then takes its label back
 assert.equal(shareButton.textContent, 'Link copied!');
 shareLabelTimers.at(-1)();
