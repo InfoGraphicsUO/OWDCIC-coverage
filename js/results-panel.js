@@ -610,6 +610,17 @@ function renderPolygon(type, properties) {
   const name = properties.name || properties.label || 'selected area';
   wrapper.className = 'results-panel__body';
 
+  wrapper.append(selfLine(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`, 'results-panel__lead'));
+
+  // area totals need valid source values; missing coverage must stay unavailable, not zero
+  if (coverage != null && covered != null && total != null) {
+    wrapper.append(selfLine(
+      `${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire detection cameras, out of total ${formatNumber(total * SQMI_PER_SQKM)} mi²`,
+    ));
+  } else if (total != null) {
+    wrapper.append(selfLine(`${formatNumber(total * SQMI_PER_SQKM)} mi² total area`));
+  }
+
   // source-specific caveats keep approximate or administrative boundaries clear
   const qualifier = type === 'federal-land' && /Department of Defense|Other federal fee manager/.test(name)
     ? 'This source boundary may include planning areas without federal fee ownership.'
@@ -620,17 +631,6 @@ function renderPolygon(type, properties) {
       TRANSMISSION_LINES_QUALIFIER,
       'results-panel__qualifier results-panel__qualifier--transmission-lines',
     ));
-  }
-
-  wrapper.append(selfLine(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`, 'results-panel__lead'));
-
-  // area totals need valid source values; missing coverage must stay unavailable, not zero
-  if (coverage != null && covered != null && total != null) {
-    wrapper.append(selfLine(
-      `${formatNumber(covered * SQMI_PER_SQKM)} mi² of ${name} is covered by fire detection cameras, out of total ${formatNumber(total * SQMI_PER_SQKM)} mi²`,
-    ));
-  } else if (total != null) {
-    wrapper.append(selfLine(`${formatNumber(total * SQMI_PER_SQKM)} mi² total area`));
   }
 
   if (polygonShowsDonut(type, properties)) {
