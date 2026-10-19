@@ -1,44 +1,43 @@
 import { openModal } from './modal.js';
 
-// each section is a heading with paragraphs or a list, in display order
-// the story sections sit in the wide left column and the lists on the right
-const ABOUT_SECTIONS = Object.freeze([
+const SUMMARY = 'The Fire Camera Coverage Map shows where wildfire detection cameras in Oregon and Washington can see, so partners can review combined coverage across camera networks, find gaps, and plan new sites without conflicts.';
+
+// dated milestones shown down the left edge of the history section
+const TIMELINE = Object.freeze([
   Object.freeze({
-    title: 'About this map',
-    paragraphs: [
-      'The Fire Camera Coverage Map shows where wildfire detection cameras in Oregon and Washington can see, so partners can review combined coverage across camera networks, find gaps, and plan new sites without conflicts.',
-    ],
+    date: 'Feb 2022',
+    text: 'The Oregon Governor\'s office, BLM, and USFS requested that a work group be formed to establish cooperation between agencies across the state in detection camera efforts. The Oregon Wildfire Detection Camera Interoperability Committee (OWDCIC) was established to bring together partners from agencies that work in structural and wildland fire, emergency management, and the electrical utility sector.',
   }),
   Object.freeze({
-    title: 'How it started',
-    paragraphs: [
-      'In February 2022, the Oregon Governor\'s office, BLM, and USFS requested that a work group be formed to establish cooperation between agencies across the state in detection camera efforts. The Oregon Wildfire Detection Camera Interoperability Committee (OWDCIC) was established to bring together partners from agencies that work in structural and wildland fire, emergency management, and the electrical utility sector.',
-      'The OWDCIC\'s mission is to build relationships, increase interoperability and resilience, ensure cross governmental and cross jurisdictional communications and cooperation, and to identify and implement best practices to achieve interoperable fire tools that support response agencies at a statewide scale. The first group of its kind in the nation, the OWDCIC is now serving as a model for new regional and state interoperability workgroups in the Pacific Northwest. Committee work has resulted in opportunities and accomplishments such as development of a statewide combined detection map GIS layer, annual efficacy reporting, and elimination of conflicts in siting and permitting between agencies.',
-      'The OWDCIC\'s goal is to define and establish true interoperability between camera systems regarding technological products and data products.',
-      'In 2024, under leadership from the USFS, the Washington camera interoperability group formed to pursue similar solutions as the Oregon counterpart.',
-    ],
+    date: '2024',
+    text: 'Under leadership from the USFS, the Washington camera interoperability group formed to pursue similar solutions as the Oregon counterpart.',
   }),
+]);
+
+const MISSION = 'The OWDCIC\'s mission is to build relationships, increase interoperability and resilience, ensure cross governmental and cross jurisdictional communications and cooperation, and to identify and implement best practices to achieve interoperable fire tools that support response agencies at a statewide scale. The first group of its kind in the nation, the OWDCIC is now serving as a model for new regional and state interoperability workgroups in the Pacific Northwest. Committee work has resulted in opportunities and accomplishments such as development of a statewide combined detection map GIS layer, annual efficacy reporting, and elimination of conflicts in siting and permitting between agencies.';
+
+const GOAL = 'To define and establish true interoperability between camera systems regarding technological products and data products.';
+
+// short is the badge text, kept to a few letters so every badge is the same size
+const ORGANIZATIONS = Object.freeze({
+  ohaz: Object.freeze({ short: 'OHAZ', name: 'University of Oregon / Oregon Hazards Lab' }),
+  blm: Object.freeze({ short: 'BLM', name: 'Bureau of Land Management' }),
+  usfs: Object.freeze({ short: 'USFS', name: 'USDA Forest Service' }),
+  odf: Object.freeze({ short: 'ODF', name: 'Oregon Department of Forestry' }),
+  pge: Object.freeze({ short: 'PGE', name: 'Portland General Electric' }),
+  pacificPower: Object.freeze({ short: 'PP', name: 'Pacific Power' }),
+  avista: Object.freeze({ short: 'AVA', name: 'Avista' }),
+  pse: Object.freeze({ short: 'PSE', name: 'Puget Sound Energy' }),
+});
+
+const ORGANIZATION_GROUPS = Object.freeze([
   Object.freeze({
     title: 'Founding members',
-    side: true,
-    items: [
-      'University of Oregon / Oregon Hazards Lab (OHAZ)',
-      'Bureau of Land Management (BLM)',
-      'USDA Forest Service (USFS)',
-      'Oregon Department of Forestry (ODF)',
-    ],
+    keys: ['ohaz', 'blm', 'usfs', 'odf'],
   }),
   Object.freeze({
     title: 'Data contributors, sponsors, and operators',
-    side: true,
-    items: [
-      'University of Oregon / Oregon Hazards Lab (OHAZ)',
-      'Oregon Department of Forestry (ODF)',
-      'Portland General Electric',
-      'Pacific Power',
-      'Avista',
-      'Puget Sound Energy',
-    ],
+    keys: ['ohaz', 'odf', 'pge', 'pacificPower', 'avista', 'pse'],
   }),
 ]);
 
@@ -65,39 +64,61 @@ function openAboutModal(onClose) {
   body.className = 'modal__body about-modal__body';
 
   const main = document.createElement('div');
+  main.className = 'about-modal__main';
+  main.append(
+    element('p', 'about-modal__lead', SUMMARY),
+    section('How it started', timeline()),
+    section('Mission', element('p', '', MISSION), goalCallout()),
+  );
+
   const side = document.createElement('div');
   side.className = 'about-modal__side';
-  for (const section of ABOUT_SECTIONS) {
-    (section.side ? side : main).append(aboutSection(section));
+  for (const group of ORGANIZATION_GROUPS) {
+    side.append(section(group.title, organizationList(group.keys)));
   }
 
   body.append(main, side);
   dialog.append(body);
 }
 
-function aboutSection({ title, paragraphs = [], items = [] }) {
-  const section = document.createElement('section');
-  section.className = 'about-modal__section';
+function section(title, ...children) {
+  const node = element('section', 'about-modal__section');
+  node.append(element('h3', 'about-modal__heading', title), ...children);
+  return node;
+}
 
-  const heading = document.createElement('h3');
-  heading.textContent = title;
-  section.append(heading);
-
-  for (const text of paragraphs) {
-    const paragraph = document.createElement('p');
-    paragraph.textContent = text;
-    section.append(paragraph);
+function timeline() {
+  const list = element('ol', 'about-modal__timeline');
+  for (const { date, text } of TIMELINE) {
+    const item = element('li', 'about-modal__milestone');
+    item.append(element('span', 'about-modal__date', date), element('p', '', text));
+    list.append(item);
   }
+  return list;
+}
 
-  if (items.length) {
-    const list = document.createElement('ul');
-    for (const text of items) {
-      const item = document.createElement('li');
-      item.textContent = text;
-      list.append(item);
-    }
-    section.append(list);
+function goalCallout() {
+  const callout = element('blockquote', 'about-modal__goal');
+  callout.append(element('span', 'about-modal__goal-label', 'Goal'), element('p', '', GOAL));
+  return callout;
+}
+
+function organizationList(keys) {
+  const list = element('ul', 'about-modal__orgs');
+  for (const key of keys) {
+    const { short, name } = ORGANIZATIONS[key];
+    const item = element('li', 'about-modal__org');
+    const badge = element('span', 'about-modal__badge', short);
+    badge.setAttribute('aria-hidden', 'true');
+    item.append(badge, element('span', 'about-modal__org-name', name));
+    list.append(item);
   }
+  return list;
+}
 
-  return section;
+function element(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text) node.textContent = text;
+  return node;
 }
