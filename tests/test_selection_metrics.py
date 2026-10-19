@@ -38,9 +38,12 @@ class SelectionMetricsTests(unittest.TestCase):
     def test_provider_coverage_keeps_overlapping_providers_separate(self):
         selected = box(0, 0, 1000, 1000)
         coverages = {'alertwest': box(0, 0, 600, 1000), 'pano': box(400, 0, 1000, 1000)}
-        got = self.module.provider_coverage(selected, coverages)
+        got = self.module.provider_coverage(selected, coverages, self.module.exclusive_coverages(coverages))
         self.assertEqual([row['provider'] for row in got], ['alertwest', 'pano'])
         self.assertEqual([row['cameraViewshedCoveragePct'] for row in got], [60, 60])
+
+        # 40% each is seen by one provider alone; the 20% overlap belongs to neither
+        self.assertEqual([row['exclusiveCoveragePct'] for row in got], [40, 40])
         self.assertNotIn('landAreaSqKm', got[0])
         self.assertEqual(self.module.provider_key(
             Path('outputs/gdal_viewsheds_envirovision/mapbox/camera_viewsheds_web_epsg5070.gpkg')), 'envirovision')

@@ -544,7 +544,7 @@ function createExportChooserModal({ group, onReport, onCsv, onMap, onClose }) {
       key: 'report',
       icon: 'fa-file-pdf',
       label: 'Full summary report (PDF)',
-      detail: `A full summary report including an overview map, tables comparing every ${group.unit} overall and by camera provider, and coverage and land status for each ${group.unit}`,
+      detail: `A full summary report including an overview map, a table comparing every ${group.unit}, and coverage and land status for each ${group.unit}, split by camera provider`,
       run: onReport,
     },
     {
@@ -1049,12 +1049,16 @@ const REPORT_ACCENT = '#f8e109';
 // covered bars use the shared viewshed orange from the map
 const REPORT_COVERAGE_COLOR = '#F28D05';
 const REPORT_BAR_TRACK = '#e8e8e8';
+
+// land seen by more than one provider, kept neutral so it reads apart from every provider color
+const REPORT_OVERLAP_COLOR = '#6b6b6b';
+const REPORT_OVERLAP_LABEL = 'More than one provider';
 const REPORT_CARDS_PER_PAGE = 4;
 const REPORT_SITE_URL = 'infographicsuo.github.io/OWDCIC-coverage';
 const reportDateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'long' });
 
 // overview map, a comparison table in list order, the same table from most to least covered,
-// coverage by camera provider when the data has it, then four area cards per page
+// then four area cards per page
 async function composeSummaryPages({ title, group, total, members, mapImage }) {
   // canvas text falls back silently if Merriweather has not finished loading
   await document.fonts?.ready;
@@ -1073,9 +1077,6 @@ async function composeSummaryPages({ title, group, total, members, mapImage }) {
     (ctx, top, bottom) => drawReportTable(ctx, {
       heading: `${capitalize(group.units)} from most to least covered`, group, total, members: ranked, top, bottom,
     }),
-    ...([total, ...members].some(hasProviderCoverage)
-      ? [(ctx, top, bottom) => drawReportProviderTable(ctx, { group, total, members, top, bottom })]
-      : []),
     ...cardPages.map((cards) => (ctx, top, bottom) => drawReportCards(ctx, { cards, top, bottom })),
   ];
   const header = { title, date: reportDateFormat.format(new Date()), pageCount: bodies.length };
@@ -1155,7 +1156,10 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
     total: REPORT_PAGE_WIDTH - REPORT_MARGIN - 6,
   };
 
-  const headerY = top + 50;
+  // the provider key needs a line of its own above the column headings
+  const split = [total, ...members].some(hasProviderCoverage);
+  if (split) drawProviderKey(ctx, REPORT_MARGIN, top + 40);
+  const headerY = top + (split ? 62 : 50);
   const rows = [...members, { ...total, name: `All ${group.units}` }];
   const rowHeight = Math.min(28, (bottom - headerY - 8) / rows.length);
 
@@ -1196,7 +1200,7 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
     ctx.fillStyle = REPORT_TEXT;
     ctx.font = `${weight}10px ${EXPORT_FONT}`;
     ctx.fillText(row.name || row.label || '', columns.name, textY);
-    drawCoverageBar(ctx, columns.bar, rowTop + rowHeight / 2 - 4, columns.barWidth, 8, rowCoverage);
+    drawCoverageBar(ctx, columns.bar, rowTop + rowHeight / 2 - 4, columns.barWidth, 8, rowCoverage, coverageSegments(row));
     ctx.fillStyle = REPORT_TEXT;
     ctx.fillText(rowCoverage == null ? 'n/a' : `${formatPercent(rowCoverage)}%`, columns.bar + columns.barWidth + 8, textY);
     ctx.textAlign = 'right';
@@ -1206,72 +1210,12 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
   });
 }
 
-// one coverage bar per provider in each row; providers overlap, so their shares can add to more than the total
-function drawReportProviderTable(ctx, { group, total, members, top, bottom }) {
-  const right = REPORT_PAGE_WIDTH - REPORT_MARGIN;
-  ctx.fillStyle = REPORT_TEXT;
-  ctx.font = `700 14px ${EXPORT_FONT}`;
-  ctx.fillText('Coverage by camera provider', REPORT_MARGIN, top + 4);
-  ctx.font = `11px ${EXPORT_FONT}`;
-  ctx.fillText('Where provider viewsheds overlap, the area counts for each provider.', REPORT_MARGIN, top + 22);
-
-  // bars start where the coverage table's do, and each provider gets an equal column of a bar and its percentage
-  const barsX = 260;
-  const columnWidth = (right - 6 - barsX) / COVERAGE_PROVIDERS.length;
-  const barWidth = columnWidth - 52;
-  const columnX = (index) => barsX + index * columnWidth;
-  const headerY = top + 50;
-  const rows = [...members, { ...total, name: `All ${group.units}` }];
-  const rowHeight = Math.min(28, (bottom - headerY - 8) / rows.length);
-
-  ctx.font = `700 9px ${EXPORT_FONT}`;
-  ctx.fillStyle = REPORT_MUTED;
-  ctx.fillText(capitalize(group.unit), REPORT_MARGIN + 6, headerY);
-  COVERAGE_PROVIDERS.forEach((provider, index) => {
-    ctx.fillStyle = provider.color;
-    ctx.fillRect(columnX(index), headerY - 7, 8, 8);
-    ctx.fillStyle = REPORT_MUTED;
-    ctx.fillText(provider.label, columnX(index) + 12, headerY);
-  });
-  ctx.strokeStyle = REPORT_TEXT;
-  ctx.lineWidth = 0.75;
-  ctx.beginPath();
-  ctx.moveTo(REPORT_MARGIN, headerY + 7);
-  ctx.lineTo(right, headerY + 7);
-  ctx.stroke();
-
-  rows.forEach((row, index) => {
-    const isTotal = index === rows.length - 1;
-    const rowTop = headerY + 8 + index * rowHeight;
-    const textY = rowTop + rowHeight / 2 + 3.5;
-    if (isTotal) {
-      ctx.strokeStyle = REPORT_TEXT;
-      ctx.beginPath();
-      ctx.moveTo(REPORT_MARGIN, rowTop);
-      ctx.lineTo(right, rowTop);
-      ctx.stroke();
-    } else if (index % 2 === 1) {
-      ctx.fillStyle = REPORT_STRIPE;
-      ctx.fillRect(REPORT_MARGIN, rowTop, right - REPORT_MARGIN, rowHeight);
-    }
-
-    ctx.fillStyle = REPORT_TEXT;
-    ctx.font = `${isTotal ? '700 ' : ''}10px ${EXPORT_FONT}`;
-    ctx.fillText(row.name || row.label || '', REPORT_MARGIN + 6, textY);
-    COVERAGE_PROVIDERS.forEach((provider, column) => {
-      const coverage = providerCoverageFor(row, provider.key)?.coverage ?? null;
-      drawCoverageBar(ctx, columnX(column), rowTop + rowHeight / 2 - 4, barWidth, 8, coverage, provider.color);
-      ctx.fillStyle = REPORT_TEXT;
-      ctx.fillText(coverage == null ? 'n/a' : `${formatPercent(coverage)}%`, columnX(column) + barWidth + 6, textY);
-    });
-  });
-}
-
 function drawReportCards(ctx, { cards, top, bottom }) {
   const gap = 16;
 
   // the notes under the cards explain the coverage and land status figures they show
-  const notesHeight = 28;
+  const split = cards.some(hasProviderCoverage);
+  const notesHeight = split ? 44 : 28;
   const width = (REPORT_PAGE_WIDTH - REPORT_MARGIN * 2 - gap) / 2;
   const height = (bottom - top - gap - notesHeight) / 2;
   cards.forEach((properties, index) => {
@@ -1288,6 +1232,7 @@ function drawReportCards(ctx, { cards, top, bottom }) {
   );
 
   ctx.fillText('unclassified includes unmapped private land. Shares under 1% are not shown.', REPORT_MARGIN, bottom - 2);
+  if (split) drawProviderKey(ctx, REPORT_MARGIN, bottom - 28);
 }
 
 function drawReportCard(ctx, x, y, width, height, properties) {
@@ -1304,7 +1249,7 @@ function drawReportCard(ctx, x, y, width, height, properties) {
   ctx.fillText(properties.name || properties.label || '', x + pad, y + 24);
   ctx.font = `600 11px ${EXPORT_FONT}`;
   ctx.fillText(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`, x + pad, y + 44);
-  drawCoverageBar(ctx, x + pad, y + 51, width - pad * 2, 8, coverage);
+  drawCoverageBar(ctx, x + pad, y + 51, width - pad * 2, 8, coverage, coverageSegments(properties));
   if (covered != null && area != null) {
     ctx.fillStyle = REPORT_MUTED;
     ctx.font = `10px ${EXPORT_FONT}`;
@@ -1331,12 +1276,38 @@ function drawReportCard(ctx, x, y, width, height, properties) {
   });
 }
 
-function drawCoverageBar(ctx, x, y, width, height, coverage, color = REPORT_COVERAGE_COLOR) {
+// one bar for total coverage; with a provider split it is cut into each provider's segment
+function drawCoverageBar(ctx, x, y, width, height, coverage, segments = null) {
   ctx.fillStyle = REPORT_BAR_TRACK;
   ctx.fillRect(x, y, width, height);
   if (coverage == null) return;
-  ctx.fillStyle = color;
-  ctx.fillRect(x, y, width * Math.max(0, Math.min(100, coverage)) / 100, height);
+  const parts = segments || [{ color: REPORT_COVERAGE_COLOR, value: coverage }];
+  let start = 0;
+  for (const { color, value } of parts) {
+    // clamp so rounding in the source shares never runs past the track
+    const end = Math.min(100, start + Math.max(0, value));
+    ctx.fillStyle = color;
+    ctx.fillRect(x + width * start / 100, y, width * (end - start) / 100, height);
+    start = end;
+  }
+}
+
+function drawProviderKey(ctx, x, y) {
+  const items = [
+    ...COVERAGE_PROVIDERS.map(({ label, color }) => ({ label: `${label} only`, color })),
+    { label: REPORT_OVERLAP_LABEL, color: REPORT_OVERLAP_COLOR },
+  ];
+  ctx.font = `9px ${EXPORT_FONT}`;
+  ctx.fillStyle = REPORT_MUTED;
+  ctx.fillText('Coverage seen by:', x, y);
+  let cursor = x + ctx.measureText('Coverage seen by:').width + 10;
+  for (const { label, color } of items) {
+    ctx.fillStyle = color;
+    ctx.fillRect(cursor, y - 7, 8, 8);
+    ctx.fillStyle = REPORT_TEXT;
+    ctx.fillText(label, cursor + 12, y);
+    cursor += 12 + ctx.measureText(label).width + 14;
+  }
 }
 
 function drawLandMixDonut(ctx, cx, cy, radius, landMix) {
@@ -1378,7 +1349,35 @@ function providerCoverageFor(properties, key) {
     ? properties.providerCoverage.find((entry) => entry?.provider === key)
     : null;
   if (!item) return null;
-  return { coverage: finite(item.cameraViewshedCoveragePct), covered: finite(item.cameraViewshedAreaSqKm) };
+  return {
+    coverage: finite(item.cameraViewshedCoveragePct),
+    covered: finite(item.cameraViewshedAreaSqKm),
+    exclusive: finite(item.exclusiveCoveragePct),
+    exclusiveCovered: finite(item.exclusiveAreaSqKm),
+  };
+}
+
+// what is left of the total once each provider's own share is taken out is seen by more than one provider
+function overlapCoverage(properties) {
+  const coverage = coverageFor(properties);
+  const covered = finite(properties.cameraViewshedAreaSqKm);
+  const shares = COVERAGE_PROVIDERS.map(({ key }) => providerCoverageFor(properties, key));
+  if (!hasProviderCoverage(properties) || shares.some((share) => share?.exclusive == null)) return null;
+  const sum = (field) => shares.reduce((total, share) => total + (share[field] ?? 0), 0);
+  return {
+    coverage: coverage == null ? null : Math.max(0, coverage - sum('exclusive')),
+    covered: covered == null ? null : Math.max(0, covered - sum('exclusiveCovered')),
+  };
+}
+
+// bar segments in key order: each provider alone, then land several providers see
+function coverageSegments(properties) {
+  const overlap = overlapCoverage(properties);
+  if (overlap?.coverage == null) return null;
+  return [
+    ...COVERAGE_PROVIDERS.map(({ key, color }) => ({ color, value: providerCoverageFor(properties, key).exclusive })),
+    { color: REPORT_OVERLAP_COLOR, value: overlap.coverage },
+  ];
 }
 
 // one row per member area and a final row for the combined option, with unrounded source values
@@ -1395,7 +1394,10 @@ function summaryCsv(selection, members) {
   const header = [
     capitalize(group.unit), 'Coverage (%)', 'Covered area (sq mi)', 'Total area (sq mi)',
     'Covered area (sq km)', 'Total area (sq km)',
-    ...COVERAGE_PROVIDERS.flatMap(({ label }) => [`${label} coverage (%)`, `${label} covered area (sq mi)`]),
+    ...COVERAGE_PROVIDERS.flatMap(({ label }) => [
+      `${label} coverage (%)`, `${label} covered area (sq mi)`, `${label} only (%)`, `${label} only (sq mi)`,
+    ]),
+    `${REPORT_OVERLAP_LABEL} (%)`, `${REPORT_OVERLAP_LABEL} (sq mi)`,
     ...labels.flatMap((label) => [`${label} (%)`, `${label} (sq mi)`]),
   ];
   const lines = rows.map((row) => {
@@ -1412,8 +1414,12 @@ function summaryCsv(selection, members) {
       ...COVERAGE_PROVIDERS.flatMap(({ key }) => {
         // an area without a provider split stays blank rather than 0
         const split = providerCoverageFor(row, key);
-        return [csvNumber(split?.coverage), csvNumber(split?.covered == null ? null : split.covered * SQMI_PER_SQKM)];
+        return [
+          csvNumber(split?.coverage), csvNumber(sqMiles(split?.covered)),
+          csvNumber(split?.exclusive), csvNumber(sqMiles(split?.exclusiveCovered)),
+        ];
       }),
+      csvNumber(overlapCoverage(row)?.coverage), csvNumber(sqMiles(overlapCoverage(row)?.covered)),
       ...labels.flatMap((label) => {
         const item = mix.get(label);
         const share = finite(item?.areaSqKm);
@@ -1425,6 +1431,10 @@ function summaryCsv(selection, members) {
   });
 
   return [header, ...lines].map((line) => line.map(csvCell).join(',')).join('\r\n');
+}
+
+function sqMiles(sqKm) {
+  return sqKm == null ? null : sqKm * SQMI_PER_SQKM;
 }
 
 function csvNumber(value) {

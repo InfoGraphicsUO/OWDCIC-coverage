@@ -491,11 +491,12 @@ URL.createObjectURL = (blob) => {
   return originalCreateObjectURL(blob);
 };
 
-// providers overlap, so their shares can add to more than the area's total coverage
+// providers overlap, so their own shares can add to more than the area's total coverage;
+// the parts only one provider sees leave 10% seen by more than one
 const providerCoverage = [
-  { provider: 'alertwest', cameraViewshedCoveragePct: 30, cameraViewshedAreaSqKm: 30 },
-  { provider: 'pano', cameraViewshedCoveragePct: 20, cameraViewshedAreaSqKm: 20 },
-  { provider: 'envirovision', cameraViewshedCoveragePct: 0, cameraViewshedAreaSqKm: 0 },
+  { provider: 'alertwest', cameraViewshedCoveragePct: 30, cameraViewshedAreaSqKm: 30, exclusiveCoveragePct: 20, exclusiveAreaSqKm: 20 },
+  { provider: 'pano', cameraViewshedCoveragePct: 20, cameraViewshedAreaSqKm: 20, exclusiveCoveragePct: 10, exclusiveAreaSqKm: 10 },
+  { provider: 'envirovision', cameraViewshedCoveragePct: 0, cameraViewshedAreaSqKm: 0, exclusiveCoveragePct: 0, exclusiveAreaSqKm: 0 },
 ];
 
 const odfMembers = [
@@ -547,17 +548,20 @@ const csvHeader = csvLines[0].split(',');
 assert.deepEqual(csvHeader.slice(0, 6), ['District', 'Coverage (%)', 'Covered area (sq mi)', 'Total area (sq mi)',
   'Covered area (sq km)', 'Total area (sq km)']);
 
-// provider columns follow the totals in a fixed order
-assert.deepEqual(csvHeader.slice(6, 12), ['ALERTWest coverage (%)', 'ALERTWest covered area (sq mi)',
-  'Pano AI coverage (%)', 'Pano AI covered area (sq mi)', 'EnviroVision coverage (%)', 'EnviroVision covered area (sq mi)']);
+// provider columns follow the totals in a fixed order, then the land several providers see
+assert.deepEqual(csvHeader.slice(6, 20), [
+  'ALERTWest coverage (%)', 'ALERTWest covered area (sq mi)', 'ALERTWest only (%)', 'ALERTWest only (sq mi)',
+  'Pano AI coverage (%)', 'Pano AI covered area (sq mi)', 'Pano AI only (%)', 'Pano AI only (sq mi)',
+  'EnviroVision coverage (%)', 'EnviroVision covered area (sq mi)', 'EnviroVision only (%)', 'EnviroVision only (sq mi)',
+  'More than one provider (%)', 'More than one provider (sq mi)']);
 
 // land status columns keep the panel's category order
-assert.deepEqual(csvHeader.slice(12), ['U.S. Forest Service land (%)', 'U.S. Forest Service land (sq mi)',
+assert.deepEqual(csvHeader.slice(20), ['U.S. Forest Service land (%)', 'U.S. Forest Service land (sq mi)',
   'State land (%)', 'State land (sq mi)', 'Other/unclassified (%)', 'Other/unclassified (sq mi)']);
 assert.equal(csvLines.length, odfMembers.length + 2, 'CSV should have a header, every district, and a total row');
-assert.match(csvLines[1], /^Alpha District,40,15\.44,38\.61,40,100,30,11\.58,20,7\.72,0,0,40,0,10,0,50,0$/,
+assert.match(csvLines[1], /^Alpha District,40,15\.44,38\.61,40,100,30,11\.58,20,7\.72,20,7\.72,10,3\.86,0,0,0,0,10,3\.86,40,0,10,0,50,0$/,
   'areas convert to sq mi; land shares without an area stay 0 sq mi');
-assert.match(csvLines[2], /^"Beta FPA, North",10,7\.72,77\.22,20,200,,,,,,,/, 'areas without a provider split stay blank');
+assert.match(csvLines[2], /^"Beta FPA, North",10,7\.72,77\.22,20,200,,,,,,,,,,,,,,,0,/, 'areas without a provider split stay blank');
 assert.match(csvLines[2], /^"Beta FPA, North",10,/, 'names with commas should be quoted');
 assert.match(csvLines[2], /,0,0,100,77\.22,0,0$/, 'categories missing from a district count as 0');
 assert.match(csvLines[4], /^Delta District,,,,,,,,,,,,/, 'unavailable coverage should stay blank, not 0');
@@ -567,7 +571,7 @@ chooser.querySelector('button.modal__close').click();
 assert.equal(body.querySelector('.results-export-chooser'), null, 'close should remove the chooser');
 assert.equal(exportButton.disabled, false, 'closing the chooser should re-enable export');
 
-// the report opens a page-by-page preview: overview map, two tables, the provider table, then four district cards per page
+// the report opens a page-by-page preview: overview map, two tables, then four district cards per page
 await exportButton._listeners.click[0]();
 const canvasesBeforeReport = exportCanvases.length;
 exportOption('report').click();
@@ -579,7 +583,7 @@ const reportModal = body.querySelector('.results-export-modal');
 assert.ok(reportModal, 'report option should open the report preview');
 assert.equal(body.querySelector('.results-export-chooser'), null, 'the chooser should close when the report opens');
 assert.equal(textOf(reportModal.querySelector('h2')), 'Summary report preview');
-assert.equal(reportModal.querySelectorAll('[data-export-preview]').length, 6, '5 districts should make 6 pages');
+assert.equal(reportModal.querySelectorAll('[data-export-preview]').length, 5, '5 districts should make 5 pages');
 assert.equal(reportModal.querySelector('[data-export-download]'), null, 'the report has no PNG download');
 
 const reportPages = exportCanvases.slice(canvasesBeforeReport).filter((node) => node.drawnText?.length);
@@ -597,11 +601,12 @@ assert.deepEqual(districtOrder(pageWith('Districts from most to least covered'))
 assert.ok(pageWith('Districts from most to least covered').includes('All districts'), 'the ranked table should keep its total row');
 assert.ok(!reportText.some((text) => /rank/i.test(text)), 'district cards should not show a coverage rank');
 
-// the provider page names each provider and shows a district without a split as n/a
-const providerPage = pageWith('Coverage by camera provider');
-assert.ok(['ALERTWest', 'Pano AI', 'EnviroVision'].every((label) => providerPage.includes(label)));
-assert.ok(providerPage.includes('30%') && providerPage.includes('n/a'));
-assert.ok(reportText.includes('Page 6 of 6'));
+// coverage bars split by provider, so the tables and cards carry a key for the colors
+const providerKey = ['ALERTWest only', 'Pano AI only', 'EnviroVision only', 'More than one provider'];
+assert.ok(providerKey.every((label) => pageWith('Coverage by district').includes(label)), 'tables should key the provider colors');
+assert.ok(providerKey.every((label) => pageWith('unclassified includes unmapped private land. Shares under 1% are not shown.').includes(label)), 'cards should key the provider colors');
+assert.ok(!reportText.includes('Coverage by camera provider'), 'the split lives in the coverage bars, not its own page');
+assert.ok(reportText.includes('Page 5 of 5'));
 
 // the PDF holds one page per preview image
 reportModal.querySelector('[data-export-pdf-download]').click();
@@ -612,8 +617,8 @@ assert.equal(downloads.at(-1).download, 'owdcic-all-odf-districts-summary-report
 
 const pdfText = Buffer.from(await blobs.at(-1).arrayBuffer()).toString('latin1');
 assert.equal(blobs.at(-1).type, 'application/pdf');
-assert.match(pdfText, /\/Kids \[3 0 R 6 0 R 9 0 R 12 0 R 15 0 R 18 0 R\] \/Count 6/);
-assert.equal(pdfText.match(/\/Type \/Page \/Parent/g).length, 6);
+assert.match(pdfText, /\/Kids \[3 0 R 6 0 R 9 0 R 12 0 R 15 0 R\] \/Count 5/);
+assert.equal(pdfText.match(/\/Type \/Page \/Parent/g).length, 5);
 
 reportModal.querySelector('[data-export-close]').click();
 

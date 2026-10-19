@@ -293,11 +293,28 @@ def provider_key(path: Path):
     return path.parent.parent.name.removeprefix(PROVIDER_FOLDER_PREFIX)
 
 
-def provider_coverage(selection, coverages):
-    """each provider's own coverage of the selection; providers can overlap, so these can add to more than the total"""
-    return [{'provider': provider, **{key: value for key, value in coverage_metrics(selection, coverage).items()
-                                      if key != 'landAreaSqKm'}}
-            for provider, coverage in coverages.items()]
+def exclusive_coverages(coverages):
+    """the part of each provider's coverage no other provider sees"""
+    return {provider: coverage.difference(union_all([other for key, other in coverages.items() if key != provider]))
+            for provider, coverage in coverages.items()}
+
+
+def provider_coverage(selection, coverages, exclusives):
+    """each provider's own coverage of the selection and the part only it covers
+
+    Providers can overlap, so their own coverage can add to more than the total;
+    the exclusive parts plus the overlap add to exactly the total.
+    """
+    rows = []
+    for provider, coverage in coverages.items():
+        own = coverage_metrics(selection, coverage)
+        exclusive = coverage_metrics(selection, exclusives[provider])
+        rows.append({'provider': provider,
+                     'cameraViewshedAreaSqKm': own['cameraViewshedAreaSqKm'],
+                     'cameraViewshedCoveragePct': own['cameraViewshedCoveragePct'],
+                     'exclusiveAreaSqKm': exclusive['cameraViewshedAreaSqKm'],
+                     'exclusiveCoveragePct': exclusive['cameraViewshedCoveragePct']})
+    return rows
 
 
 def load_viewsheds(path: Path):
@@ -498,6 +515,7 @@ def report(args, step, total, label, done, count):
 
 def run(args):
     coverage, provider_coverages, individual = load_all_viewsheds(args.viewsheds)
+    provider_exclusives = exclusive_coverages(provider_coverages)
     print('loaded viewsheds:', len(individual), flush=True)
     # checked before anything is written, so a mismatch leaves the data untouched
     check_published_viewsheds(individual, published_viewshed_ids(MANIFESTS))
@@ -592,7 +610,7 @@ def run(args):
 
             p = feature['properties']
             p.update(coverage_metrics(selected, coverage))
-            p['providerCoverage'] = provider_coverage(selected, provider_coverages)
+            p['providerCoverage'] = provider_coverage(selected, provider_coverages, provider_exclusives)
             p['landMix'] = mix_for(selected, area, designation)
             retained.append(feature)
 
