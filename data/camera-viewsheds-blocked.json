@@ -10,11 +10,6 @@
     "reason": "Confirm sheet height assignment to archived camera ID; North is provisionally the northern point."
   },
   {
-    "provider": "pano",
-    "name": "Midnight Gulch",
-    "reason": "Missing camera observer height"
-  },
-  {
     "provider": "alertwest",
     "name": "Anderson",
     "reason": "Missing coordinates"
