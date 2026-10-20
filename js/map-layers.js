@@ -150,8 +150,6 @@ const DIGITIZED_CAMERA_COLORS = Object.freeze({
   joint: '#f8e109',
 });
 
-const NO_VIEWSHED_SELECTED = '__none__';
-
 // each official provider is its own camera layer, viewshed tileset, and pair of legend rows
 // later providers only need another entry here plus their config ids
 const CAMERA_PROVIDERS = Object.freeze([
@@ -276,8 +274,10 @@ let activeFilterType = null;
 let polygonSelected = false;
 let cameraFeatures = [];
 
-// names the camera whose viewshed is highlighted, for the export legend
-let highlightedCameraName = '';
+// selected camera features keyed by camera id, in click order
+// keyed by camera because cameras on one tower can share a viewshed
+// while an area is selected these are only highlights; otherwise they also drive the results
+const selectedCameras = new Map();
 let resolveCameraFeatures;
 
 // camera options wait for the provider data while division sources wait for map setup
@@ -428,11 +428,15 @@ const resultsControl = initResultsPanel({
 const filterControl = initFilterPanel({
   types: FILTER_TYPES.map(({ value, label, group }) => ({
     value, label, group, parent: nestedFilterParent(value, FILTER_TYPES),
+    // camera rows add and remove cameras, matching map clicks
+    multiSelect: value === 'camera',
   })),
   loadOptions: loadFilterOptions,
   searchOptions: searchFilterOptions,
   onTypeSelected: typeSelected,
   onSelection: optionSelected,
+  // only the camera type is multi-select
+  onToggle: (type, id) => cameraRowToggled(id),
   onClear: clearFilter,
 });
 
@@ -1122,7 +1126,7 @@ function typeSelected(type) {
   if (activeMap) {
     clearDivisionFilter(activeMap);
     if (type && type !== 'camera') showDivisionType(activeMap, type);
-    selectCameraViewshed(activeMap, null);
+    clearCameraSelection(activeMap);
   }
 
   resultsControl.clear();
@@ -1138,7 +1142,11 @@ function optionSelected(type, id) {
       console.warn(`Camera ${id} is not available`);
       return;
     }
-    showCameraResult(activeMap, feature);
+
+    // search and link picks add the camera; only row and map clicks remove one
+    const added = !selectedCameras.has(cameraOptionId(feature));
+    selectedCameras.set(cameraOptionId(feature), feature);
+    cameraSelectionChanged({ added });
     return;
   }
 
@@ -1146,7 +1154,7 @@ function optionSelected(type, id) {
   // a new area selection drops any camera viewshed highlight
   cameraResultRequest += 1;
   polygonSelected = true;
-  selectCameraViewshed(activeMap, null);
+  clearCameraSelection(activeMap);
   selectDivision(activeMap, type, id);
   writeAnchor(type, id);
 }
@@ -1167,19 +1175,88 @@ async function cameraClicked(cameraId, mapFeature) {
   if (!feature) return;
 
   hideCameraPreview(activeMap);
-  selectCameraViewshed(activeMap, feature.properties?.viewshed_id, feature.properties?.name);
+  const added = toggleCamera(feature);
 
-  // keep polygon details in the result panel while highlighting the camera
-  if (polygonFilterIsActive()) return;
-
-  if (activeFilterType === 'camera') {
-    // selecting the matching row preserves the filter panel's active choice
-    const synced = await filterControl.select('camera', cameraOptionId(feature));
-    if (!synced) showCameraResult(activeMap, feature);
+  // keep polygon details in the result panel while highlighting cameras
+  if (polygonFilterIsActive()) {
+    applyViewshedHighlights(activeMap);
     return;
   }
 
-  showCameraResult(activeMap, feature);
+  // a newly added camera's row is scrolled into view in the camera list
+  await cameraSelectionChanged({ reveal: added ? cameraOptionId(feature) : null, added, fromMap: true });
+}
+
+// camera list row clicks add or remove that camera
+async function cameraRowToggled(cameraId) {
+  const feature = cameraFeatureById(cameraId);
+  if (!feature) {
+    console.warn(`Camera ${cameraId} is not available`);
+    return;
+  }
+
+  await cameraSelectionChanged({ added: toggleCamera(feature) });
+}
+
+// returns true when the camera was added, false when it was removed
+function toggleCamera(feature) {
+  const cameraId = cameraOptionId(feature);
+  if (selectedCameras.delete(cameraId)) return false;
+  selectedCameras.set(cameraId, feature);
+  return true;
+}
+
+// one place turns the selected cameras into highlights, list rows, results, and map movement
+// map clicks leave the view alone so the next camera stays under the cursor
+async function cameraSelectionChanged({ reveal = null, added = true, fromMap = false } = {}) {
+  if (!activeMap) return;
+  applyViewshedHighlights(activeMap);
+  filterControl.setSelected('camera', [...selectedCameras.keys()], { reveal });
+
+  const features = [...selectedCameras.values()];
+  if (!features.length) {
+    // the filter panel path keeps the menu, results, and link in sync
+    await filterControl.clearSelection();
+    return;
+  }
+
+  if (features.length === 1) {
+    // the first camera centers like a single selection; dropping back to one keeps the view
+    showCameraResult(activeMap, features[0], { fit: added });
+    if (!added && !fromMap) revealCameras(activeMap, features);
+    return;
+  }
+
+  showCameraList(features);
+  if (!fromMap) revealCameras(activeMap, features);
+}
+
+// zooms out only as far as needed when a selected camera is off screen, never in
+function revealCameras(map, features) {
+  const points = features
+    .map((feature) => feature.geometry?.coordinates)
+    .filter((point) => Array.isArray(point) && Number.isFinite(point[0]) && Number.isFinite(point[1]));
+  if (!points.length) return;
+
+  const view = map.getBounds();
+  if (points.every((point) => view.contains(point))) return;
+
+  const longitudes = points.map(([longitude]) => longitude);
+  const latitudes = points.map(([, latitude]) => latitude);
+  fitMapToBounds(map, [
+    [Math.min(...longitudes), Math.min(...latitudes)],
+    [Math.max(...longitudes), Math.max(...latitudes)],
+  ], { maxZoom: map.getZoom() });
+}
+
+function showCameraList(features) {
+  // a single-camera result still loading must not replace the list
+  cameraResultRequest += 1;
+  enableClearForResult();
+
+  // links name one camera, so a multi-camera selection links to the camera list
+  writeAnchor('camera');
+  resultsControl.showCameras(features.map((feature) => feature.properties || {}));
 }
 
 function cameraHovered(cameraId, event) {
@@ -1204,7 +1281,7 @@ function clearFilter() {
 
   if (activeMap) {
     clearDivisionFilter(activeMap);
-    selectCameraViewshed(activeMap, null);
+    clearCameraSelection(activeMap);
     hideCameraPreview(activeMap);
   }
 
@@ -1223,11 +1300,10 @@ function enableClearForResult() {
   filterControl.setClearEnabled?.(true);
 }
 
-async function showCameraResult(map, feature) {
+async function showCameraResult(map, feature, { fit = true } = {}) {
   // each selection owns a token; only its latest response may update the panel
   const request = ++cameraResultRequest;
   const properties = feature.properties || {};
-  selectCameraViewshed(map, properties.viewshed_id, properties.name);
   enableClearForResult();
   resultsControl.showLoading(properties.name || 'Camera');
   writeAnchor('camera', cameraOptionId(feature));
@@ -1243,7 +1319,7 @@ async function showCameraResult(map, feature) {
     : null;
   resultsControl.showCamera(properties, metrics, feature);
   collapseControlsOnNarrowScreen();
-  fitMapToCamera(map, feature);
+  if (fit) fitMapToCamera(map, feature);
 }
 
 // share one metrics request across camera picks
@@ -2002,7 +2078,7 @@ function addViewshedLayers(map) {
       type: 'fill',
       source: provider.viewshedSourceId,
       'source-layer': DATA_URLS.cameraViewshedsSourceLayer,
-      filter: viewshedFilter(NO_VIEWSHED_SELECTED),
+      filter: viewshedFilter([]),
       paint: {
         'fill-color': VIEWSHED_HIGHLIGHT_COLOR,
         'fill-opacity': VIEWSHED_HIGHLIGHT_OPACITY,
@@ -2069,12 +2145,21 @@ function basemapColor(colors, basemap) {
   return colors[basemap] ?? colors.outdoors;
 }
 
-function selectCameraViewshed(map, viewshedId, cameraName = '') {
-  highlightedCameraName = viewshedId ? cameraName || 'Camera' : '';
+function clearCameraSelection(map) {
+  selectedCameras.clear();
+  applyViewshedHighlights(map);
+}
 
+// cameras without a viewshed stay selected but add nothing to the highlight
+function selectedViewshedIds() {
+  return [...new Set([...selectedCameras.values()]
+    .map((feature) => feature.properties?.viewshed_id)
+    .filter(Boolean))];
+}
+
+function applyViewshedHighlights(map) {
   // provider viewshed ids are unique, so each highlight layer can share one filter
-  // the sentinel produces an empty match while no camera is selected
-  const filter = viewshedFilter(viewshedId || NO_VIEWSHED_SELECTED);
+  const filter = viewshedFilter(selectedViewshedIds());
   for (const { viewshedHighlightLayerId } of CAMERA_PROVIDERS) {
     if (map.getLayer(viewshedHighlightLayerId)) {
       map.setFilter(viewshedHighlightLayerId, filter);
@@ -2082,8 +2167,9 @@ function selectCameraViewshed(map, viewshedId, cameraName = '') {
   }
 }
 
-function viewshedFilter(viewshedId) {
-  return ['==', ['get', 'viewshed_id'], viewshedId];
+// an empty list matches nothing, which is the unselected state
+function viewshedFilter(viewshedIds) {
+  return ['in', ['get', 'viewshed_id'], ['literal', viewshedIds]];
 }
 
 // export legend rows for selection symbols, which have no layer row of their own
@@ -2099,9 +2185,19 @@ function selectionLegendItems(selection) {
     });
   }
 
-  if (highlightedCameraName && highlightedViewshedIsRendered(activeMap)) {
+  // cameras sharing one tower's viewshed share its legend row
+  const namesByViewshed = new Map();
+  for (const feature of selectedCameras.values()) {
+    const viewshedId = feature.properties?.viewshed_id;
+    if (!viewshedId) continue;
+    if (!namesByViewshed.has(viewshedId)) namesByViewshed.set(viewshedId, []);
+    namesByViewshed.get(viewshedId).push(feature.properties?.name || 'Camera');
+  }
+
+  for (const [viewshedId, names] of namesByViewshed) {
+    if (!viewshedIsRendered(activeMap, viewshedId)) continue;
     items.push({
-      label: `${highlightedCameraName} viewshed`,
+      label: `${names.join(', ')} viewshed`,
       // a sample viewshed in the highlight color reads better than a flat swatch
       visual: { type: 'icon', src: 'img/yellow_portland_tower_viewshed.png', outline: VIEWSHED_HIGHLIGHT_COLOR, size: 22 },
     });
@@ -2110,12 +2206,13 @@ function selectionLegendItems(selection) {
   return items;
 }
 
-function highlightedViewshedIsRendered(map) {
+function viewshedIsRendered(map, viewshedId) {
   // an unchecked viewshed row or an off-screen camera leaves nothing to label
   const layers = CAMERA_PROVIDERS
     .map(({ viewshedHighlightLayerId }) => viewshedHighlightLayerId)
     .filter((layerId) => map?.getLayer(layerId));
-  return layers.length > 0 && map.queryRenderedFeatures({ layers }).length > 0;
+  return layers.length > 0 &&
+    map.queryRenderedFeatures({ layers, filter: viewshedFilter([viewshedId]) }).length > 0;
 }
 
 async function addFireLayer(map) {
