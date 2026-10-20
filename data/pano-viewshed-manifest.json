@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "generated_utc": "2026-10-12T21:44:48+00:00",
+  "generated_utc": "2026-10-20T17:34:06+00:00",
   "config_hash": "1fc319aaf4acf161f84b3f6c5c31c3614d1ef1b830b541849cb2953bc3242bc6",
   "web_processing": {
     "resolution_m": 50.0,
@@ -536,6 +536,18 @@
       "status": "complete",
       "web_geojson": "web/pano-takilma.geojson",
       "exact_polygon": "polygons_exact/pano_takilma.gpkg"
+    },
+    {
+      "source_id": 43,
+      "viewshed_id": "pano-midnight-gulch",
+      "site_name": "Midnight Gulch",
+      "aliases": [],
+      "longitude": -123.51066,
+      "latitude": 42.48583,
+      "height_ft": 110.0,
+      "status": "complete",
+      "web_geojson": "web/pano-midnight-gulch.geojson",
+      "exact_polygon": "polygons_exact/pano_midnight_gulch.gpkg"
     },
     {
       "source_id": 44,

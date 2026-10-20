@@ -1139,14 +1139,13 @@
       "properties": {
         "name": "Midnight Gulch",
         "aliases": [],
-        "cameraHeightFt": null,
+        "cameraHeightFt": 110.0,
         "viewshedId": "pano-midnight-gulch",
         "provider": "pano",
         "owner": "Pacific Power",
         "county": "Josephine",
         "state": "OR",
-        "feed": "https://pacificpower.wildfirewatch.com/station/0600984faa8e464496ee945509cfd5ad",
-        "viewshedStatus": "pending"
+        "feed": "https://pacificpower.wildfirewatch.com/station/0600984faa8e464496ee945509cfd5ad"
       }
     },
     {

@@ -1,11 +1,11 @@
 # OWDCIC cameras without matched viewsheds
 
-Updated October 12, 2026. 85 ALERTWest, 68 Pano AI, and 87 EnviroVision sites have published viewsheds.
+Updated October 20, 2026. 85 ALERTWest, 69 Pano AI, and 87 EnviroVision sites have published viewsheds.
 The sites below are in the installation sheet but have no viewshed yet; every other
 site with a location and camera height is modeled. Gold Hill and Dry Mountain use
 heights the sheet marks as estimated.
 
-## Blocked: 4 sites
+## Blocked: 3 sites
 
 `data/camera-viewsheds-blocked.json` is the generated copy of this list.
 
@@ -14,7 +14,6 @@ heights the sheet marks as estimated.
 | Natapoc Ridge | ALERTWest | Confirm which camera (8603 or 15871) gets the sheet's 89 ft height |
 | Natapoc Ridge North | ALERTWest | Confirm which camera (8603 or 15871) gets the sheet's 84 ft height; North is provisionally the northern point |
 | Anderson | ALERTWest | Coordinates; the sheet gives only an estimated 50 ft height, so it is not mapped |
-| Midnight Gulch | Pano AI (Pacific Power) | Camera height |
 
 **Clearwater Wind Farm** (Pano AI, PGE table) is held out of the map: its sheet coordinates
 (46.85, -106.01) are in Montana. Remove it from `excluded` in `data/camera-site-supplements.json` once clarified.
@@ -51,4 +50,5 @@ The web map joins live ALERTWest cameras to viewsheds by ALERTWest site id, then
 
 - **Halfway** uses the digitized lookout (44.859994, -117.088277), about 5.1 km from the archived API point (44.8814, -117.0316). This was a location-priority choice, not confirmation that the archive was wrong.
 - Duplicate camera heads at Halfway and Mt Defiance share one modeled location each.
+- **Stacker Butte 2** (installed July 7, 2026, per the sheet's install-date list) is a second camera on the Stacker Butte tower. It is assumed to be at the same height with no added view, so the Stacker Butte viewshed covers it.
 - Coordinate sources and aliases for the October 2026 additions are recorded in `data/camera-site-supplements.json`.
