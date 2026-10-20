@@ -32,6 +32,7 @@ import {
   attachViewshedIds,
   camerasToGeoJSON,
   filterGeoJSONByBounds,
+  outsideApiSitesToCameras,
   providerSitesToCameras,
 } from './geojson-transform.js';
 import { initLegend } from './legend.js';
@@ -530,8 +531,10 @@ async function loadMapLayers(map) {
         LEGEND_LAYERS.alertWestCameras,
         Promise.all([data.cameras, data.viewshedManifest, data.alertWestSites]),
         ([cameras, viewshedManifest, sites]) => {
+          // sites kept out of the API still get a marker, drawn from the sites file
+          const allCameras = { features: [...cameras.features, ...outsideApiSitesToCameras(sites)] };
           // selection ids must be attached before features reach either UI
-          const features = attachViewshedIds(cameras, viewshedManifest, sites).features;
+          const features = attachViewshedIds(allCameras, viewshedManifest, sites).features;
           setSourceData(map, LAYER_IDS.cameras, { type: 'FeatureCollection', features });
           return features;
         }
