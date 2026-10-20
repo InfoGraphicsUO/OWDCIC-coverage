@@ -13,6 +13,8 @@ export const DATA_URLS = Object.freeze({
   cameraViewshedsSourceLayer: 'camera_viewsheds',
   cameraViewshedsCoverageSourceLayer: 'camera_viewshed_coverage',
   viewshedManifest: 'data/alertwest-viewshed-manifest.json',
+  // per-camera coverage and land status for the camera results
+  cameraCoverage: 'data/camera-coverage.json',
   // latest Pano AI camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.3eiwtk/
   // an empty value shows the legend row as unpublished instead of requesting tiles
   panoCameraViewsheds: 'mapbox://infographics.3eiwtk',
@@ -27,10 +29,10 @@ export const DATA_URLS = Object.freeze({
   digitizedCameraSources: 'data/digitized-camera-sources.geojson',
   standingLookouts: 'data/standing-lookouts.geojson',
   transmissionLines: 'data/transmission-lines.geojson',
-  censusStateBoundaries:
-    'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/10',
-  worldCountries:
-    'https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0',
+  // names of every division option, so the filter search needs no geometry
+  divisionOptions: 'data/map-divisions/options.json',
+  // the region outline and the hatched states and Canada around it
+  regionFocus: 'data/region-focus.geojson',
   nifcFires:
     'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Incident_Locations_Current/FeatureServer/0',
   nifcPerimeters:
@@ -139,7 +141,7 @@ export const LEGEND_LAYERS = Object.freeze({
 
 // every filter group the code can build, as [type id, label shown in the panel]
 // js/visible-content.js picks which of these the site shows and in what order
-// camera is the only non-polygon type; the others load data/divisions/<type id>.geojson
+// camera is the only non-polygon type; the others load data/map-divisions/<type id>.geojson
 export const FILTER_TYPES = Object.freeze([
   ['state', 'State'],
   ['county', 'County'],

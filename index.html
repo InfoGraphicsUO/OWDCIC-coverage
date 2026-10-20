@@ -4,6 +4,9 @@
         <meta charset="UTF-8">
         <title>OWDCIC Camera Coverage</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- the gl script and css load without cors, the style and tiles with it -->
+        <link rel="preconnect" href="https://api.mapbox.com">
+        <link rel="preconnect" href="https://api.mapbox.com" crossorigin>
         <link rel="preconnect" href="https://kit.fontawesome.com" crossorigin>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +21,6 @@
         <script defer src="js/search-region-filter.js"></script>
         <script defer src="https://api.mapbox.com/search-js/v1.5.0/web.js"></script>
         <script defer src="https://kit.fontawesome.com/be4ea184d4.js" crossorigin="anonymous"></script>
-        <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
         
         <link rel="stylesheet" href="css/site.css">
         <link rel="stylesheet" href="css/map.css">

@@ -213,6 +213,18 @@ class SelectionDataTests(unittest.TestCase):
                     self.assertFalse(geometry.is_empty)
                     self.assertGreater(geometry.area, 0)
 
+    def test_map_copies_match_the_full_divisions(self):
+        # scripts/data-builders/build-map-divisions.py must rerun after any division or metrics build
+        options = json.loads((ROOT / 'data/map-divisions/options.json').read_text())
+        for kind in KINDS:
+            with self.subTest(kind=kind):
+                full = json.loads((ROOT / f'data/divisions/{kind}.geojson').read_text())['features']
+                copy = json.loads((ROOT / f'data/map-divisions/{kind}.geojson').read_text())['features']
+                self.assertEqual([(f['id'], f['properties']) for f in copy],
+                                 [(f['id'], f['properties']) for f in full])
+                self.assertEqual([entry['divisionId'] for entry in options[kind]],
+                                 [f['properties']['divisionId'] for f in full])
+
 
 if __name__ == '__main__':
     unittest.main()
