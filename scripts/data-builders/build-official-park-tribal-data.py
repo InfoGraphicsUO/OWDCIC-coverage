@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Refresh the local park and tribal boundary indexes from official services.
+"""refresh the local park and tribal boundary indexes from official services
 
-The generated files intentionally keep source geometries intact and add the
-stable division fields consumed by the map. Tribal records are selected by
-their representative point inside the existing OR/WA mask so neighboring
-state records from the Census service are excluded.
+the generated files keep source geometries intact and add the stable division
+fields consumed by the map. tribal records are selected by their representative
+point inside the existing OR/WA mask so neighboring state records from the
+Census service are excluded
 """
 
 from __future__ import annotations

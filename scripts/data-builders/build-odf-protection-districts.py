@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Build the selectable ODF forest protection district GeoJSON product.
+"""build the selectable ODF forest protection district GeoJSON product
 
-Geometries come from the Oregon Department of Forestry district boundary
+geometries come from the Oregon Department of Forestry district boundary
 service, plus one "All ODF districts" feature holding their union so the
 combined result is measured on the merged land, not summed per district. Area
 and viewshed metrics stay null until scripts/build-selection-metrics.py is run
-with --only odf-protection-district.
+with --only odf-protection-district
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ ASSOCIATION_SUFFIX = re.compile(r"\bFPA$")
 
 
 def display_name(source_name: str) -> str:
-    """Return the ODF unit name people use, e.g. Central Oregon District."""
+    """returns the ODF unit name people use, e.g. Central Oregon District"""
     name = source_name.strip()
     return name if ASSOCIATION_SUFFIX.search(name) else f"{name} District"
 
@@ -82,7 +82,7 @@ def normalized_feature(feature: dict) -> dict:
 
 
 def combined_feature(districts: list[dict]) -> dict:
-    """The union of every district; the map highlights the members, not this shape."""
+    """the union of every district; the map highlights the members, not this shape"""
     geometry = repaired_geometry(mapping(unary_union([shape(item["geometry"]) for item in districts])))
     return division_feature(f"{DIVISION_TYPE}:all", ALL_DISTRICTS_NAME, "all",
                             geometry, memberDivisionIds=[item["id"] for item in districts])

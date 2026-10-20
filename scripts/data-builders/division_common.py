@@ -1,8 +1,8 @@
-"""Helpers shared by the builders that write data/divisions/.
+"""helpers shared by the builders that write data/divisions/
 
-The builders run as standalone scripts, and this folder is on their import
+the builders run as standalone scripts, and this folder is on their import
 path, so each one imports this module directly. Shapely is imported lazily
-because the utility and federal land builder runs on OGR alone.
+because the utility and federal land builder runs on OGR alone
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ OUT = ROOT / "data" / "divisions"
 
 
 def arcgis_query(url: str, params: dict[str, str], timeout: int = 120) -> tuple[dict, str, str]:
-    """Return an ArcGIS query's payload, its full request URL and a hash of the raw response."""
+    """returns an ArcGIS query's payload, its full request URL and a hash of the raw response"""
     source = f"{url}?{urlencode(params)}"
 
     with urlopen(source, timeout=timeout) as response:
@@ -36,7 +36,7 @@ def arcgis_query(url: str, params: dict[str, str], timeout: int = 120) -> tuple[
 
 
 def pending_metrics() -> dict:
-    """Area and coverage fields, null until scripts/build-selection-metrics.py fills them."""
+    """area and coverage fields, null until scripts/build-selection-metrics.py fills them"""
     return {
         "landAreaSqKm": None,
         "cameraViewshedAreaSqKm": None,
@@ -66,7 +66,7 @@ def write_collection(path: Path, collection: dict) -> None:
 
 
 def repaired_geometry(geometry: dict):
-    """Return a valid shapely polygonal geometry, dropping non-area artifacts."""
+    """returns a valid shapely polygonal geometry, dropping non-area artifacts"""
     from shapely.geometry import GeometryCollection, MultiPolygon, Polygon, shape
     from shapely.validation import make_valid
 
@@ -89,7 +89,7 @@ def repaired_geometry(geometry: dict):
 
 
 def coordinates(geometry: dict):
-    """Yield every position in a GeoJSON geometry."""
+    """yields every position in a GeoJSON geometry"""
 
     def walk(value):
         if isinstance(value, (list, tuple)) and value and isinstance(value[0], (int, float)):

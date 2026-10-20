@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Precompute OR/WA land coverage and exclusive land designation shares.
+"""precompute OR/WA land coverage and exclusive land designation shares
 
-Run with the QGIS bundled Python/GDAL runtime. Source downloads are cached in
-outputs/source-cache so repeat builds use the same Census hydro snapshot.
+run with the QGIS bundled Python/GDAL runtime; source downloads are cached in
+outputs/source-cache so repeat builds use the same Census hydro snapshot
 """
 from __future__ import annotations
 
@@ -93,7 +93,7 @@ def digest(path: Path) -> str:
 
 
 class CategoryIndex:
-    """Spatial index for exact, selection-local category intersections."""
+    """spatial index for exact, selection-local category intersections"""
 
     def __init__(self, geometries):
         self.geometries = []
@@ -372,9 +372,9 @@ def load_federal_categories(path: Path, land):
     for feature in features:
         # matched by id because the display names are option labels
         manager = feature['properties']['divisionId'].split(':')[1]
-        # The source service also includes DOD and some OTHF proclamation
-        # boundaries; fee-only versions of other agencies come from PAD-US Fee.
-        # DOI repeats BLM, FWS and NPS, so it would double count here.
+        # the source service also includes DOD and some OTHF proclamation
+        # boundaries; fee-only versions of other agencies come from PAD-US Fee
+        # DOI repeats BLM, FWS and NPS, so it would double count here
         if manager in ('DOD', 'OTHF', 'DOI'):
             continue
         label = ('National Park Service land' if manager == 'NPS'
@@ -478,7 +478,7 @@ def mix_for(geometry, total, designation):
             rows.append((label, area))
 
     rows.append(('Other/unclassified', max(0.0, total - sum(area for _, area in rows))))
-    # Derive the remainder from rounded prior shares so printed figures total 100%.
+    # remainder comes from the rounded prior shares so printed figures total 100%
     result = [{'label': label, 'percentage': round(area / total * 100, 2),
                'areaSqKm': area_sqkm(area)} for label, area in rows[:-1]]
     result.append({'label': 'Other/unclassified',
@@ -593,8 +593,8 @@ def run(args):
             area = selected.area
 
             if not math.isfinite(area) or area <= 0:
-                # Generalized country coastlines can miss true OR/WA land by a few
-                # hundred meters; keep those records against state land minus hydro.
+                # generalized country coastlines can miss true OR/WA land by a few
+                # hundred meters; keep those records against state land minus hydro
                 selected = polygon.intersection(state_land)
                 area = selected.area
 

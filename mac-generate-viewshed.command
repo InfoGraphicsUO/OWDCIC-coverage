@@ -4,6 +4,7 @@ set -euo pipefail
 RUNNER_DIR=${0:A:h}
 QGIS_APP=${OWDCIC_QGIS_ROOT:-/Applications/QGIS-final-4_2_1.app}
 
+# point the QGIS-bundled python at its own GDAL, PROJ, and Qt instead of any system copies
 export OWDCIC_QGIS_ROOT="$QGIS_APP"
 export PYTHONPATH="$QGIS_APP/Contents/Resources/python3.12/site-packages"
 export QT_PLUGIN_PATH="$QGIS_APP/Contents/PlugIns"

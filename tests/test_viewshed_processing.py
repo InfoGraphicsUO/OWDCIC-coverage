@@ -265,6 +265,7 @@ class DatasetMergeTests(unittest.TestCase):
         return path
 
     def test_other_cameras_do_not_change_a_camera_hash(self):
+        # only this camera's own fields feed its hash, so renaming it must not force a rebuild
         moved = {**self.SITE, "height_ft": 40.0}
         renamed = {**self.SITE, "source_id": 9, "name": "Renamed", "aliases": ["Old Camera"]}
         self.assertEqual(
@@ -338,6 +339,7 @@ class MajorityFilterTests(unittest.TestCase):
         self.assertEqual(viewsheds.majority_filter_array(values)[1, 1], 1)
 
     def test_outside_raster_is_invisible(self):
+        # cells past the edge count as not visible, so a corner loses its majority
         values = np.ones((3, 3), dtype=np.uint8)
         result = viewsheds.majority_filter_array(values)
         self.assertEqual(result[0, 0], 0)
@@ -459,6 +461,7 @@ class PublishTests(unittest.TestCase):
     def test_partial_output_folder_cannot_unpublish_viewsheds(self):
         with tempfile.TemporaryDirectory() as directory:
             data = Path(directory) / "data"
+            # the output folder lacks pano-b, which is still on the map, so the publish must fail untouched
             published = self.write_manifest(data, "pano-a", "pano-b")
             before = published.read_bytes()
             manifest = self.write_manifest(Path(directory) / "output", "pano-a")

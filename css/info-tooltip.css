@@ -21,6 +21,7 @@
 
 .info-tooltip {
     position: fixed;
+    /* above modals (1100) so info buttons inside dialogs still show their tooltip */
     z-index: 1200;
     box-sizing: border-box;
     width: max-content;

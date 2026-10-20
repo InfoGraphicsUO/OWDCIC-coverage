@@ -1,4 +1,4 @@
-"""Checks the data release's shapefile schema and README text without GDAL."""
+"""checks the data release's shapefile schema and README text without GDAL"""
 import importlib.util
 from pathlib import Path
 import sys

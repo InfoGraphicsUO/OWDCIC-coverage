@@ -1,6 +1,6 @@
 const REGION_STATE_CODES = new Set(['OR', 'WA']);
 
-// converts Oregon and Washington AlertWest camera records into GeoJSON points
+// converts Oregon and Washington ALERTWest camera records into GeoJSON points
 export function camerasToGeoJSON(cameras) {
   if (!Array.isArray(cameras)) {
     throw new TypeError('Camera API returned an unexpected payload');
@@ -80,7 +80,7 @@ export function providerSitesToCameras(sites, operator) {
 export const VIEWSHED_MATCH_RADIUS_M = 250;
 
 // links live camera points to viewshed ids from manifest
-// join order: explicit AlertWest site id, then nearest viewshed site within
+// join order: explicit ALERTWest site id, then nearest viewshed site within
 // VIEWSHED_MATCH_RADIUS_M, then normalized name or alias
 export function attachViewshedIds(cameras, manifest, siteLocations) {
   const cameraFeatures = getFeatures(cameras);
