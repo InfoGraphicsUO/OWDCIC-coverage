@@ -428,6 +428,8 @@ const resultsControl = initResultsPanel({
 const filterControl = initFilterPanel({
   types: FILTER_TYPES.map(({ value, label, group }) => ({
     value, label, group, parent: nestedFilterParent(value, FILTER_TYPES),
+    // clicking the picked camera again clears it, matching the map toggle
+    deselectable: value === 'camera',
   })),
   loadOptions: loadFilterOptions,
   onTypeSelected: typeSelected,

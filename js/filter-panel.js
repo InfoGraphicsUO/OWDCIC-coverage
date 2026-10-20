@@ -8,6 +8,7 @@
  * option data stays cached after a successful load for the life of this panel
  * a type with parent { type, option } opens from that option of its parent type
  * instead of listing on its own, and its back button returns to the parent
+ * a type with deselectable: true drops its picked option when that row is clicked again
  */
 export function initFilterPanel({
   types = [],
@@ -220,11 +221,11 @@ export function initFilterPanel({
     // options that name their own group, like cameras by provider, use the same buckets
     const grouped = visible.some((option) => option.group);
     if (activeType && (STATE_SPLIT_TYPES.has(activeType.value) || grouped)) {
-      renderGroupedItems(optionList, visible, activeId, (option) => chooseOption(option), {
+      renderGroupedItems(optionList, visible, activeId, (option) => clickOption(option), {
         query,
       });
     } else {
-      renderItems(optionList, visible, activeId, (option) => chooseOption(option));
+      renderItems(optionList, visible, activeId, (option) => clickOption(option));
     }
 
     if (!visible.length && options.length) setStatus('No options match that search.', true);
@@ -295,6 +296,16 @@ export function initFilterPanel({
     activeId = option.value;
     renderOptions();
     await onSelection(activeType.value, option.value);
+  };
+
+  // only row clicks toggle; map picks through select() always keep their option
+  const clickOption = async (option) => {
+    if (activeType?.deselectable && option && `${option.value}` === `${activeId}`) {
+      await clearSelection();
+      return;
+    }
+
+    await chooseOption(option);
   };
 
   const reset = async () => {
