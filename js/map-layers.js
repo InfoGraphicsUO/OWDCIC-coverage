@@ -1081,8 +1081,9 @@ function optionSelected(type, id) {
     }
 
     // search and link picks add the camera; only row and map clicks remove one
+    const added = !selectedCameras.has(cameraOptionId(feature));
     selectedCameras.set(cameraOptionId(feature), feature);
-    cameraSelectionChanged();
+    cameraSelectionChanged({ added });
     return;
   }
 
@@ -1120,7 +1121,7 @@ async function cameraClicked(cameraId, mapFeature) {
   }
 
   // a newly added camera's row is scrolled into view in the camera list
-  await cameraSelectionChanged({ reveal: added ? cameraOptionId(feature) : null });
+  await cameraSelectionChanged({ reveal: added ? cameraOptionId(feature) : null, added, fromMap: true });
 }
 
 // camera list row clicks add or remove that camera
@@ -1131,8 +1132,7 @@ async function cameraRowToggled(cameraId) {
     return;
   }
 
-  toggleCamera(feature);
-  await cameraSelectionChanged();
+  await cameraSelectionChanged({ added: toggleCamera(feature) });
 }
 
 // returns true when the camera was added, false when it was removed
@@ -1143,8 +1143,9 @@ function toggleCamera(feature) {
   return true;
 }
 
-// one place turns the selected cameras into highlights, list rows, and results
-async function cameraSelectionChanged({ reveal = null } = {}) {
+// one place turns the selected cameras into highlights, list rows, results, and map movement
+// map clicks leave the view alone so the next camera stays under the cursor
+async function cameraSelectionChanged({ reveal = null, added = true, fromMap = false } = {}) {
   if (!activeMap) return;
   applyViewshedHighlights(activeMap);
   filterControl.setSelected('camera', [...selectedCameras.keys()], { reveal });
@@ -1157,11 +1158,32 @@ async function cameraSelectionChanged({ reveal = null } = {}) {
   }
 
   if (features.length === 1) {
-    showCameraResult(activeMap, features[0]);
+    // the first camera centers like a single selection; dropping back to one keeps the view
+    showCameraResult(activeMap, features[0], { fit: added });
+    if (!added && !fromMap) revealCameras(activeMap, features);
     return;
   }
 
   showCameraList(features);
+  if (!fromMap) revealCameras(activeMap, features);
+}
+
+// zooms out only as far as needed when a selected camera is off screen, never in
+function revealCameras(map, features) {
+  const points = features
+    .map((feature) => feature.geometry?.coordinates)
+    .filter((point) => Array.isArray(point) && Number.isFinite(point[0]) && Number.isFinite(point[1]));
+  if (!points.length) return;
+
+  const view = map.getBounds();
+  if (points.every((point) => view.contains(point))) return;
+
+  const longitudes = points.map(([longitude]) => longitude);
+  const latitudes = points.map(([, latitude]) => latitude);
+  fitMapToBounds(map, [
+    [Math.min(...longitudes), Math.min(...latitudes)],
+    [Math.max(...longitudes), Math.max(...latitudes)],
+  ], { maxZoom: map.getZoom() });
 }
 
 function showCameraList(features) {
@@ -1215,7 +1237,7 @@ function enableClearForResult() {
   filterControl.setClearEnabled?.(true);
 }
 
-async function showCameraResult(map, feature) {
+async function showCameraResult(map, feature, { fit = true } = {}) {
   // each selection owns a token; only its latest response may update the panel
   const request = ++cameraResultRequest;
   const properties = feature.properties || {};
@@ -1242,7 +1264,7 @@ async function showCameraResult(map, feature) {
     : null;
   resultsControl.showCamera(properties, metrics, feature);
   collapseControlsOnNarrowScreen();
-  fitMapToCamera(map, feature);
+  if (fit) fitMapToCamera(map, feature);
 }
 
 function showDivisionType(map, typeValue) {
