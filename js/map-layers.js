@@ -277,8 +277,8 @@ let cameraFeatures = [];
 
 // names the camera whose viewshed is highlighted, for the export legend
 let highlightedCameraName = '';
-// a second click on the highlighted camera clears it
-let highlightedViewshedId = '';
+// a second click on the highlighted camera clears it; cameras on one tower can share a viewshed
+let highlightedCameraId = '';
 let resolveCameraFeatures;
 
 // camera options wait for the provider data while division sources wait for map setup
@@ -1109,7 +1109,7 @@ async function cameraClicked(cameraId, mapFeature) {
 
   hideCameraPreview(activeMap);
   const viewshedId = feature.properties?.viewshed_id;
-  if (viewshedId && viewshedId === highlightedViewshedId) {
+  if (viewshedId && cameraOptionId(feature) === highlightedCameraId) {
     // an area result stays put and only loses the highlight
     if (polygonFilterIsActive()) selectCameraViewshed(activeMap, null);
     // the filter panel path keeps the menu, results, and link in sync
@@ -1117,7 +1117,7 @@ async function cameraClicked(cameraId, mapFeature) {
     return;
   }
 
-  selectCameraViewshed(activeMap, viewshedId, feature.properties?.name);
+  selectCameraViewshed(activeMap, viewshedId, feature.properties?.name, cameraOptionId(feature));
 
   // keep polygon details in the result panel while highlighting the camera
   if (polygonFilterIsActive()) return;
@@ -1177,7 +1177,7 @@ async function showCameraResult(map, feature) {
   // each selection owns a token; only its latest response may update the panel
   const request = ++cameraResultRequest;
   const properties = feature.properties || {};
-  selectCameraViewshed(map, properties.viewshed_id, properties.name);
+  selectCameraViewshed(map, properties.viewshed_id, properties.name, cameraOptionId(feature));
   enableClearForResult();
   resultsControl.showLoading(properties.name || 'Camera');
   writeAnchor('camera', cameraOptionId(feature));
@@ -2034,9 +2034,9 @@ function basemapColor(colors, basemap) {
   return colors[basemap] ?? colors.outdoors;
 }
 
-function selectCameraViewshed(map, viewshedId, cameraName = '') {
+function selectCameraViewshed(map, viewshedId, cameraName = '', cameraId = '') {
   highlightedCameraName = viewshedId ? cameraName || 'Camera' : '';
-  highlightedViewshedId = viewshedId || '';
+  highlightedCameraId = viewshedId ? cameraId : '';
 
   // provider viewshed ids are unique, so each highlight layer can share one filter
   // the sentinel produces an empty match while no camera is selected

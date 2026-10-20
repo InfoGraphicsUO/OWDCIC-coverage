@@ -370,6 +370,9 @@ export function initFilterPanel({
     const option = options.find((entry) => `${entry.value}` === `${id}`);
     if (!option) return false;
     await chooseOption(option);
+
+    // a map pick can land on a row far down the list, so bring it into view
+    scrollToSelected(optionList);
     return true;
   };
 
@@ -927,6 +930,17 @@ function optionMatchesQuery(option, query) {
   }
 
   return tokens.join(' ').includes(query);
+}
+
+// centers the selected row by scrolling only the list, never the page around it
+function scrollToSelected(list) {
+  const row = list.querySelector('[role="option"][aria-selected="true"]');
+  if (!row || row.closest('[hidden]')) return;
+
+  const listBox = list.getBoundingClientRect();
+  const rowBox = row.getBoundingClientRect();
+  const offset = rowBox.top - listBox.top - (listBox.height - rowBox.height) / 2;
+  list.scrollTop += offset;
 }
 
 function moveListFocus(list, event) {
