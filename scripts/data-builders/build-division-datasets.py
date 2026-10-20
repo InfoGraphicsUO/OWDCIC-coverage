@@ -124,12 +124,13 @@ def combined_feature(features, division_type, name=ALL_FORESTS_NAME, key="all", 
 
 
 def state_combined_features(features, division_type, states_path):
-    """An Oregon and a Washington option made of the forest land inside each state.
+    """an Oregon and a Washington option made of the forest land inside each state
 
-    A forest that crosses the state line joins each state as a portion of its own,
-    so no land counts toward both. Portions are only report members: they name
-    their forest in partOfDivisionId, and the map keeps drawing the whole forest.
-    Returns the state options and the portions.
+    a forest that crosses the state line joins each state as a portion of its own,
+    so no land counts toward both. portions are only report members: they name
+    their forest in partOfDivisionId, and the map keeps drawing the whole forest
+
+    returns the state options and the portions
     """
     from pyproj import Transformer
     from shapely import set_precision, to_geojson
