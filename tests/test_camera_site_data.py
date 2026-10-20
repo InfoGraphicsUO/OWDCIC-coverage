@@ -40,7 +40,8 @@ class CameraSiteDataTests(unittest.TestCase):
             self.assertEqual((entries[name]['status'], entries[name]['height_ft']), ('complete', height))
 
         blocked = {r['name'] for r in read('camera-viewsheds-blocked.json')}
-        self.assertTrue({'Natapoc Ridge', 'Natapoc Ridge North', 'Anderson', 'Midnight Gulch'} <= blocked)
+        self.assertTrue({'Natapoc Ridge', 'Natapoc Ridge North', 'Anderson'} <= blocked)
+        self.assertNotIn('Midnight Gulch', blocked)
         self.assertNotIn('Phoenix Water Tank', blocked)
 
     def test_october_sheet_additions(self):
@@ -61,8 +62,7 @@ class CameraSiteDataTests(unittest.TestCase):
 
         modeled = {e['site_name'] for provider in ['alertwest', 'pano']
                    for e in read(f'{provider}-viewshed-manifest.json')['viewsheds'] if e['status'] == 'complete'}
-        self.assertTrue({'Gold Hill', 'Dry Mountain', 'Sycan Substation', 'Takilma'} <= modeled)
-        self.assertNotIn('Midnight Gulch', modeled)
+        self.assertTrue({'Gold Hill', 'Dry Mountain', 'Sycan Substation', 'Takilma', 'Midnight Gulch'} <= modeled)
 
     def test_envirovision_sites(self):
         sites = {f['properties']['name']: f for f in read('envirovision-sites.geojson')['features']}
