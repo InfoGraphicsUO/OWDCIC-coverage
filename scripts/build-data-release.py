@@ -100,19 +100,19 @@ CAMERA_FIELDS = {
 COVERAGE_FIELDS = {"coverage": "string", "area_sqkm": "real"}
 
 FIELD_NOTES = {
-    "provider": "camera network: alertwest, pano, or envirovision",
-    "view_id": "viewshed id, unique across providers; matches the map and the camera layer",
+    "provider": "camera network (alertwest | pano | envirovision)",
+    "view_id": "viewshed id; unique across providers; joins camera_locations to *_viewsheds",
     "site_name": "camera site name",
-    "state": "state the camera stands in (OR, WA, or blank outside both)",
-    "owner": "organization that runs the camera, where known (Pano AI sites)",
-    "height_ft": "camera height above ground in feet, used as the observer height",
-    "height_m": "the same height in meters",
-    "radius_m": "analysis radius around the camera in meters (12 miles)",
-    "area_sqkm": "polygon area in square kilometers, measured in EPSG:5070",
-    "longitude": "camera longitude, WGS 84",
-    "latitude": "camera latitude, WGS 84",
-    "viewshed": "yes when the camera has a viewshed in this release; no when it is still missing one",
-    "coverage": "area the coverage was dissolved for (or, wa, or or-wa)",
+    "state": "state of the camera location (OR | WA | blank if neither)",
+    "owner": "camera operator; Pano AI sites only",
+    "height_ft": "camera height above ground (ft); used as observer height",
+    "height_m": "camera height above ground (m)",
+    "radius_m": "analysis radius (m)",
+    "area_sqkm": "polygon area (sq km), measured in EPSG:5070",
+    "longitude": "camera longitude (WGS 84)",
+    "latitude": "camera latitude (WGS 84)",
+    "viewshed": "viewshed included in this release (yes | no)",
+    "coverage": "coverage extent (or | wa | or-wa)",
 }
 
 
@@ -308,67 +308,76 @@ def write_polygons(path: Path, fields: dict[str, str], rows: list[tuple[Any, dic
     viewsheds.validate_vector(path, None, len(rows))
 
 
+def table(headers: list[str], rows: list[list[Any]]) -> str:
+    """left-aligned plain text columns"""
+    cells = [headers, *[[str(value) for value in row] for row in rows]]
+    widths = [max(len(row[column]) for row in cells) for column in range(len(headers))]
+
+    return "\n".join(
+        "  ".join(value.ljust(width) for value, width in zip(row, widths)).rstrip() for row in cells
+    )
+
+
 def field_table(fields: dict[str, str]) -> str:
-    return "\n".join(f"  {name:<10}  {FIELD_NOTES[name]}" for name in fields)
+    return table(["field", "type", "description"], [[name, kind, FIELD_NOTES[name]] for name, kind in fields.items()])
 
 
-def readme_text(
-    tag: str, label: str, state: str | None, contents: list[str], manifests: dict[str, dict]
-) -> str:
+def readme_text(tag: str, label: str, state: str | None, summary: dict[str, Any], manifests: dict[str, dict]) -> str:
     processing = next(iter(manifests.values()))["web_processing"]
-    runs = "\n".join(
-        f"  {PROVIDER_LABELS[provider]}: {manifest['generated_utc'][:10]}"
-        for provider, manifest in manifests.items()
-    )
-    scope = (
-        f"Viewshed layers hold the cameras that stand in {label}; each keeps its full\n"
-        f"viewshed, including any part that reaches across the state line. The coverage\n"
-        f"layer is clipped to {label}."
-        if state
-        else "Viewshed layers hold every mapped camera. The coverage layer is not clipped\nto a state."
-    )
+    cameras = summary["cameras"]
+    totals = [sum(row[column] for row in cameras) for column in (1, 2, 3)]
+    omitted = "\n".join(f"omitted: {name} (0 cameras in {label})" for name in summary["omitted"])
 
-    return f"""Oregon-Washington wildfire camera viewsheds: {label}
-Release {tag}, packaged {date.today().isoformat()}
-Interactive map: {MAP_URL}
-Questions and requests: https://github.com/{REPOSITORY}/issues
+    return f"""OWDCIC CAMERA VIEWSHEDS: {label.upper()}
 
-{scope}
+release: {tag}
+packaged: {date.today().isoformat()}
+map: {MAP_URL}
+issues: https://github.com/{REPOSITORY}/issues
+camera sources: https://github.com/{REPOSITORY}/blob/main/SOURCES.md
 
-Files
-{chr(10).join(f"  {line}" for line in contents)}
+SCOPE
+viewsheds: {f"cameras located in {label}; full viewsheds, not clipped at the state line" if state else "all cameras; full viewsheds"}
+coverage: {f"clipped to the {label} state boundary" if state else "not clipped to a state"}
 
-Viewsheds were last generated on
-{runs}
+FILES
+{table(["file", "features", "geometry", "crs"], summary["files"])}
+{omitted}
 
-Coordinate systems
-  Viewshed and coverage shapefiles: NAD83 / Conus Albers (EPSG:5070), meters
-  camera_locations: WGS 84 (EPSG:4326)
+CAMERAS
+{table(
+    ["provider", "sites", "with viewshed", "without viewshed", "viewsheds generated"],
+    [*[[PROVIDER_LABELS[row[0]], *row[1:]] for row in cameras], ["total", *totals, ""]],
+)}
 
-Method
-  Each viewshed is the land a camera can see within 12 miles, computed with
-  GDAL ViewshedGenerate on USGS 3DEP 1/3 arc-second terrain resampled to 10 m.
-  The observer stands at the camera's height above the ground, targets are at
-  ground level, and a refraction coefficient of {viewsheds.REFRACTION_COEFFICIENT} accounts for earth
-  curvature. Trees and buildings are not modeled, so real views are smaller.
+COVERAGE
+all providers, dissolved: {summary["coverage_sqkm"]:,.1f} sq km
 
-  These are the polygons shown on the map: the 10 m result is resampled to a
-  {processing['resolution_m']:g} m grid, cleaned with a 3x3 majority filter, simplified at {processing['simplify_tolerance_m']:g} m,
-  smoothed ({processing['smooth_iterations']} passes), and clipped to the coastline. Leftover vertices
-  within {VERTEX_TOLERANCE_M:g} m of a straight line are then dropped to keep the files small.
-  Exact 10 m polygons are available on request.
+CRS
+EPSG:5070: NAD83 / Conus Albers, meters (viewsheds, coverage)
+EPSG:4326: WGS 84, degrees (camera_locations)
 
-Viewshed fields (*_viewsheds.shp)
+METHOD
+engine: GDAL ViewshedGenerate
+terrain: USGS 3DEP 1/3 arc-second DEM, resampled to 10 m
+analysis radius: {summary["radius_m"]:,.0f} m (12 mi)
+observer height: camera height above ground
+target height: 0 m (ground level)
+refraction coefficient: {viewsheds.REFRACTION_COEFFICIENT}
+not modeled: vegetation, buildings
+generalization: {processing["resolution_m"]:g} m grid; 3x3 majority filter; {processing["simplify_tolerance_m"]:g} m simplification; {processing["smooth_iterations"]} smoothing passes; clipped to coastline; {VERTEX_TOLERANCE_M:g} m vertex cleanup
+matches: polygons shown on the map
+exact 10 m polygons: available on request
+
+FIELDS: *_viewsheds.shp
 {field_table(VIEWSHED_FIELDS)}
 
-Coverage fields (all_camera_coverage.shp)
+FIELDS: all_camera_coverage.shp
 {field_table(COVERAGE_FIELDS)}
 
-Camera fields (camera_locations.shp)
+FIELDS: camera_locations.shp
 {field_table(CAMERA_FIELDS)}
-
-Camera sources are listed at https://github.com/{REPOSITORY}/blob/main/SOURCES.md
-"""
+""".replace("\n\n\n", "\n\n")
 
 
 def build_bundle(
@@ -380,42 +389,47 @@ def build_bundle(
     cameras: list[dict[str, Any]],
     coverage: Any,
     manifests: dict[str, dict],
-) -> tuple[Path, list[str]]:
+) -> tuple[Path, dict[str, Any]]:
     """writes one bundle's shapefiles and README, then zips the folder"""
     if folder.exists():
         shutil.rmtree(folder)
 
     folder.mkdir(parents=True)
-    contents = []
+    summary: dict[str, Any] = {"files": [], "omitted": [], "cameras": [], "radius_m": None}
+    selected_cameras = [camera for camera in cameras if state is None or camera["state"] == state]
 
     for provider, rows in providers.items():
         selected = [row for row in rows if state is None or row[1]["state"] == state]
+        sites = [camera for camera in selected_cameras if camera["provider"] == provider]
+        with_viewshed = sum(camera["viewshed"] == "yes" for camera in sites)
+        summary["cameras"].append([
+            provider, len(sites), with_viewshed, len(sites) - with_viewshed,
+            manifests[provider]["generated_utc"][:10],
+        ])
+        name = f"{provider}_viewsheds.shp"
+
         if not selected:
-            contents.append(f"{provider}_viewsheds: none; no {PROVIDER_LABELS[provider]} cameras here")
+            summary["omitted"].append(name)
             continue
 
-        write_polygons(folder / f"{provider}_viewsheds.shp", VIEWSHED_FIELDS, selected)
-        contents.append(f"{provider}_viewsheds.shp: {len(selected)} {PROVIDER_LABELS[provider]} camera viewsheds")
+        write_polygons(folder / name, VIEWSHED_FIELDS, selected)
+        summary["files"].append([name, len(selected), "polygon", viewsheds.CANONICAL_CRS])
+        summary["radius_m"] = summary["radius_m"] or selected[0][1]["radius_m"]
 
     coverage_id = state.lower() if state else "or-wa"
+    summary["coverage_sqkm"] = area_sqkm(coverage)
     write_polygons(
         folder / "all_camera_coverage.shp",
         COVERAGE_FIELDS,
-        [(coverage, {"coverage": coverage_id, "area_sqkm": area_sqkm(coverage)})],
+        [(coverage, {"coverage": coverage_id, "area_sqkm": summary["coverage_sqkm"]})],
     )
-    contents.append(
-        f"all_camera_coverage.shp: every provider's viewsheds dissolved into one area "
-        f"({area_sqkm(coverage):,.0f} sq km)"
-    )
+    summary["files"].append(["all_camera_coverage.shp", 1, "polygon", viewsheds.CANONICAL_CRS])
 
-    selected_cameras = [camera for camera in cameras if state is None or camera["state"] == state]
     write_cameras(folder / "camera_locations.shp", selected_cameras)
-    missing = sum(camera["viewshed"] == "no" for camera in selected_cameras)
-    contents.append(
-        f"camera_locations.shp: {len(selected_cameras)} camera sites, {missing} still without a viewshed"
-    )
+    summary["files"].append(["camera_locations.shp", len(selected_cameras), "point", viewsheds.WEB_CRS])
+    summary["files"].append(["README.txt", "", "", ""])
 
-    (folder / "README.txt").write_text(readme_text(tag, label, state, contents, manifests), encoding="utf-8")
+    (folder / "README.txt").write_text(readme_text(tag, label, state, summary, manifests), encoding="utf-8")
 
     archive = folder.with_suffix(".zip")
     viewsheds.safe_unlink(archive)
@@ -424,20 +438,23 @@ def build_bundle(
         for path in sorted(folder.iterdir()):
             bundle.write(path, f"{folder.name}/{path.name}")
 
-    return archive, contents
+    return archive, summary
 
 
-def release_notes(tag: str, bundles: list[tuple[Path, str, list[str]]]) -> str:
-    sections = "\n\n".join(
-        f"**{label}** ([{archive.name}](https://github.com/{REPOSITORY}/releases/download/{tag}/{archive.name}))\n"
-        + "\n".join(f"- {line}" for line in contents)
-        for archive, label, contents in bundles
-    )
+def release_notes(tag: str, bundles: list[tuple[Path, str, dict[str, Any]]]) -> str:
+    sections = []
+
+    for archive, label, summary in bundles:
+        url = f"https://github.com/{REPOSITORY}/releases/download/{tag}/{archive.name}"
+        rows = "\n".join(f"| {name} | {features} |" for name, features, *_ in summary["files"][:-1])
+        sections.append(
+            f"### {label}\n\n[{archive.name}]({url})\n\n| file | features |\n| --- | --- |\n{rows}\n\n"
+            f"coverage: {summary['coverage_sqkm']:,.1f} sq km"
+        )
 
     return (
-        "Camera viewshed shapefiles for GIS use, matching the polygons on the "
-        f"[map]({MAP_URL}). Each zip has a README.txt with field descriptions and the method.\n\n"
-        f"{sections}\n"
+        f"Camera viewshed shapefiles. Polygons match the [map]({MAP_URL}). "
+        "Field definitions and method: README.txt in each zip.\n\n" + "\n\n".join(sections) + "\n"
     )
 
 
@@ -481,7 +498,7 @@ def main() -> int:
     for index, (suffix, label, state) in enumerate(BUNDLES):
         progress(0.55 + 0.3 * index / len(BUNDLES), f"packaging the {label} download")
         clipped = coverage if state is None else viewsheds.as_multipolygon(coverage.Intersection(states[state]))
-        archive, contents = build_bundle(
+        archive, summary = build_bundle(
             release_dir / f"{ASSET_PREFIX}-{suffix}",
             label,
             state,
@@ -491,7 +508,7 @@ def main() -> int:
             clipped,
             manifests,
         )
-        bundles.append((archive, label, contents))
+        bundles.append((archive, label, summary))
         print(f"wrote {archive} ({archive.stat().st_size / 1_000_000:.0f} MB)", flush=True)
 
     notes = release_dir / "release-notes.md"
