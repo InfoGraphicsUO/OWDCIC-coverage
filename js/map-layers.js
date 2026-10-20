@@ -277,6 +277,8 @@ let cameraFeatures = [];
 
 // names the camera whose viewshed is highlighted, for the export legend
 let highlightedCameraName = '';
+// a second click on the highlighted camera clears it
+let highlightedViewshedId = '';
 let resolveCameraFeatures;
 
 // camera options wait for the provider data while division sources wait for map setup
@@ -1104,7 +1106,16 @@ async function cameraClicked(cameraId, mapFeature) {
   if (!feature) return;
 
   hideCameraPreview(activeMap);
-  selectCameraViewshed(activeMap, feature.properties?.viewshed_id, feature.properties?.name);
+  const viewshedId = feature.properties?.viewshed_id;
+  if (viewshedId && viewshedId === highlightedViewshedId) {
+    // an area result stays put and only loses the highlight
+    if (polygonFilterIsActive()) selectCameraViewshed(activeMap, null);
+    // the filter panel path keeps the menu, results, and link in sync
+    else await filterControl.clearSelection();
+    return;
+  }
+
+  selectCameraViewshed(activeMap, viewshedId, feature.properties?.name);
 
   // keep polygon details in the result panel while highlighting the camera
   if (polygonFilterIsActive()) return;
@@ -2023,6 +2034,7 @@ function basemapColor(colors, basemap) {
 
 function selectCameraViewshed(map, viewshedId, cameraName = '') {
   highlightedCameraName = viewshedId ? cameraName || 'Camera' : '';
+  highlightedViewshedId = viewshedId || '';
 
   // provider viewshed ids are unique, so each highlight layer can share one filter
   // the sentinel produces an empty match while no camera is selected
