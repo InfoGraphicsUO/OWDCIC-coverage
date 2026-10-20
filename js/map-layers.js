@@ -260,13 +260,14 @@ const DIVISION_TYPES = Object.freeze(FILTER_TYPES
       layerId: `${prefix}-line`,
       labelLayerId: `${prefix}-labels`,
       selectedLayerId: `${prefix}-selected`,
-      dataUrl: `data/divisions/${value}.geojson`,
+      dataUrl: `data/map-divisions/${value}.geojson`,
     });
   }));
 
 // cache in-flight requests separately from parsed features used for selection
 const divisionLoads = new Map();
 const divisionFeatures = new Map();
+let divisionOptionsIndex;
 
 let activeMap;
 let activeFilterType = null;
@@ -298,7 +299,8 @@ let anchorRequest = 0;
 // incremented whenever another selection or clear action takes ownership of results
 let cameraResultRequest = 0;
 let digitizedCameraLoad;
-let transmissionLinesLoad;
+// legend label -> load promise for layers fetched the first time their row is switched on
+const deferredLayerLoads = new Map();
 
 // legend rows a filter preset switched on, hidden again when that filter is left
 // a row the user toggles themselves drops out and stays as they set it
@@ -428,6 +430,7 @@ const filterControl = initFilterPanel({
     value, label, group, parent: nestedFilterParent(value, FILTER_TYPES),
   })),
   loadOptions: loadFilterOptions,
+  searchOptions: searchFilterOptions,
   onTypeSelected: typeSelected,
   onSelection: optionSelected,
   onClear: clearFilter,
@@ -443,11 +446,19 @@ mapReady
 // cached styles are ready now; otherwise wait for the first load event
 function waitForMapLoad(map) {
   // an already-loaded style can proceed without waiting for another event
-  if (map.loaded()) return map;
+  if (map.loaded()) return markLoad('style loaded', map);
 
   return new Promise((resolve) => {
-    map.once('load', () => resolve(map));
+    map.once('load', () => resolve(markLoad('style loaded', map)));
   });
+}
+
+// timings show in the devtools performance panel, or list them with
+// performance.getEntriesByType('mark').filter(({ name }) => name.startsWith('owdcic:'))
+// startTime is milliseconds since the page started loading
+function markLoad(name, value) {
+  performance.mark(`owdcic: ${name}`);
+  return value;
 }
 
 // register empty layers while providers run, then hydrate each source as ready
@@ -498,16 +509,20 @@ async function loadMapLayers(map) {
   }
 
   bindDigitizedCameraUnlock(map);
-  // a filter preset may have switched the row on before the map connected
-  legendControl.onChange(() => loadTransmissionLines(map));
-  loadTransmissionLines(map);
+  // a filter preset may have switched a row on before the map connected
+  legendControl.onChange(() => loadDeferredLayers(map));
+  loadDeferredLayers(map);
 
   // slow providers hydrate in the background after the map becomes usable
   hideMapLoading();
+  markLoad('map usable');
+  // fetch camera metrics now so the first camera pick is not waiting on them
+  loadCameraMetrics();
 
   await Promise.all([
     data.regionFocus.then((regionFocus) => {
       setSourceData(map, LAYER_IDS.regionFocusSource, regionFocus);
+      markLoad('region outline loaded');
     }),
     // the camera filter lists every provider, so it waits for all of them
     Promise.all([
@@ -581,14 +596,8 @@ async function loadMapLayers(map) {
     hydrateLegendLayer('Standing lookouts', data.lookouts, (lookouts) => {
       setSourceData(map, LAYER_IDS.lookouts, lookouts);
     }),
-    hydrateLegendLayer(
-      'National forests',
-      data.nationalForests,
-      (nationalForests) => {
-        setSourceData(map, LAYER_IDS.nationalForestsSource, nationalForests);
-      }
-    ),
   ]);
+  markLoad('startup data loaded');
 }
 
 async function hydrateLegendLayer(label, dataPromise, applyData) {
@@ -597,6 +606,7 @@ async function hydrateLegendLayer(label, dataPromise, applyData) {
     return applyData(await dataPromise);
   } finally {
     legendControl.setLoading(label, false);
+    markLoad(`${label} loaded`);
   }
 }
 
@@ -690,21 +700,38 @@ function addContextLayers(map) {
   });
 }
 
-// the lines are a couple of megabytes, so they load the first time the row is switched on
-function loadTransmissionLines(map) {
-  if (!legendControl.isChecked(LEGEND_LAYERS.transmissionLines)) return;
-  if (transmissionLinesLoad) return;
-
-  legendControl.setLoading(LEGEND_LAYERS.transmissionLines, true);
-  transmissionLinesLoad = hydrateLegendLayer(
-    LEGEND_LAYERS.transmissionLines,
-    safelyLoadLegend('transmission lines', LEGEND_LAYERS.transmissionLines, () =>
-      fetchJson(DATA_URLS.transmissionLines, 'Transmission lines')
-    ),
-    (transmissionLines) => {
-      setSourceData(map, LAYER_IDS.transmissionLinesSource, transmissionLines);
-    }
+// layers that are off at startup and slow or heavy to fetch wait until their row is switched on
+function loadDeferredLayers(map) {
+  // the lines are a couple of megabytes
+  loadLayerWhenChecked(map, LEGEND_LAYERS.transmissionLines, LAYER_IDS.transmissionLinesSource, () =>
+    fetchJson(DATA_URLS.transmissionLines, 'Transmission lines')
   );
+  // the Forest Service query is the slowest request the map makes
+  loadLayerWhenChecked(map, LEGEND_LAYERS.nationalForests, LAYER_IDS.nationalForestsSource, () =>
+    fetchArcGISGeoJSON(DATA_URLS.nationalForests, {
+      where: "ownerclassification='USDA FOREST SERVICE'",
+      outFields: 'ownerclassification,forestname',
+      orderByFields: 'objectid',
+      geometry: REGION_DATA_BOUNDS.flat().join(','),
+      geometryType: 'esriGeometryEnvelope',
+      // bounds are longitude and latitude, so tell ArcGIS their input CRS
+      inSR: '4326',
+      spatialRel: 'esriSpatialRelIntersects',
+      geometryPrecision: '4',
+      maxAllowableOffset: '0.005',
+    })
+  );
+}
+
+function loadLayerWhenChecked(map, label, sourceId, loader) {
+  if (!legendControl.isChecked(label) || deferredLayerLoads.has(label)) return;
+
+  legendControl.setLoading(label, true);
+  deferredLayerLoads.set(label, hydrateLegendLayer(
+    label,
+    safelyLoadLegend(label.toLowerCase(), label, loader),
+    (data) => setSourceData(map, sourceId, data)
+  ));
 }
 
 // QWRA tiles encode pre-classed colors rather than raw probability values
@@ -959,7 +986,31 @@ async function loadDivisionOptions(map, typeValue) {
     }),
   });
 
-  return data.features.filter((feature) => !isDivisionPortion(feature)).map((feature) => ({
+  return divisionOptions(division, data.features);
+}
+
+// names-only options for the panel search, so typing never downloads geometry
+async function searchFilterOptions(typeValue) {
+  if (typeValue === 'camera') return loadFilterOptions(typeValue);
+  const division = divisionType(typeValue);
+  if (!division) throw new Error(`Unknown division type: ${typeValue}`);
+
+  divisionOptionsIndex ??= fetchJson(DATA_URLS.divisionOptions, 'Division options')
+    .catch((error) => {
+      // let a later search retry after network or parse failure
+      divisionOptionsIndex = null;
+      throw error;
+    });
+  const properties = (await divisionOptionsIndex)[typeValue] ?? [];
+  return divisionOptions(division, properties
+    .filter((entry) => filterOptionIsVisible(division, entry))
+    .map((entry) => ({ properties: entry })));
+}
+
+// the menu entries for a division type, from full features or the names-only index
+function divisionOptions(division, features) {
+  const typeValue = division.value;
+  return features.filter((feature) => !isDivisionPortion(feature)).map((feature) => ({
     value: feature.properties.divisionId,
     label: typeValue === 'utility'
       ? `${feature.properties.label}`
@@ -1169,15 +1220,7 @@ async function showCameraResult(map, feature) {
   resultsControl.showLoading(properties.name || 'Camera');
   writeAnchor('camera', cameraOptionId(feature));
 
-  // share one metrics request across camera picks
-  cameraMetricsLoad ??= fetchJson('data/camera-coverage.json', 'Camera coverage')
-    .catch((error) => {
-      cameraMetricsLoad = null;
-      console.error('Failed to load camera coverage:', error);
-      return {};
-    });
-
-  const metricsById = await cameraMetricsLoad;
+  const metricsById = await loadCameraMetrics();
   // a newer pick owns the panel if this request finished late
   if (request !== cameraResultRequest) return;
 
@@ -1189,6 +1232,17 @@ async function showCameraResult(map, feature) {
   resultsControl.showCamera(properties, metrics, feature);
   collapseControlsOnNarrowScreen();
   fitMapToCamera(map, feature);
+}
+
+// share one metrics request across camera picks
+function loadCameraMetrics() {
+  cameraMetricsLoad ??= fetchJson(DATA_URLS.cameraCoverage, 'Camera coverage')
+    .catch((error) => {
+      cameraMetricsLoad = null;
+      console.error('Failed to load camera coverage:', error);
+      return {};
+    });
+  return cameraMetricsLoad;
 }
 
 function showDivisionType(map, typeValue) {
@@ -1228,6 +1282,7 @@ function loadDivisionData(division) {
           visible.map((feature) => [feature.properties?.divisionId, feature])
         );
         divisionFeatures.set(division.value, features);
+        markLoad(`${division.label} areas loaded`);
         return { ...data, features: visible };
       })
       .catch((error) => {
@@ -1588,8 +1643,7 @@ function loadLayerData() {
           // simplify on the service so large perimeters stay compact in transit
           geometryPrecision: '3',
           maxAllowableOffset: '0.01',
-        },
-        { pageSize: 25 }
+        }
       )
     ),
 
@@ -1620,24 +1674,6 @@ function loadLayerData() {
 
     lookouts: safelyLoadLegend('standing lookouts', 'Standing lookouts', () =>
       fetchJson(DATA_URLS.standingLookouts, 'Standing lookouts')
-    ),
-
-    nationalForests: safelyLoadLegend(
-      'national forests',
-      'National forests',
-      () =>
-        fetchArcGISGeoJSON(DATA_URLS.nationalForests, {
-          where: "ownerclassification='USDA FOREST SERVICE'",
-          outFields: 'ownerclassification,forestname',
-          orderByFields: 'objectid',
-          geometry: REGION_DATA_BOUNDS.flat().join(','),
-          geometryType: 'esriGeometryEnvelope',
-          // bounds are longitude and latitude, so tell ArcGIS their input CRS
-          inSR: '4326',
-          spatialRel: 'esriSpatialRelIntersects',
-          geometryPrecision: '4',
-          maxAllowableOffset: '0.005',
-        })
     ),
   };
 }
@@ -2304,7 +2340,6 @@ function legendItems() {
       label: LEGEND_LAYERS.nationalForests,
       swatchColor: NATIONAL_FOREST_COLOR,
       visible: false,
-      loading: true,
       infoText: 'Surface ownership parcels from the U.S. Forest Service',
       layerIds: [
         LAYER_IDS.nationalForestsFill,

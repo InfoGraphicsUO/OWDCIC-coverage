@@ -3,6 +3,10 @@ import { CAMERA_PROVIDER_COLORS, LEGEND_LAYERS, PANO_VIEWERS } from './config.js
 import { attachInfoTooltip } from './info-tooltip.js';
 import { getSetting } from './settings.js';
 
+// only the land status donut uses Plotly, so it loads the first time a donut shows
+const PLOTLY_URL = 'https://cdn.plot.ly/plotly-2.35.2.min.js';
+let plotlyLoad;
+
 const LAND_MIX_TITLE = 'Mapped land status';
 const LAND_MIX_INFO = 'Tribal areas follow reservation and trust boundaries. Other named types use mapped ownership parcels. Unclassified includes unmapped private land.';
 
@@ -788,7 +792,23 @@ function landMixColor(label, index = 0) {
   return LAND_MIX_COLORS[label] || LAND_MIX_FALLBACK_COLORS[index % LAND_MIX_FALLBACK_COLORS.length];
 }
 
-function renderDonut(host, landMix) {
+// resolves once window.Plotly exists, or when the script fails so the text fallback shows
+function loadPlotly() {
+  plotlyLoad ??= new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = PLOTLY_URL;
+    script.onload = resolve;
+    script.onerror = () => {
+      // a later result can try again
+      plotlyLoad = null;
+      resolve();
+    };
+    document.head.append(script);
+  });
+  return plotlyLoad;
+}
+
+async function renderDonut(host, landMix) {
   // the text breakdown survives both missing data and a missing Plotly bundle
   const rows = usableLandMix(landMix);
   if (!rows.length) {
@@ -796,6 +816,7 @@ function renderDonut(host, landMix) {
     return host;
   }
 
+  await loadPlotly();
   if (typeof window.Plotly?.newPlot !== 'function') {
     host.textContent = 'Chart unavailable. Land shares are listed below.';
     return host;
