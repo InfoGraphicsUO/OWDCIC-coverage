@@ -82,6 +82,11 @@ RUNNER = PROJECT_ROOT / "scripts/gdal-camera-viewsheds.py"
 QGIS_PROJECT_BUILDER = PROJECT_ROOT / "scripts/build-qgis-viewshed-project.py"
 RELEASE_BUILDER = PROJECT_ROOT / "scripts/build-data-release.py"
 RELEASE_OUTPUT = PROJECT_ROOT / "outputs/data_release"
+READY_TEXT = "Ready to start; choose inputs & check settings before starting a run!"
+RELEASE_READY_TEXT = "Ready to build the release from the published viewsheds"
+RELEASES_URL = "https://github.com/InfoGraphicsUO/OWDCIC-coverage/releases"
+# names for the published manifests the release packages
+PROVIDER_LABELS = {"alertwest": "ALERTWest", "pano": "Pano AI", "envirovision": "EnviroVision"}
 DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
@@ -413,6 +418,10 @@ class ViewshedWindow(QMainWindow):
             self.settings.addTab(scroll, label)
 
         root.addWidget(self.settings, 3)
+        # the release reads only published data, so it shows what it will package instead
+        self.release_panel = self.build_release_panel()
+        self.release_panel.hide()
+        root.addWidget(self.release_panel, 3)
         root.addWidget(self.build_progress())
 
         root.addWidget(QLabel("Run log"))
@@ -485,9 +494,58 @@ class ViewshedWindow(QMainWindow):
     def preset_values(self, values: dict) -> dict:
         return {**self.launch_values, **values}
 
+    def build_release_panel(self) -> QGroupBox:
+        group = QGroupBox("Release contents")
+        form = QFormLayout(group)
+        form.setSpacing(10)
+        self.release_sources = QLabel()
+        self.release_sources.setWordWrap(True)
+        destination = QLabel(
+            f"{RELEASE_OUTPUT}\n{RELEASES_URL} (when uploading)"
+        )
+        destination.setWordWrap(True)
+
+        for label in (self.release_sources, destination):
+            label.setTextInteractionFlags(qt_enum(Qt, "TextInteractionFlag", "TextSelectableByMouse"))
+
+        form.addRow(with_help("Published viewsheds", self.release_sources,
+            "The viewsheds listed in each provider's manifest in the data folder, which are the "
+            "ones the map shows. Publish a Live site run to change them."), self.release_sources)
+        form.addRow(QLabel("Downloads"), QLabel("Oregon, Washington, and Oregon and Washington shapefile zips"))
+        form.addRow(QLabel("Saved to"), destination)
+
+        return group
+
+    def refresh_release_sources(self) -> None:
+        lines = []
+
+        for provider, label in PROVIDER_LABELS.items():
+            path = PROJECT_ROOT / f"data/{provider}-viewshed-manifest.json"
+
+            try:
+                manifest = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                lines.append(f"{label}: no published manifest")
+                continue
+
+            complete = sum(entry.get("status") == "complete" for entry in manifest.get("viewsheds", []))
+            lines.append(f"{label}: {complete} viewsheds, published {manifest.get('generated_utc', '')[:10]}")
+
+        self.release_sources.setText("\n".join(lines))
+
     def set_release_mode(self, enabled: bool) -> None:
-        """the release ignores every run setting, so its tabs are locked while it is chosen"""
+        """the release ignores every input and run setting, so their tabs give way to a summary"""
         self.release_mode = enabled
+
+        if enabled:
+            self.refresh_release_sources()
+
+        # swap the ready message only before a run, so a finished run's result stays up
+        if self.status.text() in (READY_TEXT, RELEASE_READY_TEXT):
+            self.status.setText(RELEASE_READY_TEXT if enabled else READY_TEXT)
+
+        self.settings.setVisible(not enabled)
+        self.release_panel.setVisible(enabled)
         self.release_upload_row.setVisible(enabled)
         self.start_button.setText("Build data release" if enabled else "Start run")
         self.set_idle(self.process.state() == PROCESS_NOT_RUNNING)
@@ -712,7 +770,7 @@ class ViewshedWindow(QMainWindow):
     def build_progress(self) -> QGroupBox:
         group = QGroupBox("Progress")
         layout = QVBoxLayout(group)
-        self.status = QLabel("Ready to start; choose inputs & check settings before starting a run!")
+        self.status = QLabel(READY_TEXT)
         self.status.setWordWrap(True)
         self.overall = QProgressBar()
         self.overall.setRange(0, 1000)
@@ -984,7 +1042,7 @@ class ViewshedWindow(QMainWindow):
         return RELEASE_OUTPUT if self.release_mode else self.output.path()
 
     def set_idle(self, idle: bool) -> None:
-        self.settings.setEnabled(idle and not self.release_mode)
+        self.settings.setEnabled(idle)
         self.preset.setEnabled(idle)
         self.release_upload.setEnabled(idle)
 
