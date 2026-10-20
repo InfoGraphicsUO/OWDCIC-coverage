@@ -793,7 +793,7 @@ function landMixColor(label, index = 0) {
 }
 
 // resolves once window.Plotly exists, or when the script fails so the text fallback shows
-function loadPlotly() {
+export function loadPlotly() {
   plotlyLoad ??= new Promise((resolve) => {
     const script = document.createElement('script');
     script.src = PLOTLY_URL;

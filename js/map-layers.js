@@ -36,7 +36,7 @@ import {
 } from './geojson-transform.js';
 import { initLegend } from './legend.js';
 import { initFilterPanel } from './filter-panel.js';
-import { initResultsPanel } from './results-panel.js';
+import { initResultsPanel, loadPlotly } from './results-panel.js';
 import { hideMapLoading } from './loading.js';
 import {
   MAP_HOME_EVENT,
@@ -598,6 +598,17 @@ async function loadMapLayers(map) {
     }),
   ]);
   markLoad('startup data loaded');
+  preloadAfterStartup(map);
+}
+
+// fetch what the first chart and the forest layer need once startup is done,
+// so neither holds up the first map but neither makes a later click wait
+function preloadAfterStartup(map) {
+  const whenIdle = window.requestIdleCallback ?? ((callback) => window.setTimeout(callback, 1_000));
+  whenIdle(() => {
+    loadPlotly();
+    loadDeferredLayers(map, { preload: true });
+  });
 }
 
 async function hydrateLegendLayer(label, dataPromise, applyData) {
@@ -701,13 +712,14 @@ function addContextLayers(map) {
 }
 
 // layers that are off at startup and slow or heavy to fetch wait until their row is switched on
-function loadDeferredLayers(map) {
+// preload also fetches the ones worth having before they are asked for
+function loadDeferredLayers(map, { preload = false } = {}) {
   // the lines are a couple of megabytes
-  loadLayerWhenChecked(map, LEGEND_LAYERS.transmissionLines, LAYER_IDS.transmissionLinesSource, () =>
+  loadLayerWhenChecked(map, LEGEND_LAYERS.transmissionLines, LAYER_IDS.transmissionLinesSource, {}, () =>
     fetchJson(DATA_URLS.transmissionLines, 'Transmission lines')
   );
   // the Forest Service query is the slowest request the map makes
-  loadLayerWhenChecked(map, LEGEND_LAYERS.nationalForests, LAYER_IDS.nationalForestsSource, () =>
+  loadLayerWhenChecked(map, LEGEND_LAYERS.nationalForests, LAYER_IDS.nationalForestsSource, { preload }, () =>
     fetchArcGISGeoJSON(DATA_URLS.nationalForests, {
       where: "ownerclassification='USDA FOREST SERVICE'",
       outFields: 'ownerclassification,forestname',
@@ -723,8 +735,8 @@ function loadDeferredLayers(map) {
   );
 }
 
-function loadLayerWhenChecked(map, label, sourceId, loader) {
-  if (!legendControl.isChecked(label) || deferredLayerLoads.has(label)) return;
+function loadLayerWhenChecked(map, label, sourceId, { preload = false }, loader) {
+  if (deferredLayerLoads.has(label) || !(preload || legendControl.isChecked(label))) return;
 
   legendControl.setLoading(label, true);
   deferredLayerLoads.set(label, hydrateLegendLayer(
