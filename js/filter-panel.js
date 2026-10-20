@@ -1,20 +1,22 @@
 /**
  * builds the two-step filter menu
  * list and map picks share the same callbacks
- * callbacks: onTypeSelected(type), onSelection(type, id), onClear()
+ * callbacks: onTypeSelected(type), onSelection(type, id), onToggle(type, id), onClear()
  * onTypeSelected gets null while options load, then the selected type
  * select(type, id) is the programmatic path used by map feature clicks
  * selectType(type) opens a type without picking an option, used by anchor links
  * option data stays cached after a successful load for the life of this panel
  * a type with parent { type, option } opens from that option of its parent type
  * instead of listing on its own, and its back button returns to the parent
- * a type with deselectable: true drops its picked option when that row is clicked again
+ * a type with multiSelect: true reports row clicks to onToggle instead of picking one option;
+ * the caller owns that selection and mirrors it back with setSelected(type, ids)
  */
 export function initFilterPanel({
   types = [],
   loadOptions,
   onTypeSelected = () => {},
   onSelection = () => {},
+  onToggle = () => {},
   onClear = () => {},
 } = {}) {
   const root = document.getElementById('filter-panel');
@@ -28,6 +30,8 @@ export function initFilterPanel({
   // selection state belongs to this panel instance, while request ids fence off stale async work
   let activeType = null;
   let activeId = null;
+  // a multi-select type marks every id here instead of activeId
+  let activeIds = new Set();
   let options = [];
   let requestId = 0;
   let globalSearchId = 0;
@@ -86,6 +90,9 @@ export function initFilterPanel({
     // error styling stays on the live region so status text remains readable
     status.classList.toggle('is-error', error);
   };
+
+  // what the option rows mark as selected: one id, or a set for a multi-select type
+  const currentSelection = () => (activeType?.multiSelect ? activeIds : activeId);
 
   const setOptionSearchLabel = (text) => {
     optionSearch.input.placeholder = text;
@@ -196,7 +203,7 @@ export function initFilterPanel({
       })),
     ].sort((a, b) => a.label.localeCompare(b.label));
 
-    renderSearchResults(categoryList, items, activeId, async (item) => {
+    renderSearchResults(categoryList, items, currentSelection(), async (item) => {
       if (item.kind === 'type') {
         // type hits open the normal second step without selecting an option
         await chooseType(item.type);
@@ -220,12 +227,13 @@ export function initFilterPanel({
     // district-like datasets carry state prefixes and need separate collapsible buckets
     // options that name their own group, like cameras by provider, use the same buckets
     const grouped = visible.some((option) => option.group);
+    optionList.setAttribute('aria-multiselectable', `${Boolean(activeType?.multiSelect)}`);
     if (activeType && (STATE_SPLIT_TYPES.has(activeType.value) || grouped)) {
-      renderGroupedItems(optionList, visible, activeId, (option) => clickOption(option), {
+      renderGroupedItems(optionList, visible, currentSelection(), (option) => clickOption(option), {
         query,
       });
     } else {
-      renderItems(optionList, visible, activeId, (option) => clickOption(option));
+      renderItems(optionList, visible, currentSelection(), (option) => clickOption(option));
     }
 
     if (!visible.length && options.length) setStatus('No options match that search.', true);
@@ -245,6 +253,7 @@ export function initFilterPanel({
     const request = ++requestId;
     activeType = type;
     activeId = null;
+    activeIds = new Set();
     options = [];
 
     // open the folders holding this type so the back button lands on it
@@ -293,15 +302,18 @@ export function initFilterPanel({
     }
 
     // update selection styling before the map callback finishes
-    activeId = option.value;
-    renderOptions();
+    // a multi-select type is restyled when the caller calls setSelected
+    if (!activeType.multiSelect) {
+      activeId = option.value;
+      renderOptions();
+    }
     await onSelection(activeType.value, option.value);
   };
 
-  // only row clicks toggle; map picks through select() always keep their option
+  // only row clicks toggle; search and map picks through select() always add their option
   const clickOption = async (option) => {
-    if (activeType?.deselectable && option && `${option.value}` === `${activeId}`) {
-      await clearSelection();
+    if (activeType?.multiSelect && option && !nestedType(option)) {
+      await onToggle(activeType.value, option.value);
       return;
     }
 
@@ -314,6 +326,7 @@ export function initFilterPanel({
     globalSearchId += 1;
     activeType = null;
     activeId = null;
+    activeIds = new Set();
     options = [];
     openFolders.clear();
     groupExpandedState.clear();
@@ -372,8 +385,21 @@ export function initFilterPanel({
     await chooseOption(option);
 
     // a map pick can land on a row far down the list, so bring it into view
-    scrollToSelected(optionList);
+    scrollToOption(optionList, option.value);
     return true;
+  };
+
+  // mirrors a multi-select type's selection; reveal scrolls the list to that id
+  const setSelected = (typeValue, ids, { reveal = null } = {}) => {
+    if (activeType?.value !== typeValue || !activeType.multiSelect) return;
+    activeIds = new Set(ids.map((id) => `${id}`));
+    renderOptions();
+    if (reveal == null) return;
+
+    // map-driven selections open the right tab without forcing the sidebar open
+    shellApi?.openTab('filter', { expand: false });
+    showOptionView({ animate: false });
+    scrollToOption(optionList, reveal);
   };
 
   const clearSelection = async () => {
@@ -382,6 +408,7 @@ export function initFilterPanel({
 
     // drop only the picked option and keep the user in the current type
     activeId = null;
+    activeIds = new Set();
     showOptionView({ animate: false });
     renderOptions();
 
@@ -406,6 +433,7 @@ export function initFilterPanel({
 
   return {
     select,
+    setSelected,
     selectType,
     reset,
     clearSelection,
@@ -667,20 +695,33 @@ function normalizeStateAbbreviation(state) {
   return null;
 }
 
+// a selection is one option value, or a set of string values for a multi-select type
+function isSelectedValue(selection, value) {
+  return selection instanceof Set ? selection.has(`${value}`) : `${value}` === `${selection}`;
+}
+
+function hasSelection(selection) {
+  return selection instanceof Set ? selection.size > 0 : selection != null;
+}
+
 function renderItems(list, items, selectedValue, onChoose, { stepped = false } = {}) {
   // replace old nodes so indices and labels stay aligned with the current filtered array
   list.replaceChildren();
+  let firstFocusable = null;
   items.forEach((item, index) => {
-    const selected = `${item.value}` === `${selectedValue}`;
+    const selected = isSelectedValue(selectedValue, item.value);
     const button = document.createElement('button');
     button.type = 'button';
     button.id = `${list.id}-option-${index}`;
+    button.dataset.value = `${item.value}`;
     button.className = stepped || item.opens ? 'filter-panel__item filter-panel__item--step' : 'filter-panel__item';
     button.setAttribute('role', 'option');
     button.setAttribute('aria-selected', `${selected}`);
 
-    // keep one option in the tab order, preferring the current selection
-    button.tabIndex = selected || (selectedValue == null && index === 0) ? 0 : -1;
+    // keep one option in the tab order, preferring the first selected row
+    const focusable = !firstFocusable && (selected || !hasSelection(selectedValue));
+    button.tabIndex = focusable ? 0 : -1;
+    if (focusable) firstFocusable = button;
     button.textContent = item.displayLabel ?? item.label;
     button.addEventListener('click', () => onChoose(item));
     list.append(button);
@@ -799,7 +840,7 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
 
     // a search opens each populated bucket so matches arent hidden behind a collapsed group
     // a selection made from the map also opens its bucket so the picked row is visible
-    const holdsSelection = groupItems.some((item) => `${item.value}` === `${selectedValue}`);
+    const holdsSelection = groupItems.some((item) => isSelectedValue(selectedValue, item.value));
     const expanded = Boolean(query) || holdsSelection || groupExpandedState.get(stateName) === true;
     if (query) groupExpandedState.set(stateName, true);
 
@@ -829,21 +870,22 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
     itemsContainer.hidden = !expanded;
 
     for (const item of groupItems) {
-      const selected = `${item.value}` === `${selectedValue}`;
+      const selected = isSelectedValue(selectedValue, item.value);
       const button = document.createElement('button');
       button.type = 'button';
 
       // one list-wide counter avoids duplicate ids across the two state buckets
       button.id = `${list.id}-option-${optionIndex}`;
       optionIndex += 1;
+      button.dataset.value = `${item.value}`;
       button.className = item.opens ? 'filter-panel__item filter-panel__item--step' : 'filter-panel__item';
       button.setAttribute('role', 'option');
       button.setAttribute('aria-selected', `${selected}`);
 
-      // prefer the selected row, otherwise start tab navigation at the first option
-      const focusable = selected || (selectedValue == null && !firstFocusable);
+      // prefer the first selected row, otherwise start tab navigation at the first option
+      const focusable = !firstFocusable && (selected || !hasSelection(selectedValue));
       button.tabIndex = focusable ? 0 : -1;
-      if (focusable && !firstFocusable) firstFocusable = button;
+      if (focusable) firstFocusable = button;
       button.textContent = item.displayLabel;
       button.addEventListener('click', () => onChoose(item));
       itemsContainer.append(button);
@@ -854,21 +896,22 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
   }
 
   for (const item of ungrouped) {
-    const selected = `${item.value}` === `${selectedValue}`;
+    const selected = isSelectedValue(selectedValue, item.value);
     const button = document.createElement('button');
     button.type = 'button';
 
     // continue the same id sequence after all named state groups
     button.id = `${list.id}-option-${optionIndex}`;
     optionIndex += 1;
+    button.dataset.value = `${item.value}`;
     button.className = item.opens ? 'filter-panel__item filter-panel__item--step' : 'filter-panel__item';
     button.setAttribute('role', 'option');
     button.setAttribute('aria-selected', `${selected}`);
 
     // keep unknown or future state labels after the named buckets
-    const focusable = selected || (selectedValue == null && !firstFocusable);
+    const focusable = !firstFocusable && (selected || !hasSelection(selectedValue));
     button.tabIndex = focusable ? 0 : -1;
-    if (focusable && !firstFocusable) firstFocusable = button;
+    if (focusable) firstFocusable = button;
     button.textContent = item.displayLabel;
     button.addEventListener('click', () => onChoose(item));
     list.append(button);
@@ -881,8 +924,9 @@ const groupExpandedState = new Map();
 function renderSearchResults(list, items, selectedValue, onChoose) {
   // search results can represent either a category drilldown or a direct option pick
   list.replaceChildren();
+  let firstFocusable = null;
   items.forEach((item, index) => {
-    const selected = item.kind === 'option' && `${item.option.value}` === `${selectedValue}`;
+    const selected = item.kind === 'option' && isSelectedValue(selectedValue, item.option.value);
     const button = document.createElement('button');
     button.type = 'button';
     button.id = `${list.id}-option-${index}`;
@@ -893,7 +937,9 @@ function renderSearchResults(list, items, selectedValue, onChoose) {
     button.setAttribute('aria-selected', `${selected}`);
 
     // selected state belongs only to an option hit in the current category
-    button.tabIndex = selected || (selectedValue == null && index === 0) ? 0 : -1;
+    const focusable = !firstFocusable && (selected || !hasSelection(selectedValue));
+    button.tabIndex = focusable ? 0 : -1;
+    if (focusable) firstFocusable = button;
 
     const label = document.createElement('span');
     label.className = 'filter-panel__item-label';
@@ -932,9 +978,10 @@ function optionMatchesQuery(option, query) {
   return tokens.join(' ').includes(query);
 }
 
-// centers the selected row by scrolling only the list, never the page around it
-function scrollToSelected(list) {
-  const row = list.querySelector('[role="option"][aria-selected="true"]');
+// centers an option's row by scrolling only the list, never the page around it
+function scrollToOption(list, value) {
+  const row = [...list.querySelectorAll('[role="option"]')]
+    .find((button) => button.dataset.value === `${value}`);
   if (!row || row.closest('[hidden]')) return;
 
   const listBox = list.getBoundingClientRect();

@@ -180,6 +180,15 @@ export function initResultsPanel({
     presentResult(properties.name || 'Camera', renderCamera(properties, metrics), location);
   }
 
+  function showCameras(cameras = []) {
+    current = { kind: 'cameras', cameras };
+    presentResult(`${cameras.length} cameras selected`, renderCameraList(cameras));
+
+    // the export layouts and links describe one camera, so they wait for a single selection
+    exportButton.disabled = true;
+    shareButton.disabled = true;
+  }
+
   function openExportModal() {
     if (!current) {
       // this guard also covers a keyboard activation during a pending selection change
@@ -385,7 +394,7 @@ export function initResultsPanel({
   // the caller owns clearing so the filter panel and map reset together
   element.querySelector('[data-results-close]').addEventListener('click', () => onClose());
   clear();
-  return { showPolygon, showCamera, showLoading, showError, clear, element };
+  return { showPolygon, showCamera, showCameras, showLoading, showError, clear, element };
 
   function replaceContent(node) {
     // a removed trigger fires no pointerout, so its tooltip would stay on screen
@@ -609,6 +618,37 @@ function selfLine(text, className = 'results-panel__line') {
   p.className = className;
   p.textContent = text;
   return p;
+}
+
+function renderCameraList(cameras) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'results-panel__body results-panel__camera-list';
+  const list = document.createElement('ul');
+
+  for (const properties of cameras) {
+    const item = document.createElement('li');
+    const name = document.createElement('span');
+    name.className = 'results-panel__camera-list-name';
+    name.textContent = properties.name || 'Camera';
+    item.append(name);
+
+    // same locality fallback as a single camera result
+    const location = [properties.county, properties.state].filter(Boolean).join(', ') || properties.operator || '';
+    if (location) {
+      const detail = document.createElement('span');
+      detail.className = 'results-panel__camera-list-detail';
+      detail.textContent = location;
+      item.append(detail);
+    }
+
+    list.append(item);
+  }
+
+  wrapper.append(
+    list,
+    selfLine('Export and link sharing are available when one camera is selected.', 'results-panel__line results-panel__camera-list-note'),
+  );
+  return wrapper;
 }
 
 function renderPolygon(type, properties) {

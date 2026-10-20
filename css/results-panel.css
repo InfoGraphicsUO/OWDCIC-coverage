@@ -391,6 +391,34 @@
     font-size: 16px;
 }
 
+.results-panel__camera-list ul {
+    margin: 0 0 14px;
+    padding: 0;
+    list-style: none;
+}
+
+.results-panel__camera-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid #444;
+}
+
+.results-panel__camera-list-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.results-panel__camera-list-detail {
+    display: block;
+    color: #c8c8c8;
+    font-size: 12px;
+}
+
+.results-panel__camera-list-note {
+    color: #c8c8c8;
+    font-size: 13px;
+}
+
 .results-panel__camera a:focus-visible {
     outline: 2px solid var(--ohaz-yellow, #f8e109);
     outline-offset: 2px;
