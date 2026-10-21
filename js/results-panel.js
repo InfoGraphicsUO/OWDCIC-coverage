@@ -683,7 +683,7 @@ function renderCamera(properties, metrics) {
     ? `Camera view available on ${viewer.name}, provided by Pano AI`
     : isEnviroVision ? 'No public camera preview is available. EnviroVision ForestWatch imagery is limited to approved agencies.'
       // ALERTWest keeps these sites out of its API for landowner privacy
-      : properties.outsideApi ? 'No public camera preview is available. This site\'s imagery is kept private for the landowners.'
+      : properties.outsideApi ? 'No public camera preview is available in respect of the landowner\'s privacy.'
         : 'Camera preview unavailable';
   if (imageUrl) {
     // remove failed remote thumbnails instead of showing a broken image
