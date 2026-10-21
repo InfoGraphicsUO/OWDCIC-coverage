@@ -2059,7 +2059,7 @@ function addViewshedLayers(map) {
   legendControl.onChange(() => syncViewshedFills(map));
 }
 
-// viewsheds sit above context lines, so as background they leave those lines their hover info
+// viewsheds cover so much that their entries go after whatever else is under the cursor
 function addViewshedHover(map, layerId, { title, symbol }) {
   addHoverLayer(map, layerId, { kind: 'label', title, symbol, background: true });
 }

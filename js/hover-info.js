@@ -14,7 +14,7 @@ export function pointerCanHover() {
 /**
  * show a feature's info beside the cursor while the pointer is over it
  * `symbol` and `title` are values, or functions reading them from the hovered feature
- * `background` layers cover wide areas, so they show only when nothing else is under the cursor
+ * `background` layers cover wide areas, so their entries go after the more specific ones
  */
 export function addHoverLayer(map, layerId, { kind, symbol, title, background = false }) {
   let layers = HOVER_LAYERS.get(map);
@@ -27,7 +27,7 @@ export function addHoverLayer(map, layerId, { kind, symbol, title, background = 
   layers.set(layerId, { kind, symbol, title, background });
 }
 
-// one map-wide handler lets the topmost of overlapping features own the tooltip
+// one map-wide handler gathers every feature still visible under the cursor into one tooltip
 function bindHoverInfo(map, layers) {
   const canvasContainer = map.getCanvasContainer();
 
@@ -63,19 +63,32 @@ function hoveredEntries(map, layers, event) {
   const layerIds = [...layers.keys()].filter((layerId) => map.getLayer(layerId));
   if (!layerIds.length) return [];
 
-  // rendered features come back topmost first, so markers win over the lines beneath them
+  // rendered features come back topmost first; an opaque one hides everything beneath it
   const features = map.queryRenderedFeatures(event.point, { layers: layerIds });
-  const foreground = features.find(({ layer }) => !layers.get(layer.id).background);
-  if (foreground) return [describe(layers, foreground)];
+  const opaqueIndex = features.findIndex(({ layer }) => isOpaque(map, layer.id));
+  const visible = opaqueIndex < 0 ? features : features.slice(0, opaqueIndex + 1);
 
-  // overlapping background layers stack in the order they were added, once per title
+  // one entry per layer, since lines meeting at a substation would otherwise fill the screen
+  const unique = visible.filter((feature, index) =>
+    visible.findIndex(({ layer }) => layer.id === feature.layer.id) === index);
+
+  // background layers stack last in the order they were added, once per title
+  const foreground = unique.filter(({ layer }) => !layers.get(layer.id).background);
+  const background = layerIds.flatMap((layerId) =>
+    unique.filter(({ layer }) => layer.id === layerId && layers.get(layerId).background));
+
   const entries = [];
-  for (const layerId of layerIds) {
-    const feature = features.find(({ layer }) => layer.id === layerId);
-    const entry = feature && describe(layers, feature);
-    if (entry && !entries.some(({ title }) => title && title === entry.title)) entries.push(entry);
+  for (const entry of [...foreground, ...background].map((feature) => describe(layers, feature))) {
+    if (!entries.some(({ title }) => title && title === entry.title)) entries.push(entry);
   }
   return entries;
+}
+
+// markers are drawn solid, while lines and translucent fills leave what lies beneath readable
+function isOpaque(map, layerId) {
+  const layer = map.getLayer(layerId);
+  if (layer.type === 'symbol' || layer.type === 'circle') return true;
+  return layer.type === 'fill' && map.getPaintProperty(layerId, 'fill-opacity') === 1;
 }
 
 function describe(layers, feature) {

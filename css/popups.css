@@ -70,9 +70,16 @@
     margin-bottom: 0;
 }
 
-/* overlapping viewsheds stack in one tooltip */
+/* overlapping features stack in one tooltip */
 .feature-popup--hover .cam-popup + .cam-popup {
     margin-top: 6px;
+}
+
+/* a rule keeps a detailed entry's lines apart from the next entry's title */
+.feature-popup--hover .cam-popup:has(.cam-meta) + .cam-popup {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(31, 41, 51, 0.12);
 }
 
 .feature-popup.is-offscreen {
