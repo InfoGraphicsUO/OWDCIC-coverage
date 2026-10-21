@@ -60,16 +60,8 @@ import {
   addRegionFocusLayers,
   loadRegionFocusData,
 } from './states-highlight.js';
-import {
-  hideCameraPreview,
-  showCameraPreview,
-  showDigitizedCameraPopup,
-  showFireHistoryPopup,
-  showFirePopup,
-  showLookoutPopup,
-  showTransmissionLinePopup,
-  showPrescribedPopup,
-} from './popups.js';
+import { addHoverLayer, pointerCanHover } from './hover-info.js';
+import { showFeaturePopup } from './popups.js';
 import { getSetting, initSettings, onSettingChange } from './settings.js';
 
 const LABEL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
@@ -792,10 +784,13 @@ function addContextLayers(map) {
     paint: { 'line-width': 10, 'line-opacity': 0 },
   }, beforeId);
 
-  bindLayerInteractions(map, LAYER_IDS.transmissionLinesHit, (clickedMap, event) => {
-    // markers above the line keep priority for clicks
-    if (hasInteractiveFeatureAtPoint(clickedMap, event.point, MARKER_LAYER_IDS)) return;
-    showTransmissionLinePopup(clickedMap, event, LAYER_SYMBOLS.transmissionLines);
+  bindLayerInteractions(map, LAYER_IDS.transmissionLinesHit, {
+    ...featureInfo('transmissionLine', LAYER_SYMBOLS.transmissionLines),
+    click: (clickedMap, event) => {
+      // markers above the line keep priority for taps
+      if (hasInteractiveFeatureAtPoint(clickedMap, event.point, MARKER_LAYER_IDS)) return;
+      showFeaturePopup(clickedMap, event, 'transmissionLine', LAYER_SYMBOLS.transmissionLines);
+    },
   });
 }
 
@@ -1267,7 +1262,6 @@ async function cameraClicked(cameraId, mapFeature) {
   const feature = cameraFeatureById(cameraId) || mapFeature;
   if (!feature) return;
 
-  hideCameraPreview(activeMap);
   selectCameraViewshed(activeMap, feature.properties?.viewshed_id, feature.properties?.name);
 
   // keep polygon details in the result panel while highlighting the camera
@@ -1283,19 +1277,6 @@ async function cameraClicked(cameraId, mapFeature) {
   showCameraResult(activeMap, feature);
 }
 
-function cameraHovered(cameraId, event) {
-  if (!activeMap) return;
-  if (!cameraId) {
-    hideCameraPreview(activeMap);
-    return;
-  }
-  if (!event) return;
-
-  const layerId = event.features?.[0]?.layer?.id;
-  const provider = CAMERA_PROVIDERS.find(({ cameraLayerId }) => cameraLayerId === layerId);
-  showCameraPreview(activeMap, event, provider && { iconUrl: provider.iconUrl });
-}
-
 function clearFilter() {
   // prevent a late metrics response from refilling the cleared panel
   cameraResultRequest += 1;
@@ -1306,7 +1287,6 @@ function clearFilter() {
   if (activeMap) {
     clearDivisionFilter(activeMap);
     selectCameraViewshed(activeMap, null);
-    hideCameraPreview(activeMap);
   }
 
   filterControl.setClearEnabled?.(false);
@@ -1975,7 +1955,14 @@ async function addCameraLayers(map) {
     ])
   );
 
-  for (const { cameraLayerId, iconId, privateIconId, sharedSiteIconOffset = [0, 0] } of CAMERA_PROVIDERS) {
+  for (const {
+    cameraLayerId,
+    iconId,
+    iconUrl,
+    privateIconId,
+    privateIconUrl,
+    sharedSiteIconOffset = [0, 0],
+  } of CAMERA_PROVIDERS) {
     addGeoJSONSource(map, cameraLayerId);
     map.addLayer({
       id: cameraLayerId,
@@ -1994,19 +1981,20 @@ async function addCameraLayers(map) {
       },
     });
 
-    // hover previews use the map event; clicks open details and select its viewshed
-    bindLayerInteractions(map, cameraLayerId, null, {
-      show: (hoveredMap, event) => {
-        const feature = event.features?.[0];
-        cameraHovered(feature ? cameraOptionId(feature) : null, event);
+    // hovering names the camera; clicks and taps open details and select its viewshed
+    bindLayerInteractions(map, cameraLayerId, {
+      hover: {
+        kind: 'camera',
+        // same marker the camera is drawn with
+        symbol: (feature) => ({
+          iconUrl: privateIconUrl && feature.properties?.outsideApi ? privateIconUrl : iconUrl,
+        }),
       },
-      hide: () => cameraHovered(null),
-    });
-
-    map.on('click', cameraLayerId, (event) => {
-      const feature = event.features?.[0];
-      if (!feature) return;
-      cameraClicked(cameraOptionId(feature), feature);
+      click: (clickedMap, event) => {
+        const feature = event.features?.[0];
+        if (feature) cameraClicked(cameraOptionId(feature), feature);
+      },
+      clickWithMouse: true,
     });
   }
 }
@@ -2051,12 +2039,16 @@ async function addDigitizedCameraLayers(map) {
       },
     });
 
-    bindLayerInteractions(map, operator.layerId, (clickedMap, event) => {
-      // same marker the clicked site is drawn with
-      const planned = event.features?.[0]?.properties?.status === 'Planned';
-      showDigitizedCameraPopup(clickedMap, event, {
-        iconUrl: planned ? operator.plannedIconUrl : operator.operationalIconUrl,
-      });
+    // same marker the site is drawn with
+    const symbol = (feature) => ({
+      iconUrl: feature?.properties?.status === 'Planned'
+        ? operator.plannedIconUrl
+        : operator.operationalIconUrl,
+    });
+    bindLayerInteractions(map, operator.layerId, {
+      hover: { kind: 'digitizedCamera', symbol },
+      click: (clickedMap, event) =>
+        showFeaturePopup(clickedMap, event, 'digitizedCamera', symbol(event.features?.[0])),
     });
   }
 }
@@ -2131,6 +2123,21 @@ function addViewshedLayers(map) {
 
   // both hooks call back immediately, so the first pass may precede the other's value
   let basemap = 'outdoors';
+
+  addViewshedHover(map, LAYER_IDS.combinedViewshedsFill, {
+    title: () => 'Camera viewshed',
+    symbol: () => viewshedSymbol(null, basemap),
+  });
+  for (const provider of providers) {
+    addViewshedHover(map, provider.viewshedFillLayerId, {
+      // provider names only mean something while each provider has its own color
+      title: () => getSetting(SEPARATE_VIEWSHED_COLORS_SETTING)
+        ? `${provider.name} camera viewshed`
+        : 'Camera viewshed',
+      symbol: () => viewshedSymbol(provider, basemap),
+    });
+  }
+
   onBasemapChange((selected) => {
     basemap = selected;
     applyViewshedSymbology(map, basemap);
@@ -2140,6 +2147,11 @@ function addViewshedLayers(map) {
     syncViewshedFills(map);
   });
   legendControl.onChange(() => syncViewshedFills(map));
+}
+
+// viewsheds cover so much that their entries go after whatever else is under the cursor
+function addViewshedHover(map, layerId, { title, symbol }) {
+  addHoverLayer(map, layerId, { kind: 'label', title, symbol, background: true });
 }
 
 // shared-color providers draw through the combined fill so overlaps do not darken
@@ -2158,26 +2170,31 @@ function syncViewshedFills(map) {
 }
 
 function applyViewshedSymbology(map, basemap) {
-  const darkOutline = basemap === 'satellite';
-  const sharedColor = basemapColor(VIEWSHED_FILL_COLOR, basemap);
-  const sharedImage = basemapColor(VIEWSHED_LEGEND_IMAGES, basemap);
-
-  legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, sharedColor, { darkOutline, image: sharedImage });
+  const shared = viewshedSymbol(null, basemap);
+  legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, shared.swatchColor, { image: shared.swatchImage });
   if (map.getLayer(LAYER_IDS.combinedViewshedsFill)) {
-    map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color', sharedColor);
+    map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color', shared.swatchColor);
   }
 
   for (const provider of CAMERA_PROVIDERS) {
-    const colors = viewshedColors(provider);
-    const fillColor = basemapColor(colors, basemap);
-
+    const { swatchColor, swatchImage } = viewshedSymbol(provider, basemap);
     if (map.getLayer(provider.viewshedFillLayerId)) {
-      map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', fillColor);
+      map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', swatchColor);
     }
-    // providers in their own color show a sample viewshed in that color
-    const image = colors === VIEWSHED_FILL_COLOR ? sharedImage : provider.viewshedLegendImage;
-    legendControl.updateSwatchColor(provider.viewshedLabel, fillColor, { darkOutline, image });
+    legendControl.updateSwatchColor(provider.viewshedLabel, swatchColor, { image: swatchImage });
   }
+}
+
+// a provider, or null for the shared color, as the layer list and hover info draw it
+function viewshedSymbol(provider, basemap) {
+  const colors = provider ? viewshedColors(provider) : VIEWSHED_FILL_COLOR;
+  return {
+    swatchColor: basemapColor(colors, basemap),
+    // providers in their own color show a sample viewshed in that color
+    swatchImage: colors === VIEWSHED_FILL_COLOR
+      ? basemapColor(VIEWSHED_LEGEND_IMAGES, basemap)
+      : provider.viewshedLegendImage,
+  };
 }
 
 function viewshedColors({ viewshedFillColor }) {
@@ -2253,7 +2270,7 @@ async function addFireLayer(map) {
     layout: markerLayout(fireIconExpression()),
   });
 
-  bindLayerInteractions(map, LAYER_IDS.fires, withSymbol(showFirePopup, LAYER_SYMBOLS.fires));
+  bindLayerInteractions(map, LAYER_IDS.fires, featureInfo('fire', LAYER_SYMBOLS.fires));
 }
 
 /**
@@ -2299,11 +2316,7 @@ function addPerimeterLayers(map) {
     },
   });
 
-  bindLayerInteractions(
-    map,
-    LAYER_IDS.perimetersFill,
-    withSymbol(showFirePopup, LAYER_SYMBOLS.fires)
-  );
+  bindLayerInteractions(map, LAYER_IDS.perimetersFill, featureInfo('fire', LAYER_SYMBOLS.fires));
 }
 
 // each fire history type draws earlier years, the year being left, and the timeline's year
@@ -2384,22 +2397,18 @@ function addFireHistoryLayers(map) {
 
   if (year !== null) applyFireHistoryYear(map, year);
 
-  bindLayerInteractions(
-    map,
-    LAYER_IDS.fireHistoryIgnitions,
-    withSymbol(showFireHistoryPopup, LAYER_SYMBOLS.fireHistoryIgnitions)
-  );
-  bindLayerInteractions(
-    map,
-    LAYER_IDS.fireHistoryIgnitionsEarlier,
-    withSymbol(showFireHistoryPopup, LAYER_SYMBOLS.fireHistoryIgnitions)
-  );
+  for (const layerId of [LAYER_IDS.fireHistoryIgnitions, LAYER_IDS.fireHistoryIgnitionsEarlier]) {
+    bindLayerInteractions(map, layerId, featureInfo('fireHistory', LAYER_SYMBOLS.fireHistoryIgnitions));
+  }
   for (const layerId of [LAYER_IDS.fireHistoryPerimetersFill, LAYER_IDS.fireHistoryPerimetersEarlierFill]) {
-    bindLayerInteractions(map, layerId, (clickedMap, event) => {
-      // an ignition point sitting on its own burn scar keeps the click
-      const ignitionLayers = [LAYER_IDS.fireHistoryIgnitions, LAYER_IDS.fireHistoryIgnitionsEarlier];
-      if (hasInteractiveFeatureAtPoint(clickedMap, event.point, ignitionLayers)) return;
-      showFireHistoryPopup(clickedMap, event, LAYER_SYMBOLS.fireHistoryPerimeters);
+    bindLayerInteractions(map, layerId, {
+      ...featureInfo('fireHistory', LAYER_SYMBOLS.fireHistoryPerimeters),
+      click: (clickedMap, event) => {
+        // an ignition point sitting on its own burn scar keeps the tap
+        const ignitionLayers = [LAYER_IDS.fireHistoryIgnitions, LAYER_IDS.fireHistoryIgnitionsEarlier];
+        if (hasInteractiveFeatureAtPoint(clickedMap, event.point, ignitionLayers)) return;
+        showFeaturePopup(clickedMap, event, 'fireHistory', LAYER_SYMBOLS.fireHistoryPerimeters);
+      },
     });
   }
 }
@@ -2504,11 +2513,11 @@ async function addPrescribedLayer(map) {
     layout: markerLayout(PRESCRIBED_ICON_ID),
   });
 
-  bindLayerInteractions(
-    map,
-    LAYER_IDS.prescribed,
-    withSymbol(showPrescribedPopup, LAYER_SYMBOLS.prescribed)
-  );
+  // the clicked box keeps its Watch Duty link reachable for mouse users too
+  bindLayerInteractions(map, LAYER_IDS.prescribed, {
+    ...featureInfo('prescribed', LAYER_SYMBOLS.prescribed),
+    clickWithMouse: true,
+  });
 }
 
 function addLookoutLayer(map) {
@@ -2525,11 +2534,7 @@ function addLookoutLayer(map) {
     },
   });
 
-  bindLayerInteractions(
-    map,
-    LAYER_IDS.lookouts,
-    withSymbol(showLookoutPopup, LAYER_SYMBOLS.lookouts)
-  );
+  bindLayerInteractions(map, LAYER_IDS.lookouts, featureInfo('lookout', LAYER_SYMBOLS.lookouts));
 }
 
 function markerLayout(iconImage) {
@@ -2563,32 +2568,34 @@ function setSourceData(map, sourceId, data) {
   source.setData(data);
 }
 
-// popup opener that also hands over the layer's legend symbol
-function withSymbol(showPopup, symbol) {
-  return (map, event) => showPopup(map, event, symbol);
+// same details on hover with a mouse and in a box when tapped
+function featureInfo(kind, symbol) {
+  return {
+    hover: { kind, symbol },
+    click: (map, event) => showFeaturePopup(map, event, kind, symbol),
+  };
 }
 
 /**
- * share pointer affordance and popup dispatch across interactive layers
- * previews add a hover popup that clicks can expand
+ * share hover info, pointer affordance, and click dispatch across interactive layers
+ * clicks only act for touch unless `clickWithMouse`, since a mouse already sees the info on hover
  */
-function bindLayerInteractions(map, layerId, showPopup, preview) {
+function bindLayerInteractions(map, layerId, { hover, click, clickWithMouse = false }) {
+  if (hover) addHoverLayer(map, layerId, hover);
+
+  const clickActs = () => clickWithMouse || !pointerCanHover();
+
   map.on('mouseenter', layerId, () => {
-    map.getCanvas().style.cursor = 'pointer';
+    if (clickActs()) map.getCanvas().style.cursor = 'pointer';
   });
 
   map.on('mouseleave', layerId, () => {
     map.getCanvas().style.cursor = '';
-    preview?.hide(map);
   });
 
-  // mousemove catches transitions between markers placed side by side
-  if (preview) {
-    map.on('mousemove', layerId, (event) => preview.show(map, event));
-  }
-
-  // layers without a full popup still retain pointer feedback and previews
-  if (showPopup) map.on('click', layerId, (event) => showPopup(map, event));
+  map.on('click', layerId, (event) => {
+    if (clickActs()) click(map, event);
+  });
 }
 
 // map each legend row to the Mapbox layers controlled by its checkbox
@@ -2679,7 +2686,7 @@ function legendItems() {
       label: LEGEND_LAYERS.transmissionLines,
       ...LAYER_SYMBOLS.transmissionLines,
       visible: false,
-      infoText: 'Electric power transmission lines from a 2024 archive of the U.S. Electric Power Transmission Lines dataset. Thicker lines carry higher voltage. Click a line for its owner, voltage, and substations.',
+      infoText: 'Electric power transmission lines from a 2024 archive of the U.S. Electric Power Transmission Lines dataset. Thicker lines carry higher voltage. Hover over or tap a line for its owner, voltage, and substations.',
       layerIds: [LAYER_IDS.transmissionLines, LAYER_IDS.transmissionLinesHit],
     },
     {

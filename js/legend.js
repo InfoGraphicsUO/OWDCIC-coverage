@@ -132,20 +132,14 @@ export function initLegend(items) {
       infoTooltip.refresh(infoButton);
     },
 
-    updateSwatchColor(label, color, { darkOutline = false, image = null } = {}) {
+    updateSwatchColor(label, color, { image = null } = {}) {
       // viewshed colors change with the selected basemap
       const swatch = findBinding(label)?.swatch;
       if (!swatch) return;
 
       // CSS variables let one swatch style follow runtime basemap changes
       swatch.style.setProperty('--legend-swatch-color', color);
-
-      // an inline url resolves from the page, where a CSS variable would resolve from the stylesheet
-      swatch.style.backgroundImage = image ? `url("${image}")` : '';
-      swatch.classList.toggle('legend-swatch--image', Boolean(image));
-
-      // the image has its own edges, so only flat swatches take the satellite outline
-      swatch.classList.toggle('legend-swatch--dark-outline', darkOutline && !image);
+      setSwatchImage(swatch, image);
     },
 
     setLoading(label, loading) {
@@ -422,8 +416,15 @@ function createLegendSwatch(item) {
   if (item.swatchClass) classes.push(item.swatchClass);
   swatch.className = classes.join(' ');
   swatch.style.setProperty('--legend-swatch-color', item.swatchColor);
+  setSwatchImage(swatch, item.swatchImage);
   swatch.setAttribute('aria-hidden', 'true');
   return swatch;
+}
+
+function setSwatchImage(swatch, image) {
+  // an inline url resolves from the page, where a CSS variable would resolve from the stylesheet
+  swatch.style.backgroundImage = image ? `url("${image}")` : '';
+  swatch.classList.toggle('legend-swatch--image', Boolean(image));
 }
 
 function setLayersVisible(map, layerIds, visible) {
