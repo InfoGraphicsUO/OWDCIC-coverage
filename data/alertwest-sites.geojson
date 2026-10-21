@@ -548,7 +548,9 @@
         "cameraHeightFt": 102.0,
         "alertWestLive": true,
         "provider": "alertwest",
-        "outsideApi": true
+        "outsideApi": true,
+        "county": "Douglas",
+        "state": "OR"
       }
     },
     {
@@ -670,7 +672,9 @@
         "cameraHeightFt": 80.0,
         "alertWestLive": true,
         "provider": "alertwest",
-        "outsideApi": true
+        "outsideApi": true,
+        "county": "Lane",
+        "state": "OR"
       }
     },
     {
