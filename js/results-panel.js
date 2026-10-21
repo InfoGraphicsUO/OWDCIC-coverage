@@ -2079,7 +2079,7 @@ function cameraCountBadges(cameraCounts) {
     badge.className = 'results-panel__camera-count';
     badge.textContent = `${formatNumber(count)} ${provider}`;
     const color = COVERAGE_PROVIDERS.find(({ label }) => label === provider)?.color;
-    if (color) badge.style.backgroundColor = color;
+    if (color) badge.style.setProperty('--camera-count-color', color);
     line.append(badge);
   }
   return line;
