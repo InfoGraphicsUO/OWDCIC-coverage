@@ -90,5 +90,9 @@ export function initFireHistoryTimeline(container, onChange) {
     current() {
       return firstYear === null ? null : year();
     },
+
+    firstYear() {
+      return firstYear;
+    },
   };
 }

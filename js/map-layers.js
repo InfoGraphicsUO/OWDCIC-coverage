@@ -501,7 +501,10 @@ const fireHistoryFiles = new Map();
 // the year slider rides over the map and only shows while a fire history row is on
 const fireHistoryTimeline = initFireHistoryTimeline(
   document.querySelector('.map-panels'),
-  (year) => activeMap && applyFireHistoryYear(activeMap, year)
+  (year) => {
+    labelFireHistoryExport(year);
+    if (activeMap) applyFireHistoryYear(activeMap, year);
+  }
 );
 
 const filterControl = initFilterPanel({
@@ -2453,6 +2456,23 @@ function crossfadeFireHistoryYears(map) {
 // the timeline follows the fire history rows rather than having a switch of its own
 function syncFireHistoryTimeline() {
   fireHistoryTimeline.setVisible(FIRE_HISTORY_LABELS.some((label) => legendControl.isChecked(label)));
+}
+
+// an exported map has no slider, so its legend names the years each row shows
+function labelFireHistoryExport(year) {
+  const firstYear = fireHistoryTimeline.firstYear();
+  let earlierYears = `before ${year}`;
+  if (year - 1 === firstYear) earlierYears = String(firstYear);
+  else if (year - 1 > firstYear) earlierYears = `${firstYear}–${year - 1}`;
+
+  for (const [label, years] of [
+    [LEGEND_LAYERS.fireHistoryPerimeters, year],
+    [LEGEND_LAYERS.fireHistoryIgnitions, year],
+    [LEGEND_LAYERS.fireHistoryEarlierPerimeters, earlierYears],
+    [LEGEND_LAYERS.fireHistoryEarlierIgnitions, earlierYears],
+  ]) {
+    legendControl.setExportLabel(label, `${label} (${years})`);
+  }
 }
 
 function loadFireHistoryFile(url, label) {

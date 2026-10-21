@@ -2238,6 +2238,8 @@ export function condenseCameraLegendRows(rows, { separateViewshedColors = false 
   for (const row of rows) {
     // provider rows already carry the camera symbology
     if (row.label === LEGEND_LAYERS.cameras && hasProviderCameras) continue;
+    // the fire history rows under it carry every fire symbol
+    if (row.label === LEGEND_LAYERS.fireHistory) continue;
 
     const isViewshedGroup = row.label === LEGEND_LAYERS.viewsheds;
     const isProviderViewshed = row.label in EXPORT_PROVIDER_VIEWSHED_LABELS;
@@ -2283,7 +2285,7 @@ function readLegendRowsFromDom() {
 }
 
 function parseLegendRowFromDom(row) {
-  const label = row.querySelector('.legend-label')?.textContent?.trim();
+  const label = row.dataset?.exportLabel || row.querySelector('.legend-label')?.textContent?.trim();
   if (!label) return null;
   const visualRoot = row.querySelector('.legend-visual');
   const visual = visualRoot ? parseLegendVisualFromDom(visualRoot) : exportLegendVisualForLabel(label);
