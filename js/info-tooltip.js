@@ -45,7 +45,9 @@ function refresh(button) {
   // detached buttons have no useful viewport position
   if (!tooltip || !button || !button.isConnected) return;
   activeButton = button;
-  tooltip.textContent = button.dataset.tooltip || '';
+  // a trigger can build richer content, such as color chips, in place of its plain text
+  if (typeof button.tooltipContent === 'function') tooltip.replaceChildren(...button.tooltipContent());
+  else tooltip.textContent = button.dataset.tooltip || '';
   tooltip.hidden = false;
   const buttonRect = button.getBoundingClientRect();
 

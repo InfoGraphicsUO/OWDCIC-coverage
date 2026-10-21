@@ -1,9 +1,12 @@
+import { attachInfoTooltip } from './info-tooltip.js';
+
 /**
  * year slider over the map for the Fire history layer
  * it stays hidden until a fire history row is switched on and its data gives it a year range
  * onChange receives { year, cumulative } whenever either one changes
+ * colors are the map's { year, earlier } fills, repeated in the earlier years explanation
  */
-export function initFireHistoryTimeline(container, onChange) {
+export function initFireHistoryTimeline(container, onChange, colors) {
   const element = document.createElement('section');
   element.className = 'fire-timeline';
   element.setAttribute('aria-label', 'Fire history timeline');
@@ -35,8 +38,14 @@ export function initFireHistoryTimeline(container, onChange) {
   cumulativeLabel.className = 'fire-timeline__cumulative';
   cumulativeLabel.append(cumulativeInput, 'Show earlier years');
 
-  element.append(yearLabel, track, cumulativeLabel);
+  const cumulativeInfo = createEarlierYearsInfo(colors);
+  const cumulativeControl = document.createElement('div');
+  cumulativeControl.className = 'fire-timeline__cumulative-control';
+  cumulativeControl.append(cumulativeLabel, cumulativeInfo);
+
+  element.append(yearLabel, track, cumulativeControl);
   container.append(element);
+  attachInfoTooltip(element);
 
   let firstYear = null;
   let lastYear = null;
@@ -105,4 +114,36 @@ export function initFireHistoryTimeline(container, onChange) {
       return { year: firstYear === null ? null : year(), cumulative: cumulativeInput.checked };
     },
   };
+}
+
+// the explanation names each fill with a chip of its color, so the text matches the map
+function createEarlierYearsInfo({ year, earlier }) {
+  const parts = [
+    'Shows the years before the selected year in a faded ',
+    [earlier, 'brown'],
+    ', building up a history of past fires beneath the selected year in ',
+    [year, 'dark red'],
+    '.',
+  ];
+
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'info-button fire-timeline__info';
+  button.innerHTML = '<i class="fa-regular fa-circle-info" aria-hidden="true"></i>';
+  const text = parts.map((part) => (Array.isArray(part) ? part[1] : part)).join('');
+  // plain text for assistive technology, chips for the visible tooltip
+  button.dataset.tooltip = text;
+  button.setAttribute('aria-label', text);
+  button.tooltipContent = () => parts.map((part) => {
+    if (!Array.isArray(part)) return part;
+    const [color, name] = part;
+    const chip = document.createElement('span');
+    chip.className = 'fire-timeline__color';
+    const swatch = document.createElement('span');
+    swatch.className = 'fire-timeline__chip';
+    swatch.style.background = color;
+    chip.append(swatch, name);
+    return chip;
+  });
+  return button;
 }
