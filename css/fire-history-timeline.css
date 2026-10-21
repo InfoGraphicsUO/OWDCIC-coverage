@@ -91,21 +91,8 @@
 .fire-timeline__info:hover,
 .fire-timeline__info:focus-visible { color: #fff; }
 
-/* the tooltip lives on the body, so these chips are styled outside .fire-timeline */
-.fire-timeline__color {
-    white-space: nowrap;
-    font-weight: 700;
-}
-
-.fire-timeline__chip {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    margin-right: 4px;
-    vertical-align: -1px;
-    border: 1px solid rgba(255, 255, 255, .7);
-    border-radius: 2px;
-}
+/* the tooltip lives on the body, so this is styled outside .fire-timeline */
+.fire-timeline__color { font-weight: 700; }
 
 .fire-timeline__cumulative input {
     margin: 0;

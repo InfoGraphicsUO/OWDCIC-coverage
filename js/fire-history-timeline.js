@@ -116,12 +116,11 @@ export function initFireHistoryTimeline(container, onChange, colors) {
   };
 }
 
-// the explanation names its fill with a chip of its color, so the text matches the map
+// the explanation sets the phrase for the earlier years in their color, so the text matches the map
 function createEarlierYearsInfo({ earlier }) {
   const parts = [
-    'Shows the years before the selected year in a faded ',
-    [earlier, 'brown'],
-    ' to build up a history of past fires.',
+    'Shows fire ignitions and perimeters ',
+    [earlier, 'before the selected year'],
   ];
 
   const button = document.createElement('button');
@@ -129,19 +128,17 @@ function createEarlierYearsInfo({ earlier }) {
   button.className = 'info-button fire-timeline__info';
   button.innerHTML = '<i class="fa-regular fa-circle-info" aria-hidden="true"></i>';
   const text = parts.map((part) => (Array.isArray(part) ? part[1] : part)).join('');
-  // plain text for assistive technology, chips for the visible tooltip
+  // plain text for assistive technology, the colored phrase for the visible tooltip
   button.dataset.tooltip = text;
   button.setAttribute('aria-label', text);
   button.tooltipContent = () => parts.map((part) => {
     if (!Array.isArray(part)) return part;
-    const [color, name] = part;
-    const chip = document.createElement('span');
-    chip.className = 'fire-timeline__color';
-    const swatch = document.createElement('span');
-    swatch.className = 'fire-timeline__chip';
-    swatch.style.background = color;
-    chip.append(swatch, name);
-    return chip;
+    const [color, phrase] = part;
+    const colored = document.createElement('span');
+    colored.className = 'fire-timeline__color';
+    colored.style.color = color;
+    colored.textContent = phrase;
+    return colored;
   });
   return button;
 }
