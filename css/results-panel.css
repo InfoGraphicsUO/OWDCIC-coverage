@@ -220,6 +220,24 @@
     line-height: 1.4;
 }
 
+.results-panel__camera-counts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+/* background comes from the provider's marker color */
+.results-panel__camera-count {
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--camera-count-color, #727272) 60%, transparent);
+    color: #fff;
+    font-weight: 600;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+    white-space: nowrap;
+}
+
 .results-panel__lead {
     font-size: 17px;
     font-weight: 600;
