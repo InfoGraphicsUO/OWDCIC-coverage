@@ -38,7 +38,6 @@
 
 .fire-timeline__year {
     grid-area: year;
-    min-width: 3.2em;
     font-size: 22px;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
