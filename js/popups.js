@@ -16,55 +16,35 @@ const DATE_FORMAT = new Intl.DateTimeFormat('en-US', {
 // one visible popup per map without retaining discarded map instances
 const ACTIVE_POPUPS = new WeakMap();
 
+// one cursor-following tooltip element per map, reused between hovers
+const HOVER_TOOLTIPS = new WeakMap();
+
 // screen-pixel spacing used after projecting the feature onto the map container
 const POPUP_MARGIN = 12;
 const POPUP_MARKER_GAP = 14;
 
+// the cursor arrow hangs below its hotspot, so a tooltip below it needs more room
+const TOOLTIP_GAP_ABOVE = 14;
+const TOOLTIP_GAP_BELOW = 26;
+
+// crossing the small gaps between neighbouring lines and markers should not blink the tooltip
+const TOOLTIP_HIDE_DELAY_MS = 120;
+
 // unique ids connect each dialog to its generated title
 let popupTitleId = 0;
 
-export function showDigitizedCameraPopup(map, event, symbol) {
-  showPopup(map, event, createDigitizedCameraPopup, { symbol });
-}
+// content builders by the feature kinds map-layers.js binds
+const POPUP_CONTENT = Object.freeze({
+  camera: createCameraPreview,
+  digitizedCamera: createDigitizedCameraPopup,
+  fire: createFirePopup,
+  lookout: createLookoutPopup,
+  prescribed: createPrescribedPopup,
+  transmissionLine: createTransmissionLinePopup,
+});
 
-/** lightweight hover popup carrying only the camera name and locality */
-export function showCameraPreview(map, event, symbol) {
-  const feature = event.features?.[0];
-  if (!feature) return;
-
-  const active = ACTIVE_POPUPS.get(map);
-
-  // a clicked popup outranks previews so hovering cannot discard it
-  if (active && !active.isPreview) return;
-
-  const key = featureKey(feature);
-  if (active?.isPreview && active.featureKey === key) return;
-
-  showPopup(map, event, createCameraPreview, { preview: true, featureKey: key, symbol });
-}
-
-export function hideCameraPreview(map) {
-  const active = ACTIVE_POPUPS.get(map);
-  if (active?.isPreview) active.close();
-}
-
-export function showFirePopup(map, event, symbol) {
-  showPopup(map, event, createFirePopup, { symbol });
-}
-
-export function showPrescribedPopup(map, event, symbol) {
-  showPopup(map, event, createPrescribedPopup, { symbol });
-}
-
-export function showLookoutPopup(map, event, symbol) {
-  showPopup(map, event, createLookoutPopup, { symbol });
-}
-
-export function showTransmissionLinePopup(map, event, symbol) {
-  showPopup(map, event, createTransmissionLinePopup, { symbol });
-}
-
-function showPopup(map, event, createContent, options = {}) {
+/** box pinned to the clicked or tapped feature, closed with its button, Escape or a map click */
+export function showFeaturePopup(map, event, kind, symbol) {
   const feature = event.features?.[0];
   if (!feature) return;
 
@@ -73,30 +53,96 @@ function showPopup(map, event, createContent, options = {}) {
   if (!coordinates) return;
 
   // symbol is the layer's legend symbol, drawn beside the popup title
-  const { symbol, ...popupOptions } = options;
-  const content = createContent(feature.properties || {}, symbol);
+  const content = POPUP_CONTENT[kind](feature.properties || {}, symbol);
 
   // replacing in place prevents overlapping dialogs and stale listeners
   ACTIVE_POPUPS.get(map)?.close({ immediate: true });
+  hideHoverTooltip(map);
 
-  const popup = new FeaturePopup(map, coordinates, content, popupOptions);
+  const popup = new FeaturePopup(map, coordinates, content, { featureKey: hoverKey(feature) });
   ACTIVE_POPUPS.set(map, popup);
   popup.open();
 }
 
-// identifies a hovered feature so its preview can be matched on click
-function featureKey(feature) {
-  return feature.properties?.id ?? feature.id ?? null;
+/** tooltip beside the cursor carrying the same details as the clicked box */
+export function showHoverTooltip(map, point, feature, kind, symbol) {
+  const key = hoverKey(feature);
+
+  // the pinned box already shows this feature beside the cursor
+  if (ACTIVE_POPUPS.get(map)?.featureKey === key) {
+    hideHoverTooltip(map);
+    return;
+  }
+
+  let tooltip = HOVER_TOOLTIPS.get(map);
+  if (!tooltip) {
+    tooltip = new HoverTooltip(map);
+    HOVER_TOOLTIPS.set(map, tooltip);
+  }
+
+  tooltip.show(point, key, () =>
+    POPUP_CONTENT[kind](feature.properties || {}, symbol, { hover: true })
+  );
+}
+
+export function hideHoverTooltip(map) {
+  HOVER_TOOLTIPS.get(map)?.hide();
+}
+
+// features without ids still differ by their properties, which stay small here
+function hoverKey(feature) {
+  return `${feature.layer?.id}:${JSON.stringify(feature.properties ?? {})}`;
+}
+
+/** reuses one element so moving between features only swaps its content */
+class HoverTooltip {
+  constructor(map) {
+    this.map = map;
+    this.key = null;
+    this.hideTimer = null;
+    this.element = document.createElement('div');
+    this.element.className = 'feature-popup feature-popup--hover';
+
+    // it repeats what the pointer is over, with no way to reach it by keyboard
+    this.element.setAttribute('aria-hidden', 'true');
+    map.getContainer().append(this.element);
+  }
+
+  show(point, key, createContent) {
+    window.clearTimeout(this.hideTimer);
+
+    if (key !== this.key) {
+      this.key = key;
+      this.element.replaceChildren(createContent());
+    }
+
+    placeBeside(this.element, this.map.getContainer(), point, {
+      gapAbove: TOOLTIP_GAP_ABOVE,
+      gapBelow: TOOLTIP_GAP_BELOW,
+    });
+
+    // fade in once on entry; moving the cursor only changes left and top
+    this.element.classList.add('is-open');
+  }
+
+  hide() {
+    if (!this.element.classList.contains('is-open')) return;
+
+    window.clearTimeout(this.hideTimer);
+    this.hideTimer = window.setTimeout(() => {
+      this.key = null;
+      this.element.classList.remove('is-open');
+    }, TOOLTIP_HIDE_DELAY_MS);
+  }
 }
 
 /** owns a popup DOM element along with its map listeners and screen position */
 class FeaturePopup {
-  constructor(map, coordinates, content, { featureKey = null, preview = false } = {}) {
+  constructor(map, coordinates, content, { featureKey = null } = {}) {
     this.map = map;
     this.coordinates = coordinates;
-    this.isPreview = preview;
     this.featureKey = featureKey;
-    this.element = createPopupElement(content, { preview });
+    this.element = createPopupElement(content);
     this.animationFrame = null;
     this.mapClickTimer = null;
     this.resizeObserver =
@@ -112,8 +158,7 @@ class FeaturePopup {
     this.map.on('resize', this.schedulePositionUpdate);
     document.addEventListener('keydown', this.handleKeyDown);
 
-    // previews are dismissed by leaving the feature rather than by the user
-    if (!this.isPreview) this.enableDismissal();
+    this.enableDismissal();
 
     this.updatePosition();
 
@@ -181,10 +226,6 @@ class FeaturePopup {
     // all measurements stay in map-container pixels
     const container = this.map.getContainer();
     const point = this.map.project(this.coordinates);
-    const width = this.element.offsetWidth;
-    const height = this.element.offsetHeight;
-
-    if (!width || !height) return;
 
     // hiding offscreen content avoids a dialog stranded at the nearest edge
     const isOffscreen =
@@ -194,34 +235,10 @@ class FeaturePopup {
       point.y > container.clientHeight;
     this.element.classList.toggle('is-offscreen', isOffscreen);
 
-    const left = clamp(
-      point.x - width / 2,
-      POPUP_MARGIN,
-      container.clientWidth - width - POPUP_MARGIN
-    );
-
-    // prefer above the marker unless the lower side has more usable room
-    const spaceAbove = point.y - POPUP_MARKER_GAP;
-    const spaceBelow = container.clientHeight - point.y - POPUP_MARKER_GAP;
-    const placeBelow =
-      spaceAbove < height + POPUP_MARGIN && spaceBelow > spaceAbove;
-
-    const preferredTop = placeBelow
-      ? point.y + POPUP_MARKER_GAP
-      : point.y - height - POPUP_MARKER_GAP;
-    const top = clamp(
-      preferredTop,
-      POPUP_MARGIN,
-      container.clientHeight - height - POPUP_MARGIN
-    );
-
-    // keep the pointer and animation origin inside popup rounded corners
-    const originX = clamp(point.x - left, 18, width - 18);
-
-    this.element.classList.toggle('feature-popup--below', placeBelow);
-    this.element.style.left = `${left}px`;
-    this.element.style.top = `${top}px`;
-    this.element.style.setProperty('--popup-origin-x', `${originX}px`);
+    placeBeside(this.element, container, point, {
+      gapAbove: POPUP_MARKER_GAP,
+      gapBelow: POPUP_MARKER_GAP,
+    });
   }
 
   handleMapClick = () => {
@@ -237,18 +254,11 @@ class FeaturePopup {
   };
 }
 
-function createPopupElement(content, { preview = false } = {}) {
+function createPopupElement(content) {
   const popup = document.createElement('section');
-  popup.className = preview ? 'feature-popup feature-popup--preview' : 'feature-popup';
+  popup.className = 'feature-popup';
   popup.setAttribute('role', 'dialog');
   labelPopup(popup, content);
-
-  // a preview closes on mouseleave, so a close button would be unreachable
-  if (preview) {
-    popup.append(content);
-    return popup;
-  }
-
   popup.append(createCloseButton(), content);
   return popup;
 }
@@ -272,11 +282,47 @@ function labelPopup(popup, content) {
   popup.setAttribute('aria-labelledby', title.id);
 }
 
+/** places a popup above a container point, or below it when the lower side has more room */
+function placeBeside(element, container, point, { gapAbove, gapBelow }) {
+  const width = element.offsetWidth;
+  const height = element.offsetHeight;
+
+  if (!width || !height) return;
+
+  const left = clamp(
+    point.x - width / 2,
+    POPUP_MARGIN,
+    container.clientWidth - width - POPUP_MARGIN
+  );
+
+  const spaceAbove = point.y - gapAbove;
+  const spaceBelow = container.clientHeight - point.y - gapBelow;
+  const placeBelow =
+    spaceAbove < height + POPUP_MARGIN && spaceBelow > spaceAbove;
+
+  const preferredTop = placeBelow
+    ? point.y + gapBelow
+    : point.y - height - gapAbove;
+  const top = clamp(
+    preferredTop,
+    POPUP_MARGIN,
+    container.clientHeight - height - POPUP_MARGIN
+  );
+
+  // keep the pointer and animation origin inside popup rounded corners
+  const originX = clamp(point.x - left, 18, width - 18);
+
+  element.classList.toggle('feature-popup--below', placeBelow);
+  element.style.left = `${left}px`;
+  element.style.top = `${top}px`;
+  element.style.setProperty('--popup-origin-x', `${originX}px`);
+}
+
 function clamp(value, minimum, maximum) {
   return Math.min(Math.max(value, minimum), Math.max(minimum, maximum));
 }
 
-// hover preview stays limited to what identifies the camera at a glance
+// cameras open the results panel on click, so hover only identifies the camera
 function createCameraPreview({ name, state, county, owner }, symbol) {
   const popup = createPopupContainer(name || 'Camera', symbol);
 
@@ -402,7 +448,7 @@ function availableText(value) {
   return text && text.toUpperCase() !== 'NOT AVAILABLE' ? text : null;
 }
 
-function createPrescribedPopup(properties, symbol) {
+function createPrescribedPopup(properties, symbol, { hover = false } = {}) {
   const popup = createPopupContainer(properties.name || 'Prescribed fire', symbol);
 
   const acres = formatNumber(properties.acreage, ACRES_FORMAT);
@@ -411,8 +457,10 @@ function createPrescribedPopup(properties, symbol) {
   const startDate = formatArcGISDate(properties.prescribed_date_start);
   if (startDate) popup.append(createMetaLine(`Scheduled: ${startDate}`));
 
+  // a link cannot be reached in a tooltip that moves with the cursor
   const watchDutyUrl = getHttpsUrl(properties.watchduty_url);
-  if (watchDutyUrl) appendExternalLink(popup, watchDutyUrl, 'Open in Watch Duty');
+  if (watchDutyUrl && hover) popup.append(createMetaLine('Click for the Watch Duty link'));
+  else if (watchDutyUrl) appendExternalLink(popup, watchDutyUrl, 'Open in Watch Duty');
 
   return popup;
 }

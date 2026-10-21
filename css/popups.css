@@ -49,15 +49,20 @@
     transform: translateY(0) scale(1);
 }
 
-/* hover preview hugs its text and must never sit under the pointer */
-.feature-popup--preview {
-    width: auto;
+/* hover tooltip hugs its text and must never catch the pointer it follows */
+.feature-popup--hover {
+    width: max-content;
     max-width: min(280px, calc(100% - 24px));
-    padding: 9px 12px;
+    padding: 10px 13px;
 }
 
-.feature-popup--preview.is-open {
+.feature-popup--hover.is-open {
     pointer-events: none;
+}
+
+/* no close button to clear */
+.feature-popup--hover .cam-title {
+    padding-right: 0;
 }
 
 .feature-popup.is-offscreen {
