@@ -24,7 +24,7 @@ const POPUP_MARGIN = 12;
 const POPUP_MARKER_GAP = 14;
 
 // the cursor arrow hangs below its hotspot, so a tooltip below it needs more room
-const TOOLTIP_GAP_ABOVE = 30;
+const TOOLTIP_GAP_ABOVE = 14;
 const TOOLTIP_GAP_BELOW = 26;
 
 // crossing the small gaps between neighbouring lines and markers should not blink the tooltip
