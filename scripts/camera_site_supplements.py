@@ -31,6 +31,13 @@ def supplement_sites(by_provider, text, converter):
     for provider, collection in by_provider.items():
         collection['features'] = [f for f in collection['features'] if (provider, f['properties']['name']) not in excluded]
 
+    # live sites ALERTWest keeps out of its API, so the map draws their markers from this file
+    for record in supplements.get('outsideApi', []):
+        site = next((f for f in by_provider[record['provider']]['features'] if f['properties']['name'] == record['sheetName']), None)
+        if site is None:
+            raise ValueError(f"Unknown outsideApi site: {record['sheetName']}")
+        site['properties']['outsideApi'] = True
+
     for record in supplements['sites']:
         provider = record['provider']
         row = rows.get(record.get('sheetName'))

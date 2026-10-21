@@ -547,7 +547,8 @@
         "aliases": [],
         "cameraHeightFt": 102.0,
         "alertWestLive": true,
-        "provider": "alertwest"
+        "provider": "alertwest",
+        "outsideApi": true
       }
     },
     {
@@ -668,7 +669,8 @@
         "aliases": [],
         "cameraHeightFt": 80.0,
         "alertWestLive": true,
-        "provider": "alertwest"
+        "provider": "alertwest",
+        "outsideApi": true
       }
     },
     {

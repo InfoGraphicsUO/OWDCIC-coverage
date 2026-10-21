@@ -61,6 +61,7 @@ export const CAMERA_PROVIDER_COLORS = Object.freeze({
 // marker artwork rasterized by js/marker-icons.js and shown in the legend
 export const MARKER_ICON_URLS = Object.freeze({
   camera: 'img/camera-marker.svg',
+  privateCamera: 'img/private-camera-marker.svg',
   panoCamera: 'img/pano-camera-marker.svg',
   enviroVisionCamera: 'img/envirovision-camera-marker.svg',
   fire: 'img/fire-marker.svg',
