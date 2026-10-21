@@ -48,7 +48,8 @@ Carried over from the earlier inventory; not rechecked against the live API on O
 **Bear Mountain** and **Callahan Ridge** are live but ALERTWest keeps them out of its API
 for landowner privacy (#147). They are listed under `outsideApi` in
 `data/camera-site-supplements.json`, and the map draws their markers from
-`data/alertwest-sites.geojson` with no camera image or live feed link.
+`data/alertwest-sites.geojson` as a slashed camera (`img/private-camera-marker.svg`) with no
+camera image or live feed link.
 
 The web map joins live ALERTWest cameras to viewsheds by ALERTWest site id, then by location
 (nearest viewshed site within 250 m, `js/geojson-transform.js`), then by name.
