@@ -150,6 +150,7 @@
 //   'OR Burn probability (QWRA)',
 //   'Transmission lines',
 //   'Fires (NIFC)',
+//   'Fire history',
 //   'Prescribed fires (Watch Duty)',
 //
 // ---------------------------------------------------------------------------
@@ -185,5 +186,6 @@ export const VISIBLE_LAYERS = [
   'OR Burn probability (QWRA)',
   'Transmission lines',
   'Fires (NIFC)',
+  'Fire history',
   'Prescribed fires (Watch Duty)',
 ];

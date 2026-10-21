@@ -29,6 +29,9 @@ export const DATA_URLS = Object.freeze({
   digitizedCameraSources: 'data/digitized-camera-sources.geojson',
   standingLookouts: 'data/standing-lookouts.geojson',
   transmissionLines: 'data/transmission-lines.geojson',
+  // past wildfires of 100+ acres since 2016, built by scripts/data-builders/build-fire-history.py
+  fireHistoryPerimeters: 'data/fire-history-perimeters.geojson',
+  fireHistoryIgnitions: 'data/fire-history-ignitions.geojson',
   // names of every division option, so the filter search needs no geometry
   divisionOptions: 'data/map-divisions/options.json',
   // the region outline and the hatched states and Canada around it
@@ -116,6 +119,16 @@ export const LAYER_IDS = Object.freeze({
   perimetersSource: 'nifc-perimeters',
   perimetersFill: 'nifc-perimeters-fill',
   perimetersLine: 'nifc-perimeters-line',
+  fireHistoryPerimetersSource: 'fire-history-perimeters',
+  fireHistoryPerimetersEarlierFill: 'fire-history-perimeters-earlier-fill',
+  fireHistoryPerimetersOutgoingFill: 'fire-history-perimeters-outgoing-fill',
+  fireHistoryPerimetersOutgoingLine: 'fire-history-perimeters-outgoing-line',
+  fireHistoryPerimetersFill: 'fire-history-perimeters-fill',
+  fireHistoryPerimetersLine: 'fire-history-perimeters-line',
+  fireHistoryIgnitionsSource: 'fire-history-ignitions',
+  fireHistoryIgnitionsEarlier: 'fire-history-ignitions-earlier',
+  fireHistoryIgnitionsOutgoing: 'fire-history-ignitions-outgoing',
+  fireHistoryIgnitions: 'fire-history-ignitions',
   prescribedSource: 'watchduty-prescribed',
   prescribed: 'watchduty-prescribed',
   lookouts: 'standing-lookouts',
@@ -137,6 +150,9 @@ export const LEGEND_LAYERS = Object.freeze({
   burnProbability: 'OR Burn probability (QWRA)',
   transmissionLines: 'Transmission lines',
   fires: 'Fires (NIFC)',
+  fireHistory: 'Fire history',
+  fireHistoryPerimeters: 'Past fire perimeters',
+  fireHistoryIgnitions: 'Past fire ignitions',
   prescribed: 'Prescribed fires (Watch Duty)',
 });
 
