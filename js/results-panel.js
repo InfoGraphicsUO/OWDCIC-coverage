@@ -1601,6 +1601,11 @@ function layoutLegendPanel({ ctx, width, rows }) {
   const labelLines = rows.map((row) => wrapExportLines([row.label], EXPORT_LEGEND_LABEL_CHARS));
   const extraLines = labelLines.reduce((total, lines) => total + lines.length - 1, 0);
 
+  // a row with a second icon widens the symbol column for every row so labels stay aligned
+  const companionWidth = rows.some((row) => row.visual?.companionImage)
+    ? EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_COMPANION_GAP
+    : 0;
+
   // leave room for the empty-legend fallback label
   const contentHeight = titleHeight + Math.max(rows.length, 1) * rowHeight + extraLines * EXPORT_LEGEND_LINE_HEIGHT;
   return {
@@ -1610,7 +1615,8 @@ function layoutLegendPanel({ ctx, width, rows }) {
     padY,
     titleHeight,
     rowHeight,
-    textOffset: EXPORT_LEGEND_TEXT_OFFSET,
+    textOffset: EXPORT_LEGEND_TEXT_OFFSET + companionWidth,
+    companionWidth,
     rows,
     labelLines,
   };
@@ -1694,7 +1700,8 @@ function drawLegendOverlay(ctx, x, y, layout) {
   // draw each visible layer with the same visual parsed from the map legend
   layout.rows.forEach((row, index) => {
     textY += layout.rowHeight;
-    const swatchX = x + layout.padX;
+    // single symbols center in the column a two-icon row needs
+    const swatchX = x + layout.padX + (row.visual?.companionImage ? 0 : layout.companionWidth / 2);
 
     // the swatch centers on the whole label, including wrapped lines
     const lineCount = layout.labelLines[index].length;
@@ -1702,11 +1709,9 @@ function drawLegendOverlay(ctx, x, y, layout) {
     const swatchY = labelMiddle - EXPORT_LEGEND_SWATCH_SIZE / 2;
     drawLegendVisual(ctx, row.visual, swatchX, swatchY);
     ctx.fillStyle = '#f0f0f0';
-    // a second icon beside the first pushes this row's label over
-    const companionWidth = row.visual?.companionImage ? EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_COMPANION_GAP : 0;
     layout.labelLines[index].forEach((line, lineIndex) => {
       if (lineIndex) textY += EXPORT_LEGEND_LINE_HEIGHT;
-      ctx.fillText(line, swatchX + layout.textOffset + companionWidth, textY);
+      ctx.fillText(line, x + layout.padX + layout.textOffset, textY);
     });
   });
 }
