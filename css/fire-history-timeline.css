@@ -92,7 +92,12 @@
 .fire-timeline__info:focus-visible { color: #fff; }
 
 /* the tooltip lives on the body, so this is styled outside .fire-timeline */
-.fire-timeline__color { font-weight: 700; }
+/* a thin white outline keeps the brown readable on the dark tooltip */
+.fire-timeline__color {
+    font-weight: 700;
+    -webkit-text-stroke: 1px rgba(255, 255, 255, .75);
+    paint-order: stroke fill;
+}
 
 .fire-timeline__cumulative input {
     margin: 0;
