@@ -138,7 +138,7 @@ const FIRE_HISTORY_IGNITION_RADIUS = [
   1_000, 4,
   100_000, 8,
 ];
-// matches no feature, for the earlier-years layers while only one year shows
+// matches no feature until the timeline has a year
 const NO_FIRE_YEAR = ['==', ['get', 'year'], -1];
 
 // relative line widths by the source's VOLT_CLASS; DC and NOT AVAILABLE borrow another class's width
@@ -395,19 +395,26 @@ const LAYER_SYMBOLS = Object.freeze({
   prescribed: Object.freeze({ iconUrl: MARKER_ICON_URLS.prescribed }),
   fireHistoryPerimeters: Object.freeze({ swatchColor: FIRE_HISTORY_COLOR }),
   fireHistoryIgnitions: Object.freeze({ swatchColor: FIRE_HISTORY_COLOR, swatchShape: 'circle' }),
+  fireHistoryEarlierPerimeters: Object.freeze({ swatchColor: FIRE_HISTORY_EARLIER_COLOR }),
+  fireHistoryEarlierIgnitions: Object.freeze({ swatchColor: FIRE_HISTORY_EARLIER_COLOR, swatchShape: 'circle' }),
 });
 
 const FIRE_HISTORY_PERIMETER_LAYER_IDS = Object.freeze([
-  LAYER_IDS.fireHistoryPerimetersEarlierFill,
   LAYER_IDS.fireHistoryPerimetersOutgoingFill,
   LAYER_IDS.fireHistoryPerimetersOutgoingLine,
   LAYER_IDS.fireHistoryPerimetersFill,
   LAYER_IDS.fireHistoryPerimetersLine,
 ]);
 const FIRE_HISTORY_IGNITION_LAYER_IDS = Object.freeze([
-  LAYER_IDS.fireHistoryIgnitionsEarlier,
   LAYER_IDS.fireHistoryIgnitionsOutgoing,
   LAYER_IDS.fireHistoryIgnitions,
+]);
+// every legend row that draws fire history, so the timeline shows while any is on
+const FIRE_HISTORY_LABELS = Object.freeze([
+  LEGEND_LAYERS.fireHistoryPerimeters,
+  LEGEND_LAYERS.fireHistoryIgnitions,
+  LEGEND_LAYERS.fireHistoryEarlierPerimeters,
+  LEGEND_LAYERS.fireHistoryEarlierIgnitions,
 ]);
 // the timeline's year, and the year it just left while that one fades out
 const FIRE_HISTORY_YEAR_LAYER_IDS = Object.freeze([
@@ -488,12 +495,13 @@ const resultsControl = initResultsPanel({
 
 // the year the fire history layers last drew, so the next one knows which year to fade out
 let shownFireHistoryYear = null;
+// one request per fire history file, shared by its selected and earlier year rows
+const fireHistoryFiles = new Map();
 
 // the year slider rides over the map and only shows while a fire history row is on
 const fireHistoryTimeline = initFireHistoryTimeline(
   document.querySelector('.map-panels'),
-  (state) => activeMap && applyFireHistoryYear(activeMap, state),
-  { earlier: FIRE_HISTORY_EARLIER_COLOR }
+  (year) => activeMap && applyFireHistoryYear(activeMap, year)
 );
 
 const filterControl = initFilterPanel({
@@ -795,17 +803,18 @@ function loadDeferredLayers(map, { preload = false } = {}) {
   loadLayerWhenChecked(map, LEGEND_LAYERS.transmissionLines, LAYER_IDS.transmissionLinesSource, {}, () =>
     fetchJson(DATA_URLS.transmissionLines, 'Transmission lines')
   );
-  // each fire history file widens the timeline to the years it covers
-  for (const [label, sourceId, url] of [
-    [LEGEND_LAYERS.fireHistoryPerimeters, LAYER_IDS.fireHistoryPerimetersSource, DATA_URLS.fireHistoryPerimeters],
-    [LEGEND_LAYERS.fireHistoryIgnitions, LAYER_IDS.fireHistoryIgnitionsSource, DATA_URLS.fireHistoryIgnitions],
+  // the selected and earlier rows of each type draw from one file, fetched once for both;
+  // each file widens the timeline to the years it covers
+  for (const [labels, sourceId, url] of [
+    [[LEGEND_LAYERS.fireHistoryPerimeters, LEGEND_LAYERS.fireHistoryEarlierPerimeters],
+      LAYER_IDS.fireHistoryPerimetersSource, DATA_URLS.fireHistoryPerimeters],
+    [[LEGEND_LAYERS.fireHistoryIgnitions, LEGEND_LAYERS.fireHistoryEarlierIgnitions],
+      LAYER_IDS.fireHistoryIgnitionsSource, DATA_URLS.fireHistoryIgnitions],
   ]) {
-    if (layerIsRemoved(label)) continue;
-    loadLayerWhenChecked(map, label, sourceId, {}, async () => {
-      const data = await fetchJson(url, label);
-      fireHistoryTimeline.includeYears(data.features.map(({ properties }) => properties?.year));
-      return data;
-    });
+    for (const label of labels) {
+      if (layerIsRemoved(label)) continue;
+      loadLayerWhenChecked(map, label, sourceId, {}, () => loadFireHistoryFile(url, label));
+    }
   }
   // the Forest Service query is the slowest request the map makes
   loadLayerWhenChecked(map, LEGEND_LAYERS.nationalForests, LAYER_IDS.nationalForestsSource, { preload }, () =>
@@ -2297,7 +2306,7 @@ function addPerimeterLayers(map) {
 // each fire history type draws earlier years, the year being left, and the timeline's year
 // in their own layers, so one year can fade out as the next fades in over the earlier ones
 function addFireHistoryLayers(map) {
-  const { year, cumulative } = fireHistoryTimeline.current();
+  const year = fireHistoryTimeline.current();
   const hidden = { visibility: 'none' };
 
   addGeoJSONSource(map, LAYER_IDS.fireHistoryPerimetersSource);
@@ -2306,6 +2315,7 @@ function addFireHistoryLayers(map) {
     type: 'fill',
     source: LAYER_IDS.fireHistoryPerimetersSource,
     layout: hidden,
+    filter: NO_FIRE_YEAR,
     paint: {
       'fill-color': FIRE_HISTORY_EARLIER_COLOR,
       'fill-opacity': FIRE_HISTORY_EARLIER_FILL_OPACITY,
@@ -2346,6 +2356,7 @@ function addFireHistoryLayers(map) {
     type: 'circle',
     source: LAYER_IDS.fireHistoryIgnitionsSource,
     layout: hidden,
+    filter: NO_FIRE_YEAR,
     paint: {
       'circle-color': FIRE_HISTORY_EARLIER_COLOR,
       'circle-opacity': 0.55,
@@ -2368,7 +2379,7 @@ function addFireHistoryLayers(map) {
     });
   }
 
-  if (year !== null) applyFireHistoryYear(map, { year, cumulative });
+  if (year !== null) applyFireHistoryYear(map, year);
 
   bindLayerInteractions(
     map,
@@ -2390,21 +2401,20 @@ function addFireHistoryLayers(map) {
   }
 }
 
-// shows the timeline's year, plus every year before it when the timeline is cumulative
-function applyFireHistoryYear(map, { year, cumulative }) {
+// shows the timeline's year, and every year before it in the earlier rows
+function applyFireHistoryYear(map, year) {
   const previousYear = shownFireHistoryYear;
   shownFireHistoryYear = year;
 
   const yearFilter = ['==', ['get', 'year'], year];
-  const earlierFilter = cumulative ? ['<', ['get', 'year'], year] : NO_FIRE_YEAR;
+  const earlierFilter = ['<', ['get', 'year'], year];
   for (const layerId of FIRE_HISTORY_YEAR_LAYER_IDS) map.setFilter(layerId, yearFilter);
   map.setFilter(LAYER_IDS.fireHistoryPerimetersEarlierFill, earlierFilter);
   map.setFilter(LAYER_IDS.fireHistoryIgnitionsEarlier, earlierFilter);
 
-  // switching earlier years on or off keeps the year where it is, so nothing fades
   if (previousYear === null || previousYear === year) return;
 
-  // the year being left fades out on top; with earlier years shown it settles
+  // the year being left fades out on top; with the earlier rows on it settles
   // into their muted style underneath, otherwise it disappears
   const outgoingFilter = ['==', ['get', 'year'], previousYear];
   for (const layerId of FIRE_HISTORY_OUTGOING_LAYER_IDS) map.setFilter(layerId, outgoingFilter);
@@ -2442,10 +2452,20 @@ function crossfadeFireHistoryYears(map) {
 
 // the timeline follows the fire history rows rather than having a switch of its own
 function syncFireHistoryTimeline() {
-  fireHistoryTimeline.setVisible(
-    legendControl.isChecked(LEGEND_LAYERS.fireHistoryPerimeters) ||
-    legendControl.isChecked(LEGEND_LAYERS.fireHistoryIgnitions)
-  );
+  fireHistoryTimeline.setVisible(FIRE_HISTORY_LABELS.some((label) => legendControl.isChecked(label)));
+}
+
+function loadFireHistoryFile(url, label) {
+  if (!fireHistoryFiles.has(url)) {
+    const request = fetchJson(url, label).then((data) => {
+      fireHistoryTimeline.includeYears(data.features.map(({ properties }) => properties?.year));
+      return data;
+    });
+    // a failed request is dropped so the other row can try again
+    request.catch(() => fireHistoryFiles.delete(url));
+    fireHistoryFiles.set(url, request);
+  }
+  return fireHistoryFiles.get(url);
 }
 
 async function addPrescribedLayer(map) {
@@ -2659,7 +2679,12 @@ function legendItems() {
       swatchColor: FIRE_HISTORY_COLOR,
       visible: false,
       infoText: `Wildfires of 100 acres or more in Oregon and Washington since 2016, from the NIFC Interagency Fire Perimeter History and WFIGS services. Turning a layer on opens a timeline over the map to step through the years.`,
-      layerIds: [...FIRE_HISTORY_PERIMETER_LAYER_IDS, ...FIRE_HISTORY_IGNITION_LAYER_IDS],
+      layerIds: [
+        ...FIRE_HISTORY_PERIMETER_LAYER_IDS,
+        ...FIRE_HISTORY_IGNITION_LAYER_IDS,
+        LAYER_IDS.fireHistoryPerimetersEarlierFill,
+        LAYER_IDS.fireHistoryIgnitionsEarlier,
+      ],
       children: [
         {
           label: LEGEND_LAYERS.fireHistoryPerimeters,
@@ -2672,6 +2697,18 @@ function legendItems() {
           ...LAYER_SYMBOLS.fireHistoryIgnitions,
           visible: false,
           layerIds: FIRE_HISTORY_IGNITION_LAYER_IDS,
+        },
+        {
+          label: LEGEND_LAYERS.fireHistoryEarlierPerimeters,
+          ...LAYER_SYMBOLS.fireHistoryEarlierPerimeters,
+          visible: false,
+          layerIds: [LAYER_IDS.fireHistoryPerimetersEarlierFill],
+        },
+        {
+          label: LEGEND_LAYERS.fireHistoryEarlierIgnitions,
+          ...LAYER_SYMBOLS.fireHistoryEarlierIgnitions,
+          visible: false,
+          layerIds: [LAYER_IDS.fireHistoryIgnitionsEarlier],
         },
       ],
     },

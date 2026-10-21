@@ -1,12 +1,9 @@
-import { attachInfoTooltip } from './info-tooltip.js';
-
 /**
  * year slider over the map for the Fire history layer
  * it stays hidden until a fire history row is switched on and its data gives it a year range
- * onChange receives { year, cumulative } whenever either one changes
- * colors holds the map's earlier years fill, repeated in the earlier years explanation
+ * onChange receives the year whenever it changes
  */
-export function initFireHistoryTimeline(container, onChange, colors) {
+export function initFireHistoryTimeline(container, onChange) {
   const element = document.createElement('section');
   element.className = 'fire-timeline';
   element.setAttribute('aria-label', 'Fire history timeline');
@@ -30,36 +27,18 @@ export function initFireHistoryTimeline(container, onChange, colors) {
   track.className = 'fire-timeline__track';
   track.append(slider, ticks);
 
-  const cumulativeInput = document.createElement('input');
-  cumulativeInput.type = 'checkbox';
-  // one year at a time by default; earlier years are an opt-in
-  cumulativeInput.checked = false;
-  const cumulativeLabel = document.createElement('label');
-  cumulativeLabel.className = 'fire-timeline__cumulative';
-  cumulativeLabel.append(cumulativeInput, 'Show earlier years');
-
-  const cumulativeInfo = createEarlierYearsInfo(colors);
-  const cumulativeControl = document.createElement('div');
-  cumulativeControl.className = 'fire-timeline__cumulative-control';
-  cumulativeControl.append(cumulativeLabel, cumulativeInfo);
-
-  element.append(yearLabel, track, cumulativeControl);
+  element.append(yearLabel, track);
   container.append(element);
-  attachInfoTooltip(element);
 
   let firstYear = null;
   let lastYear = null;
   let wanted = false;
 
   const year = () => Number(slider.value);
-  const notify = () => onChange({ year: year(), cumulative: cumulativeInput.checked });
+  const notify = () => onChange(year());
 
   function render() {
     yearLabel.textContent = String(year());
-    // the label already reads the year, so the slider announces the same text
-    slider.setAttribute('aria-valuetext', cumulativeInput.checked
-      ? `${firstYear} through ${year()}`
-      : String(year()));
   }
 
   function renderTicks() {
@@ -78,12 +57,10 @@ export function initFireHistoryTimeline(container, onChange, colors) {
     element.inert = !open;
   }
 
-  for (const [input, event] of [[slider, 'input'], [cumulativeInput, 'change']]) {
-    input.addEventListener(event, () => {
-      render();
-      notify();
-    });
-  }
+  slider.addEventListener('input', () => {
+    render();
+    notify();
+  });
 
   render();
 
@@ -111,34 +88,7 @@ export function initFireHistoryTimeline(container, onChange, colors) {
     },
 
     current() {
-      return { year: firstYear === null ? null : year(), cumulative: cumulativeInput.checked };
+      return firstYear === null ? null : year();
     },
   };
-}
-
-// the explanation sets the phrase for the earlier years in their color, so the text matches the map
-function createEarlierYearsInfo({ earlier }) {
-  const parts = [
-    'Shows fire ignitions and perimeters ',
-    [earlier, 'before the selected year'],
-  ];
-
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'info-button fire-timeline__info';
-  button.innerHTML = '<i class="fa-regular fa-circle-info" aria-hidden="true"></i>';
-  const text = parts.map((part) => (Array.isArray(part) ? part[1] : part)).join('');
-  // plain text for assistive technology, the colored phrase for the visible tooltip
-  button.dataset.tooltip = text;
-  button.setAttribute('aria-label', text);
-  button.tooltipContent = () => parts.map((part) => {
-    if (!Array.isArray(part)) return part;
-    const [color, phrase] = part;
-    const colored = document.createElement('span');
-    colored.className = 'fire-timeline__color';
-    colored.style.color = color;
-    colored.textContent = phrase;
-    return colored;
-  });
-  return button;
 }

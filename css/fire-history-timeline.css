@@ -5,12 +5,9 @@
     left: 50%;
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    grid-template-areas:
-        "year track"
-        "year cumulative";
+    grid-template-areas: "year track";
     align-items: center;
     column-gap: 12px;
-    row-gap: 2px;
     width: min(560px, calc(100% - 2 * var(--panel-gap)));
     padding: 10px 16px 8px;
     color: var(--control-chrome-text);
@@ -69,39 +66,6 @@
     color: var(--control-chrome-muted);
     font-size: 10px;
     font-variant-numeric: tabular-nums;
-}
-
-.fire-timeline__cumulative-control {
-    grid-area: cumulative;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    justify-self: end;
-}
-
-.fire-timeline__cumulative {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    color: var(--control-chrome-muted);
-    cursor: pointer;
-}
-
-.fire-timeline__info { color: var(--control-chrome-muted); }
-.fire-timeline__info:hover,
-.fire-timeline__info:focus-visible { color: #fff; }
-
-/* the tooltip lives on the body, so this is styled outside .fire-timeline */
-/* a thin white outline keeps the brown readable on the dark tooltip */
-.fire-timeline__color {
-    font-weight: 700;
-    -webkit-text-stroke: 1px rgba(255, 255, 255, .75);
-    paint-order: stroke fill;
-}
-
-.fire-timeline__cumulative input {
-    margin: 0;
-    accent-color: var(--ohaz-yellow);
 }
 
 @media (max-width: 640px) {

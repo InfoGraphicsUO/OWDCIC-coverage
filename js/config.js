@@ -153,6 +153,8 @@ export const LEGEND_LAYERS = Object.freeze({
   fireHistory: 'Fire history',
   fireHistoryPerimeters: 'Past fire perimeters',
   fireHistoryIgnitions: 'Past fire ignitions',
+  fireHistoryEarlierPerimeters: 'Earlier fire perimeters',
+  fireHistoryEarlierIgnitions: 'Earlier fire ignitions',
   prescribed: 'Prescribed fires (Watch Duty)',
 });
 
