@@ -61,7 +61,7 @@ for (const f of attachViewshedIds(halfwayHeads, manifest, { features: [pendingHa
 const panoSites = JSON.parse(readFileSync(new URL('../data/pano-sites.geojson', import.meta.url), 'utf8'));
 const panoCameras = providerSitesToCameras(panoSites, 'Pano AI').features;
 assert.equal(panoCameras.length, 69);
-assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 68);
+assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 69);
 
 // each owner's table lands in the one Pano layer
 const owners = (name) => panoCameras.filter(f => f.properties.owner === name).length;
@@ -88,6 +88,7 @@ assert.equal(enviroVisionCameras.filter(f => f.properties.sharesAlertWestSite).l
 
 const pendingWithHeight = structuredClone(panoSites.features.find(f => f.properties.name === 'Midnight Gulch'));
 pendingWithHeight.properties.cameraHeightFt = 100;
+pendingWithHeight.properties.viewshedStatus = 'pending';
 assert.equal(providerSitesToCameras({ features: [pendingWithHeight] }, 'Pano AI').features[0].properties.viewshed_id, null);
 
 // live sites ALERTWest keeps out of its API get a marker from the sites file, with no feed or image
