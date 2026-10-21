@@ -31,6 +31,7 @@ import {
   addNumericProperty,
   attachViewshedIds,
   camerasToGeoJSON,
+  countPointsInGeometry,
   filterGeoJSONByBounds,
   providerSitesToCameras,
 } from './geojson-transform.js';
@@ -275,6 +276,7 @@ let activeFilterType = null;
 // an area result is showing, as opposed to a polygon type with nothing picked
 let polygonSelected = false;
 let cameraFeatures = [];
+let camerasLoaded = false;
 
 // names the camera whose viewshed is highlighted, for the export legend
 let highlightedCameraName = '';
@@ -547,6 +549,7 @@ async function loadMapLayers(map) {
     ]).then((providerFeatures) => {
       // a failed provider contributes no cameras rather than blocking the filter
       cameraFeatures = providerFeatures.flatMap((features) => features ?? []);
+      camerasLoaded = true;
       resolveCameraFeatures(cameraFeatures);
     }),
     hydrateLegendLayer(
@@ -1334,9 +1337,24 @@ function selectDivision(map, typeValue, divisionId) {
     return;
   }
 
-  resultsControl.showPolygon(typeValue, feature);
+  resultsControl.showPolygon(typeValue, feature, polygonCameraCounts(feature));
+  // an early selection fills in its camera counts once every provider has loaded
+  if (!camerasLoaded) {
+    cameraFeaturesReady.then(() => resultsControl.updatePolygonCameraCounts(feature, polygonCameraCounts(feature)));
+  }
   collapseControlsOnNarrowScreen();
   fitMapToBounds(map, featureBounds(feature), { maxZoom: 10, duration: 800 });
+}
+
+// camera markers inside the area per provider, or null until the providers load
+function polygonCameraCounts(feature) {
+  if (!camerasLoaded) return null;
+  // live ALERTWest features carry no operator, so they fall back to the first provider
+  return countPointsInGeometry(
+    { features: cameraFeatures },
+    feature.geometry,
+    (camera) => camera.properties?.operator || CAMERA_PROVIDERS[0].name,
+  );
 }
 
 function clearDivisionFilter(map) {

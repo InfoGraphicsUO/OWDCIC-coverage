@@ -168,11 +168,17 @@ export function initResultsPanel({
     shareButton.disabled = true;
   }
 
-  function showPolygon(type, feature) {
+  function showPolygon(type, feature, cameraCounts = null) {
     // callers may pass GeoJSON or its properties object directly
     const properties = feature?.properties || feature || {};
-    current = { kind: 'polygon', type, properties, geometry: feature?.geometry, bbox: feature?.bbox };
-    presentResult(properties.name || properties.label || 'Selected area', renderPolygon(type, properties));
+    current = { kind: 'polygon', type, properties, cameraCounts, geometry: feature?.geometry, bbox: feature?.bbox };
+    presentResult(properties.name || properties.label || 'Selected area', renderPolygon(type, properties, cameraCounts));
+  }
+
+  // counts can arrive after the panel opens, so only redraw if that area is still shown
+  function updatePolygonCameraCounts(feature, cameraCounts) {
+    if (current?.kind !== 'polygon' || current.properties !== (feature?.properties || feature)) return;
+    showPolygon(current.type, feature, cameraCounts);
   }
 
   function showCamera(properties = {}, metrics = null, feature = null) {
@@ -389,7 +395,7 @@ export function initResultsPanel({
   // the caller owns clearing so the filter panel and map reset together
   element.querySelector('[data-results-close]').addEventListener('click', () => onClose());
   clear();
-  return { showPolygon, showCamera, showLoading, showError, clear, element };
+  return { showPolygon, updatePolygonCameraCounts, showCamera, showLoading, showError, clear, element };
 
   function replaceContent(node) {
     // a removed trigger fires no pointerout, so its tooltip would stay on screen
@@ -615,7 +621,7 @@ function selfLine(text, className = 'results-panel__line') {
   return p;
 }
 
-function renderPolygon(type, properties) {
+function renderPolygon(type, properties, cameraCounts) {
   const wrapper = document.createElement('div');
   const coverage = coverageFor(properties);
   const total = finite(properties.landAreaSqKm);
@@ -633,6 +639,8 @@ function renderPolygon(type, properties) {
   } else if (total != null) {
     wrapper.append(selfLine(`${formatNumber(total * SQMI_PER_SQKM)} mi² total area`));
   }
+  const cameras = cameraCountLine(cameraCounts);
+  if (cameras) wrapper.append(selfLine(cameras));
 
   // source-specific caveats keep approximate or administrative boundaries clear
   const qualifier = type === 'federal-land' && /Department of Defense|Other federal fee manager/.test(name)
@@ -1985,7 +1993,7 @@ function traceRoundedRect(ctx, x, y, width, height, radius) {
   ctx.closePath();
 }
 
-function exportSummary({ kind, type, properties, metrics }) {
+function exportSummary({ kind, type, properties, metrics, cameraCounts }) {
   if (kind === 'camera') {
     // mirror the on-screen camera summary order and unavailable-state wording
     const lines = [];
@@ -2017,6 +2025,8 @@ function exportSummary({ kind, type, properties, metrics }) {
   } else if (selected != null) {
     lines.push(`${formatNumber(selected * SQMI_PER_SQKM)} mi² total area`);
   }
+  const cameras = cameraCountLine(cameraCounts);
+  if (cameras) lines.push(cameras);
 
   return lines;
 }
@@ -2048,6 +2058,15 @@ function usableLandMix(landMix) {
 }
 
 // separates cameras that have no viewshed from viewsheds whose coverage failed
+// e.g. "13 cameras: 11 EnviroVision, 2 ALERTWest", from [provider, count] pairs
+function cameraCountLine(cameraCounts) {
+  if (!cameraCounts) return '';
+  const total = cameraCounts.reduce((sum, [, count]) => sum + count, 0);
+  if (total === 0) return 'No fire detection cameras in this area';
+  const providers = cameraCounts.map(([provider, count]) => `${formatNumber(count)} ${provider}`).join(', ');
+  return `${formatNumber(total)} ${total === 1 ? 'camera' : 'cameras'}: ${providers}`;
+}
+
 function cameraUnavailableMessage(properties, metrics) {
   if (!metrics && !properties?.viewshed_id) {
     return 'Coverage unavailable: no viewshed has been generated for this camera.';

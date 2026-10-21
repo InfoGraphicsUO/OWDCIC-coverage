@@ -1,7 +1,7 @@
 // camera to viewshed join must key on id or location, not only display names
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
-import { attachViewshedIds, providerSitesToCameras } from '../js/geojson-transform.js';
+import { attachViewshedIds, countPointsInGeometry, providerSitesToCameras } from '../js/geojson-transform.js';
 
 const manifest = JSON.parse(readFileSync(new URL('../data/alertwest-viewshed-manifest.json', import.meta.url), 'utf8'));
 const entry = (id) => manifest.viewsheds.find((item) => item.viewshed_id === id);
@@ -89,3 +89,17 @@ assert.equal(enviroVisionCameras.filter(f => f.properties.sharesAlertWestSite).l
 const pendingWithHeight = structuredClone(panoSites.features.find(f => f.properties.name === 'Midnight Gulch'));
 pendingWithHeight.properties.cameraHeightFt = 100;
 assert.equal(providerSitesToCameras({ features: [pendingWithHeight] }, 'Pano AI').features[0].properties.viewshed_id, null);
+
+// area camera counts skip points in holes and outside every part, largest provider first
+{
+  const square = (x, y, size) => [[x, y], [x + size, y], [x + size, y + size], [x, y + size], [x, y]];
+  const geometry = { type: 'MultiPolygon', coordinates: [[square(0, 0, 10), square(4, 4, 2)], [square(20, 0, 2)]] };
+  const point = (operator, lon, lat) => ({ geometry: { type: 'Point', coordinates: [lon, lat] }, properties: { operator } });
+  const cameras = {
+    features: [
+      point('A', 1, 1), point('B', 2, 2), point('B', 21, 1), point('B', 5, 5), point('A', 30, 30),
+    ],
+  };
+  assert.deepEqual(countPointsInGeometry(cameras, geometry, (f) => f.properties.operator), [['B', 2], ['A', 1]]);
+  assert.deepEqual(countPointsInGeometry(cameras, null, (f) => f.properties.operator), []);
+}

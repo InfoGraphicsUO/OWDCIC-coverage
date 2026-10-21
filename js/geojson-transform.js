@@ -250,6 +250,40 @@ export function featurePoint(feature) {
 }
 
 /**
+ * counts point features inside a Polygon or MultiPolygon, keyed by `keyOf(feature)`
+ *
+ * returns [key, count] pairs, largest count first
+ */
+export function countPointsInGeometry(geojson, geometry, keyOf) {
+  const polygons = geometry?.type === 'Polygon' ? [geometry.coordinates]
+    : geometry?.type === 'MultiPolygon' ? geometry.coordinates
+    : [];
+  const counts = new Map();
+
+  for (const feature of getFeatures(geojson)) {
+    const point = featurePoint(feature);
+    if (!point || !polygons.some((rings) => pointInPolygon(point, rings))) continue;
+    const key = keyOf(feature);
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+
+  return [...counts].sort((a, b) => b[1] - a[1]);
+}
+
+// even-odd ray casting, so holes in the outer ring are excluded
+function pointInPolygon([x, y], rings) {
+  let inside = false;
+  for (const ring of rings) {
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+    }
+  }
+  return inside;
+}
+
+/**
  * copies features and normalizes provider-specific numeric fields
  *
  * `sourceNames` order sets priority and missing values become null
