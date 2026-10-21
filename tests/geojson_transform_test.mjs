@@ -1,7 +1,7 @@
 // camera to viewshed join must key on id or location, not only display names
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
-import { attachViewshedIds, countPointsInGeometry, providerSitesToCameras } from '../js/geojson-transform.js';
+import { attachViewshedIds, countPointsInGeometry, outsideApiSitesToCameras, providerSitesToCameras } from '../js/geojson-transform.js';
 
 const manifest = JSON.parse(readFileSync(new URL('../data/alertwest-viewshed-manifest.json', import.meta.url), 'utf8'));
 const entry = (id) => manifest.viewsheds.find((item) => item.viewshed_id === id);
@@ -89,6 +89,13 @@ assert.equal(enviroVisionCameras.filter(f => f.properties.sharesAlertWestSite).l
 const pendingWithHeight = structuredClone(panoSites.features.find(f => f.properties.name === 'Midnight Gulch'));
 pendingWithHeight.properties.cameraHeightFt = 100;
 assert.equal(providerSitesToCameras({ features: [pendingWithHeight] }, 'Pano AI').features[0].properties.viewshed_id, null);
+
+// live sites ALERTWest keeps out of its API get a marker from the sites file, with no feed or image
+const alertWestSites = JSON.parse(readFileSync(new URL('../data/alertwest-sites.geojson', import.meta.url), 'utf8'));
+const outsideApi = attachViewshedIds({ features: outsideApiSitesToCameras(alertWestSites) }, manifest, alertWestSites).features;
+assert.deepEqual(outsideApi.map(f => [f.properties.name, f.properties.viewshed_id]),
+  [['Callahan Ridge', 'callahan-ridge'], ['Bear Mountain', 'bear-mountain']]);
+assert.ok(outsideApi.every(f => f.properties.id == null && f.properties.image == null));
 
 // area camera counts skip points in holes and outside every part, largest provider first
 {

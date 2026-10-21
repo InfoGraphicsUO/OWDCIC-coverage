@@ -55,6 +55,8 @@ class CameraSiteDataTests(unittest.TestCase):
         alertwest = {f['properties']['name']: f['properties'] for f in read('alertwest-sites.geojson')['features']}
         self.assertEqual(alertwest['Monument Mountain']['cameraHeightFt'], 43.33)
         self.assertTrue(alertwest['Gold Hill']['cameraHeightEstimated'])
+        # live sites ALERTWest keeps out of its API, so the map draws their markers itself
+        self.assertEqual({n for n, p in alertwest.items() if p.get('outsideApi')}, {'Bear Mountain', 'Callahan Ridge'})
 
         # every site with a height and location is modeled, so nothing waits in the GDAL queue
         for provider in ['alertwest', 'pano']:

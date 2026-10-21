@@ -33,6 +33,7 @@ import {
   camerasToGeoJSON,
   countPointsInGeometry,
   filterGeoJSONByBounds,
+  outsideApiSitesToCameras,
   providerSitesToCameras,
 } from './geojson-transform.js';
 import { initLegend } from './legend.js';
@@ -74,6 +75,7 @@ const LABEL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity
 // stable ids let UI controls refer to layers without inspecting the style
 const FIRE_ICON_ID = 'fire-marker';
 const CAMERA_ICON_ID = 'camera-marker';
+const PRIVATE_CAMERA_ICON_ID = 'private-camera-marker';
 const PANO_CAMERA_ICON_ID = 'pano-camera-marker';
 const ENVIROVISION_CAMERA_ICON_ID = 'envirovision-camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
@@ -163,6 +165,9 @@ const CAMERA_PROVIDERS = Object.freeze([
     cameraLayerId: LAYER_IDS.cameras,
     iconId: CAMERA_ICON_ID,
     iconUrl: MARKER_ICON_URLS.camera,
+    // sites kept out of the API for landowner privacy show a slashed camera
+    privateIconId: PRIVATE_CAMERA_ICON_ID,
+    privateIconUrl: MARKER_ICON_URLS.privateCamera,
     viewshedLabel: LEGEND_LAYERS.alertWestViewsheds,
     viewshedTileset: DATA_URLS.cameraViewsheds,
     viewshedSourceId: LAYER_IDS.viewshedsSource,
@@ -532,8 +537,10 @@ async function loadMapLayers(map) {
         LEGEND_LAYERS.alertWestCameras,
         Promise.all([data.cameras, data.viewshedManifest, data.alertWestSites]),
         ([cameras, viewshedManifest, sites]) => {
+          // sites kept out of the API still get a marker, drawn from the sites file
+          const allCameras = { features: [...cameras.features, ...outsideApiSitesToCameras(sites)] };
           // selection ids must be attached before features reach either UI
-          const features = attachViewshedIds(cameras, viewshedManifest, sites).features;
+          const features = attachViewshedIds(allCameras, viewshedManifest, sites).features;
           setSourceData(map, LAYER_IDS.cameras, { type: 'FeatureCollection', features });
           return features;
         }
@@ -1871,19 +1878,22 @@ async function loadAlertWestCameras() {
 async function addCameraLayers(map) {
   // register images before adding symbol layers that reference them
   await Promise.all(
-    CAMERA_PROVIDERS.map(({ iconId, iconUrl }) =>
-      registerMarkerIcon(map, { id: iconId, url: iconUrl, size: CAMERA_MARKER_SIZE })
-    )
+    CAMERA_PROVIDERS.flatMap(({ iconId, iconUrl, privateIconId, privateIconUrl }) => [
+      registerMarkerIcon(map, { id: iconId, url: iconUrl, size: CAMERA_MARKER_SIZE }),
+      privateIconId && registerMarkerIcon(map, { id: privateIconId, url: privateIconUrl, size: CAMERA_MARKER_SIZE }),
+    ])
   );
 
-  for (const { cameraLayerId, iconId, sharedSiteIconOffset = [0, 0] } of CAMERA_PROVIDERS) {
+  for (const { cameraLayerId, iconId, privateIconId, sharedSiteIconOffset = [0, 0] } of CAMERA_PROVIDERS) {
     addGeoJSONSource(map, cameraLayerId);
     map.addLayer({
       id: cameraLayerId,
       type: 'symbol',
       source: cameraLayerId,
       layout: {
-        ...markerLayout(iconId),
+        ...markerLayout(privateIconId
+          ? ['case', ['==', ['get', 'outsideApi'], true], privateIconId, iconId]
+          : iconId),
         'icon-offset': [
           'case',
           ['==', ['get', 'sharesAlertWestSite'], true],

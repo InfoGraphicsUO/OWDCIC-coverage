@@ -76,6 +76,30 @@ export function providerSitesToCameras(sites, operator) {
   return { type: 'FeatureCollection', features };
 }
 
+// live ALERTWest sites kept out of the API for landowner privacy, as camera points
+// they carry no id or image, so no live feed or preview is ever linked
+export function outsideApiSitesToCameras(sites) {
+  const features = [];
+
+  for (const feature of getFeatures(sites)) {
+    const point = featurePoint(feature);
+    if (!point || feature.properties?.outsideApi !== true) continue;
+
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: point },
+      properties: {
+        id: null,
+        name: feature.properties.name || 'Camera',
+        image: null,
+        outsideApi: true,
+      },
+    });
+  }
+
+  return features;
+}
+
 // live cameras sit within this distance of the viewshed site they were modeled from
 export const VIEWSHED_MATCH_RADIUS_M = 250;
 
