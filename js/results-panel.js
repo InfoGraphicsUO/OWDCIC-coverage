@@ -639,8 +639,8 @@ function renderPolygon(type, properties, cameraCounts) {
   } else if (total != null) {
     wrapper.append(selfLine(`${formatNumber(total * SQMI_PER_SQKM)} mi² total area`));
   }
-  const cameras = cameraCountLine(cameraCounts);
-  if (cameras) wrapper.append(selfLine(cameras));
+  const cameras = cameraCountBadges(cameraCounts);
+  if (cameras) wrapper.append(cameras);
 
   // source-specific caveats keep approximate or administrative boundaries clear
   const qualifier = type === 'federal-land' && /Department of Defense|Other federal fee manager/.test(name)
@@ -2065,6 +2065,24 @@ function cameraCountLine(cameraCounts) {
   if (total === 0) return 'No fire detection cameras in this area';
   const providers = cameraCounts.map(([provider, count]) => `${formatNumber(count)} ${provider}`).join(', ');
   return `${formatNumber(total)} ${total === 1 ? 'camera' : 'cameras'}: ${providers}`;
+}
+
+// the panel version of cameraCountLine, each provider tinted with its map marker color
+function cameraCountBadges(cameraCounts) {
+  if (!cameraCounts) return null;
+  const total = cameraCounts.reduce((sum, [, count]) => sum + count, 0);
+  if (total === 0) return selfLine(cameraCountLine(cameraCounts));
+
+  const line = selfLine(`${formatNumber(total)} ${total === 1 ? 'camera' : 'cameras'}:`, 'results-panel__line results-panel__camera-counts');
+  for (const [provider, count] of cameraCounts) {
+    const badge = document.createElement('span');
+    badge.className = 'results-panel__camera-count';
+    badge.textContent = `${formatNumber(count)} ${provider}`;
+    const color = COVERAGE_PROVIDERS.find(({ label }) => label === provider)?.color;
+    if (color) badge.style.backgroundColor = color;
+    line.append(badge);
+  }
+  return line;
 }
 
 function cameraUnavailableMessage(properties, metrics) {
