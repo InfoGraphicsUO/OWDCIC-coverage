@@ -38,6 +38,7 @@ const POPUP_CONTENT = Object.freeze({
   camera: createCameraPreview,
   digitizedCamera: createDigitizedCameraPopup,
   fire: createFirePopup,
+  fireHistory: createFireHistoryPopup,
   label: createLabelPopup,
   lookout: createLookoutPopup,
   prescribed: createPrescribedPopup,
@@ -407,6 +408,22 @@ function createFirePopup(properties, symbol) {
 // layers like viewsheds only need naming, with the name chosen by the caller
 function createLabelPopup(properties, symbol, { title }) {
   return createPopupContainer(title, symbol);
+}
+
+function createFireHistoryPopup(properties, symbol) {
+  const popup = createPopupContainer(properties.name || 'Unnamed fire', symbol);
+
+  // ignitions carry a discovery date, perimeters only their year
+  const date = properties.date ? DATE_FORMAT.format(new Date(`${properties.date}T12:00:00`)) : null;
+  if (date) popup.append(createMetaLine(`Discovered ${date}`));
+  else if (properties.year) popup.append(createMetaLine(`Burned in ${properties.year}`));
+
+  const acres = formatNumber(properties.acres, ACRES_FORMAT);
+  if (acres != null) popup.append(createMetaLine(`${acres} acres`));
+
+  if (properties.cause) popup.append(createMetaLine(`Cause: ${properties.cause}`));
+
+  return popup;
 }
 
 function createLookoutPopup(properties, symbol) {

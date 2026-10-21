@@ -87,8 +87,12 @@ function hoveredEntries(map, layers, event) {
 // markers are drawn solid, while lines and translucent fills leave what lies beneath readable
 function isOpaque(map, layerId) {
   const layer = map.getLayer(layerId);
-  if (layer.type === 'symbol' || layer.type === 'circle') return true;
-  return layer.type === 'fill' && map.getPaintProperty(layerId, 'fill-opacity') === 1;
+  if (layer.type === 'symbol') return true;
+  if (layer.type !== 'circle' && layer.type !== 'fill') return false;
+
+  // an unset opacity is drawn solid; expressions are treated as see-through
+  const opacity = map.getPaintProperty(layerId, `${layer.type}-opacity`) ?? 1;
+  return opacity === 1;
 }
 
 function describe(layers, feature) {

@@ -295,6 +295,12 @@ assert.deepEqual(
   condenseCameraLegendRows(threeProviders, { separateViewshedColors: true }).map(({ label }) => label).slice(3),
   ['ALERTWest viewsheds', 'Pano AI viewsheds', 'EnviroVision viewsheds']);
 
+// fire history lists only its symbol rows, under their export labels
+assert.deepEqual(
+  condenseCameraLegendRows(['Fire history', 'Fire perimeters (2020)', 'Earlier fire perimeters (2016–2019)']
+    .map((label) => ({ label }))).map(({ label }) => label),
+  ['Fire perimeters (2020)', 'Earlier fire perimeters (2016–2019)']);
+
 // retain map and export canvas inputs so the crop math can be checked directly
 const canvas = new FakeNode('canvas');
 canvas.width = 1200;

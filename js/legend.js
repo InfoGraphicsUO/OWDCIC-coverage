@@ -115,6 +115,12 @@ export function initLegend(items) {
       legend.insertBefore(binding.element, next ?? null);
     },
 
+    // the PNG export reads this in place of the visible label, for state the label can't show
+    setExportLabel(label, text) {
+      const row = findBinding(label)?.row;
+      if (row) row.dataset.exportLabel = text;
+    },
+
     updateInfo(label, text) {
       // only rows with provider notes get a tooltip trigger
       const infoButton = findBinding(label)?.infoButton;

@@ -895,7 +895,7 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'BLM lands': { type: 'swatch', style: 'fill', color: '#f6d94a' },
   'OR Burn probability (QWRA)': { type: 'swatch', style: 'burn-probability' },
   'Transmission lines': { type: 'swatch', style: 'line', color: '#c2188f' },
-  'Fires (NIFC)': { type: 'icon', src: 'img/fire-marker.svg' },
+  'Current fires (NIFC)': { type: 'icon', src: 'img/fire-marker.svg' },
   'Prescribed fires (Watch Duty)': { type: 'icon', src: 'img/prescribed-marker.svg' },
 });
 
@@ -2238,6 +2238,8 @@ export function condenseCameraLegendRows(rows, { separateViewshedColors = false 
   for (const row of rows) {
     // provider rows already carry the camera symbology
     if (row.label === LEGEND_LAYERS.cameras && hasProviderCameras) continue;
+    // the fire history rows under it carry every fire symbol
+    if (row.label === LEGEND_LAYERS.fireHistory) continue;
 
     const isViewshedGroup = row.label === LEGEND_LAYERS.viewsheds;
     const isProviderViewshed = row.label in EXPORT_PROVIDER_VIEWSHED_LABELS;
@@ -2283,7 +2285,7 @@ function readLegendRowsFromDom() {
 }
 
 function parseLegendRowFromDom(row) {
-  const label = row.querySelector('.legend-label')?.textContent?.trim();
+  const label = row.dataset?.exportLabel || row.querySelector('.legend-label')?.textContent?.trim();
   if (!label) return null;
   const visualRoot = row.querySelector('.legend-visual');
   const visual = visualRoot ? parseLegendVisualFromDom(visualRoot) : exportLegendVisualForLabel(label);
