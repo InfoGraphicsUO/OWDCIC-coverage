@@ -1,5 +1,5 @@
 import { openModal } from './modal.js';
-import { CAMERA_PROVIDER_COLORS, LEGEND_LAYERS, PANO_VIEWERS } from './config.js';
+import { CAMERA_PROVIDER_COLORS, LEGEND_LAYERS, MARKER_ICON_URLS, PANO_VIEWERS } from './config.js';
 import { attachInfoTooltip } from './info-tooltip.js';
 import { getSetting } from './settings.js';
 
@@ -866,6 +866,7 @@ const EXPORT_FONT = 'Merriweather, "Segoe UI", sans-serif';
 const EXPORT_LEGEND_SWATCH_SIZE = 20;
 const EXPORT_LEGEND_SWATCH_GAP = 10;
 const EXPORT_LEGEND_TEXT_OFFSET = EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_SWATCH_GAP;
+const EXPORT_LEGEND_COMPANION_GAP = 4;
 
 // selection rows carry place and camera names, which can outgrow one legend line
 const EXPORT_LEGEND_LABEL_CHARS = 30;
@@ -1701,9 +1702,11 @@ function drawLegendOverlay(ctx, x, y, layout) {
     const swatchY = labelMiddle - EXPORT_LEGEND_SWATCH_SIZE / 2;
     drawLegendVisual(ctx, row.visual, swatchX, swatchY);
     ctx.fillStyle = '#f0f0f0';
+    // a second icon beside the first pushes this row's label over
+    const companionWidth = row.visual?.companionImage ? EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_COMPANION_GAP : 0;
     layout.labelLines[index].forEach((line, lineIndex) => {
       if (lineIndex) textY += EXPORT_LEGEND_LINE_HEIGHT;
-      ctx.fillText(line, swatchX + layout.textOffset, textY);
+      ctx.fillText(line, swatchX + layout.textOffset + companionWidth, textY);
     });
   });
 }
@@ -1729,8 +1732,12 @@ function drawLegendVisual(ctx, visual, x, y) {
   }
 }
 
-function drawExportLegendIcon(ctx, { image, size = EXPORT_LEGEND_SWATCH_SIZE, outline }, x, y) {
+function drawExportLegendIcon(ctx, { image, companionImage, size = EXPORT_LEGEND_SWATCH_SIZE, outline }, x, y) {
   if (!image) return;
+  if (companionImage) {
+    ctx.drawImage(companionImage, x + EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_COMPANION_GAP, y,
+      EXPORT_LEGEND_SWATCH_SIZE, EXPORT_LEGEND_SWATCH_SIZE);
+  }
 
   // larger icons grow evenly around the normal slot so centering holds
   const inset = (EXPORT_LEGEND_SWATCH_SIZE - size) / 2;
@@ -2147,6 +2154,10 @@ async function resolveLegendRowsForExport(getLegendItems, basemap) {
   const viewshedIcon = EXPORT_VIEWSHED_ICONS[basemap] ?? EXPORT_VIEWSHED_ICONS.outdoors;
   const viewshedOutline = EXPORT_VIEWSHED_OUTLINES[basemap] ?? EXPORT_VIEWSHED_OUTLINES.outdoors;
   return condensed.map((row) => {
+    // sites kept out of the ALERTWest API draw a slashed camera, shown beside the provider's own
+    if (row.label === LEGEND_LAYERS.alertWestCameras && row.visual?.type === 'icon') {
+      return { ...row, visual: { ...row.visual, companionSrc: MARKER_ICON_URLS.privateCamera } };
+    }
     if (EXPORT_SHARED_COLOR_VIEWSHED_LABELS.has(row.label)) {
       return { ...row, visual: { type: 'icon', src: viewshedIcon, outline: viewshedOutline, size: 22 } };
     }
@@ -2318,8 +2329,11 @@ async function preloadLegendVisuals(rows) {
   return Promise.all(rows.map(async (row) => {
     if (row.visual?.type !== 'icon' || !row.visual.src) return row;
     try {
-      const image = await loadImage(resolveAssetUrl(row.visual.src));
-      return { ...row, visual: { ...row.visual, image } };
+      const [image, companionImage] = await Promise.all([
+        loadImage(resolveAssetUrl(row.visual.src)),
+        row.visual.companionSrc ? loadImage(resolveAssetUrl(row.visual.companionSrc)) : null,
+      ]);
+      return { ...row, visual: { ...row.visual, image, companionImage } };
     } catch (_) {
       // retain the text row when its icon asset cannot be loaded
       return row;
