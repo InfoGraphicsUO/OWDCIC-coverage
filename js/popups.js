@@ -317,7 +317,7 @@ function placeBeside(element, container, point, { gapAbove, gapBelow }) {
     container.clientHeight - height - POPUP_MARGIN
   );
 
-  // keep the pointer and animation origin inside popup rounded corners
+  // keep the animation origin inside popup rounded corners
   const originX = clamp(point.x - left, 18, width - 18);
 
   element.classList.toggle('feature-popup--below', placeBelow);
