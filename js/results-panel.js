@@ -866,7 +866,7 @@ const EXPORT_FONT = 'Merriweather, "Segoe UI", sans-serif';
 const EXPORT_LEGEND_SWATCH_SIZE = 20;
 const EXPORT_LEGEND_SWATCH_GAP = 10;
 const EXPORT_LEGEND_TEXT_OFFSET = EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_SWATCH_GAP;
-const EXPORT_LEGEND_COMPANION_GAP = 1;
+const EXPORT_LEGEND_COMPANION_GAP = 0;
 
 // selection rows carry place and camera names, which can outgrow one legend line
 const EXPORT_LEGEND_LABEL_CHARS = 30;
