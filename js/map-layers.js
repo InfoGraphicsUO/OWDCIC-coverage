@@ -659,7 +659,7 @@ async function loadMapLayers(map) {
       })
     ),
     hydrateLegendLayer(
-      'Fires (NIFC)',
+      LEGEND_LAYERS.fires,
       Promise.all([data.fires, data.perimeters]),
       ([fires, perimeters]) => {
         // marker sizing reads acreage from this local field
@@ -1730,7 +1730,7 @@ function loadLayerData() {
       fetchJson(DATA_URLS.alertWestCameraSites, 'ALERTWest site locations')
     ),
 
-    fires: safelyLoadLegend('NIFC fires', 'Fires (NIFC)', () =>
+    fires: safelyLoadLegend('NIFC fires', LEGEND_LAYERS.fires, () =>
       // limit the service response to the two states covered by the map
       fetchArcGISGeoJSON(DATA_URLS.nifcFires, {
         where: "POOState IN ('US-OR','US-WA')",
@@ -1750,7 +1750,7 @@ function loadLayerData() {
       loadRegionFocusData
     ),
 
-    perimeters: safelyLoadLegend('NIFC perimeters', 'Fires (NIFC)', () =>
+    perimeters: safelyLoadLegend('NIFC perimeters', LEGEND_LAYERS.fires, () =>
       fetchArcGISGeoJSON(
         DATA_URLS.nifcPerimeters,
         {

@@ -895,7 +895,7 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'BLM lands': { type: 'swatch', style: 'fill', color: '#f6d94a' },
   'OR Burn probability (QWRA)': { type: 'swatch', style: 'burn-probability' },
   'Transmission lines': { type: 'swatch', style: 'line', color: '#c2188f' },
-  'Fires (NIFC)': { type: 'icon', src: 'img/fire-marker.svg' },
+  'Current fires (NIFC)': { type: 'icon', src: 'img/fire-marker.svg' },
   'Prescribed fires (Watch Duty)': { type: 'icon', src: 'img/prescribed-marker.svg' },
 });
 

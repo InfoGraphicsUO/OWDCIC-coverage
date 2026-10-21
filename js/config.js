@@ -149,7 +149,7 @@ export const LEGEND_LAYERS = Object.freeze({
   blmLands: 'BLM lands',
   burnProbability: 'OR Burn probability (QWRA)',
   transmissionLines: 'Transmission lines',
-  fires: 'Fires (NIFC)',
+  fires: 'Current fires (NIFC)',
   fireHistory: 'Fire history',
   fireHistoryPerimeters: 'Fire perimeters',
   fireHistoryIgnitions: 'Fire ignitions',
