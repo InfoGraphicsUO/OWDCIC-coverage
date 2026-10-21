@@ -92,6 +92,8 @@ export function outsideApiSitesToCameras(sites) {
         id: null,
         name: feature.properties.name || 'Camera',
         image: null,
+        county: feature.properties.county ?? null,
+        state: feature.properties.state ?? null,
         outsideApi: true,
       },
     });

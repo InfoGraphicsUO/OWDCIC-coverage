@@ -37,6 +37,8 @@ def supplement_sites(by_provider, text, converter):
         if site is None:
             raise ValueError(f"Unknown outsideApi site: {record['sheetName']}")
         site['properties']['outsideApi'] = True
+        # the live API supplies no county for these, so the file carries it
+        site['properties'].update(county=record['county'], state=record['state'])
 
     for record in supplements['sites']:
         provider = record['provider']

@@ -96,6 +96,7 @@ const outsideApi = attachViewshedIds({ features: outsideApiSitesToCameras(alertW
 assert.deepEqual(outsideApi.map(f => [f.properties.name, f.properties.viewshed_id]),
   [['Callahan Ridge', 'callahan-ridge'], ['Bear Mountain', 'bear-mountain']]);
 assert.ok(outsideApi.every(f => f.properties.id == null && f.properties.image == null));
+assert.deepEqual(outsideApi.map(f => [f.properties.county, f.properties.state]), [['Douglas', 'OR'], ['Lane', 'OR']]);
 
 // area camera counts skip points in holes and outside every part, largest provider first
 {
