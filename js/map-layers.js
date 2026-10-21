@@ -493,7 +493,7 @@ let shownFireHistoryYear = null;
 const fireHistoryTimeline = initFireHistoryTimeline(
   document.querySelector('.map-panels'),
   (state) => activeMap && applyFireHistoryYear(activeMap, state),
-  { year: FIRE_HISTORY_COLOR, earlier: FIRE_HISTORY_EARLIER_COLOR }
+  { earlier: FIRE_HISTORY_EARLIER_COLOR }
 );
 
 const filterControl = initFilterPanel({

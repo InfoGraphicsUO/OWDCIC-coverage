@@ -4,7 +4,7 @@ import { attachInfoTooltip } from './info-tooltip.js';
  * year slider over the map for the Fire history layer
  * it stays hidden until a fire history row is switched on and its data gives it a year range
  * onChange receives { year, cumulative } whenever either one changes
- * colors are the map's { year, earlier } fills, repeated in the earlier years explanation
+ * colors holds the map's earlier years fill, repeated in the earlier years explanation
  */
 export function initFireHistoryTimeline(container, onChange, colors) {
   const element = document.createElement('section');
@@ -116,14 +116,12 @@ export function initFireHistoryTimeline(container, onChange, colors) {
   };
 }
 
-// the explanation names each fill with a chip of its color, so the text matches the map
-function createEarlierYearsInfo({ year, earlier }) {
+// the explanation names its fill with a chip of its color, so the text matches the map
+function createEarlierYearsInfo({ earlier }) {
   const parts = [
     'Shows the years before the selected year in a faded ',
     [earlier, 'brown'],
-    ', building up a history of past fires beneath the selected year in ',
-    [year, 'dark red'],
-    '.',
+    ' to build up a history of past fires.',
   ];
 
   const button = document.createElement('button');
