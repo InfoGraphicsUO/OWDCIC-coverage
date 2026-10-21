@@ -2,6 +2,7 @@
 .feature-popup {
     /* aligns the pointer and scale animation with the projected feature */
     --popup-origin-x: 50%;
+    --popup-background: rgba(255, 255, 255, 0.82);
 
     position: absolute;
     z-index: 3;
@@ -11,7 +12,9 @@
     width: min(280px, calc(100% - 24px));
     padding: 14px;
     color: #20252b;
-    background: rgba(255, 255, 255, 0.97);
+    background: var(--popup-background);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
     border: 1px solid rgba(31, 41, 51, 0.12);
     border-radius: var(--ui-radius-lg);
     box-shadow:
@@ -37,9 +40,11 @@
     box-sizing: border-box;
     width: 12px;
     height: 12px;
-    background: #fff;
+    background: var(--popup-background);
     border-right: 1px solid rgba(31, 41, 51, 0.12);
     border-bottom: 1px solid rgba(31, 41, 51, 0.12);
+    /* only the half outside the box, so the see-through box shows no overlap */
+    clip-path: polygon(100% 0, 100% 100%, 0 100%);
     transform: rotate(45deg);
 }
 
@@ -100,6 +105,7 @@
     border: 0;
     border-top: 1px solid rgba(31, 41, 51, 0.12);
     border-left: 1px solid rgba(31, 41, 51, 0.12);
+    clip-path: polygon(0 0, 100% 0, 0 100%);
 }
 
 .feature-popup--below.is-open {
