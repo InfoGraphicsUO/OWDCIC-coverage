@@ -2033,6 +2033,21 @@ function addViewshedLayers(map) {
 
   // both hooks call back immediately, so the first pass may precede the other's value
   let basemap = 'outdoors';
+
+  addViewshedHover(map, LAYER_IDS.combinedViewshedsFill, {
+    title: () => 'Camera viewshed',
+    symbol: () => viewshedSymbol(null, basemap),
+  });
+  for (const provider of providers) {
+    addViewshedHover(map, provider.viewshedFillLayerId, {
+      // provider names only mean something while each provider has its own color
+      title: () => getSetting(SEPARATE_VIEWSHED_COLORS_SETTING)
+        ? `${provider.name} camera viewshed`
+        : 'Camera viewshed',
+      symbol: () => viewshedSymbol(provider, basemap),
+    });
+  }
+
   onBasemapChange((selected) => {
     basemap = selected;
     applyViewshedSymbology(map, basemap);
@@ -2042,6 +2057,11 @@ function addViewshedLayers(map) {
     syncViewshedFills(map);
   });
   legendControl.onChange(() => syncViewshedFills(map));
+}
+
+// viewsheds sit above context lines, so as background they leave those lines their hover info
+function addViewshedHover(map, layerId, { title, symbol }) {
+  addHoverLayer(map, layerId, { kind: 'label', title, symbol, background: true });
 }
 
 // shared-color providers draw through the combined fill so overlaps do not darken
@@ -2060,26 +2080,31 @@ function syncViewshedFills(map) {
 }
 
 function applyViewshedSymbology(map, basemap) {
-  const darkOutline = basemap === 'satellite';
-  const sharedColor = basemapColor(VIEWSHED_FILL_COLOR, basemap);
-  const sharedImage = basemapColor(VIEWSHED_LEGEND_IMAGES, basemap);
-
-  legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, sharedColor, { darkOutline, image: sharedImage });
+  const shared = viewshedSymbol(null, basemap);
+  legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, shared.swatchColor, { image: shared.swatchImage });
   if (map.getLayer(LAYER_IDS.combinedViewshedsFill)) {
-    map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color', sharedColor);
+    map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color', shared.swatchColor);
   }
 
   for (const provider of CAMERA_PROVIDERS) {
-    const colors = viewshedColors(provider);
-    const fillColor = basemapColor(colors, basemap);
-
+    const { swatchColor, swatchImage } = viewshedSymbol(provider, basemap);
     if (map.getLayer(provider.viewshedFillLayerId)) {
-      map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', fillColor);
+      map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', swatchColor);
     }
-    // providers in their own color show a sample viewshed in that color
-    const image = colors === VIEWSHED_FILL_COLOR ? sharedImage : provider.viewshedLegendImage;
-    legendControl.updateSwatchColor(provider.viewshedLabel, fillColor, { darkOutline, image });
+    legendControl.updateSwatchColor(provider.viewshedLabel, swatchColor, { image: swatchImage });
   }
+}
+
+// a provider, or null for the shared color, as the layer list and hover info draw it
+function viewshedSymbol(provider, basemap) {
+  const colors = provider ? viewshedColors(provider) : VIEWSHED_FILL_COLOR;
+  return {
+    swatchColor: basemapColor(colors, basemap),
+    // providers in their own color show a sample viewshed in that color
+    swatchImage: colors === VIEWSHED_FILL_COLOR
+      ? basemapColor(VIEWSHED_LEGEND_IMAGES, basemap)
+      : provider.viewshedLegendImage,
+  };
 }
 
 function viewshedColors({ viewshedFillColor }) {
@@ -2288,7 +2313,7 @@ function featureInfo(kind, symbol) {
  * clicks only act for touch unless `clickWithMouse`, since a mouse already sees the info on hover
  */
 function bindLayerInteractions(map, layerId, { hover, click, clickWithMouse = false }) {
-  if (hover) addHoverLayer(map, layerId, hover.kind, hover.symbol);
+  if (hover) addHoverLayer(map, layerId, hover);
 
   const clickActs = () => clickWithMouse || !pointerCanHover();
 

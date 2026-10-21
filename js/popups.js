@@ -24,7 +24,7 @@ const POPUP_MARGIN = 12;
 const POPUP_MARKER_GAP = 14;
 
 // the cursor arrow hangs below its hotspot, so a tooltip below it needs more room
-const TOOLTIP_GAP_ABOVE = 14;
+const TOOLTIP_GAP_ABOVE = 30;
 const TOOLTIP_GAP_BELOW = 26;
 
 // crossing the small gaps between neighbouring lines and markers should not blink the tooltip
@@ -38,6 +38,7 @@ const POPUP_CONTENT = Object.freeze({
   camera: createCameraPreview,
   digitizedCamera: createDigitizedCameraPopup,
   fire: createFirePopup,
+  label: createLabelPopup,
   lookout: createLookoutPopup,
   prescribed: createPrescribedPopup,
   transmissionLine: createTransmissionLinePopup,
@@ -64,12 +65,17 @@ export function showFeaturePopup(map, event, kind, symbol) {
   popup.open();
 }
 
-/** tooltip beside the cursor carrying the same details as the clicked box */
-export function showHoverTooltip(map, point, feature, kind, symbol) {
-  const key = hoverKey(feature);
+/**
+ * tooltip beside the cursor carrying the same details as the clicked box
+ * each entry is `{ feature, kind, symbol, title }`, and several stack in one tooltip
+ */
+export function showHoverTooltip(map, point, entries) {
+  const key = entries
+    .map(({ feature, title }) => `${hoverKey(feature)}:${title ?? ''}`)
+    .join('|');
 
   // the pinned box already shows this feature beside the cursor
-  if (ACTIVE_POPUPS.get(map)?.featureKey === key) {
+  if (entries.length === 1 && ACTIVE_POPUPS.get(map)?.featureKey === hoverKey(entries[0].feature)) {
     hideHoverTooltip(map);
     return;
   }
@@ -81,7 +87,9 @@ export function showHoverTooltip(map, point, feature, kind, symbol) {
   }
 
   tooltip.show(point, key, () =>
-    POPUP_CONTENT[kind](feature.properties || {}, symbol, { hover: true })
+    entries.map(({ feature, kind, symbol, title }) =>
+      POPUP_CONTENT[kind](feature.properties || {}, symbol, { hover: true, title })
+    )
   );
 }
 
@@ -113,7 +121,7 @@ class HoverTooltip {
 
     if (key !== this.key) {
       this.key = key;
-      this.element.replaceChildren(createContent());
+      this.element.replaceChildren(...createContent());
     }
 
     placeBeside(this.element, this.map.getContainer(), point, {
@@ -394,6 +402,11 @@ function createFirePopup(properties, symbol) {
   if (location) popup.append(createMetaLine(location));
 
   return popup;
+}
+
+// layers like viewsheds only need naming, with the name chosen by the caller
+function createLabelPopup(properties, symbol, { title }) {
+  return createPopupContainer(title, symbol);
 }
 
 function createLookoutPopup(properties, symbol) {

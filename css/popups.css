@@ -65,6 +65,16 @@
     padding-right: 0;
 }
 
+/* title-only entries such as viewsheds */
+.feature-popup--hover .cam-title:last-child {
+    margin-bottom: 0;
+}
+
+/* overlapping viewsheds stack in one tooltip */
+.feature-popup--hover .cam-popup + .cam-popup {
+    margin-top: 6px;
+}
+
 .feature-popup.is-offscreen {
     visibility: hidden;
     opacity: 0;
