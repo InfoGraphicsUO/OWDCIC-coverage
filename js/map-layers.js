@@ -37,6 +37,7 @@ import {
   providerSitesToCameras,
 } from './geojson-transform.js';
 import { initLegend } from './legend.js';
+import { initFireHistoryTimeline } from './fire-history-timeline.js';
 import { initFilterPanel } from './filter-panel.js';
 import { initResultsPanel, loadPlotly } from './results-panel.js';
 import { hideMapLoading } from './loading.js';
@@ -63,6 +64,7 @@ import {
   hideCameraPreview,
   showCameraPreview,
   showDigitizedCameraPopup,
+  showFireHistoryPopup,
   showFirePopup,
   showLookoutPopup,
   showTransmissionLinePopup,
@@ -119,6 +121,25 @@ const NATIONAL_FOREST_COLOR = '#3b7d4f';
 const BLM_LAND_COLOR = '#f6d94a';
 const BURN_PROBABILITY_COLOR = '#d7191c';
 const TRANSMISSION_LINE_COLOR = '#c2188f';
+
+// the timeline's year stands out in a dark red, apart from the brighter red of active fires
+// and the orange viewsheds; earlier years fall back to a muted brown
+const FIRE_HISTORY_COLOR = '#8f1d2c';
+const FIRE_HISTORY_EARLIER_COLOR = '#7a6458';
+const FIRE_HISTORY_FILL_OPACITY = 0.5;
+const FIRE_HISTORY_EARLIER_FILL_OPACITY = 0.22;
+// how long one year's fires take to fade out as the next year's fade in,
+// short enough that dragging across several years still keeps up
+const FIRE_HISTORY_FADE_MS = 600;
+// ignition circles grow with final fire size, in px by acres
+const FIRE_HISTORY_IGNITION_RADIUS = [
+  'interpolate', ['linear'], ['coalesce', ['get', 'acres'], 0],
+  100, 2.5,
+  1_000, 4,
+  100_000, 8,
+];
+// matches no feature until the timeline has a year
+const NO_FIRE_YEAR = ['==', ['get', 'year'], -1];
 
 // relative line widths by the source's VOLT_CLASS; DC and NOT AVAILABLE borrow another class's width
 const TRANSMISSION_LINE_WIDTHS = Object.freeze({
@@ -372,7 +393,46 @@ const LAYER_SYMBOLS = Object.freeze({
   }),
   fires: Object.freeze({ iconUrl: MARKER_ICON_URLS.fire }),
   prescribed: Object.freeze({ iconUrl: MARKER_ICON_URLS.prescribed }),
+  fireHistoryPerimeters: Object.freeze({ swatchColor: FIRE_HISTORY_COLOR }),
+  fireHistoryIgnitions: Object.freeze({ swatchColor: FIRE_HISTORY_COLOR, swatchShape: 'circle' }),
+  fireHistoryEarlierPerimeters: Object.freeze({ swatchColor: FIRE_HISTORY_EARLIER_COLOR }),
+  fireHistoryEarlierIgnitions: Object.freeze({ swatchColor: FIRE_HISTORY_EARLIER_COLOR, swatchShape: 'circle' }),
 });
+
+const FIRE_HISTORY_PERIMETER_LAYER_IDS = Object.freeze([
+  LAYER_IDS.fireHistoryPerimetersOutgoingFill,
+  LAYER_IDS.fireHistoryPerimetersOutgoingLine,
+  LAYER_IDS.fireHistoryPerimetersFill,
+  LAYER_IDS.fireHistoryPerimetersLine,
+]);
+const FIRE_HISTORY_IGNITION_LAYER_IDS = Object.freeze([
+  LAYER_IDS.fireHistoryIgnitionsOutgoing,
+  LAYER_IDS.fireHistoryIgnitions,
+]);
+// every legend row that draws fire history, so the timeline shows while any is on
+const FIRE_HISTORY_LABELS = Object.freeze([
+  LEGEND_LAYERS.fireHistoryPerimeters,
+  LEGEND_LAYERS.fireHistoryIgnitions,
+  LEGEND_LAYERS.fireHistoryEarlierPerimeters,
+  LEGEND_LAYERS.fireHistoryEarlierIgnitions,
+]);
+// the timeline's year, and the year it just left while that one fades out
+const FIRE_HISTORY_YEAR_LAYER_IDS = Object.freeze([
+  LAYER_IDS.fireHistoryPerimetersFill,
+  LAYER_IDS.fireHistoryPerimetersLine,
+  LAYER_IDS.fireHistoryIgnitions,
+]);
+const FIRE_HISTORY_OUTGOING_LAYER_IDS = Object.freeze([
+  LAYER_IDS.fireHistoryPerimetersOutgoingFill,
+  LAYER_IDS.fireHistoryPerimetersOutgoingLine,
+  LAYER_IDS.fireHistoryIgnitionsOutgoing,
+]);
+const FIRE_HISTORY_CLICK_LAYER_IDS = Object.freeze([
+  LAYER_IDS.fireHistoryIgnitions,
+  LAYER_IDS.fireHistoryIgnitionsEarlier,
+  LAYER_IDS.fireHistoryPerimetersFill,
+  LAYER_IDS.fireHistoryPerimetersEarlierFill,
+]);
 
 // features that take a click ahead of whatever lies under them
 const MARKER_LAYER_IDS = Object.freeze([
@@ -382,6 +442,7 @@ const MARKER_LAYER_IDS = Object.freeze([
   LAYER_IDS.perimetersFill,
   LAYER_IDS.prescribed,
   LAYER_IDS.lookouts,
+  ...FIRE_HISTORY_CLICK_LAYER_IDS,
 ]);
 const INTERACTIVE_LAYER_IDS = Object.freeze([...MARKER_LAYER_IDS, LAYER_IDS.transmissionLinesHit]);
 
@@ -431,6 +492,20 @@ const resultsControl = initResultsPanel({
   // clears the picked option but keeps the filter panel on its current type
   onClose: () => filterControl.clearSelection(),
 });
+
+// the year the fire history layers last drew, so the next one knows which year to fade out
+let shownFireHistoryYear = null;
+// one request per fire history file, shared by its selected and earlier year rows
+const fireHistoryFiles = new Map();
+
+// the year slider rides over the map and only shows while a fire history row is on
+const fireHistoryTimeline = initFireHistoryTimeline(
+  document.querySelector('.map-panels'),
+  (year) => {
+    labelFireHistoryExport(year);
+    if (activeMap) applyFireHistoryYear(activeMap, year);
+  }
+);
 
 const filterControl = initFilterPanel({
   types: FILTER_TYPES.map(({ value, label, group }) => ({
@@ -490,6 +565,7 @@ async function loadMapLayers(map) {
   map.on(MAP_HOME_EVENT, home);
   bindApplicationSourceErrors(map);
   addViewshedLayers(map);
+  addFireHistoryLayers(map);
   addPerimeterLayers(map);
   addLookoutLayer(map);
 
@@ -519,6 +595,8 @@ async function loadMapLayers(map) {
   // a filter preset may have switched a row on before the map connected
   legendControl.onChange(() => loadDeferredLayers(map));
   loadDeferredLayers(map);
+  legendControl.onChange(syncFireHistoryTimeline);
+  syncFireHistoryTimeline();
 
   // slow providers hydrate in the background after the map becomes usable
   hideMapLoading();
@@ -584,7 +662,7 @@ async function loadMapLayers(map) {
       })
     ),
     hydrateLegendLayer(
-      'Fires (NIFC)',
+      LEGEND_LAYERS.fires,
       Promise.all([data.fires, data.perimeters]),
       ([fires, perimeters]) => {
         // marker sizing reads acreage from this local field
@@ -728,6 +806,19 @@ function loadDeferredLayers(map, { preload = false } = {}) {
   loadLayerWhenChecked(map, LEGEND_LAYERS.transmissionLines, LAYER_IDS.transmissionLinesSource, {}, () =>
     fetchJson(DATA_URLS.transmissionLines, 'Transmission lines')
   );
+  // the selected and earlier rows of each type draw from one file, fetched once for both;
+  // each file widens the timeline to the years it covers
+  for (const [labels, sourceId, url] of [
+    [[LEGEND_LAYERS.fireHistoryPerimeters, LEGEND_LAYERS.fireHistoryEarlierPerimeters],
+      LAYER_IDS.fireHistoryPerimetersSource, DATA_URLS.fireHistoryPerimeters],
+    [[LEGEND_LAYERS.fireHistoryIgnitions, LEGEND_LAYERS.fireHistoryEarlierIgnitions],
+      LAYER_IDS.fireHistoryIgnitionsSource, DATA_URLS.fireHistoryIgnitions],
+  ]) {
+    for (const label of labels) {
+      if (layerIsRemoved(label)) continue;
+      loadLayerWhenChecked(map, label, sourceId, {}, () => loadFireHistoryFile(url, label));
+    }
+  }
   // the Forest Service query is the slowest request the map makes
   loadLayerWhenChecked(map, LEGEND_LAYERS.nationalForests, LAYER_IDS.nationalForestsSource, { preload }, () =>
     fetchArcGISGeoJSON(DATA_URLS.nationalForests, {
@@ -1642,7 +1733,7 @@ function loadLayerData() {
       fetchJson(DATA_URLS.alertWestCameraSites, 'ALERTWest site locations')
     ),
 
-    fires: safelyLoadLegend('NIFC fires', 'Fires (NIFC)', () =>
+    fires: safelyLoadLegend('NIFC fires', LEGEND_LAYERS.fires, () =>
       // limit the service response to the two states covered by the map
       fetchArcGISGeoJSON(DATA_URLS.nifcFires, {
         where: "POOState IN ('US-OR','US-WA')",
@@ -1662,7 +1753,7 @@ function loadLayerData() {
       loadRegionFocusData
     ),
 
-    perimeters: safelyLoadLegend('NIFC perimeters', 'Fires (NIFC)', () =>
+    perimeters: safelyLoadLegend('NIFC perimeters', LEGEND_LAYERS.fires, () =>
       fetchArcGISGeoJSON(
         DATA_URLS.nifcPerimeters,
         {
@@ -2215,6 +2306,188 @@ function addPerimeterLayers(map) {
   );
 }
 
+// each fire history type draws earlier years, the year being left, and the timeline's year
+// in their own layers, so one year can fade out as the next fades in over the earlier ones
+function addFireHistoryLayers(map) {
+  const year = fireHistoryTimeline.current();
+  const hidden = { visibility: 'none' };
+
+  addGeoJSONSource(map, LAYER_IDS.fireHistoryPerimetersSource);
+  map.addLayer({
+    id: LAYER_IDS.fireHistoryPerimetersEarlierFill,
+    type: 'fill',
+    source: LAYER_IDS.fireHistoryPerimetersSource,
+    layout: hidden,
+    filter: NO_FIRE_YEAR,
+    paint: {
+      'fill-color': FIRE_HISTORY_EARLIER_COLOR,
+      'fill-opacity': FIRE_HISTORY_EARLIER_FILL_OPACITY,
+      'fill-outline-color': FIRE_HISTORY_EARLIER_COLOR,
+    },
+  });
+  for (const [fillId, lineId] of [
+    [LAYER_IDS.fireHistoryPerimetersOutgoingFill, LAYER_IDS.fireHistoryPerimetersOutgoingLine],
+    [LAYER_IDS.fireHistoryPerimetersFill, LAYER_IDS.fireHistoryPerimetersLine],
+  ]) {
+    map.addLayer({
+      id: fillId,
+      type: 'fill',
+      source: LAYER_IDS.fireHistoryPerimetersSource,
+      layout: hidden,
+      filter: NO_FIRE_YEAR,
+      paint: {
+        'fill-color': FIRE_HISTORY_COLOR,
+        'fill-opacity': FIRE_HISTORY_FILL_OPACITY,
+      },
+    });
+    map.addLayer({
+      id: lineId,
+      type: 'line',
+      source: LAYER_IDS.fireHistoryPerimetersSource,
+      layout: hidden,
+      filter: NO_FIRE_YEAR,
+      paint: {
+        'line-color': FIRE_HISTORY_COLOR,
+        'line-width': 1.25,
+      },
+    });
+  }
+
+  addGeoJSONSource(map, LAYER_IDS.fireHistoryIgnitionsSource);
+  map.addLayer({
+    id: LAYER_IDS.fireHistoryIgnitionsEarlier,
+    type: 'circle',
+    source: LAYER_IDS.fireHistoryIgnitionsSource,
+    layout: hidden,
+    filter: NO_FIRE_YEAR,
+    paint: {
+      'circle-color': FIRE_HISTORY_EARLIER_COLOR,
+      'circle-opacity': 0.55,
+      'circle-radius': FIRE_HISTORY_IGNITION_RADIUS,
+    },
+  });
+  for (const layerId of [LAYER_IDS.fireHistoryIgnitionsOutgoing, LAYER_IDS.fireHistoryIgnitions]) {
+    map.addLayer({
+      id: layerId,
+      type: 'circle',
+      source: LAYER_IDS.fireHistoryIgnitionsSource,
+      layout: hidden,
+      filter: NO_FIRE_YEAR,
+      paint: {
+        'circle-color': FIRE_HISTORY_COLOR,
+        'circle-radius': FIRE_HISTORY_IGNITION_RADIUS,
+        'circle-stroke-color': '#fff',
+        'circle-stroke-width': 0.75,
+      },
+    });
+  }
+
+  if (year !== null) applyFireHistoryYear(map, year);
+
+  bindLayerInteractions(
+    map,
+    LAYER_IDS.fireHistoryIgnitions,
+    withSymbol(showFireHistoryPopup, LAYER_SYMBOLS.fireHistoryIgnitions)
+  );
+  bindLayerInteractions(
+    map,
+    LAYER_IDS.fireHistoryIgnitionsEarlier,
+    withSymbol(showFireHistoryPopup, LAYER_SYMBOLS.fireHistoryIgnitions)
+  );
+  for (const layerId of [LAYER_IDS.fireHistoryPerimetersFill, LAYER_IDS.fireHistoryPerimetersEarlierFill]) {
+    bindLayerInteractions(map, layerId, (clickedMap, event) => {
+      // an ignition point sitting on its own burn scar keeps the click
+      const ignitionLayers = [LAYER_IDS.fireHistoryIgnitions, LAYER_IDS.fireHistoryIgnitionsEarlier];
+      if (hasInteractiveFeatureAtPoint(clickedMap, event.point, ignitionLayers)) return;
+      showFireHistoryPopup(clickedMap, event, LAYER_SYMBOLS.fireHistoryPerimeters);
+    });
+  }
+}
+
+// shows the timeline's year, and every year before it in the earlier rows
+function applyFireHistoryYear(map, year) {
+  const previousYear = shownFireHistoryYear;
+  shownFireHistoryYear = year;
+
+  const yearFilter = ['==', ['get', 'year'], year];
+  const earlierFilter = ['<', ['get', 'year'], year];
+  for (const layerId of FIRE_HISTORY_YEAR_LAYER_IDS) map.setFilter(layerId, yearFilter);
+  map.setFilter(LAYER_IDS.fireHistoryPerimetersEarlierFill, earlierFilter);
+  map.setFilter(LAYER_IDS.fireHistoryIgnitionsEarlier, earlierFilter);
+
+  if (previousYear === null || previousYear === year) return;
+
+  // the year being left fades out on top; with the earlier rows on it settles
+  // into their muted style underneath, otherwise it disappears
+  const outgoingFilter = ['==', ['get', 'year'], previousYear];
+  for (const layerId of FIRE_HISTORY_OUTGOING_LAYER_IDS) map.setFilter(layerId, outgoingFilter);
+  crossfadeFireHistoryYears(map);
+}
+
+// paint transitions only run between constant values, so both years jump to their
+// starting opacity for one frame and then ease past each other
+function crossfadeFireHistoryYears(map) {
+  const duration = motionDuration(FIRE_HISTORY_FADE_MS);
+  const fades = [
+    ['fill-opacity', FIRE_HISTORY_FILL_OPACITY, LAYER_IDS.fireHistoryPerimetersFill, LAYER_IDS.fireHistoryPerimetersOutgoingFill],
+    ['line-opacity', 1, LAYER_IDS.fireHistoryPerimetersLine, LAYER_IDS.fireHistoryPerimetersOutgoingLine],
+    ['circle-opacity', 1, LAYER_IDS.fireHistoryIgnitions, LAYER_IDS.fireHistoryIgnitionsOutgoing],
+    ['circle-stroke-opacity', 1, LAYER_IDS.fireHistoryIgnitions, LAYER_IDS.fireHistoryIgnitionsOutgoing],
+  ];
+  const setOpacity = (layerId, property, opacity, transition) => {
+    map.setPaintProperty(layerId, `${property}-transition`, { duration: transition, delay: 0 });
+    map.setPaintProperty(layerId, property, opacity);
+  };
+
+  for (const [property, opacity, incomingId, outgoingId] of fades) {
+    setOpacity(incomingId, property, duration ? 0 : opacity, 0);
+    setOpacity(outgoingId, property, duration ? opacity : 0, 0);
+  }
+  if (!duration) return;
+
+  map.once('render', () => {
+    for (const [property, opacity, incomingId, outgoingId] of fades) {
+      setOpacity(incomingId, property, opacity, duration);
+      setOpacity(outgoingId, property, 0, duration);
+    }
+  });
+}
+
+// the timeline follows the fire history rows rather than having a switch of its own
+function syncFireHistoryTimeline() {
+  fireHistoryTimeline.setVisible(FIRE_HISTORY_LABELS.some((label) => legendControl.isChecked(label)));
+}
+
+// an exported map has no slider, so its legend names the years each row shows
+function labelFireHistoryExport(year) {
+  const firstYear = fireHistoryTimeline.firstYear();
+  let earlierYears = `before ${year}`;
+  if (year - 1 === firstYear) earlierYears = String(firstYear);
+  else if (year - 1 > firstYear) earlierYears = `${firstYear}–${year - 1}`;
+
+  for (const [label, years] of [
+    [LEGEND_LAYERS.fireHistoryPerimeters, year],
+    [LEGEND_LAYERS.fireHistoryIgnitions, year],
+    [LEGEND_LAYERS.fireHistoryEarlierPerimeters, earlierYears],
+    [LEGEND_LAYERS.fireHistoryEarlierIgnitions, earlierYears],
+  ]) {
+    legendControl.setExportLabel(label, `${label} (${years})`);
+  }
+}
+
+function loadFireHistoryFile(url, label) {
+  if (!fireHistoryFiles.has(url)) {
+    const request = fetchJson(url, label).then((data) => {
+      fireHistoryTimeline.includeYears(data.features.map(({ properties }) => properties?.year));
+      return data;
+    });
+    // a failed request is dropped so the other row can try again
+    request.catch(() => fireHistoryFiles.delete(url));
+    fireHistoryFiles.set(url, request);
+  }
+  return fireHistoryFiles.get(url);
+}
+
 async function addPrescribedLayer(map) {
   // register the image before adding a symbol layer that references it
   await registerMarkerIcon(map, {
@@ -2418,6 +2691,47 @@ function legendItems() {
         LAYER_IDS.fires,
         LAYER_IDS.perimetersFill,
         LAYER_IDS.perimetersLine,
+      ],
+    },
+    {
+      label: LEGEND_LAYERS.fireHistory,
+      swatchClass: 'legend-swatch--hidden',
+      swatchColor: FIRE_HISTORY_COLOR,
+      visible: false,
+      infoText: `Wildfires of 100 acres or more in Oregon and Washington since 2016, from the NIFC Interagency Fire Perimeter History and WFIGS services. Turning a layer on opens a timeline over the map to step through the years.`,
+      layerIds: [
+        ...FIRE_HISTORY_PERIMETER_LAYER_IDS,
+        ...FIRE_HISTORY_IGNITION_LAYER_IDS,
+        LAYER_IDS.fireHistoryPerimetersEarlierFill,
+        LAYER_IDS.fireHistoryIgnitionsEarlier,
+      ],
+      children: [
+        {
+          label: LEGEND_LAYERS.fireHistoryPerimeters,
+          ...LAYER_SYMBOLS.fireHistoryPerimeters,
+          visible: false,
+          layerIds: FIRE_HISTORY_PERIMETER_LAYER_IDS,
+        },
+        {
+          label: LEGEND_LAYERS.fireHistoryIgnitions,
+          ...LAYER_SYMBOLS.fireHistoryIgnitions,
+          visible: false,
+          layerIds: FIRE_HISTORY_IGNITION_LAYER_IDS,
+        },
+        {
+          label: LEGEND_LAYERS.fireHistoryEarlierPerimeters,
+          ...LAYER_SYMBOLS.fireHistoryEarlierPerimeters,
+          visible: false,
+          infoText: 'Shows the perimeters before the current year in a faded brown',
+          layerIds: [LAYER_IDS.fireHistoryPerimetersEarlierFill],
+        },
+        {
+          label: LEGEND_LAYERS.fireHistoryEarlierIgnitions,
+          ...LAYER_SYMBOLS.fireHistoryEarlierIgnitions,
+          visible: false,
+          infoText: 'Shows the ignitions before the current year in a faded brown',
+          layerIds: [LAYER_IDS.fireHistoryIgnitionsEarlier],
+        },
       ],
     },
     {
