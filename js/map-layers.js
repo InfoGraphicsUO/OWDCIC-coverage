@@ -120,6 +120,7 @@ const FIRE_HISTORY_COLOR = '#8f1d2c';
 const FIRE_HISTORY_EARLIER_COLOR = '#7a6458';
 const FIRE_HISTORY_FILL_OPACITY = 0.5;
 const FIRE_HISTORY_EARLIER_FILL_OPACITY = 0.22;
+const FIRE_HISTORY_EARLIER_IGNITION_OPACITY = 0.55;
 // how long one year's fires take to fade out as the next year's fade in,
 // short enough that dragging across several years still keeps up
 const FIRE_HISTORY_FADE_MS = 600;
@@ -385,10 +386,20 @@ const LAYER_SYMBOLS = Object.freeze({
   }),
   fires: Object.freeze({ iconUrl: MARKER_ICON_URLS.fire }),
   prescribed: Object.freeze({ iconUrl: MARKER_ICON_URLS.prescribed }),
-  fireHistoryPerimeters: Object.freeze({ swatchColor: FIRE_HISTORY_COLOR }),
+  fireHistoryPerimeters: Object.freeze({
+    swatchColor: FIRE_HISTORY_COLOR,
+    swatchOpacity: FIRE_HISTORY_FILL_OPACITY,
+  }),
   fireHistoryIgnitions: Object.freeze({ swatchColor: FIRE_HISTORY_COLOR, swatchShape: 'circle' }),
-  fireHistoryEarlierPerimeters: Object.freeze({ swatchColor: FIRE_HISTORY_EARLIER_COLOR }),
-  fireHistoryEarlierIgnitions: Object.freeze({ swatchColor: FIRE_HISTORY_EARLIER_COLOR, swatchShape: 'circle' }),
+  fireHistoryEarlierPerimeters: Object.freeze({
+    swatchColor: FIRE_HISTORY_EARLIER_COLOR,
+    swatchOpacity: FIRE_HISTORY_EARLIER_FILL_OPACITY,
+  }),
+  fireHistoryEarlierIgnitions: Object.freeze({
+    swatchColor: FIRE_HISTORY_EARLIER_COLOR,
+    swatchShape: 'circle',
+    swatchOpacity: FIRE_HISTORY_EARLIER_IGNITION_OPACITY,
+  }),
 });
 
 const FIRE_HISTORY_PERIMETER_LAYER_IDS = Object.freeze([
@@ -2375,7 +2386,7 @@ function addFireHistoryLayers(map) {
     filter: NO_FIRE_YEAR,
     paint: {
       'circle-color': FIRE_HISTORY_EARLIER_COLOR,
-      'circle-opacity': 0.55,
+      'circle-opacity': FIRE_HISTORY_EARLIER_IGNITION_OPACITY,
       'circle-radius': FIRE_HISTORY_IGNITION_RADIUS,
     },
   });
