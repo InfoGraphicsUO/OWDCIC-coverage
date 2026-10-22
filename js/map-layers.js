@@ -453,6 +453,15 @@ const INTERACTIVE_LAYER_IDS = Object.freeze([...MARKER_LAYER_IDS, LAYER_IDS.tran
 const CAMERA_MARKER_SIZE = 20;
 const PRESCRIBED_MARKER_SIZE = 18;
 
+// each [minimum zoom, size] pair selects a prerendered official camera marker
+// steps sit on whole zooms because Mapbox lays out symbols at tile zoom
+const CAMERA_MARKER_SIZES = [
+  [0, 12],
+  [6, 15],
+  [7, 17],
+  [8, CAMERA_MARKER_SIZE],
+];
+
 // each [minimum acres, size] pair selects a prerendered fire marker
 const FIRE_MARKER_SIZES = [
   [0, 14],
@@ -1957,12 +1966,25 @@ async function loadAlertWestCameras() {
   return camerasToGeoJSON(await fetchJson(CAMERA_API, 'Camera API'));
 }
 
+// picks a per-size value for the camera marker size at the current zoom
+function cameraZoomStep(valueForSize) {
+  const [[, smallestSize], ...largerSizes] = CAMERA_MARKER_SIZES;
+
+  return [
+    'step',
+    ['zoom'],
+    valueForSize(smallestSize),
+    ...largerSizes.flatMap(([zoom, size]) => [zoom, valueForSize(size)]),
+  ];
+}
+
 async function addCameraLayers(map) {
+  const sizes = CAMERA_MARKER_SIZES.map(([, size]) => size);
   // register images before adding symbol layers that reference them
   await Promise.all(
     CAMERA_PROVIDERS.flatMap(({ iconId, iconUrl, privateIconId, privateIconUrl }) => [
-      registerMarkerIcon(map, { id: iconId, url: iconUrl, size: CAMERA_MARKER_SIZE }),
-      privateIconId && registerMarkerIcon(map, { id: privateIconId, url: privateIconUrl, size: CAMERA_MARKER_SIZE }),
+      registerMarkerIconSizes(map, { id: iconId, url: iconUrl, sizes }),
+      privateIconId && registerMarkerIconSizes(map, { id: privateIconId, url: privateIconUrl, sizes }),
     ])
   );
 
@@ -1980,15 +2002,19 @@ async function addCameraLayers(map) {
       type: 'symbol',
       source: cameraLayerId,
       layout: {
-        ...markerLayout(privateIconId
-          ? ['case', ['==', ['get', 'outsideApi'], true], privateIconId, iconId]
-          : iconId),
-        'icon-offset': [
+        // zoomed out, cameras shrink so dense areas stay readable
+        ...markerLayout(cameraZoomStep((size) =>
+          privateIconId
+            ? ['case', ['==', ['get', 'outsideApi'], true], sizedIconId(privateIconId, size), sizedIconId(iconId, size)]
+            : sizedIconId(iconId, size)
+        )),
+        // shared-site offsets are set for the full-size marker, so they shrink with it
+        'icon-offset': cameraZoomStep((size) => [
           'case',
           ['==', ['get', 'sharesAlertWestSite'], true],
-          ['literal', sharedSiteIconOffset],
+          ['literal', sharedSiteIconOffset.map((offset) => Math.round((offset * size) / CAMERA_MARKER_SIZE))],
           ['literal', [0, 0]],
-        ],
+        ]),
       },
     });
 
