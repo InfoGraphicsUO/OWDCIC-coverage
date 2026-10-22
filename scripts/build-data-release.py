@@ -62,6 +62,9 @@ GH_LOCATIONS = (
 # drops the near-collinear vertices smoothing leaves behind; well under the 50 m web
 # grid, it changes area by about 0.001% and cuts vertices (and zip size) by about 60%
 VERTEX_TOLERANCE_M = 2.0
+# clipping to a state line can leave zero-area rings; shapefiles store ring roles by
+# winding order, which such a ring lacks, so it reads back as a nested shell
+SLIVER_AREA_M2 = 1.0
 
 PROVIDER_LABELS = {
     "alertwest": "ALERTWest",
@@ -183,6 +186,30 @@ def next_tag(gh: str | None) -> str:
 
 def area_sqkm(geometry: Any) -> float:
     return round(geometry.GetArea() / 1_000_000, 3)
+
+
+def drop_slivers(geometry: Any) -> Any:
+    """removes polygons and holes smaller than SLIVER_AREA_M2"""
+    result = viewsheds.ogr.Geometry(viewsheds.ogr.wkbMultiPolygon)
+
+    for part in viewsheds.polygon_parts(geometry):
+        if part.GetArea() < SLIVER_AREA_M2:
+            continue
+
+        polygon = viewsheds.ogr.Geometry(viewsheds.ogr.wkbPolygon)
+        polygon.AddGeometry(part.GetGeometryRef(0).Clone())
+
+        for index in range(1, part.GetGeometryCount()):
+            ring = part.GetGeometryRef(index)
+            hole = viewsheds.ogr.Geometry(viewsheds.ogr.wkbPolygon)
+            hole.AddGeometry(ring.Clone())
+
+            if hole.GetArea() >= SLIVER_AREA_M2:
+                polygon.AddGeometry(ring.Clone())
+
+        result.AddGeometry(polygon)
+
+    return result
 
 
 def load_states() -> dict[str, Any]:
@@ -498,6 +525,7 @@ def main() -> int:
     for index, (suffix, label, state) in enumerate(BUNDLES):
         progress(0.55 + 0.3 * index / len(BUNDLES), f"packaging the {label} download")
         clipped = coverage if state is None else viewsheds.as_multipolygon(coverage.Intersection(states[state]))
+        clipped = drop_slivers(clipped)
         archive, summary = build_bundle(
             release_dir / f"{ASSET_PREFIX}-{suffix}",
             label,
