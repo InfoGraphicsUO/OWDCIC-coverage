@@ -54,6 +54,38 @@ export function initAbout() {
   });
 }
 
+// each tab builds its own panel content the first time the modal opens
+const ABOUT_TABS = Object.freeze([
+  Object.freeze({
+    id: 'overview',
+    label: 'Overview',
+    build: () => [
+      element('p', 'about-modal__lead', SUMMARY),
+      section('How it started', timeline()),
+    ],
+  }),
+  Object.freeze({
+    id: 'mission',
+    label: 'Mission',
+    build: () => [
+      element('p', '', MISSION),
+      goalCallout(),
+      element('p', 'about-modal__closing', CLOSING),
+    ],
+  }),
+  Object.freeze({
+    id: 'partners',
+    label: 'Partners',
+    build: () => {
+      const columns = element('div', 'about-modal__partners');
+      for (const group of ORGANIZATION_GROUPS) {
+        columns.append(section(group.title, organizationList(group.names)));
+      }
+      return [columns];
+    },
+  }),
+]);
+
 function openAboutModal(onClose) {
   const { dialog } = openModal({
     id: 'about',
@@ -63,25 +95,64 @@ function openAboutModal(onClose) {
     onClose,
   });
 
-  const body = document.createElement('div');
-  body.className = 'modal__body about-modal__body';
+  const tabList = element('div', 'about-modal__tabs');
+  tabList.setAttribute('role', 'tablist');
+  tabList.setAttribute('aria-label', 'About sections');
 
-  const main = document.createElement('div');
-  main.className = 'about-modal__main';
-  main.append(
-    element('p', 'about-modal__lead', SUMMARY),
-    section('How it started', timeline()),
-    section('Mission', element('p', '', MISSION), goalCallout(), element('p', 'about-modal__closing', CLOSING)),
-  );
+  const body = element('div', 'modal__body about-modal__body');
+  const tabs = [];
+  const panels = [];
 
-  const side = document.createElement('div');
-  side.className = 'about-modal__side';
-  for (const group of ORGANIZATION_GROUPS) {
-    side.append(section(group.title, organizationList(group.names)));
+  for (const { id, label, build } of ABOUT_TABS) {
+    const tab = element('button', 'about-modal__tab', label);
+    tab.type = 'button';
+    tab.id = `about-tab-${id}`;
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-controls', `about-panel-${id}`);
+    tab.addEventListener('click', () => selectTab(tabs.indexOf(tab)));
+
+    const panel = element('div', 'about-modal__panel');
+    panel.id = `about-panel-${id}`;
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', tab.id);
+    panel.append(...build());
+
+    tabs.push(tab);
+    panels.push(panel);
   }
 
-  body.append(main, side);
-  dialog.append(body);
+  // arrow keys move between tabs, matching the usual tablist pattern
+  tabList.addEventListener('keydown', (event) => {
+    const current = tabs.indexOf(document.activeElement);
+    if (current < 0) return;
+
+    let next = null;
+    if (event.key === 'ArrowRight') next = (current + 1) % tabs.length;
+    if (event.key === 'ArrowLeft') next = (current - 1 + tabs.length) % tabs.length;
+    if (event.key === 'Home') next = 0;
+    if (event.key === 'End') next = tabs.length - 1;
+    if (next === null) return;
+
+    event.preventDefault();
+    selectTab(next);
+    tabs[next].focus();
+  });
+
+  function selectTab(index) {
+    tabs.forEach((tab, i) => {
+      const selected = i === index;
+      tab.classList.toggle('is-active', selected);
+      tab.setAttribute('aria-selected', `${selected}`);
+      tab.tabIndex = selected ? 0 : -1;
+      panels[i].hidden = !selected;
+    });
+    body.scrollTop = 0;
+  }
+
+  tabList.append(...tabs);
+  body.append(...panels);
+  dialog.append(tabList, body);
+  selectTab(0);
 }
 
 function section(title, ...children) {
