@@ -502,7 +502,8 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl {
     float: none;
-    margin: 0 0 var(--panel-gap);
+    /* the extra 4px over three gaps lines the gear's bottom up with the 72px rail buttons */
+    margin: 0 0 calc(var(--panel-gap) + 4px / 3);
 }
 
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group {
@@ -645,6 +646,8 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     .control-rail__button { flex-basis: 64px; font-size: 11px; }
     .control-rail__icon { width: 24px; height: 24px; font-size: 18px; }
     .zoom-viewer { display: none; }
+    /* the map controls already run taller than the shorter rail here */
+    .mapboxgl-ctrl-top-left .mapboxgl-ctrl { margin-bottom: var(--panel-gap); }
 }
 
 @media (max-width: 900px) {
