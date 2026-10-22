@@ -3,7 +3,7 @@
     --ohaz-yellow: #f8e109;
     --ohaz-green: #3c6b03;
     --banner-height: 82px;
-    --font-heading: "Urbanist", "Clarity City", sans-serif;
+    --font-heading: "Barlow Semi Condensed", "Clarity City", sans-serif;
     --panel-background: rgba(255, 255, 255, 0.94);
     --panel-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     --ui-radius: 10px;
@@ -61,7 +61,7 @@ textarea {
     margin: 0 0 0 18px;
     font-family: var(--font-heading);
     font-size: clamp(21px, 2.3vw, 32px);
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.1;
     letter-spacing: 0.01em;
 }
