@@ -146,7 +146,10 @@ textarea {
 
 .about-modal__dialog .modal__header h2 {
     align-self: center;
-    padding: 14px 0;
+    padding: 12px 0;
+    font-family: var(--font-heading);
+    font-size: 24px;
+    font-weight: 600;
 }
 
 .about-modal__dialog .modal__close {
@@ -156,35 +159,35 @@ textarea {
 .about-modal__tabs {
     display: flex;
     flex: 1 1 auto;
+    align-items: center;
     gap: 4px;
     margin-left: 16px;
 }
 
 .about-modal__tab {
-    margin-bottom: -1px;
-    padding: 16px 14px 13px;
-    color: #c8c8c8;
+    height: 36px;
+    padding: 0 10px;
+    color: #fff;
     background: transparent;
     border: 0;
-    border-bottom: 3px solid transparent;
-    font-size: 15px;
+    border-radius: var(--ui-radius-sm);
+    font-size: 14px;
     font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: color 120ms ease, border-color 120ms ease;
+    transition: background-color 120ms ease;
 }
 
-.about-modal__tab:hover {
-    color: #fff;
-}
-
+.about-modal__tab:hover,
+.about-modal__tab:focus-visible,
 .about-modal__tab.is-active {
-    color: #fff;
-    border-bottom-color: var(--ohaz-yellow);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .about-modal__tab:focus-visible {
     outline: 2px solid var(--ohaz-yellow);
-    outline-offset: -2px;
+    outline-offset: 2px;
 }
 
 .modal__body.about-modal__body {
