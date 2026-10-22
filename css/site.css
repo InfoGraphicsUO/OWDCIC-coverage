@@ -38,7 +38,7 @@ textarea {
     display: flex;
     align-items: center;
     height: var(--banner-height);
-    padding: 8px 22px;
+    padding: 6px 14px;
     color: #fff;
     background: var(--ohaz-grey);
     border-bottom: 5px solid var(--ohaz-yellow);
@@ -58,9 +58,9 @@ textarea {
 }
 
 .site-banner__title {
-    margin: 0 0 0 18px;
+    margin: 0 0 0 14px;
     font-family: var(--font-heading);
-    font-size: clamp(21px, 2.3vw, 32px);
+    font-size: clamp(24px, 2.9vw, 42px);
     font-weight: 600;
     line-height: 1.1;
     letter-spacing: 0.01em;
@@ -74,12 +74,12 @@ textarea {
 .site-banner__about,
 .site-banner__settings {
     height: 42px;
-    padding: 0 12px;
+    padding: 0 10px;
     color: #fff;
     background: transparent;
     border: 0;
     border-radius: var(--ui-radius-sm);
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -330,7 +330,7 @@ textarea {
     }
 
     .site-banner__title {
-        margin-left: 12px;
-        font-size: 19px;
+        margin-left: 10px;
+        font-size: 22px;
     }
 }
