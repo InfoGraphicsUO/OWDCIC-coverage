@@ -115,6 +115,12 @@ export function initLegend(items) {
       legend.insertBefore(binding.element, next ?? null);
     },
 
+    // the PNG export reads this in place of the visible label, for state the label can't show
+    setExportLabel(label, text) {
+      const row = findBinding(label)?.row;
+      if (row) row.dataset.exportLabel = text;
+    },
+
     updateInfo(label, text) {
       // only rows with provider notes get a tooltip trigger
       const infoButton = findBinding(label)?.infoButton;
@@ -126,20 +132,14 @@ export function initLegend(items) {
       infoTooltip.refresh(infoButton);
     },
 
-    updateSwatchColor(label, color, { darkOutline = false, image = null } = {}) {
+    updateSwatchColor(label, color, { image = null } = {}) {
       // viewshed colors change with the selected basemap
       const swatch = findBinding(label)?.swatch;
       if (!swatch) return;
 
       // CSS variables let one swatch style follow runtime basemap changes
       swatch.style.setProperty('--legend-swatch-color', color);
-
-      // an inline url resolves from the page, where a CSS variable would resolve from the stylesheet
-      swatch.style.backgroundImage = image ? `url("${image}")` : '';
-      swatch.classList.toggle('legend-swatch--image', Boolean(image));
-
-      // the image has its own edges, so only flat swatches take the satellite outline
-      swatch.classList.toggle('legend-swatch--dark-outline', darkOutline && !image);
+      setSwatchImage(swatch, image);
     },
 
     setLoading(label, loading) {
@@ -414,10 +414,21 @@ function createLegendSwatch(item) {
   if (item.swatchShape === 'circle') classes.push('legend-swatch--circle');
   if (item.swatchBorder === false) classes.push('legend-swatch--fill');
   if (item.swatchClass) classes.push(item.swatchClass);
+  if (item.swatchOpacity !== undefined) {
+    classes.push('legend-swatch--translucent');
+    swatch.style.setProperty('--legend-swatch-opacity', `${item.swatchOpacity * 100}%`);
+  }
   swatch.className = classes.join(' ');
   swatch.style.setProperty('--legend-swatch-color', item.swatchColor);
+  setSwatchImage(swatch, item.swatchImage);
   swatch.setAttribute('aria-hidden', 'true');
   return swatch;
+}
+
+function setSwatchImage(swatch, image) {
+  // an inline url resolves from the page, where a CSS variable would resolve from the stylesheet
+  swatch.style.backgroundImage = image ? `url("${image}")` : '';
+  swatch.classList.toggle('legend-swatch--image', Boolean(image));
 }
 
 function setLayersVisible(map, layerIds, visible) {

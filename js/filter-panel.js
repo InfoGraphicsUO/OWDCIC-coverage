@@ -6,12 +6,15 @@
  * select(type, id) is the programmatic path used by map feature clicks
  * selectType(type) opens a type without picking an option, used by anchor links
  * option data stays cached after a successful load for the life of this panel
+ * searchOptions(type) lists the same options more cheaply for the category search,
+ * e.g. names without geometry; it defaults to loadOptions
  * a type with parent { type, option } opens from that option of its parent type
  * instead of listing on its own, and its back button returns to the parent
  */
 export function initFilterPanel({
   types = [],
   loadOptions,
+  searchOptions = loadOptions,
   onTypeSelected = () => {},
   onSelection = () => {},
   onClear = () => {},
@@ -31,6 +34,7 @@ export function initFilterPanel({
   let requestId = 0;
   let globalSearchId = 0;
   const optionsCache = new Map();
+  const searchCache = new Map();
 
   // folders (groups of types) the user has open, as joined name paths
   const openFolders = new Set();
@@ -131,6 +135,17 @@ export function initFilterPanel({
     return normalized;
   };
 
+  // a type already opened reuses its full options instead of fetching the search list
+  const ensureSearchOptionsLoaded = async (typeValue) => {
+    if (optionsCache.has(typeValue)) return optionsCache.get(typeValue);
+    if (searchCache.has(typeValue)) return searchCache.get(typeValue);
+
+    const loaded = await searchOptions(typeValue);
+    const normalized = Array.isArray(loaded) ? loaded : [];
+    searchCache.set(typeValue, normalized);
+    return normalized;
+  };
+
   const renderCategories = () => {
     const query = categorySearch.input.value.trim().toLowerCase();
     if (!query) {
@@ -161,7 +176,7 @@ export function initFilterPanel({
     const optionMatches = [];
     await Promise.all(types.map(async (type) => {
       try {
-        const loaded = await ensureOptionsLoaded(type.value);
+        const loaded = await ensureSearchOptionsLoaded(type.value);
         if (searchId !== globalSearchId) return;
         loaded
           .filter((option) => optionMatchesQuery(option, query))
@@ -203,8 +218,11 @@ export function initFilterPanel({
       }
 
       // option hits skip the intermediate view and apply the exact matching option
+      // search hits come from the names-only list, so pick the loaded option with the same value
       await chooseType(item.type, { focusSearch: false });
-      await chooseOption(item.option);
+      const option = options.find((entry) => `${entry.value}` === `${item.option.value}`);
+      if (activeType?.value !== item.type.value || !option) return;
+      await chooseOption(option);
       categorySearch.input.value = '';
     });
 

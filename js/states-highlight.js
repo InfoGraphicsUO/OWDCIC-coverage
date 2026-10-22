@@ -1,4 +1,3 @@
-import { fetchArcGISGeoJSON } from './arcgis-requests.js';
 import { DATA_URLS, LAYER_IDS, emptyFeatureCollection } from './config.js';
 
 const OUTSIDE_HATCH_IMAGE_ID = 'outside-region-hatch';
@@ -8,33 +7,19 @@ const HATCH_LINE_WIDTH = 2;
 const SHARED_EDGE_TOLERANCE = 0.003;
 const SHARED_EDGE_MIN_DIRECTION_COSINE = 0.9;
 
-// states that intersect or sit immediately around the map's constrained bounds
-const WESTERN_STATE_FIPS = Object.freeze([
-  '04', '06', '08', '16', '30', '32', '41', '49', '53', '56',
-]);
 const REGION_STATE_FIPS = new Set(['41', '53']);
 
-// fetches light Census boundaries for the two-state region rendering
+// reads the western states and Canada saved by scripts/data-builders/build-region-focus.py
 export async function loadRegionFocusData() {
-  const [boundary, countries] = await Promise.all([
-    fetchArcGISGeoJSON(DATA_URLS.censusStateBoundaries, {
-      where: `STATE IN (${WESTERN_STATE_FIPS.map((fips) => `'${fips}'`).join(',')})`,
-      outFields: 'STATE,GEOID',
-      orderByFields: 'OID',
-      // 5 decimal places plus 0.002 degree offset trim statewide payload
-      geometryPrecision: '5',
-      maxAllowableOffset: '0.002',
-    }),
-    fetchArcGISGeoJSON(DATA_URLS.worldCountries, {
-      where: "ISO='CA'",
-      outFields: 'ISO',
-      orderByFields: 'FID',
-      geometryPrecision: '5',
-      maxAllowableOffset: '0.002',
-    }),
-  ]);
+  const response = await fetch(DATA_URLS.regionFocus);
+  if (!response.ok) throw new Error(`Region focus HTTP ${response.status}`);
+  const { features = [] } = await response.json();
 
-  return buildRegionFocusData(boundary, countries);
+  // Canada is the only feature with a country code
+  return buildRegionFocusData(
+    { type: 'FeatureCollection', features: features.filter((feature) => !feature.properties?.ISO) },
+    { type: 'FeatureCollection', features: features.filter((feature) => feature.properties?.ISO) },
+  );
 }
 
 // adds the outside-region hatch and combined outline above the basemap

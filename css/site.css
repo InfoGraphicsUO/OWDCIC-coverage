@@ -32,6 +32,7 @@ textarea {
 .site-banner {
     position: absolute;
     inset: 0 0 auto 0;
+    /* over the map and its controls, under modals */
     z-index: 1000;
     box-sizing: border-box;
     display: flex;

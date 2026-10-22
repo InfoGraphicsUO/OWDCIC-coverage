@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Convert a CSV with latitude/longitude columns to GeoJSON points.
+"""convert a CSV with latitude/longitude columns to GeoJSON points
 
     python scripts/csv-to-geojson.py data/standing-lookouts.csv
     python scripts/csv-to-geojson.py data/sites.csv data/alertwest-sites.geojson --sites
 
-Sites mode writes ALERTWest sites to the main output and each provider section
+sites mode writes ALERTWest sites to the main output and each provider section
 (e.g. PANO.AI) to its own file, moving sites onto matching digitized camera
-locations, which are more accurate than the sheet's coordinates.
+locations, which are more accurate than the sheet's coordinates
 """
 
 from __future__ import annotations
@@ -182,7 +182,7 @@ def csv_to_geojson(
     lon_column: str | None = None,
     name_column: str | None = None,
 ) -> dict:
-    """Turn any lat/lon CSV into Point features; remaining columns become properties."""
+    """turns any lat/lon CSV into Point features; remaining columns become properties"""
     reader = csv.DictReader(text.splitlines())
     fieldnames = list(reader.fieldnames or [])
 
@@ -248,9 +248,9 @@ def sites_csv_to_geojson(
     digitized: list[dict] | None = None,
     counties: list[dict] | None = None,
 ) -> dict[str, dict]:
-    """Camera sites sheet: ALERTWest heights, provider tables, then AW Live aliases.
+    """camera sites sheet: ALERTWest heights, provider tables, then AW Live aliases
 
-    Returns one FeatureCollection per provider, keyed by provider id.
+    returns one FeatureCollection per provider, keyed by provider id
     """
     rows = list(csv.reader(text.splitlines()))
     if not rows:

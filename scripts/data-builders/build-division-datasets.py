@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Build the Census and Forest Service OR/WA division GeoJSON products.
+"""build the Census and Forest Service OR/WA division GeoJSON products
 
-Parks and tribal lands, ODF districts, and utility and federal land have their
-own builders in this folder.  All geometries come from the listed public
-ArcGIS services.  The builder keeps
-the raw service response hash in each collection so a refresh is auditable.
-Area and viewshed metrics are intentionally nullable until the GDAL coverage
-step is run against the local EPSG:5070 product.
+parks and tribal lands, ODF districts, and utility and federal land have their
+own builders in this folder. all geometries come from the listed public
+ArcGIS services. the raw service response hash is kept in each collection so
+a refresh is auditable. area and viewshed metrics stay null until the GDAL
+coverage step is run against the local EPSG:5070 product
 """
 from __future__ import annotations
 
@@ -30,6 +29,8 @@ SOURCES = {
 
 # listed first in the national forest options; the map highlights its members, not its shape
 ALL_FORESTS_NAME = "All National Forests"
+# listed after it, each covering only the forest land inside that state
+STATE_FORESTS = (("OR", "Oregon"), ("WA", "Washington"))
 
 # counties are generalized server-side because the map draws all 75 outlines at once
 COUNTY_PARAMS = {"maxAllowableOffset": "0.0005", "f": "geojson", "orderByFields": "GEOID"}
@@ -41,7 +42,7 @@ def fetch(url, where, fields, extra=None):
 
 
 def arcgis_geometry(geometry):
-    """Convert ArcGIS rings to GeoJSON, retaining holes and disjoint parts."""
+    """converts ArcGIS rings to GeoJSON, keeping holes and disjoint parts"""
     if "type" in geometry: return geometry
     rings = geometry.get("rings") or []
 
@@ -108,29 +109,28 @@ def polygons(geometry):
     return [geometry["coordinates"]] if geometry["type"] == "Polygon" else geometry["coordinates"]
 
 
-def combined_feature(features, division_type):
-    """Every member's polygons in one shape; the coverage step repairs shared edges into a union."""
+def combined_feature(features, division_type, name=ALL_FORESTS_NAME, key="all", state=None):
+    """every member's polygons in one shape; the coverage step repairs shared edges into a union"""
     geom = {"type": "MultiPolygon", "coordinates": [poly for f in features for poly in polygons(f["geometry"])]}
     b = bbox(geom)
-    did = f"{division_type}:all"
+    did = f"{division_type}:{key}"
 
     return {"type":"Feature", "id":did, "geometry":geom, "bbox":b, "properties":{
-        "divisionId": did, "divisionType": division_type, "name": ALL_FORESTS_NAME,
-        "label": ALL_FORESTS_NAME, "labelPoint":[(b[0]+b[2])/2, (b[1]+b[3])/2],
-        "state": None, "sourceFeatureId": "all", **pending_metrics(),
+        "divisionId": did, "divisionType": division_type, "name": name,
+        "label": name, "labelPoint":[(b[0]+b[2])/2, (b[1]+b[3])/2],
+        "state": state, "sourceFeatureId": key, **pending_metrics(),
         "memberDivisionIds": [f["id"] for f in features]
     }}
 
 
-# what is left of a unit after clipping can be a sliver where the two boundaries disagree by a hair
-MIN_CLIPPED_AREA_SQKM = 10
+def state_combined_features(features, division_type, states_path):
+    """an Oregon and a Washington option made of the forest land inside each state
 
+    a forest that crosses the state line joins each state as a portion of its own,
+    so no land counts toward both. portions are only report members: they name
+    their forest in partOfDivisionId, and the map keeps drawing the whole forest
 
-def clip_to_project_boundary(features):
-    """Cut each feature to the OR/WA project boundary and drop those with next to nothing inside it.
-
-    Forest Service units run into CA, ID and NV, so each is clipped to
-    data/or-wa-boundary.geojson, which keeps the shown area and the coverage metrics to the project region.
+    returns the state options and the portions
     """
     from pyproj import Transformer
     from shapely import set_precision, to_geojson
@@ -139,10 +139,69 @@ def clip_to_project_boundary(features):
     from shapely.validation import make_valid
 
     to_equal_area = Transformer.from_crs(4326, 5070, always_xy=True).transform
+    sqkm = lambda geometry: transform(to_equal_area, geometry).area / 1e6
+    state_shapes = {f["properties"]["state"]: make_valid(shape(f["geometry"]))
+                    for f in json.loads(states_path.read_text())["features"]}
+    combined, portions = [], []
+
+    for abbr, state_name in STATE_FORESTS:
+        boundary = state_shapes[abbr]
+        members = []
+
+        for feature in features:
+            forest = make_valid(shape(feature["geometry"]))
+            inside = forest.intersection(boundary)
+
+            # a sliver along the state line is boundary disagreement, not forest in that state
+            if sqkm(inside) < MIN_CLIPPED_AREA_SQKM:
+                continue
+            if sqkm(forest.difference(boundary)) < MIN_CLIPPED_AREA_SQKM:
+                members.append(feature)
+                continue
+
+            parts = [part for part in getattr(inside, "geoms", [inside]) if isinstance(part, (Polygon, MultiPolygon))]
+            geometry = set_precision(MultiPolygon([poly for part in parts for poly in getattr(part, "geoms", [part])]), 1e-5)
+            point = geometry.representative_point()
+            did = f"{feature['id']}:{abbr.lower()}"
+            name = f"{feature['properties']['name']} ({state_name} portion)"
+            portion = {"type": "Feature", "id": did, "geometry": json.loads(to_geojson(geometry)),
+                       "bbox": list(geometry.bounds), "properties": {
+                           "divisionId": did, "divisionType": division_type, "name": name, "label": name,
+                           "labelPoint": [round(point.x, 5), round(point.y, 5)], "state": abbr,
+                           "sourceFeatureId": feature["properties"]["sourceFeatureId"], **pending_metrics(),
+                           "partOfDivisionId": feature["id"]}}
+            portions.append(portion)
+            members.append(portion)
+
+        combined.append(combined_feature(members, division_type, f"{state_name} National Forests", abbr.lower(), abbr))
+
+    return combined, portions
+
+
+# what is left of a unit after clipping can be a sliver where the two boundaries disagree by a hair
+MIN_CLIPPED_AREA_SQKM = 10
+
+
+def clip_to_project_boundary(features):
+    """cuts each feature to the OR/WA project boundary and drops those with next to nothing inside it
+
+    Forest Service units run into CA, ID and NV, so each is clipped to
+    data/or-wa-boundary.geojson, which keeps the shown area and the coverage
+    metrics to the project region
+    """
+    from pyproj import Transformer
+    from shapely import set_precision, to_geojson
+    from shapely.ops import transform
+    from shapely.geometry import MultiPolygon, Polygon, shape
+    from shapely.validation import make_valid
+
+    # areas are measured in EPSG:5070 (equal area, meters), not in degrees
+    to_equal_area = Transformer.from_crs(4326, 5070, always_xy=True).transform
     boundary = shape(json.loads((ROOT / "data" / "or-wa-boundary.geojson").read_text())["features"][0]["geometry"])
     clipped, dropped = [], []
 
     for feature in features:
+        # source rings can self-intersect, so repair before intersecting
         inside = make_valid(shape(feature["geometry"])).intersection(boundary)
         parts = [part for part in getattr(inside, "geoms", [inside]) if isinstance(part, (Polygon, MultiPolygon)) and part.area > 0]
         polygons = [poly for part in parts for poly in getattr(part, "geoms", [part])]
@@ -151,7 +210,9 @@ def clip_to_project_boundary(features):
             dropped.append({"id": feature["id"], "name": feature["properties"]["name"]})
             continue
 
+        # snap to 5 decimals, matching the precision the service returns
         geometry = set_precision(MultiPolygon(polygons), 1e-5)
+        # / 1e6 turns square meters into square km
         if geometry.is_empty or transform(to_equal_area, geometry).area / 1e6 < MIN_CLIPPED_AREA_SQKM:
             dropped.append({"id": feature["id"], "name": feature["properties"]["name"]})
             continue
@@ -184,7 +245,8 @@ def main():
             result["features"], outside = clip_to_project_boundary(result["features"])
             result["metadata"]["clippedTo"] = "data/or-wa-boundary.geojson"
             result["metadata"]["excludedOutsideBoundaryFeatures"] = outside
-            result["features"].insert(0, combined_feature(result["features"], dtype))
+            states, portions = state_combined_features(result["features"], dtype, args.output / "state.geojson")
+            result["features"] = [combined_feature(result["features"], dtype), *states, *result["features"], *portions]
 
         write_collection(args.output / f"{kind}.geojson", result)
         print(f"{kind}: {len(result['features'])} features")

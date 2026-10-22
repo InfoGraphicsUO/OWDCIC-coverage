@@ -14,6 +14,22 @@
       "reason": "Missing coordinates"
     }
   ],
+  "outsideApi": [
+    {
+      "sheetName": "Bear Mountain",
+      "provider": "alertwest",
+      "county": "Lane",
+      "state": "OR",
+      "reason": "Kept out of the ALERTWest API for landowner privacy; ALERTWest allowed a manual map marker without camera images (issue #147)."
+    },
+    {
+      "sheetName": "Callahan Ridge",
+      "provider": "alertwest",
+      "county": "Douglas",
+      "state": "OR",
+      "reason": "Kept out of the ALERTWest API for landowner privacy; ALERTWest allowed a manual map marker without camera images (issue #147)."
+    }
+  ],
   "sites": [
     {
       "sheetName": "Mt Defiance",

@@ -906,10 +906,9 @@ def repair_polygon_parts(geometry: Any) -> Any:
     if result.IsEmpty():
         return result
 
-    # Individual members can be valid while the MultiPolygon is not (for
-    # example, after reprojection when two boundaries become coincident).
-    # Repair the collection as well so the GeoJSON driver cannot serialize
-    # overlapping or collapsed rings as an invalid output geometry.
+    # members can be valid while the MultiPolygon is not (e.g. after reprojection
+    # when two boundaries become coincident), so repair the collection too and the
+    # GeoJSON driver cannot write overlapping or collapsed rings
     repaired_collection = result.MakeValid()
     valid_result = ogr.Geometry(ogr.wkbMultiPolygon)
 
@@ -1058,6 +1057,7 @@ def majority_filter_array(values: Any) -> Any:
     visible = np.asarray(values) == 1
     # cells beyond the raster boundary count as not visible
     padded = np.pad(visible, 1, mode="constant", constant_values=False)
+    # sum the 3x3 neighborhood by adding the grid shifted over each of the 9 offsets
     counts = np.zeros(visible.shape, dtype=np.uint8)
 
     for row_offset in range(3):
@@ -1125,6 +1125,7 @@ def build_dem(
 ) -> None:
     """warps the DEM index to a square, cell-aligned UTM grid around the camera"""
     x, y = observer
+    # one extra cell past the radius so the edge of the circle is fully covered
     margin = config.radius_m + config.cell_size_m
     paths["dem"].parent.mkdir(parents=True, exist_ok=True)
     gdal.Warp(

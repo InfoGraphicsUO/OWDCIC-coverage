@@ -1,4 +1,4 @@
-"""Validate the shipped map selection products as a set."""
+"""validates the shipped map selection products as a set"""
 import json
 import math
 from pathlib import Path
@@ -12,7 +12,7 @@ KINDS = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
 
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
-    'utility': 3, 'national-forest': 20, 'national-park': 14,
+    'utility': 3, 'national-forest': 26, 'national-park': 14,
     'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
 }
 
@@ -113,8 +113,10 @@ class SelectionDataTests(unittest.TestCase):
     def test_all_national_forests_combines_every_forest(self):
         data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
         combined = [f for f in data['features'] if 'memberDivisionIds' in f['properties']]
-        self.assertEqual([f['properties']['name'] for f in combined], ['All National Forests'])
-        members = [f for f in data['features'] if f not in combined]
+        self.assertEqual([f['properties']['name'] for f in combined],
+                         ['All National Forests', 'Oregon National Forests', 'Washington National Forests'])
+        members = [f for f in data['features']
+                   if f not in combined and 'partOfDivisionId' not in f['properties']]
         self.assertEqual(sorted(combined[0]['properties']['memberDivisionIds']),
                          sorted(f['id'] for f in members))
 
@@ -123,6 +125,29 @@ class SelectionDataTests(unittest.TestCase):
             total = sum(f['properties'][key] for f in members)
             self.assertLessEqual(combined[0]['properties'][key], total)
             self.assertGreater(combined[0]['properties'][key], total * 0.99)
+
+    def test_state_national_forests_split_forests_at_the_state_line(self):
+        data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
+        features = {f['id']: f['properties'] for f in data['features']}
+        everything, oregon, washington = (features[f'national-forest:{key}'] for key in ('all', 'or', 'wa'))
+        portions = [p for p in features.values() if 'partOfDivisionId' in p]
+
+        # only forests that cross the line are split, and each split forest has one portion per state
+        self.assertEqual(sorted(p['name'] for p in portions), [
+            'Columbia River Gorge National Scenic Area (Oregon portion)',
+            'Columbia River Gorge National Scenic Area (Washington portion)',
+            'Umatilla National Forest (Oregon portion)',
+            'Umatilla National Forest (Washington portion)',
+        ])
+        split = {p['partOfDivisionId'] for p in portions}
+        for state in (oregon, washington):
+            members = [features[i] for i in state['memberDivisionIds']]
+            self.assertFalse(split & set(state['memberDivisionIds']), 'a split forest joins a state as its portion')
+            self.assertTrue(all(m.get('partOfDivisionId') is None or m['state'] == state['state'] for m in members))
+
+        # no forest land counts toward both states, so the states add up to all forests
+        for key in ('landAreaSqKm', 'cameraViewshedAreaSqKm'):
+            self.assertAlmostEqual(oregon[key] + washington[key], everything[key], delta=everything[key] * 0.005)
 
     def test_national_forest_is_clipped_to_the_project_boundary(self):
         data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
@@ -155,14 +180,14 @@ class SelectionDataTests(unittest.TestCase):
 
     def test_cameras_are_not_reported_as_zero_when_viewshed_is_missing(self):
         data = json.loads((ROOT / 'data/camera-coverage.json').read_text())
-        # 85 ALERTWest + 68 Pano AI + 87 EnviroVision viewsheds; none is currently missing coverage
-        self.assertEqual(len(data['viewsheds']), 240)
+        # 85 ALERTWest + 69 Pano AI + 87 EnviroVision viewsheds; none is currently missing coverage
+        self.assertEqual(len(data['viewsheds']), 241)
         self.assertEqual(data['metadata']['areaCrs'], 'EPSG:5070')
         self.assertEqual(data['metadata']['denominator'], 'individual viewshed land footprint')
         available = [key for key, result in data['viewsheds'].items() if result['coverageAvailable']]
         unavailable = [key for key, result in data['viewsheds'].items() if not result['coverageAvailable']]
-        self.assertEqual(len(available), 240)
-        self.assertEqual(sum(key.startswith('pano-') for key in available), 68)
+        self.assertEqual(len(available), 241)
+        self.assertEqual(sum(key.startswith('pano-') for key in available), 69)
         self.assertEqual(len(unavailable), 0)
 
         for result in data['viewsheds'].values():
@@ -187,6 +212,18 @@ class SelectionDataTests(unittest.TestCase):
                     self.assertTrue(geometry.is_valid, feature['id'])
                     self.assertFalse(geometry.is_empty)
                     self.assertGreater(geometry.area, 0)
+
+    def test_map_copies_match_the_full_divisions(self):
+        # scripts/data-builders/build-map-divisions.py must rerun after any division or metrics build
+        options = json.loads((ROOT / 'data/map-divisions/options.json').read_text())
+        for kind in KINDS:
+            with self.subTest(kind=kind):
+                full = json.loads((ROOT / f'data/divisions/{kind}.geojson').read_text())['features']
+                copy = json.loads((ROOT / f'data/map-divisions/{kind}.geojson').read_text())['features']
+                self.assertEqual([(f['id'], f['properties']) for f in copy],
+                                 [(f['id'], f['properties']) for f in full])
+                self.assertEqual([entry['divisionId'] for entry in options[kind]],
+                                 [f['properties']['divisionId'] for f in full])
 
 
 if __name__ == '__main__':

@@ -459,6 +459,11 @@
     display: grid;
 }
 
+/* group rows marked hidden show only the checkbox and label; the empty slot keeps labels aligned */
+.control-menu .legend-group__parent .legend-visual:has(.legend-swatch--hidden) {
+    visibility: hidden;
+}
+
 .control-menu .legend-info {
     color: var(--control-chrome-muted);
 }
@@ -632,7 +637,7 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     :root {
         --rail-width: 64px;
         --panel-gap: 8px;
-        /* Keep the body, collapse tab, and visible rail inside the viewport. */
+        /* keep the body, collapse tab, and visible rail inside the viewport */
         --sidebar-width: calc(100vw - var(--rail-width) - var(--panel-gap) * 2);
     }
 

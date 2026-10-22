@@ -3,6 +3,7 @@ setlocal
 
 set "PROJECT_ROOT=%~dp0"
 
+rem look for a QGIS install: explicit env vars first, then OSGeo4W, then the newest "QGIS *" folder
 if defined OWDCIC_QGIS_ROOT goto qgis_found
 if defined QGIS_ROOT set "OWDCIC_QGIS_ROOT=%QGIS_ROOT%"
 if defined OWDCIC_QGIS_ROOT goto qgis_found

@@ -13,6 +13,8 @@ export const DATA_URLS = Object.freeze({
   cameraViewshedsSourceLayer: 'camera_viewsheds',
   cameraViewshedsCoverageSourceLayer: 'camera_viewshed_coverage',
   viewshedManifest: 'data/alertwest-viewshed-manifest.json',
+  // per-camera coverage and land status for the camera results
+  cameraCoverage: 'data/camera-coverage.json',
   // latest Pano AI camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.3eiwtk/
   // an empty value shows the legend row as unpublished instead of requesting tiles
   panoCameraViewsheds: 'mapbox://infographics.3eiwtk',
@@ -27,10 +29,13 @@ export const DATA_URLS = Object.freeze({
   digitizedCameraSources: 'data/digitized-camera-sources.geojson',
   standingLookouts: 'data/standing-lookouts.geojson',
   transmissionLines: 'data/transmission-lines.geojson',
-  censusStateBoundaries:
-    'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/10',
-  worldCountries:
-    'https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0',
+  // past wildfires of 100+ acres since 2016, built by scripts/data-builders/build-fire-history.py
+  fireHistoryPerimeters: 'data/fire-history-perimeters.geojson',
+  fireHistoryIgnitions: 'data/fire-history-ignitions.geojson',
+  // names of every division option, so the filter search needs no geometry
+  divisionOptions: 'data/map-divisions/options.json',
+  // the region outline and the hatched states and Canada around it
+  regionFocus: 'data/region-focus.geojson',
   nifcFires:
     'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Incident_Locations_Current/FeatureServer/0',
   nifcPerimeters:
@@ -59,6 +64,7 @@ export const CAMERA_PROVIDER_COLORS = Object.freeze({
 // marker artwork rasterized by js/marker-icons.js and shown in the legend
 export const MARKER_ICON_URLS = Object.freeze({
   camera: 'img/camera-marker.svg',
+  privateCamera: 'img/private-camera-marker.svg',
   panoCamera: 'img/pano-camera-marker.svg',
   enviroVisionCamera: 'img/envirovision-camera-marker.svg',
   fire: 'img/fire-marker.svg',
@@ -113,6 +119,16 @@ export const LAYER_IDS = Object.freeze({
   perimetersSource: 'nifc-perimeters',
   perimetersFill: 'nifc-perimeters-fill',
   perimetersLine: 'nifc-perimeters-line',
+  fireHistoryPerimetersSource: 'fire-history-perimeters',
+  fireHistoryPerimetersEarlierFill: 'fire-history-perimeters-earlier-fill',
+  fireHistoryPerimetersOutgoingFill: 'fire-history-perimeters-outgoing-fill',
+  fireHistoryPerimetersOutgoingLine: 'fire-history-perimeters-outgoing-line',
+  fireHistoryPerimetersFill: 'fire-history-perimeters-fill',
+  fireHistoryPerimetersLine: 'fire-history-perimeters-line',
+  fireHistoryIgnitionsSource: 'fire-history-ignitions',
+  fireHistoryIgnitionsEarlier: 'fire-history-ignitions-earlier',
+  fireHistoryIgnitionsOutgoing: 'fire-history-ignitions-outgoing',
+  fireHistoryIgnitions: 'fire-history-ignitions',
   prescribedSource: 'watchduty-prescribed',
   prescribed: 'watchduty-prescribed',
   lookouts: 'standing-lookouts',
@@ -133,13 +149,18 @@ export const LEGEND_LAYERS = Object.freeze({
   blmLands: 'BLM lands',
   burnProbability: 'OR Burn probability (QWRA)',
   transmissionLines: 'Transmission lines',
-  fires: 'Fires (NIFC)',
+  fires: 'Current fires (NIFC)',
+  fireHistory: 'Fire history',
+  fireHistoryPerimeters: 'Fire perimeters',
+  fireHistoryIgnitions: 'Fire ignitions',
+  fireHistoryEarlierPerimeters: 'Earlier fire perimeters',
+  fireHistoryEarlierIgnitions: 'Earlier fire ignitions',
   prescribed: 'Prescribed fires (Watch Duty)',
 });
 
 // every filter group the code can build, as [type id, label shown in the panel]
 // js/visible-content.js picks which of these the site shows and in what order
-// camera is the only non-polygon type; the others load data/divisions/<type id>.geojson
+// camera is the only non-polygon type; the others load data/map-divisions/<type id>.geojson
 export const FILTER_TYPES = Object.freeze([
   ['state', 'State'],
   ['county', 'County'],

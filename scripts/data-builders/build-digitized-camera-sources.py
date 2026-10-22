@@ -173,6 +173,7 @@ def inverse_oregon_lambert(x_feet: float, y_feet: float) -> tuple[float, float]:
         updated = math.pi / 2 - 2 * math.atan(
             conformal_t * ratio ** (eccentricity / 2)
         )
+        # converged once the change is far below a micrometer on the ground
         if abs(updated - latitude) < 1e-13:
             latitude = updated
             break
