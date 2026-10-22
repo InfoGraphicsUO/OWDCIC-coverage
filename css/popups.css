@@ -1,6 +1,6 @@
 /* position comes from projected container pixels in js/popups.js */
 .feature-popup {
-    /* aligns the pointer and scale animation with the projected feature */
+    /* aligns the scale animation with the projected feature */
     --popup-origin-x: 50%;
 
     position: absolute;
@@ -11,7 +11,9 @@
     width: min(280px, calc(100% - 24px));
     padding: 14px;
     color: #20252b;
-    background: rgba(255, 255, 255, 0.97);
+    background: rgba(255, 255, 255, 0.72);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
     border: 1px solid rgba(31, 41, 51, 0.12);
     border-radius: var(--ui-radius-lg);
     box-shadow:
@@ -27,37 +29,43 @@
     will-change: opacity, transform;
 }
 
-.feature-popup::after {
-    content: '';
-    position: absolute;
-
-    /* half the pointer width keeps its center on --popup-origin-x */
-    left: calc(var(--popup-origin-x) - 6px);
-    bottom: -7px;
-    box-sizing: border-box;
-    width: 12px;
-    height: 12px;
-    background: #fff;
-    border-right: 1px solid rgba(31, 41, 51, 0.12);
-    border-bottom: 1px solid rgba(31, 41, 51, 0.12);
-    transform: rotate(45deg);
-}
-
 .feature-popup.is-open {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0) scale(1);
 }
 
-/* hover preview hugs its text and must never sit under the pointer */
-.feature-popup--preview {
-    width: auto;
+/* hover tooltip hugs its text and must never catch the pointer it follows */
+.feature-popup--hover {
+    width: max-content;
     max-width: min(280px, calc(100% - 24px));
-    padding: 9px 12px;
+    padding: 10px 13px;
 }
 
-.feature-popup--preview.is-open {
+.feature-popup--hover.is-open {
     pointer-events: none;
+}
+
+/* no close button to clear */
+.feature-popup--hover .cam-title {
+    padding-right: 0;
+}
+
+/* title-only entries such as viewsheds */
+.feature-popup--hover .cam-title:last-child {
+    margin-bottom: 0;
+}
+
+/* overlapping features stack in one tooltip */
+.feature-popup--hover .cam-popup + .cam-popup {
+    margin-top: 6px;
+}
+
+/* a rule keeps a detailed entry's lines apart from the next entry's title */
+.feature-popup--hover .cam-popup:has(.cam-meta) + .cam-popup {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(31, 41, 51, 0.12);
 }
 
 .feature-popup.is-offscreen {
@@ -69,15 +77,6 @@
 .feature-popup--below {
     transform: translateY(-6px) scale(0.97);
     transform-origin: var(--popup-origin-x) 0;
-}
-
-/* flip the pointer when JS places the popup below its feature */
-.feature-popup--below::after {
-    top: -7px;
-    bottom: auto;
-    border: 0;
-    border-top: 1px solid rgba(31, 41, 51, 0.12);
-    border-left: 1px solid rgba(31, 41, 51, 0.12);
 }
 
 .feature-popup--below.is-open {

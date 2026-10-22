@@ -547,7 +547,10 @@
         "aliases": [],
         "cameraHeightFt": 102.0,
         "alertWestLive": true,
-        "provider": "alertwest"
+        "provider": "alertwest",
+        "outsideApi": true,
+        "county": "Douglas",
+        "state": "OR"
       }
     },
     {
@@ -668,7 +671,10 @@
         "aliases": [],
         "cameraHeightFt": 80.0,
         "alertWestLive": true,
-        "provider": "alertwest"
+        "provider": "alertwest",
+        "outsideApi": true,
+        "county": "Lane",
+        "state": "OR"
       }
     },
     {

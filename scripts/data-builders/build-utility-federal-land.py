@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Build the selectable utility service area and federal land GeoJSON products.
+"""build the selectable utility service area and federal land GeoJSON products
 
-Utility areas come from the Oregon utility incentive layer; Washington has no
+utility areas come from the Oregon utility incentive layer; Washington has no
 accessible service-area layer. Federal land is the PAD-US federal fee layer
-unioned into one feature per managing agency plus a combined Interior feature. Area and viewshed metrics stay
-null until scripts/build-selection-metrics.py is run.
+unioned into one feature per managing agency plus a combined Interior feature
+area and viewshed metrics stay null until scripts/build-selection-metrics.py is run
 
-Run with the QGIS bundled Python for the GDAL bindings.
+run with the QGIS bundled Python for the GDAL bindings
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ INTERIOR_NAME = "Dept of Interior (BLM, USFWS, NPS)"
 
 
 def fetch(url: str, where: str, fields: str) -> tuple[list[dict], str]:
-    """Return the service features and a hash of the raw response."""
+    """returns the service features and a hash of the raw response"""
     params = {
         "where": where,
         "outFields": fields,
@@ -60,14 +60,14 @@ def fetch(url: str, where: str, fields: str) -> tuple[list[dict], str]:
 
 
 def polygon_geometry(feature: dict):
-    """Return a valid OGR geometry, or None for records without a shape."""
+    """returns a valid OGR geometry, or None for records without a shape"""
     rings = (feature.get("geometry") or {}).get("rings")
     if not rings:
         return None
 
     geometry = ogr.CreateGeometryFromJson(json.dumps({"type": "Polygon", "coordinates": rings}))
 
-    # multipart source shapes arrive as one ring list and need splitting
+    # every ring goes in as one polygon, so multipart shapes come out invalid until MakeValid splits them
     return geometry if geometry.IsValid() else geometry.MakeValid()
 
 

@@ -3,9 +3,9 @@
 
     python scripts/data-builders/build-envirovision-sites.py EVS_DetectionCameraLocations.gdb.zip
 
-Runs under the QGIS Python for its bundled GDAL. ODF keeps one record per camera,
+runs under the QGIS Python for its bundled GDAL. ODF keeps one record per camera,
 so cameras sharing a point are merged into one site; the viewshed is modeled once
-per site from its tallest camera.
+per site from its tallest camera
 """
 
 from __future__ import annotations
@@ -81,6 +81,7 @@ def read_cameras(source: Path) -> list[dict]:
     for feature in layer:
         geometry = feature.GetGeometryRef()
         # the point is authoritative; a few Latitude/Longitude attributes are stale or missing a sign
+        # rounded in the source CRS so cameras on the same point share a key
         key = (round(geometry.GetX(), 1), round(geometry.GetY(), 1))
         point = geometry.Clone()
         point.Transform(to_wgs84)

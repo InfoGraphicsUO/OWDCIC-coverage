@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Precompute OR/WA land coverage and exclusive land designation shares.
+"""precompute OR/WA land coverage and exclusive land designation shares
 
-Run with the QGIS bundled Python/GDAL runtime. Source downloads are cached in
-outputs/source-cache so repeat builds use the same Census hydro snapshot.
+run with the QGIS bundled Python/GDAL runtime; source downloads are cached in
+outputs/source-cache so repeat builds use the same Census hydro snapshot
 """
 from __future__ import annotations
 
@@ -31,6 +31,8 @@ VIEWSHEDS = (
     ROOT / 'outputs/gdal_viewsheds_pano/mapbox/camera_viewsheds_web_epsg5070.gpkg',
     ROOT / 'outputs/gdal_viewsheds_envirovision/mapbox/camera_viewsheds_web_epsg5070.gpkg',
 )
+# report and CSV split coverage by provider, keyed by the web package's output folder
+PROVIDER_FOLDER_PREFIX = 'gdal_viewsheds_'
 # published manifests name every viewshed the map shows; metrics must cover the same set
 MANIFESTS = ROOT / 'data'
 MASK = ROOT / 'data/pacific-northwest-land-mask.geojson'
@@ -44,7 +46,7 @@ TYPES = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
          'odf-protection-district')
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
-    'utility': 3, 'national-forest': 20, 'national-park': 14,
+    'utility': 3, 'national-forest': 26, 'national-park': 14,
     'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
 }
 # names shown in the viewshed runner while each metric builds
@@ -91,7 +93,7 @@ def digest(path: Path) -> str:
 
 
 class CategoryIndex:
-    """Spatial index for exact, selection-local category intersections."""
+    """spatial index for exact, selection-local category intersections"""
 
     def __init__(self, geometries):
         self.geometries = []
@@ -268,8 +270,9 @@ def check_published_viewsheds(individual, published):
 
 
 def load_all_viewsheds(paths):
-    """merges providers into one dissolved coverage and one id -> viewshed lookup"""
-    coverages = []
+    """merges providers into one dissolved coverage and one id -> viewshed lookup,
+    keeping each provider's own coverage for the per-provider split"""
+    coverages = {}
     individual = {}
 
     for path in paths:
@@ -279,10 +282,39 @@ def load_all_viewsheds(paths):
         if duplicates:
             raise ValueError(f'viewshed IDs repeat across providers: {sorted(duplicates)}')
 
-        coverages.append(coverage)
+        coverages[provider_key(path)] = coverage
         individual.update(provider_viewsheds)
 
-    return union_all(coverages), individual
+    return union_all(list(coverages.values())), coverages, individual
+
+
+def provider_key(path: Path):
+    """outputs/gdal_viewsheds_pano/mapbox/x.gpkg -> pano"""
+    return path.parent.parent.name.removeprefix(PROVIDER_FOLDER_PREFIX)
+
+
+def exclusive_coverages(coverages):
+    """the part of each provider's coverage no other provider sees"""
+    return {provider: coverage.difference(union_all([other for key, other in coverages.items() if key != provider]))
+            for provider, coverage in coverages.items()}
+
+
+def provider_coverage(selection, coverages, exclusives):
+    """each provider's own coverage of the selection and the part only it covers
+
+    Providers can overlap, so their own coverage can add to more than the total;
+    the exclusive parts plus the overlap add to exactly the total.
+    """
+    rows = []
+    for provider, coverage in coverages.items():
+        own = coverage_metrics(selection, coverage)
+        exclusive = coverage_metrics(selection, exclusives[provider])
+        rows.append({'provider': provider,
+                     'cameraViewshedAreaSqKm': own['cameraViewshedAreaSqKm'],
+                     'cameraViewshedCoveragePct': own['cameraViewshedCoveragePct'],
+                     'exclusiveAreaSqKm': exclusive['cameraViewshedAreaSqKm'],
+                     'exclusiveCoveragePct': exclusive['cameraViewshedCoveragePct']})
+    return rows
 
 
 def load_viewsheds(path: Path):
@@ -340,9 +372,9 @@ def load_federal_categories(path: Path, land):
     for feature in features:
         # matched by id because the display names are option labels
         manager = feature['properties']['divisionId'].split(':')[1]
-        # The source service also includes DOD and some OTHF proclamation
-        # boundaries; fee-only versions of other agencies come from PAD-US Fee.
-        # DOI repeats BLM, FWS and NPS, so it would double count here.
+        # the source service also includes DOD and some OTHF proclamation
+        # boundaries; fee-only versions of other agencies come from PAD-US Fee
+        # DOI repeats BLM, FWS and NPS, so it would double count here
         if manager in ('DOD', 'OTHF', 'DOI'):
             continue
         label = ('National Park Service land' if manager == 'NPS'
@@ -446,7 +478,7 @@ def mix_for(geometry, total, designation):
             rows.append((label, area))
 
     rows.append(('Other/unclassified', max(0.0, total - sum(area for _, area in rows))))
-    # Derive the remainder from rounded prior shares so printed figures total 100%.
+    # remainder comes from the rounded prior shares so printed figures total 100%
     result = [{'label': label, 'percentage': round(area / total * 100, 2),
                'areaSqKm': area_sqkm(area)} for label, area in rows[:-1]]
     result.append({'label': 'Other/unclassified',
@@ -482,7 +514,8 @@ def report(args, step, total, label, done, count):
 
 
 def run(args):
-    coverage, individual = load_all_viewsheds(args.viewsheds)
+    coverage, provider_coverages, individual = load_all_viewsheds(args.viewsheds)
+    provider_exclusives = exclusive_coverages(provider_coverages)
     print('loaded viewsheds:', len(individual), flush=True)
     # checked before anything is written, so a mismatch leaves the data untouched
     check_published_viewsheds(individual, published_viewshed_ids(MANIFESTS))
@@ -560,8 +593,8 @@ def run(args):
             area = selected.area
 
             if not math.isfinite(area) or area <= 0:
-                # Generalized country coastlines can miss true OR/WA land by a few
-                # hundred meters; keep those records against state land minus hydro.
+                # generalized country coastlines can miss true OR/WA land by a few
+                # hundred meters; keep those records against state land minus hydro
                 selected = polygon.intersection(state_land)
                 area = selected.area
 
@@ -577,6 +610,7 @@ def run(args):
 
             p = feature['properties']
             p.update(coverage_metrics(selected, coverage))
+            p['providerCoverage'] = provider_coverage(selected, provider_coverages, provider_exclusives)
             p['landMix'] = mix_for(selected, area, designation)
             retained.append(feature)
 

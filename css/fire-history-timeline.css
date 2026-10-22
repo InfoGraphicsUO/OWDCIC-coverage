@@ -1,0 +1,86 @@
+.fire-timeline {
+    box-sizing: border-box;
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas: "year track";
+    align-items: center;
+    column-gap: 12px;
+    width: min(560px, calc(100% - 2 * var(--panel-gap)));
+    padding: 10px 16px 8px;
+    color: var(--control-chrome-text);
+    background: var(--control-chrome-bg);
+    border: 1px solid var(--control-chrome-border);
+    border-radius: var(--ui-radius);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, .3);
+    font: 12px/1.2 "Clarity City", "Segoe UI", sans-serif;
+    /* closed, it sits just below its spot and fades out before turning invisible */
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, 24px);
+    transition:
+        opacity 200ms ease,
+        transform var(--sidebar-duration) var(--sidebar-ease),
+        visibility 0s linear var(--sidebar-duration);
+}
+
+.fire-timeline.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+    transition:
+        opacity 200ms ease,
+        transform var(--sidebar-duration) var(--sidebar-ease),
+        visibility 0s;
+}
+
+.fire-timeline__year {
+    grid-area: year;
+    font-size: 22px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.fire-timeline__track {
+    grid-area: track;
+    min-width: 0;
+}
+
+.fire-timeline__slider {
+    display: block;
+    width: 100%;
+    margin: 0;
+    accent-color: var(--ohaz-yellow);
+    cursor: pointer;
+}
+
+/* one label per year, spaced to sit under the slider's stops */
+.fire-timeline__ticks {
+    display: flex;
+    justify-content: space-between;
+    /* roughly half the slider thumb, so the end labels line up with its stops */
+    padding: 0 2px;
+    color: var(--control-chrome-muted);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+    .fire-timeline {
+        bottom: 40px;
+        column-gap: 8px;
+        padding: 8px 10px 6px;
+    }
+
+    .fire-timeline__year { font-size: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fire-timeline,
+    .fire-timeline.is-open {
+        transform: translate(-50%, 0);
+        transition: none;
+    }
+}

@@ -31,12 +31,15 @@ import {
   addNumericProperty,
   attachViewshedIds,
   camerasToGeoJSON,
+  countPointsInGeometry,
   filterGeoJSONByBounds,
+  outsideApiSitesToCameras,
   providerSitesToCameras,
 } from './geojson-transform.js';
 import { initLegend } from './legend.js';
+import { initFireHistoryTimeline } from './fire-history-timeline.js';
 import { initFilterPanel } from './filter-panel.js';
-import { initResultsPanel } from './results-panel.js';
+import { initResultsPanel, loadPlotly } from './results-panel.js';
 import { hideMapLoading } from './loading.js';
 import {
   MAP_HOME_EVENT,
@@ -57,15 +60,8 @@ import {
   addRegionFocusLayers,
   loadRegionFocusData,
 } from './states-highlight.js';
-import {
-  hideCameraPreview,
-  showCameraPreview,
-  showDigitizedCameraPopup,
-  showFirePopup,
-  showLookoutPopup,
-  showTransmissionLinePopup,
-  showPrescribedPopup,
-} from './popups.js';
+import { addHoverLayer, pointerCanHover } from './hover-info.js';
+import { showFeaturePopup } from './popups.js';
 import { getSetting, initSettings, onSettingChange } from './settings.js';
 import { initAbout } from './about.js';
 
@@ -74,6 +70,7 @@ const LABEL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity
 // stable ids let UI controls refer to layers without inspecting the style
 const FIRE_ICON_ID = 'fire-marker';
 const CAMERA_ICON_ID = 'camera-marker';
+const PRIVATE_CAMERA_ICON_ID = 'private-camera-marker';
 const PANO_CAMERA_ICON_ID = 'pano-camera-marker';
 const ENVIROVISION_CAMERA_ICON_ID = 'envirovision-camera-marker';
 const PRESCRIBED_ICON_ID = 'prescribed-marker';
@@ -85,6 +82,10 @@ const DIGITIZED_CAMERA_UNLOCK_TIMEOUT_MS = 2_000;
 
 const BOUNDARY_COLOR = '#494949';
 const BOUNDARY_FILL_COLOR = '#929292';
+
+// base fill and outline draw whole areas; portions only appear in a selection outline
+const WHOLE_AREA_FILTER = ['!', ['has', 'partOfDivisionId']];
+
 const SELECTED_BOUNDARY_COLOR = '#f8e109';
 
 const PANO_OPERATOR = 'Pano AI';
@@ -113,6 +114,26 @@ const NATIONAL_FOREST_COLOR = '#3b7d4f';
 const BLM_LAND_COLOR = '#f6d94a';
 const BURN_PROBABILITY_COLOR = '#d7191c';
 const TRANSMISSION_LINE_COLOR = '#c2188f';
+
+// the timeline's year stands out in a dark red, apart from the brighter red of active fires
+// and the orange viewsheds; earlier years fall back to a muted brown
+const FIRE_HISTORY_COLOR = '#8f1d2c';
+const FIRE_HISTORY_EARLIER_COLOR = '#7a6458';
+const FIRE_HISTORY_FILL_OPACITY = 0.5;
+const FIRE_HISTORY_EARLIER_FILL_OPACITY = 0.22;
+const FIRE_HISTORY_EARLIER_IGNITION_OPACITY = 0.55;
+// how long one year's fires take to fade out as the next year's fade in,
+// short enough that dragging across several years still keeps up
+const FIRE_HISTORY_FADE_MS = 600;
+// ignition circles grow with final fire size, in px by acres
+const FIRE_HISTORY_IGNITION_RADIUS = [
+  'interpolate', ['linear'], ['coalesce', ['get', 'acres'], 0],
+  100, 2.5,
+  1_000, 4,
+  100_000, 8,
+];
+// matches no feature until the timeline has a year
+const NO_FIRE_YEAR = ['==', ['get', 'year'], -1];
 
 // relative line widths by the source's VOLT_CLASS; DC and NOT AVAILABLE borrow another class's width
 const TRANSMISSION_LINE_WIDTHS = Object.freeze({
@@ -159,6 +180,9 @@ const CAMERA_PROVIDERS = Object.freeze([
     cameraLayerId: LAYER_IDS.cameras,
     iconId: CAMERA_ICON_ID,
     iconUrl: MARKER_ICON_URLS.camera,
+    // sites kept out of the API for landowner privacy show a slashed camera
+    privateIconId: PRIVATE_CAMERA_ICON_ID,
+    privateIconUrl: MARKER_ICON_URLS.privateCamera,
     viewshedLabel: LEGEND_LAYERS.alertWestViewsheds,
     viewshedTileset: DATA_URLS.cameraViewsheds,
     viewshedSourceId: LAYER_IDS.viewshedsSource,
@@ -183,6 +207,7 @@ const CAMERA_PROVIDERS = Object.freeze([
       outdoors: CAMERA_PROVIDER_COLORS.pano,
       satellite: '#a9d4fb',
     }),
+    viewshedLegendImage: 'img/blue_portland_tower_viewshed.png',
     sharedSiteIconOffset: Object.freeze([14, 0]),
   }),
   Object.freeze({
@@ -201,6 +226,7 @@ const CAMERA_PROVIDERS = Object.freeze([
       outdoors: CAMERA_PROVIDER_COLORS.enviroVision,
       satellite: '#b5e3a8',
     }),
+    viewshedLegendImage: 'img/green_portland_tower_viewshed.png',
     sharedSiteIconOffset: Object.freeze([-14, 0]),
   }),
 ]);
@@ -255,13 +281,14 @@ const DIVISION_TYPES = Object.freeze(FILTER_TYPES
       layerId: `${prefix}-line`,
       labelLayerId: `${prefix}-labels`,
       selectedLayerId: `${prefix}-selected`,
-      dataUrl: `data/divisions/${value}.geojson`,
+      dataUrl: `data/map-divisions/${value}.geojson`,
     });
   }));
 
 // cache in-flight requests separately from parsed features used for selection
 const divisionLoads = new Map();
 const divisionFeatures = new Map();
+let divisionOptionsIndex;
 
 let activeMap;
 let activeFilterType = null;
@@ -269,6 +296,7 @@ let activeFilterType = null;
 // an area result is showing, as opposed to a polygon type with nothing picked
 let polygonSelected = false;
 let cameraFeatures = [];
+let camerasLoaded = false;
 
 // names the camera whose viewshed is highlighted, for the export legend
 let highlightedCameraName = '';
@@ -293,7 +321,8 @@ let anchorRequest = 0;
 // incremented whenever another selection or clear action takes ownership of results
 let cameraResultRequest = 0;
 let digitizedCameraLoad;
-let transmissionLinesLoad;
+// legend label -> load promise for layers fetched the first time their row is switched on
+const deferredLayerLoads = new Map();
 
 // legend rows a filter preset switched on, hidden again when that filter is left
 // a row the user toggles themselves drops out and stays as they set it
@@ -358,7 +387,56 @@ const LAYER_SYMBOLS = Object.freeze({
   }),
   fires: Object.freeze({ iconUrl: MARKER_ICON_URLS.fire }),
   prescribed: Object.freeze({ iconUrl: MARKER_ICON_URLS.prescribed }),
+  fireHistoryPerimeters: Object.freeze({
+    swatchColor: FIRE_HISTORY_COLOR,
+    swatchOpacity: FIRE_HISTORY_FILL_OPACITY,
+  }),
+  fireHistoryIgnitions: Object.freeze({ swatchColor: FIRE_HISTORY_COLOR, swatchShape: 'circle' }),
+  fireHistoryEarlierPerimeters: Object.freeze({
+    swatchColor: FIRE_HISTORY_EARLIER_COLOR,
+    swatchOpacity: FIRE_HISTORY_EARLIER_FILL_OPACITY,
+  }),
+  fireHistoryEarlierIgnitions: Object.freeze({
+    swatchColor: FIRE_HISTORY_EARLIER_COLOR,
+    swatchShape: 'circle',
+    swatchOpacity: FIRE_HISTORY_EARLIER_IGNITION_OPACITY,
+  }),
 });
+
+const FIRE_HISTORY_PERIMETER_LAYER_IDS = Object.freeze([
+  LAYER_IDS.fireHistoryPerimetersOutgoingFill,
+  LAYER_IDS.fireHistoryPerimetersOutgoingLine,
+  LAYER_IDS.fireHistoryPerimetersFill,
+  LAYER_IDS.fireHistoryPerimetersLine,
+]);
+const FIRE_HISTORY_IGNITION_LAYER_IDS = Object.freeze([
+  LAYER_IDS.fireHistoryIgnitionsOutgoing,
+  LAYER_IDS.fireHistoryIgnitions,
+]);
+// every legend row that draws fire history, so the timeline shows while any is on
+const FIRE_HISTORY_LABELS = Object.freeze([
+  LEGEND_LAYERS.fireHistoryPerimeters,
+  LEGEND_LAYERS.fireHistoryIgnitions,
+  LEGEND_LAYERS.fireHistoryEarlierPerimeters,
+  LEGEND_LAYERS.fireHistoryEarlierIgnitions,
+]);
+// the timeline's year, and the year it just left while that one fades out
+const FIRE_HISTORY_YEAR_LAYER_IDS = Object.freeze([
+  LAYER_IDS.fireHistoryPerimetersFill,
+  LAYER_IDS.fireHistoryPerimetersLine,
+  LAYER_IDS.fireHistoryIgnitions,
+]);
+const FIRE_HISTORY_OUTGOING_LAYER_IDS = Object.freeze([
+  LAYER_IDS.fireHistoryPerimetersOutgoingFill,
+  LAYER_IDS.fireHistoryPerimetersOutgoingLine,
+  LAYER_IDS.fireHistoryIgnitionsOutgoing,
+]);
+const FIRE_HISTORY_CLICK_LAYER_IDS = Object.freeze([
+  LAYER_IDS.fireHistoryIgnitions,
+  LAYER_IDS.fireHistoryIgnitionsEarlier,
+  LAYER_IDS.fireHistoryPerimetersFill,
+  LAYER_IDS.fireHistoryPerimetersEarlierFill,
+]);
 
 // features that take a click ahead of whatever lies under them
 const MARKER_LAYER_IDS = Object.freeze([
@@ -368,12 +446,22 @@ const MARKER_LAYER_IDS = Object.freeze([
   LAYER_IDS.perimetersFill,
   LAYER_IDS.prescribed,
   LAYER_IDS.lookouts,
+  ...FIRE_HISTORY_CLICK_LAYER_IDS,
 ]);
 const INTERACTIVE_LAYER_IDS = Object.freeze([...MARKER_LAYER_IDS, LAYER_IDS.transmissionLinesHit]);
 
 // marker sizes use CSS pixels
 const CAMERA_MARKER_SIZE = 20;
 const PRESCRIBED_MARKER_SIZE = 18;
+
+// each [minimum zoom, size] pair selects a prerendered official camera marker
+// steps sit on whole zooms because Mapbox lays out symbols at tile zoom
+const CAMERA_MARKER_SIZES = [
+  [0, 12],
+  [6, 15],
+  [7, 17],
+  [8, CAMERA_MARKER_SIZE],
+];
 
 // each [minimum acres, size] pair selects a prerendered fire marker
 const FIRE_MARKER_SIZES = [
@@ -419,11 +507,26 @@ const resultsControl = initResultsPanel({
   onClose: () => filterControl.clearSelection(),
 });
 
+// the year the fire history layers last drew, so the next one knows which year to fade out
+let shownFireHistoryYear = null;
+// one request per fire history file, shared by its selected and earlier year rows
+const fireHistoryFiles = new Map();
+
+// the year slider rides over the map and only shows while a fire history row is on
+const fireHistoryTimeline = initFireHistoryTimeline(
+  document.querySelector('.map-panels'),
+  (year) => {
+    labelFireHistoryExport(year);
+    if (activeMap) applyFireHistoryYear(activeMap, year);
+  }
+);
+
 const filterControl = initFilterPanel({
   types: FILTER_TYPES.map(({ value, label, group }) => ({
     value, label, group, parent: nestedFilterParent(value, FILTER_TYPES),
   })),
   loadOptions: loadFilterOptions,
+  searchOptions: searchFilterOptions,
   onTypeSelected: typeSelected,
   onSelection: optionSelected,
   onClear: clearFilter,
@@ -439,11 +542,19 @@ mapReady
 // cached styles are ready now; otherwise wait for the first load event
 function waitForMapLoad(map) {
   // an already-loaded style can proceed without waiting for another event
-  if (map.loaded()) return map;
+  if (map.loaded()) return markLoad('style loaded', map);
 
   return new Promise((resolve) => {
-    map.once('load', () => resolve(map));
+    map.once('load', () => resolve(markLoad('style loaded', map)));
   });
+}
+
+// timings show in the devtools performance panel, or list them with
+// performance.getEntriesByType('mark').filter(({ name }) => name.startsWith('owdcic:'))
+// startTime is milliseconds since the page started loading
+function markLoad(name, value) {
+  performance.mark(`owdcic: ${name}`);
+  return value;
 }
 
 // register empty layers while providers run, then hydrate each source as ready
@@ -468,6 +579,7 @@ async function loadMapLayers(map) {
   map.on(MAP_HOME_EVENT, home);
   bindApplicationSourceErrors(map);
   addViewshedLayers(map);
+  addFireHistoryLayers(map);
   addPerimeterLayers(map);
   addLookoutLayer(map);
 
@@ -494,16 +606,22 @@ async function loadMapLayers(map) {
   }
 
   bindDigitizedCameraUnlock(map);
-  // a filter preset may have switched the row on before the map connected
-  legendControl.onChange(() => loadTransmissionLines(map));
-  loadTransmissionLines(map);
+  // a filter preset may have switched a row on before the map connected
+  legendControl.onChange(() => loadDeferredLayers(map));
+  loadDeferredLayers(map);
+  legendControl.onChange(syncFireHistoryTimeline);
+  syncFireHistoryTimeline();
 
   // slow providers hydrate in the background after the map becomes usable
   hideMapLoading();
+  markLoad('map usable');
+  // fetch camera metrics now so the first camera pick is not waiting on them
+  loadCameraMetrics();
 
   await Promise.all([
     data.regionFocus.then((regionFocus) => {
       setSourceData(map, LAYER_IDS.regionFocusSource, regionFocus);
+      markLoad('region outline loaded');
     }),
     // the camera filter lists every provider, so it waits for all of them
     Promise.all([
@@ -511,8 +629,10 @@ async function loadMapLayers(map) {
         LEGEND_LAYERS.alertWestCameras,
         Promise.all([data.cameras, data.viewshedManifest, data.alertWestSites]),
         ([cameras, viewshedManifest, sites]) => {
+          // sites kept out of the API still get a marker, drawn from the sites file
+          const allCameras = { features: [...cameras.features, ...outsideApiSitesToCameras(sites)] };
           // selection ids must be attached before features reach either UI
-          const features = attachViewshedIds(cameras, viewshedManifest, sites).features;
+          const features = attachViewshedIds(allCameras, viewshedManifest, sites).features;
           setSourceData(map, LAYER_IDS.cameras, { type: 'FeatureCollection', features });
           return features;
         }
@@ -528,6 +648,7 @@ async function loadMapLayers(map) {
     ]).then((providerFeatures) => {
       // a failed provider contributes no cameras rather than blocking the filter
       cameraFeatures = providerFeatures.flatMap((features) => features ?? []);
+      camerasLoaded = true;
       resolveCameraFeatures(cameraFeatures);
     }),
     hydrateLegendLayer(
@@ -555,7 +676,7 @@ async function loadMapLayers(map) {
       })
     ),
     hydrateLegendLayer(
-      'Fires (NIFC)',
+      LEGEND_LAYERS.fires,
       Promise.all([data.fires, data.perimeters]),
       ([fires, perimeters]) => {
         // marker sizing reads acreage from this local field
@@ -577,14 +698,19 @@ async function loadMapLayers(map) {
     hydrateLegendLayer('Standing lookouts', data.lookouts, (lookouts) => {
       setSourceData(map, LAYER_IDS.lookouts, lookouts);
     }),
-    hydrateLegendLayer(
-      'National forests',
-      data.nationalForests,
-      (nationalForests) => {
-        setSourceData(map, LAYER_IDS.nationalForestsSource, nationalForests);
-      }
-    ),
   ]);
+  markLoad('startup data loaded');
+  preloadAfterStartup(map);
+}
+
+// fetch what the first chart and the forest layer need once startup is done,
+// so neither holds up the first map but neither makes a later click wait
+function preloadAfterStartup(map) {
+  const whenIdle = window.requestIdleCallback ?? ((callback) => window.setTimeout(callback, 1_000));
+  whenIdle(() => {
+    loadPlotly();
+    loadDeferredLayers(map, { preload: true });
+  });
 }
 
 async function hydrateLegendLayer(label, dataPromise, applyData) {
@@ -593,6 +719,7 @@ async function hydrateLegendLayer(label, dataPromise, applyData) {
     return applyData(await dataPromise);
   } finally {
     legendControl.setLoading(label, false);
+    markLoad(`${label} loaded`);
   }
 }
 
@@ -679,28 +806,62 @@ function addContextLayers(map) {
     paint: { 'line-width': 10, 'line-opacity': 0 },
   }, beforeId);
 
-  bindLayerInteractions(map, LAYER_IDS.transmissionLinesHit, (clickedMap, event) => {
-    // markers above the line keep priority for clicks
-    if (hasInteractiveFeatureAtPoint(clickedMap, event.point, MARKER_LAYER_IDS)) return;
-    showTransmissionLinePopup(clickedMap, event, LAYER_SYMBOLS.transmissionLines);
+  bindLayerInteractions(map, LAYER_IDS.transmissionLinesHit, {
+    ...featureInfo('transmissionLine', LAYER_SYMBOLS.transmissionLines),
+    click: (clickedMap, event) => {
+      // markers above the line keep priority for taps
+      if (hasInteractiveFeatureAtPoint(clickedMap, event.point, MARKER_LAYER_IDS)) return;
+      showFeaturePopup(clickedMap, event, 'transmissionLine', LAYER_SYMBOLS.transmissionLines);
+    },
   });
 }
 
-// the lines are a couple of megabytes, so they load the first time the row is switched on
-function loadTransmissionLines(map) {
-  if (!legendControl.isChecked(LEGEND_LAYERS.transmissionLines)) return;
-  if (transmissionLinesLoad) return;
-
-  legendControl.setLoading(LEGEND_LAYERS.transmissionLines, true);
-  transmissionLinesLoad = hydrateLegendLayer(
-    LEGEND_LAYERS.transmissionLines,
-    safelyLoadLegend('transmission lines', LEGEND_LAYERS.transmissionLines, () =>
-      fetchJson(DATA_URLS.transmissionLines, 'Transmission lines')
-    ),
-    (transmissionLines) => {
-      setSourceData(map, LAYER_IDS.transmissionLinesSource, transmissionLines);
-    }
+// layers that are off at startup and slow or heavy to fetch wait until their row is switched on
+// preload also fetches the ones worth having before they are asked for
+function loadDeferredLayers(map, { preload = false } = {}) {
+  // the lines are a couple of megabytes
+  loadLayerWhenChecked(map, LEGEND_LAYERS.transmissionLines, LAYER_IDS.transmissionLinesSource, {}, () =>
+    fetchJson(DATA_URLS.transmissionLines, 'Transmission lines')
   );
+  // the selected and earlier rows of each type draw from one file, fetched once for both;
+  // each file widens the timeline to the years it covers
+  for (const [labels, sourceId, url] of [
+    [[LEGEND_LAYERS.fireHistoryPerimeters, LEGEND_LAYERS.fireHistoryEarlierPerimeters],
+      LAYER_IDS.fireHistoryPerimetersSource, DATA_URLS.fireHistoryPerimeters],
+    [[LEGEND_LAYERS.fireHistoryIgnitions, LEGEND_LAYERS.fireHistoryEarlierIgnitions],
+      LAYER_IDS.fireHistoryIgnitionsSource, DATA_URLS.fireHistoryIgnitions],
+  ]) {
+    for (const label of labels) {
+      if (layerIsRemoved(label)) continue;
+      loadLayerWhenChecked(map, label, sourceId, {}, () => loadFireHistoryFile(url, label));
+    }
+  }
+  // the Forest Service query is the slowest request the map makes
+  loadLayerWhenChecked(map, LEGEND_LAYERS.nationalForests, LAYER_IDS.nationalForestsSource, { preload }, () =>
+    fetchArcGISGeoJSON(DATA_URLS.nationalForests, {
+      where: "ownerclassification='USDA FOREST SERVICE'",
+      outFields: 'ownerclassification,forestname',
+      orderByFields: 'objectid',
+      geometry: REGION_DATA_BOUNDS.flat().join(','),
+      geometryType: 'esriGeometryEnvelope',
+      // bounds are longitude and latitude, so tell ArcGIS their input CRS
+      inSR: '4326',
+      spatialRel: 'esriSpatialRelIntersects',
+      geometryPrecision: '4',
+      maxAllowableOffset: '0.005',
+    })
+  );
+}
+
+function loadLayerWhenChecked(map, label, sourceId, { preload = false }, loader) {
+  if (deferredLayerLoads.has(label) || !(preload || legendControl.isChecked(label))) return;
+
+  legendControl.setLoading(label, true);
+  deferredLayerLoads.set(label, hydrateLegendLayer(
+    label,
+    safelyLoadLegend(label.toLowerCase(), label, loader),
+    (data) => setSourceData(map, sourceId, data)
+  ));
 }
 
 // QWRA tiles encode pre-classed colors rather than raw probability values
@@ -741,6 +902,7 @@ function addBoundaryLayers(map) {
       id: division.fillLayerId,
       type: 'fill',
       source: division.sourceId,
+      filter: WHOLE_AREA_FILTER,
       layout: { visibility: 'none' },
       paint: {
         'fill-color': BOUNDARY_FILL_COLOR,
@@ -766,6 +928,7 @@ function addBoundaryLayers(map) {
       id: division.layerId,
       type: 'line',
       source: division.sourceId,
+      filter: WHOLE_AREA_FILTER,
       layout: { visibility: 'none' },
       paint: {
         'line-color': BOUNDARY_COLOR,
@@ -929,13 +1092,15 @@ async function loadDivisionOptions(map, typeValue) {
 
   // a combined option has no shape of its own on the map, so clicks and labels land on its members
   const drawn = data.features.filter((feature) => !isCombinedDivision(feature));
-  // keep full geometry for hit testing and selection, labels use compact points
+  // keep full geometry for hit testing and selection, labels use compact points;
+  // portions stay in the source only so a state option can outline its own side of the line
   setSourceData(map, division.sourceId, { ...data, features: drawn });
+  const labelled = drawn.filter((feature) => !isDivisionPortion(feature));
 
   // precomputed label points keep text placement independent of polygon geometry
   setSourceData(map, division.labelSourceId, {
     type: 'FeatureCollection',
-    features: drawn.flatMap((feature) => {
+    features: labelled.flatMap((feature) => {
       const coordinates = feature.properties?.labelPoint;
       // malformed or missing label points should not block the polygon options
       if (!Array.isArray(coordinates) || coordinates.length !== 2 ||
@@ -951,7 +1116,31 @@ async function loadDivisionOptions(map, typeValue) {
     }),
   });
 
-  return data.features.map((feature) => ({
+  return divisionOptions(division, data.features);
+}
+
+// names-only options for the panel search, so typing never downloads geometry
+async function searchFilterOptions(typeValue) {
+  if (typeValue === 'camera') return loadFilterOptions(typeValue);
+  const division = divisionType(typeValue);
+  if (!division) throw new Error(`Unknown division type: ${typeValue}`);
+
+  divisionOptionsIndex ??= fetchJson(DATA_URLS.divisionOptions, 'Division options')
+    .catch((error) => {
+      // let a later search retry after network or parse failure
+      divisionOptionsIndex = null;
+      throw error;
+    });
+  const properties = (await divisionOptionsIndex)[typeValue] ?? [];
+  return divisionOptions(division, properties
+    .filter((entry) => filterOptionIsVisible(division, entry))
+    .map((entry) => ({ properties: entry })));
+}
+
+// the menu entries for a division type, from full features or the names-only index
+function divisionOptions(division, features) {
+  const typeValue = division.value;
+  return features.filter((feature) => !isDivisionPortion(feature)).map((feature) => ({
     value: feature.properties.divisionId,
     label: typeValue === 'utility'
       ? `${feature.properties.label}`
@@ -968,6 +1157,11 @@ async function loadDivisionOptions(map, typeValue) {
 // an option that stands for several others, e.g. All ODF districts; it lists them in memberDivisionIds
 function isCombinedDivision(feature) {
   return Array.isArray(feature?.properties?.memberDivisionIds);
+}
+
+// the part of an area inside one state, e.g. Umatilla's Oregon portion in Oregon National Forests
+function isDivisionPortion(feature) {
+  return Boolean(feature?.properties?.partOfDivisionId);
 }
 
 function cameraOptionId(feature) {
@@ -1090,7 +1284,6 @@ async function cameraClicked(cameraId, mapFeature) {
   const feature = cameraFeatureById(cameraId) || mapFeature;
   if (!feature) return;
 
-  hideCameraPreview(activeMap);
   selectCameraViewshed(activeMap, feature.properties?.viewshed_id, feature.properties?.name);
 
   // keep polygon details in the result panel while highlighting the camera
@@ -1106,19 +1299,6 @@ async function cameraClicked(cameraId, mapFeature) {
   showCameraResult(activeMap, feature);
 }
 
-function cameraHovered(cameraId, event) {
-  if (!activeMap) return;
-  if (!cameraId) {
-    hideCameraPreview(activeMap);
-    return;
-  }
-  if (!event) return;
-
-  const layerId = event.features?.[0]?.layer?.id;
-  const provider = CAMERA_PROVIDERS.find(({ cameraLayerId }) => cameraLayerId === layerId);
-  showCameraPreview(activeMap, event, provider && { iconUrl: provider.iconUrl });
-}
-
 function clearFilter() {
   // prevent a late metrics response from refilling the cleared panel
   cameraResultRequest += 1;
@@ -1129,7 +1309,6 @@ function clearFilter() {
   if (activeMap) {
     clearDivisionFilter(activeMap);
     selectCameraViewshed(activeMap, null);
-    hideCameraPreview(activeMap);
   }
 
   filterControl.setClearEnabled?.(false);
@@ -1156,15 +1335,7 @@ async function showCameraResult(map, feature) {
   resultsControl.showLoading(properties.name || 'Camera');
   writeAnchor('camera', cameraOptionId(feature));
 
-  // share one metrics request across camera picks
-  cameraMetricsLoad ??= fetchJson('data/camera-coverage.json', 'Camera coverage')
-    .catch((error) => {
-      cameraMetricsLoad = null;
-      console.error('Failed to load camera coverage:', error);
-      return {};
-    });
-
-  const metricsById = await cameraMetricsLoad;
+  const metricsById = await loadCameraMetrics();
   // a newer pick owns the panel if this request finished late
   if (request !== cameraResultRequest) return;
 
@@ -1176,6 +1347,17 @@ async function showCameraResult(map, feature) {
   resultsControl.showCamera(properties, metrics, feature);
   collapseControlsOnNarrowScreen();
   fitMapToCamera(map, feature);
+}
+
+// share one metrics request across camera picks
+function loadCameraMetrics() {
+  cameraMetricsLoad ??= fetchJson(DATA_URLS.cameraCoverage, 'Camera coverage')
+    .catch((error) => {
+      cameraMetricsLoad = null;
+      console.error('Failed to load camera coverage:', error);
+      return {};
+    });
+  return cameraMetricsLoad;
 }
 
 function showDivisionType(map, typeValue) {
@@ -1215,6 +1397,7 @@ function loadDivisionData(division) {
           visible.map((feature) => [feature.properties?.divisionId, feature])
         );
         divisionFeatures.set(division.value, features);
+        markLoad(`${division.label} areas loaded`);
         return { ...data, features: visible };
       })
       .catch((error) => {
@@ -1254,9 +1437,24 @@ function selectDivision(map, typeValue, divisionId) {
     return;
   }
 
-  resultsControl.showPolygon(typeValue, feature);
+  resultsControl.showPolygon(typeValue, feature, polygonCameraCounts(feature));
+  // an early selection fills in its camera counts once every provider has loaded
+  if (!camerasLoaded) {
+    cameraFeaturesReady.then(() => resultsControl.updatePolygonCameraCounts(feature, polygonCameraCounts(feature)));
+  }
   collapseControlsOnNarrowScreen();
   fitMapToBounds(map, featureBounds(feature), { maxZoom: 10, duration: 800 });
+}
+
+// camera markers inside the area per provider, or null until the providers load
+function polygonCameraCounts(feature) {
+  if (!camerasLoaded) return null;
+  // live ALERTWest features carry no operator, so they fall back to the first provider
+  return countPointsInGeometry(
+    { features: cameraFeatures },
+    feature.geometry,
+    (camera) => camera.properties?.operator || CAMERA_PROVIDERS[0].name,
+  );
 }
 
 function clearDivisionFilter(map) {
@@ -1537,7 +1735,7 @@ function loadLayerData() {
       fetchJson(DATA_URLS.alertWestCameraSites, 'ALERTWest site locations')
     ),
 
-    fires: safelyLoadLegend('NIFC fires', 'Fires (NIFC)', () =>
+    fires: safelyLoadLegend('NIFC fires', LEGEND_LAYERS.fires, () =>
       // limit the service response to the two states covered by the map
       fetchArcGISGeoJSON(DATA_URLS.nifcFires, {
         where: "POOState IN ('US-OR','US-WA')",
@@ -1557,7 +1755,7 @@ function loadLayerData() {
       loadRegionFocusData
     ),
 
-    perimeters: safelyLoadLegend('NIFC perimeters', 'Fires (NIFC)', () =>
+    perimeters: safelyLoadLegend('NIFC perimeters', LEGEND_LAYERS.fires, () =>
       fetchArcGISGeoJSON(
         DATA_URLS.nifcPerimeters,
         {
@@ -1575,8 +1773,7 @@ function loadLayerData() {
           // simplify on the service so large perimeters stay compact in transit
           geometryPrecision: '3',
           maxAllowableOffset: '0.01',
-        },
-        { pageSize: 25 }
+        }
       )
     ),
 
@@ -1607,24 +1804,6 @@ function loadLayerData() {
 
     lookouts: safelyLoadLegend('standing lookouts', 'Standing lookouts', () =>
       fetchJson(DATA_URLS.standingLookouts, 'Standing lookouts')
-    ),
-
-    nationalForests: safelyLoadLegend(
-      'national forests',
-      'National forests',
-      () =>
-        fetchArcGISGeoJSON(DATA_URLS.nationalForests, {
-          where: "ownerclassification='USDA FOREST SERVICE'",
-          outFields: 'ownerclassification,forestname',
-          orderByFields: 'objectid',
-          geometry: REGION_DATA_BOUNDS.flat().join(','),
-          geometryType: 'esriGeometryEnvelope',
-          // bounds are longitude and latitude, so tell ArcGIS their input CRS
-          inSR: '4326',
-          spatialRel: 'esriSpatialRelIntersects',
-          geometryPrecision: '4',
-          maxAllowableOffset: '0.005',
-        })
     ),
   };
 }
@@ -1789,44 +1968,72 @@ async function loadAlertWestCameras() {
   return camerasToGeoJSON(await fetchJson(CAMERA_API, 'Camera API'));
 }
 
+// picks a per-size value for the camera marker size at the current zoom
+function cameraZoomStep(valueForSize) {
+  const [[, smallestSize], ...largerSizes] = CAMERA_MARKER_SIZES;
+
+  return [
+    'step',
+    ['zoom'],
+    valueForSize(smallestSize),
+    ...largerSizes.flatMap(([zoom, size]) => [zoom, valueForSize(size)]),
+  ];
+}
+
 async function addCameraLayers(map) {
+  const sizes = CAMERA_MARKER_SIZES.map(([, size]) => size);
   // register images before adding symbol layers that reference them
   await Promise.all(
-    CAMERA_PROVIDERS.map(({ iconId, iconUrl }) =>
-      registerMarkerIcon(map, { id: iconId, url: iconUrl, size: CAMERA_MARKER_SIZE })
-    )
+    CAMERA_PROVIDERS.flatMap(({ iconId, iconUrl, privateIconId, privateIconUrl }) => [
+      registerMarkerIconSizes(map, { id: iconId, url: iconUrl, sizes }),
+      privateIconId && registerMarkerIconSizes(map, { id: privateIconId, url: privateIconUrl, sizes }),
+    ])
   );
 
-  for (const { cameraLayerId, iconId, sharedSiteIconOffset = [0, 0] } of CAMERA_PROVIDERS) {
+  for (const {
+    cameraLayerId,
+    iconId,
+    iconUrl,
+    privateIconId,
+    privateIconUrl,
+    sharedSiteIconOffset = [0, 0],
+  } of CAMERA_PROVIDERS) {
     addGeoJSONSource(map, cameraLayerId);
     map.addLayer({
       id: cameraLayerId,
       type: 'symbol',
       source: cameraLayerId,
       layout: {
-        ...markerLayout(iconId),
-        'icon-offset': [
+        // zoomed out, cameras shrink so dense areas stay readable
+        ...markerLayout(cameraZoomStep((size) =>
+          privateIconId
+            ? ['case', ['==', ['get', 'outsideApi'], true], sizedIconId(privateIconId, size), sizedIconId(iconId, size)]
+            : sizedIconId(iconId, size)
+        )),
+        // shared-site offsets are set for the full-size marker, so they shrink with it
+        'icon-offset': cameraZoomStep((size) => [
           'case',
           ['==', ['get', 'sharesAlertWestSite'], true],
-          ['literal', sharedSiteIconOffset],
+          ['literal', sharedSiteIconOffset.map((offset) => Math.round((offset * size) / CAMERA_MARKER_SIZE))],
           ['literal', [0, 0]],
-        ],
+        ]),
       },
     });
 
-    // hover previews use the map event; clicks open details and select its viewshed
-    bindLayerInteractions(map, cameraLayerId, null, {
-      show: (hoveredMap, event) => {
+    // hovering names the camera; clicks and taps open details and select its viewshed
+    bindLayerInteractions(map, cameraLayerId, {
+      hover: {
+        kind: 'camera',
+        // same marker the camera is drawn with
+        symbol: (feature) => ({
+          iconUrl: privateIconUrl && feature.properties?.outsideApi ? privateIconUrl : iconUrl,
+        }),
+      },
+      click: (clickedMap, event) => {
         const feature = event.features?.[0];
-        cameraHovered(feature ? cameraOptionId(feature) : null, event);
+        if (feature) cameraClicked(cameraOptionId(feature), feature);
       },
-      hide: () => cameraHovered(null),
-    });
-
-    map.on('click', cameraLayerId, (event) => {
-      const feature = event.features?.[0];
-      if (!feature) return;
-      cameraClicked(cameraOptionId(feature), feature);
+      clickWithMouse: true,
     });
   }
 }
@@ -1871,12 +2078,16 @@ async function addDigitizedCameraLayers(map) {
       },
     });
 
-    bindLayerInteractions(map, operator.layerId, (clickedMap, event) => {
-      // same marker the clicked site is drawn with
-      const planned = event.features?.[0]?.properties?.status === 'Planned';
-      showDigitizedCameraPopup(clickedMap, event, {
-        iconUrl: planned ? operator.plannedIconUrl : operator.operationalIconUrl,
-      });
+    // same marker the site is drawn with
+    const symbol = (feature) => ({
+      iconUrl: feature?.properties?.status === 'Planned'
+        ? operator.plannedIconUrl
+        : operator.operationalIconUrl,
+    });
+    bindLayerInteractions(map, operator.layerId, {
+      hover: { kind: 'digitizedCamera', symbol },
+      click: (clickedMap, event) =>
+        showFeaturePopup(clickedMap, event, 'digitizedCamera', symbol(event.features?.[0])),
     });
   }
 }
@@ -1951,6 +2162,21 @@ function addViewshedLayers(map) {
 
   // both hooks call back immediately, so the first pass may precede the other's value
   let basemap = 'outdoors';
+
+  addViewshedHover(map, LAYER_IDS.combinedViewshedsFill, {
+    title: () => 'Camera viewshed',
+    symbol: () => viewshedSymbol(null, basemap),
+  });
+  for (const provider of providers) {
+    addViewshedHover(map, provider.viewshedFillLayerId, {
+      // provider names only mean something while each provider has its own color
+      title: () => getSetting(SEPARATE_VIEWSHED_COLORS_SETTING)
+        ? `${provider.name} camera viewshed`
+        : 'Camera viewshed',
+      symbol: () => viewshedSymbol(provider, basemap),
+    });
+  }
+
   onBasemapChange((selected) => {
     basemap = selected;
     applyViewshedSymbology(map, basemap);
@@ -1960,6 +2186,11 @@ function addViewshedLayers(map) {
     syncViewshedFills(map);
   });
   legendControl.onChange(() => syncViewshedFills(map));
+}
+
+// viewsheds cover so much that their entries go after whatever else is under the cursor
+function addViewshedHover(map, layerId, { title, symbol }) {
+  addHoverLayer(map, layerId, { kind: 'label', title, symbol, background: true });
 }
 
 // shared-color providers draw through the combined fill so overlaps do not darken
@@ -1978,27 +2209,31 @@ function syncViewshedFills(map) {
 }
 
 function applyViewshedSymbology(map, basemap) {
-  const darkOutline = basemap === 'satellite';
-  const sharedColor = basemapColor(VIEWSHED_FILL_COLOR, basemap);
-  const sharedImage = basemapColor(VIEWSHED_LEGEND_IMAGES, basemap);
-
-  legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, sharedColor, { darkOutline, image: sharedImage });
+  const shared = viewshedSymbol(null, basemap);
+  legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, shared.swatchColor, { image: shared.swatchImage });
   if (map.getLayer(LAYER_IDS.combinedViewshedsFill)) {
-    map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color', sharedColor);
+    map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color', shared.swatchColor);
   }
 
   for (const provider of CAMERA_PROVIDERS) {
-    const colors = viewshedColors(provider);
-    const fillColor = basemapColor(colors, basemap);
-
+    const { swatchColor, swatchImage } = viewshedSymbol(provider, basemap);
     if (map.getLayer(provider.viewshedFillLayerId)) {
-      map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', fillColor);
+      map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', swatchColor);
     }
-
-    // providers in their own color keep a flat swatch
-    const image = colors === VIEWSHED_FILL_COLOR ? sharedImage : null;
-    legendControl.updateSwatchColor(provider.viewshedLabel, fillColor, { darkOutline, image });
+    legendControl.updateSwatchColor(provider.viewshedLabel, swatchColor, { image: swatchImage });
   }
+}
+
+// a provider, or null for the shared color, as the layer list and hover info draw it
+function viewshedSymbol(provider, basemap) {
+  const colors = provider ? viewshedColors(provider) : VIEWSHED_FILL_COLOR;
+  return {
+    swatchColor: basemapColor(colors, basemap),
+    // providers in their own color show a sample viewshed in that color
+    swatchImage: colors === VIEWSHED_FILL_COLOR
+      ? basemapColor(VIEWSHED_LEGEND_IMAGES, basemap)
+      : provider.viewshedLegendImage,
+  };
 }
 
 function viewshedColors({ viewshedFillColor }) {
@@ -2043,7 +2278,7 @@ function selectionLegendItems(selection) {
     items.push({
       label: `${highlightedCameraName} viewshed`,
       // a sample viewshed in the highlight color reads better than a flat swatch
-      visual: { type: 'icon', src: 'img/yellow_portland_tower_viewshed.png', outline: '#808080', size: 22 },
+      visual: { type: 'icon', src: 'img/yellow_portland_tower_viewshed.png', outline: VIEWSHED_HIGHLIGHT_COLOR, size: 22 },
     });
   }
 
@@ -2074,7 +2309,7 @@ async function addFireLayer(map) {
     layout: markerLayout(fireIconExpression()),
   });
 
-  bindLayerInteractions(map, LAYER_IDS.fires, withSymbol(showFirePopup, LAYER_SYMBOLS.fires));
+  bindLayerInteractions(map, LAYER_IDS.fires, featureInfo('fire', LAYER_SYMBOLS.fires));
 }
 
 /**
@@ -2120,11 +2355,185 @@ function addPerimeterLayers(map) {
     },
   });
 
-  bindLayerInteractions(
-    map,
-    LAYER_IDS.perimetersFill,
-    withSymbol(showFirePopup, LAYER_SYMBOLS.fires)
-  );
+  bindLayerInteractions(map, LAYER_IDS.perimetersFill, featureInfo('fire', LAYER_SYMBOLS.fires));
+}
+
+// each fire history type draws earlier years, the year being left, and the timeline's year
+// in their own layers, so one year can fade out as the next fades in over the earlier ones
+function addFireHistoryLayers(map) {
+  const year = fireHistoryTimeline.current();
+  const hidden = { visibility: 'none' };
+
+  addGeoJSONSource(map, LAYER_IDS.fireHistoryPerimetersSource);
+  map.addLayer({
+    id: LAYER_IDS.fireHistoryPerimetersEarlierFill,
+    type: 'fill',
+    source: LAYER_IDS.fireHistoryPerimetersSource,
+    layout: hidden,
+    filter: NO_FIRE_YEAR,
+    paint: {
+      'fill-color': FIRE_HISTORY_EARLIER_COLOR,
+      'fill-opacity': FIRE_HISTORY_EARLIER_FILL_OPACITY,
+      'fill-outline-color': FIRE_HISTORY_EARLIER_COLOR,
+    },
+  });
+  for (const [fillId, lineId] of [
+    [LAYER_IDS.fireHistoryPerimetersOutgoingFill, LAYER_IDS.fireHistoryPerimetersOutgoingLine],
+    [LAYER_IDS.fireHistoryPerimetersFill, LAYER_IDS.fireHistoryPerimetersLine],
+  ]) {
+    map.addLayer({
+      id: fillId,
+      type: 'fill',
+      source: LAYER_IDS.fireHistoryPerimetersSource,
+      layout: hidden,
+      filter: NO_FIRE_YEAR,
+      paint: {
+        'fill-color': FIRE_HISTORY_COLOR,
+        'fill-opacity': FIRE_HISTORY_FILL_OPACITY,
+      },
+    });
+    map.addLayer({
+      id: lineId,
+      type: 'line',
+      source: LAYER_IDS.fireHistoryPerimetersSource,
+      layout: hidden,
+      filter: NO_FIRE_YEAR,
+      paint: {
+        'line-color': FIRE_HISTORY_COLOR,
+        'line-width': 1.25,
+      },
+    });
+  }
+
+  addGeoJSONSource(map, LAYER_IDS.fireHistoryIgnitionsSource);
+  map.addLayer({
+    id: LAYER_IDS.fireHistoryIgnitionsEarlier,
+    type: 'circle',
+    source: LAYER_IDS.fireHistoryIgnitionsSource,
+    layout: hidden,
+    filter: NO_FIRE_YEAR,
+    paint: {
+      'circle-color': FIRE_HISTORY_EARLIER_COLOR,
+      'circle-opacity': FIRE_HISTORY_EARLIER_IGNITION_OPACITY,
+      'circle-radius': FIRE_HISTORY_IGNITION_RADIUS,
+    },
+  });
+  for (const layerId of [LAYER_IDS.fireHistoryIgnitionsOutgoing, LAYER_IDS.fireHistoryIgnitions]) {
+    map.addLayer({
+      id: layerId,
+      type: 'circle',
+      source: LAYER_IDS.fireHistoryIgnitionsSource,
+      layout: hidden,
+      filter: NO_FIRE_YEAR,
+      paint: {
+        'circle-color': FIRE_HISTORY_COLOR,
+        'circle-radius': FIRE_HISTORY_IGNITION_RADIUS,
+        'circle-stroke-color': '#fff',
+        'circle-stroke-width': 0.75,
+      },
+    });
+  }
+
+  if (year !== null) applyFireHistoryYear(map, year);
+
+  for (const layerId of [LAYER_IDS.fireHistoryIgnitions, LAYER_IDS.fireHistoryIgnitionsEarlier]) {
+    bindLayerInteractions(map, layerId, featureInfo('fireHistory', LAYER_SYMBOLS.fireHistoryIgnitions));
+  }
+  for (const layerId of [LAYER_IDS.fireHistoryPerimetersFill, LAYER_IDS.fireHistoryPerimetersEarlierFill]) {
+    bindLayerInteractions(map, layerId, {
+      ...featureInfo('fireHistory', LAYER_SYMBOLS.fireHistoryPerimeters),
+      click: (clickedMap, event) => {
+        // an ignition point sitting on its own burn scar keeps the tap
+        const ignitionLayers = [LAYER_IDS.fireHistoryIgnitions, LAYER_IDS.fireHistoryIgnitionsEarlier];
+        if (hasInteractiveFeatureAtPoint(clickedMap, event.point, ignitionLayers)) return;
+        showFeaturePopup(clickedMap, event, 'fireHistory', LAYER_SYMBOLS.fireHistoryPerimeters);
+      },
+    });
+  }
+}
+
+// shows the timeline's year, and every year before it in the earlier rows
+function applyFireHistoryYear(map, year) {
+  const previousYear = shownFireHistoryYear;
+  shownFireHistoryYear = year;
+
+  const yearFilter = ['==', ['get', 'year'], year];
+  const earlierFilter = ['<', ['get', 'year'], year];
+  for (const layerId of FIRE_HISTORY_YEAR_LAYER_IDS) map.setFilter(layerId, yearFilter);
+  map.setFilter(LAYER_IDS.fireHistoryPerimetersEarlierFill, earlierFilter);
+  map.setFilter(LAYER_IDS.fireHistoryIgnitionsEarlier, earlierFilter);
+
+  if (previousYear === null || previousYear === year) return;
+
+  // the year being left fades out on top; with the earlier rows on it settles
+  // into their muted style underneath, otherwise it disappears
+  const outgoingFilter = ['==', ['get', 'year'], previousYear];
+  for (const layerId of FIRE_HISTORY_OUTGOING_LAYER_IDS) map.setFilter(layerId, outgoingFilter);
+  crossfadeFireHistoryYears(map);
+}
+
+// paint transitions only run between constant values, so both years jump to their
+// starting opacity for one frame and then ease past each other
+function crossfadeFireHistoryYears(map) {
+  const duration = motionDuration(FIRE_HISTORY_FADE_MS);
+  const fades = [
+    ['fill-opacity', FIRE_HISTORY_FILL_OPACITY, LAYER_IDS.fireHistoryPerimetersFill, LAYER_IDS.fireHistoryPerimetersOutgoingFill],
+    ['line-opacity', 1, LAYER_IDS.fireHistoryPerimetersLine, LAYER_IDS.fireHistoryPerimetersOutgoingLine],
+    ['circle-opacity', 1, LAYER_IDS.fireHistoryIgnitions, LAYER_IDS.fireHistoryIgnitionsOutgoing],
+    ['circle-stroke-opacity', 1, LAYER_IDS.fireHistoryIgnitions, LAYER_IDS.fireHistoryIgnitionsOutgoing],
+  ];
+  const setOpacity = (layerId, property, opacity, transition) => {
+    map.setPaintProperty(layerId, `${property}-transition`, { duration: transition, delay: 0 });
+    map.setPaintProperty(layerId, property, opacity);
+  };
+
+  for (const [property, opacity, incomingId, outgoingId] of fades) {
+    setOpacity(incomingId, property, duration ? 0 : opacity, 0);
+    setOpacity(outgoingId, property, duration ? opacity : 0, 0);
+  }
+  if (!duration) return;
+
+  map.once('render', () => {
+    for (const [property, opacity, incomingId, outgoingId] of fades) {
+      setOpacity(incomingId, property, opacity, duration);
+      setOpacity(outgoingId, property, 0, duration);
+    }
+  });
+}
+
+// the timeline follows the fire history rows rather than having a switch of its own
+function syncFireHistoryTimeline() {
+  fireHistoryTimeline.setVisible(FIRE_HISTORY_LABELS.some((label) => legendControl.isChecked(label)));
+}
+
+// an exported map has no slider, so its legend names the years each row shows
+function labelFireHistoryExport(year) {
+  const firstYear = fireHistoryTimeline.firstYear();
+  let earlierYears = `before ${year}`;
+  if (year - 1 === firstYear) earlierYears = String(firstYear);
+  else if (year - 1 > firstYear) earlierYears = `${firstYear}–${year - 1}`;
+
+  for (const [label, years] of [
+    [LEGEND_LAYERS.fireHistoryPerimeters, year],
+    [LEGEND_LAYERS.fireHistoryIgnitions, year],
+    [LEGEND_LAYERS.fireHistoryEarlierPerimeters, earlierYears],
+    [LEGEND_LAYERS.fireHistoryEarlierIgnitions, earlierYears],
+  ]) {
+    legendControl.setExportLabel(label, `${label} (${years})`);
+  }
+}
+
+function loadFireHistoryFile(url, label) {
+  if (!fireHistoryFiles.has(url)) {
+    const request = fetchJson(url, label).then((data) => {
+      fireHistoryTimeline.includeYears(data.features.map(({ properties }) => properties?.year));
+      return data;
+    });
+    // a failed request is dropped so the other row can try again
+    request.catch(() => fireHistoryFiles.delete(url));
+    fireHistoryFiles.set(url, request);
+  }
+  return fireHistoryFiles.get(url);
 }
 
 async function addPrescribedLayer(map) {
@@ -2143,11 +2552,11 @@ async function addPrescribedLayer(map) {
     layout: markerLayout(PRESCRIBED_ICON_ID),
   });
 
-  bindLayerInteractions(
-    map,
-    LAYER_IDS.prescribed,
-    withSymbol(showPrescribedPopup, LAYER_SYMBOLS.prescribed)
-  );
+  // the clicked box keeps its Watch Duty link reachable for mouse users too
+  bindLayerInteractions(map, LAYER_IDS.prescribed, {
+    ...featureInfo('prescribed', LAYER_SYMBOLS.prescribed),
+    clickWithMouse: true,
+  });
 }
 
 function addLookoutLayer(map) {
@@ -2164,11 +2573,7 @@ function addLookoutLayer(map) {
     },
   });
 
-  bindLayerInteractions(
-    map,
-    LAYER_IDS.lookouts,
-    withSymbol(showLookoutPopup, LAYER_SYMBOLS.lookouts)
-  );
+  bindLayerInteractions(map, LAYER_IDS.lookouts, featureInfo('lookout', LAYER_SYMBOLS.lookouts));
 }
 
 function markerLayout(iconImage) {
@@ -2202,32 +2607,34 @@ function setSourceData(map, sourceId, data) {
   source.setData(data);
 }
 
-// popup opener that also hands over the layer's legend symbol
-function withSymbol(showPopup, symbol) {
-  return (map, event) => showPopup(map, event, symbol);
+// same details on hover with a mouse and in a box when tapped
+function featureInfo(kind, symbol) {
+  return {
+    hover: { kind, symbol },
+    click: (map, event) => showFeaturePopup(map, event, kind, symbol),
+  };
 }
 
 /**
- * share pointer affordance and popup dispatch across interactive layers
- * previews add a hover popup that clicks can expand
+ * share hover info, pointer affordance, and click dispatch across interactive layers
+ * clicks only act for touch unless `clickWithMouse`, since a mouse already sees the info on hover
  */
-function bindLayerInteractions(map, layerId, showPopup, preview) {
+function bindLayerInteractions(map, layerId, { hover, click, clickWithMouse = false }) {
+  if (hover) addHoverLayer(map, layerId, hover);
+
+  const clickActs = () => clickWithMouse || !pointerCanHover();
+
   map.on('mouseenter', layerId, () => {
-    map.getCanvas().style.cursor = 'pointer';
+    if (clickActs()) map.getCanvas().style.cursor = 'pointer';
   });
 
   map.on('mouseleave', layerId, () => {
     map.getCanvas().style.cursor = '';
-    preview?.hide(map);
   });
 
-  // mousemove catches transitions between markers placed side by side
-  if (preview) {
-    map.on('mousemove', layerId, (event) => preview.show(map, event));
-  }
-
-  // layers without a full popup still retain pointer feedback and previews
-  if (showPopup) map.on('click', layerId, (event) => showPopup(map, event));
+  map.on('click', layerId, (event) => {
+    if (clickActs()) click(map, event);
+  });
 }
 
 // map each legend row to the Mapbox layers controlled by its checkbox
@@ -2268,6 +2675,8 @@ function legendItems() {
       label: LEGEND_LAYERS.viewsheds,
       swatchColor: VIEWSHED_FILL_COLOR.outdoors,
       swatchBorder: false,
+      // the group row shows only its checkbox and label; the export still reads this swatch
+      swatchClass: 'legend-swatch--hidden',
       layerIds: CAMERA_PROVIDERS.flatMap(viewshedLayerIds),
       children: CAMERA_PROVIDERS.map((provider) => ({
         label: provider.viewshedLabel,
@@ -2290,7 +2699,6 @@ function legendItems() {
       label: LEGEND_LAYERS.nationalForests,
       swatchColor: NATIONAL_FOREST_COLOR,
       visible: false,
-      loading: true,
       infoText: 'Surface ownership parcels from the U.S. Forest Service',
       layerIds: [
         LAYER_IDS.nationalForestsFill,
@@ -2317,7 +2725,7 @@ function legendItems() {
       label: LEGEND_LAYERS.transmissionLines,
       ...LAYER_SYMBOLS.transmissionLines,
       visible: false,
-      infoText: 'Electric power transmission lines from a 2024 archive of the U.S. Electric Power Transmission Lines dataset. Thicker lines carry higher voltage. Click a line for its owner, voltage, and substations.',
+      infoText: 'Electric power transmission lines from a 2024 archive of the U.S. Electric Power Transmission Lines dataset. Thicker lines carry higher voltage. Hover over or tap a line for its owner, voltage, and substations.',
       layerIds: [LAYER_IDS.transmissionLines, LAYER_IDS.transmissionLinesHit],
     },
     {
@@ -2329,6 +2737,47 @@ function legendItems() {
         LAYER_IDS.fires,
         LAYER_IDS.perimetersFill,
         LAYER_IDS.perimetersLine,
+      ],
+    },
+    {
+      label: LEGEND_LAYERS.fireHistory,
+      swatchClass: 'legend-swatch--hidden',
+      swatchColor: FIRE_HISTORY_COLOR,
+      visible: false,
+      infoText: `Wildfires of 100 acres or more in Oregon and Washington since 2016, from the NIFC Interagency Fire Perimeter History and WFIGS services. Turning a layer on opens a timeline over the map to step through the years.`,
+      layerIds: [
+        ...FIRE_HISTORY_PERIMETER_LAYER_IDS,
+        ...FIRE_HISTORY_IGNITION_LAYER_IDS,
+        LAYER_IDS.fireHistoryPerimetersEarlierFill,
+        LAYER_IDS.fireHistoryIgnitionsEarlier,
+      ],
+      children: [
+        {
+          label: LEGEND_LAYERS.fireHistoryPerimeters,
+          ...LAYER_SYMBOLS.fireHistoryPerimeters,
+          visible: false,
+          layerIds: FIRE_HISTORY_PERIMETER_LAYER_IDS,
+        },
+        {
+          label: LEGEND_LAYERS.fireHistoryIgnitions,
+          ...LAYER_SYMBOLS.fireHistoryIgnitions,
+          visible: false,
+          layerIds: FIRE_HISTORY_IGNITION_LAYER_IDS,
+        },
+        {
+          label: LEGEND_LAYERS.fireHistoryEarlierPerimeters,
+          ...LAYER_SYMBOLS.fireHistoryEarlierPerimeters,
+          visible: false,
+          infoText: 'Shows the perimeters before the current year in a faded brown',
+          layerIds: [LAYER_IDS.fireHistoryPerimetersEarlierFill],
+        },
+        {
+          label: LEGEND_LAYERS.fireHistoryEarlierIgnitions,
+          ...LAYER_SYMBOLS.fireHistoryEarlierIgnitions,
+          visible: false,
+          infoText: 'Shows the ignitions before the current year in a faded brown',
+          layerIds: [LAYER_IDS.fireHistoryIgnitionsEarlier],
+        },
       ],
     },
     {

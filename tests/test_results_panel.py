@@ -1,4 +1,4 @@
-"""Source checks for the results panel contract (donuts, copy, export)."""
+"""source checks for the results panel contract (donuts, copy, export)"""
 import re
 import subprocess
 import unittest

@@ -1,7 +1,7 @@
 // camera to viewshed join must key on id or location, not only display names
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
-import { attachViewshedIds, providerSitesToCameras } from '../js/geojson-transform.js';
+import { attachViewshedIds, countPointsInGeometry, outsideApiSitesToCameras, providerSitesToCameras } from '../js/geojson-transform.js';
 
 const manifest = JSON.parse(readFileSync(new URL('../data/alertwest-viewshed-manifest.json', import.meta.url), 'utf8'));
 const entry = (id) => manifest.viewsheds.find((item) => item.viewshed_id === id);
@@ -61,7 +61,7 @@ for (const f of attachViewshedIds(halfwayHeads, manifest, { features: [pendingHa
 const panoSites = JSON.parse(readFileSync(new URL('../data/pano-sites.geojson', import.meta.url), 'utf8'));
 const panoCameras = providerSitesToCameras(panoSites, 'Pano AI').features;
 assert.equal(panoCameras.length, 69);
-assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 68);
+assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 69);
 
 // each owner's table lands in the one Pano layer
 const owners = (name) => panoCameras.filter(f => f.properties.owner === name).length;
@@ -88,4 +88,27 @@ assert.equal(enviroVisionCameras.filter(f => f.properties.sharesAlertWestSite).l
 
 const pendingWithHeight = structuredClone(panoSites.features.find(f => f.properties.name === 'Midnight Gulch'));
 pendingWithHeight.properties.cameraHeightFt = 100;
+pendingWithHeight.properties.viewshedStatus = 'pending';
 assert.equal(providerSitesToCameras({ features: [pendingWithHeight] }, 'Pano AI').features[0].properties.viewshed_id, null);
+
+// live sites ALERTWest keeps out of its API get a marker from the sites file, with no feed or image
+const alertWestSites = JSON.parse(readFileSync(new URL('../data/alertwest-sites.geojson', import.meta.url), 'utf8'));
+const outsideApi = attachViewshedIds({ features: outsideApiSitesToCameras(alertWestSites) }, manifest, alertWestSites).features;
+assert.deepEqual(outsideApi.map(f => [f.properties.name, f.properties.viewshed_id]),
+  [['Callahan Ridge', 'callahan-ridge'], ['Bear Mountain', 'bear-mountain']]);
+assert.ok(outsideApi.every(f => f.properties.id == null && f.properties.image == null));
+assert.deepEqual(outsideApi.map(f => [f.properties.county, f.properties.state]), [['Douglas', 'OR'], ['Lane', 'OR']]);
+
+// area camera counts skip points in holes and outside every part, largest provider first
+{
+  const square = (x, y, size) => [[x, y], [x + size, y], [x + size, y + size], [x, y + size], [x, y]];
+  const geometry = { type: 'MultiPolygon', coordinates: [[square(0, 0, 10), square(4, 4, 2)], [square(20, 0, 2)]] };
+  const point = (operator, lon, lat) => ({ geometry: { type: 'Point', coordinates: [lon, lat] }, properties: { operator } });
+  const cameras = {
+    features: [
+      point('A', 1, 1), point('B', 2, 2), point('B', 21, 1), point('B', 5, 5), point('A', 30, 30),
+    ],
+  };
+  assert.deepEqual(countPointsInGeometry(cameras, geometry, (f) => f.properties.operator), [['B', 2], ['A', 1]]);
+  assert.deepEqual(countPointsInGeometry(cameras, null, (f) => f.properties.operator), []);
+}

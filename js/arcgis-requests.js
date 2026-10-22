@@ -60,7 +60,7 @@ export async function fetchArcGISGeoJSON(
   return { type: 'FeatureCollection', features };
 }
 
-// fetch one arc page with retry handling for any failure
+// fetch one ArcGIS page with retry handling for any failure
 async function fetchArcGISPage(featureLayerUrl, params, { retries }) {
   const queryUrl = `${featureLayerUrl.replace(/\/$/, '')}/query`; // remove trailing slash from url
   let lastError;
@@ -135,7 +135,7 @@ async function readJson(response) {
   }
 }
 
-// will convert Retry-After seconds or an HTTP date into milliseconds from now
+// convert Retry-After seconds or an HTTP date into milliseconds from now
 function parseRetryAfter(value) {
   if (!value) {
     return null;

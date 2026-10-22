@@ -33,6 +33,7 @@ textarea {
 .site-banner {
     position: absolute;
     inset: 0 0 auto 0;
+    /* over the map and its controls, under modals */
     z-index: 1000;
     box-sizing: border-box;
     display: flex;
@@ -158,15 +159,25 @@ textarea {
     width: min(1040px, 100%);
 }
 
+/* the story column scrolls on its own so the partner lists stay in view */
 .modal__body.about-modal__body {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
-    gap: 28px;
-    padding: 18px 22px;
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.about-modal__main {
+    padding: 20px 28px 24px 24px;
+    overflow: auto;
 }
 
 .about-modal__side {
-    padding-left: 24px;
+    padding: 20px 24px 24px;
+    overflow: auto;
     border-left: 1px solid #444;
 }
 
@@ -174,18 +185,18 @@ textarea {
     margin: 0 0 20px;
     padding-bottom: 18px;
     border-bottom: 1px solid #444;
-    font-size: 16px;
+    font-size: 19px;
     line-height: 1.6;
 }
 
 .about-modal__section + .about-modal__section {
-    margin-top: 22px;
+    margin-top: 26px;
 }
 
 .about-modal__heading {
-    margin: 0 0 10px;
+    margin: 0 0 12px;
     color: #fff;
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 700;
     text-decoration: underline var(--ohaz-yellow) 2px;
     text-underline-offset: 5px;
@@ -193,7 +204,7 @@ textarea {
 
 .about-modal__section p {
     margin: 0;
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.6;
 }
 
@@ -206,18 +217,18 @@ textarea {
 .about-modal__milestone {
     position: relative;
     display: grid;
-    grid-template-columns: 76px minmax(0, 1fr);
+    grid-template-columns: 90px minmax(0, 1fr);
     gap: 14px;
-    padding-bottom: 14px;
+    padding-bottom: 16px;
 }
 
 /* yellow rail joining the milestone dots */
 .about-modal__milestone::before {
     content: "";
     position: absolute;
-    top: 6px;
-    bottom: -6px;
-    left: 82px;
+    top: 8px;
+    bottom: -8px;
+    left: 96px;
     width: 2px;
     background: rgba(248, 225, 9, 0.35);
 }
@@ -238,7 +249,7 @@ textarea {
 .about-modal__milestone p::before {
     content: "";
     position: absolute;
-    top: 6px;
+    top: 7px;
     left: -11px;
     width: 10px;
     height: 10px;
@@ -250,7 +261,7 @@ textarea {
 .about-modal__date {
     padding-top: 1px;
     color: var(--ohaz-yellow);
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 700;
     text-align: right;
 }
@@ -264,7 +275,7 @@ textarea {
 }
 
 .about-modal__section .about-modal__goal p {
-    font-size: 14px;
+    font-size: 16px;
     font-style: italic;
 }
 
@@ -278,11 +289,11 @@ textarea {
 
 .about-modal__orgs {
     display: grid;
-    gap: 8px;
+    gap: 10px;
     margin: 0;
     padding: 0;
     list-style: none;
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.4;
 }
 
@@ -299,12 +310,17 @@ textarea {
 
 @media (max-width: 760px) {
     .modal__body.about-modal__body {
-        grid-template-columns: 1fr;
-        gap: 18px;
+        display: block;
+        overflow: auto;
+    }
+
+    .about-modal__main {
+        overflow: visible;
     }
 
     .about-modal__side {
-        padding-left: 0;
+        overflow: visible;
+        border-top: 1px solid #444;
         border-left: 0;
     }
 }

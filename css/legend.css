@@ -247,6 +247,19 @@
     background: var(--legend-swatch-color);
 }
 
+/* blends the layer's fill opacity over a light land tone, so it reads as it does on the map
+   rather than darkening against the menu */
+.legend-swatch--translucent {
+    background: color-mix(in srgb, var(--legend-swatch-color) var(--legend-swatch-opacity), #efeee4);
+    border-width: 1px;
+}
+
+/* translucent points have no white ring on the map */
+.legend-swatch--circle.legend-swatch--translucent {
+    border: 0;
+    box-shadow: none;
+}
+
 .legend-swatch--burn-probability {
     background: linear-gradient(to right, #f2774f, #b83745);
 }
@@ -260,17 +273,13 @@
     border-radius: 0;
 }
 
-.legend-swatch--fill.legend-swatch--dark-outline {
-    border: 1px solid #2a2a2a;
-}
-
 /* sample viewshed image set inline by the legend; replaces the flat fill */
 .legend-swatch--image {
     /* slightly larger than other swatches; the centered legend visual lets it spill evenly */
     width: 20px;
     height: 20px;
-    /* round outline follows the circular sample viewshed */
-    border: 1px solid #808080;
+    /* round outline follows the circular sample viewshed in its own color */
+    border: 1px solid var(--legend-swatch-color);
     border-radius: 50%;
     background-color: transparent;
     background-position: center;
