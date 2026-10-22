@@ -145,16 +145,30 @@ textarea {
     height: min(540px, 92vh);
 }
 
+.about-modal__dialog .modal__header {
+    align-items: stretch;
+    padding: 0 16px;
+}
+
+.about-modal__dialog .modal__header h2 {
+    align-self: center;
+    padding: 14px 0;
+}
+
+.about-modal__dialog .modal__close {
+    align-self: center;
+}
+
 .about-modal__tabs {
     display: flex;
+    flex: 1 1 auto;
     gap: 4px;
-    padding: 0 20px;
-    border-bottom: 1px solid #444;
+    margin-left: 16px;
 }
 
 .about-modal__tab {
     margin-bottom: -1px;
-    padding: 12px 14px 10px;
+    padding: 16px 14px 13px;
     color: #c8c8c8;
     background: transparent;
     border: 0;

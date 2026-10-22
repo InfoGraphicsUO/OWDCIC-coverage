@@ -87,7 +87,7 @@ const ABOUT_TABS = Object.freeze([
 ]);
 
 function openAboutModal(onClose) {
-  const { dialog } = openModal({
+  const { dialog, closeButton } = openModal({
     id: 'about',
     title: 'About',
     closeLabel: 'Close about',
@@ -149,9 +149,11 @@ function openAboutModal(onClose) {
     body.scrollTop = 0;
   }
 
+  // tabs share the header row, between the title and the close button
   tabList.append(...tabs);
+  closeButton.before(tabList);
   body.append(...panels);
-  dialog.append(tabList, body);
+  dialog.append(body);
   selectTab(0);
 }
 
