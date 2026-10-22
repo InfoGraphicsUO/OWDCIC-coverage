@@ -140,11 +140,6 @@ textarea {
     width: min(1040px, 100%);
 }
 
-/* fixed height so switching tabs doesn't resize the dialog */
-.modal__dialog.about-modal__dialog {
-    height: min(540px, 92vh);
-}
-
 .about-modal__dialog .modal__header {
     align-items: stretch;
     padding: 0 16px;
@@ -193,10 +188,22 @@ textarea {
     outline-offset: -2px;
 }
 
+/* panels share one grid cell so the dialog is as tall as the longest tab
+   and doesn't resize when switching */
 .modal__body.about-modal__body {
+    display: grid;
     flex: 1 1 auto;
     min-height: 0;
     padding: 22px 28px 26px;
+}
+
+.about-modal__panel {
+    grid-area: 1 / 1;
+    visibility: hidden;
+}
+
+.about-modal__panel.is-active {
+    visibility: visible;
 }
 
 .about-modal__panel > p {

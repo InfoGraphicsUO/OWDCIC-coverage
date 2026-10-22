@@ -144,7 +144,7 @@ function openAboutModal(onClose) {
       tab.classList.toggle('is-active', selected);
       tab.setAttribute('aria-selected', `${selected}`);
       tab.tabIndex = selected ? 0 : -1;
-      panels[i].hidden = !selected;
+      panels[i].classList.toggle('is-active', selected);
     });
     body.scrollTop = 0;
   }
