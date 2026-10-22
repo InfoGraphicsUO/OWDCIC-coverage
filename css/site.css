@@ -134,7 +134,10 @@ textarea {
     width: min(1040px, 100%);
 }
 
+/* equal side columns keep the tabs centered on the dialog */
 .about-modal__dialog .modal__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
     align-items: stretch;
     padding: 0 16px;
 }
@@ -149,11 +152,11 @@ textarea {
 
 .about-modal__dialog .modal__close {
     align-self: center;
+    justify-self: end;
 }
 
 .about-modal__tabs {
     display: flex;
-    flex: 1 1 auto;
     align-items: center;
     gap: 4px;
 }
