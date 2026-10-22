@@ -6,6 +6,8 @@ stay separate even at a shared tower because their observer heights can differ
 """
 import csv
 import json
+import re
+from datetime import datetime
 from pathlib import Path
 
 
@@ -16,7 +18,11 @@ PANO_VIEWERS = {
     'Portland General Electric': 'https://portlandgeneral.wildfirewatch.com/',
     'Pacific Power': 'https://pacificpower.wildfirewatch.com/',
     'Washington DNR': 'https://wadnr.wildfirewatch.com/',
+    'Puget Sound Energy': 'https://pse.wildfirewatch.com/',
 }
+PROVIDER_LABELS = {'alertwest': 'ALERTWest', 'pano': 'Pano AI', 'envirovision': 'EnviroVision'}
+# counts in this doc sit between <!-- name --> and <!-- /name --> and are rewritten on every build
+STATUS_DOC = Path(__file__).resolve().parent.parent / 'cameras-without-viewsheds.md'
 
 
 def supplement_sites(by_provider, text, converter):
@@ -130,6 +136,7 @@ def supplement_sites(by_provider, text, converter):
     blocked = []
     # providers built outside the sheet keep their own site file; only its queue state is refreshed
     external = {}
+    published, queued, published_dates = {}, {}, []
 
     for provider in EXTERNAL_PROVIDERS:
         path = data / f'{provider}-sites.geojson'
@@ -143,6 +150,10 @@ def supplement_sites(by_provider, text, converter):
         manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {'viewsheds': []}
         entries = {e['viewshed_id']: e for e in manifest['viewsheds']}
         ready = []
+        published[provider] = 0
+
+        if manifest.get('generated_utc'):
+            published_dates.append(manifest['generated_utc'])
 
         for source_id, feature in enumerate(collection['features'], start=1):
             props = feature['properties']
@@ -153,6 +164,7 @@ def supplement_sites(by_provider, text, converter):
                             [entry['longitude'], entry['latitude']] == feature['geometry']['coordinates'])
 
             if complete:
+                published[provider] += 1
                 continue
 
             props['viewshedStatus'] = 'pending'
@@ -165,6 +177,7 @@ def supplement_sites(by_provider, text, converter):
                 ready.append({**feature, 'properties': {**props, 'sourceId': source_id}})
 
         converter.write_geojson(data / f'{provider}-sites-needing-viewsheds.geojson', {'type': 'FeatureCollection', 'features': ready})
+        queued[provider] = len(ready)
 
     for provider, collection in external.items():
         converter.write_geojson(data / f'{provider}-sites.geojson', collection)
@@ -172,3 +185,38 @@ def supplement_sites(by_provider, text, converter):
     # sheet rows with no usable location never become features, so list them here
     blocked += [{'provider': r['provider'], 'name': r['sheetName'], 'reason': r['reason']} for r in supplements.get('unmapped', [])]
     (data / 'camera-viewsheds-blocked.json').write_text(json.dumps(blocked, indent=2) + '\n', encoding='utf-8')
+    update_status_doc(published, queued, len(blocked), max(published_dates, default=None))
+
+
+def update_status_doc(published, queued, blocked_count, published_utc):
+    if not STATUS_DOC.exists():
+        return
+
+    # the newest publish date, so rebuilding without new viewsheds leaves the doc unchanged
+    updated = f"Updated {format_date(published_utc)}. " if published_utc else ''
+    ready = [f"{count} {PROVIDER_LABELS.get(provider, provider)}" for provider, count in queued.items() if count]
+    values = {
+        'published-counts': updated + join_words([
+            f"{published[provider]} {PROVIDER_LABELS.get(provider, provider)}" for provider in published
+        ]) + ' sites have published viewsheds.',
+        'ready-count': f"Ready to run: {join_words(ready)} {plural(sum(queued.values()))}" if ready else 'Ready to run: none',
+        'blocked-count': f"Blocked: {blocked_count} {plural(blocked_count)}",
+    }
+
+    text = STATUS_DOC.read_text(encoding='utf-8')
+    for name, value in values.items():
+        text = re.sub(rf'(<!-- {name} -->).*?(<!-- /{name} -->)', lambda match: match[1] + value + match[2], text, flags=re.S)
+    STATUS_DOC.write_text(text, encoding='utf-8')
+
+
+def format_date(utc):
+    date = datetime.fromisoformat(utc.replace('Z', '+00:00'))
+    return f"{date:%B} {date.day}, {date.year}"
+
+
+def join_words(items):
+    return items[0] if len(items) < 2 else ', '.join(items[:-1]) + (',' if len(items) > 2 else '') + ' and ' + items[-1]
+
+
+def plural(count):
+    return 'site' if count == 1 else 'sites'

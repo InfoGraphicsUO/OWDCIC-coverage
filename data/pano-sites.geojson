@@ -1693,6 +1693,447 @@
         "state": "WA",
         "feed": "https://wadnr.wildfirewatch.com/station/c5160588d3424bd29d55e54c19e881e7"
       }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.858121,
+          47.3361395
+        ]
+      },
+      "properties": {
+        "name": "McDonald Mountain",
+        "aliases": [],
+        "cameraHeightFt": 198.0,
+        "viewshedId": "pano-mcdonald-mountain",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "King",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/6f214284a836462997e6981c2f73f396"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.843127,
+          47.218999
+        ]
+      },
+      "properties": {
+        "name": "Grass Mountain West",
+        "aliases": [],
+        "cameraHeightFt": 75.0,
+        "viewshedId": "pano-grass-mountain-west",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "King",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/d35d8ce8e0614fee9f9a78263cebab91"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.795555,
+          47.204099
+        ]
+      },
+      "properties": {
+        "name": "Grass Mountain East",
+        "aliases": [],
+        "cameraHeightFt": 155.0,
+        "viewshedId": "pano-grass-mountain-east",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "King",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/65abeabafd364d85821351a720071f53"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.626383,
+          47.140801
+        ]
+      },
+      "properties": {
+        "name": "Greenwater",
+        "aliases": [],
+        "cameraHeightFt": 88.0,
+        "viewshedId": "pano-greenwater",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Pierce",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/2b433e8390c640a4ab7baaace5d083ba"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.893135,
+          47.117332
+        ]
+      },
+      "properties": {
+        "name": "Three Sisters Mountain",
+        "aliases": [],
+        "cameraHeightFt": 152.0,
+        "viewshedId": "pano-three-sisters-mountain",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Pierce",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/b01b6145f3d046d28436bb67e3ecba4d"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.321356,
+          47.257606
+        ]
+      },
+      "properties": {
+        "name": "Stampede Pass",
+        "aliases": [],
+        "cameraHeightFt": 115.0,
+        "viewshedId": "pano-stampede-pass",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Kittitas",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/eb5fcaa6bd8b44779bce0520240c85f7"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.193183,
+          47.71368
+        ]
+      },
+      "properties": {
+        "name": "Deception Creek",
+        "aliases": [],
+        "cameraHeightFt": 177.0,
+        "viewshedId": "pano-deception-creek",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "King",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/244ba11a8cb74a3886286a799eea062d"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.150992,
+          47.710528
+        ]
+      },
+      "properties": {
+        "name": "Scenic",
+        "aliases": [],
+        "cameraHeightFt": 230.0,
+        "viewshedId": "pano-scenic",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "King",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/0cfcc0d462e74b0bbc34d4cb14048379"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.1087916,
+          47.733208
+        ]
+      },
+      "properties": {
+        "name": "Cowboy Mountain",
+        "aliases": [],
+        "cameraHeightFt": 175.0,
+        "viewshedId": "pano-cowboy-mountain",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "King",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/7f83693f10554fab926d0daf04f49f14"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.280487,
+          46.956922
+        ]
+      },
+      "properties": {
+        "name": "Renslow",
+        "aliases": [],
+        "cameraHeightFt": 175.0,
+        "viewshedId": "pano-renslow",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Kittitas",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/6018c8fe9c274370b34ff0297d4274cb"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.15107,
+          46.948
+        ]
+      },
+      "properties": {
+        "name": "Ryegrass",
+        "aliases": [],
+        "cameraHeightFt": 214.9,
+        "viewshedId": "pano-ryegrass",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Kittitas",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/36dbd3aa2f984526b661e749e1f65d09"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.185988,
+          47.2381032
+        ]
+      },
+      "properties": {
+        "name": "Easton",
+        "aliases": [],
+        "cameraHeightFt": 120.0,
+        "viewshedId": "pano-easton",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Kittitas",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/4acb40d38f3745c3b32311c2e30af7cd"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.710144,
+          47.181617
+        ]
+      },
+      "properties": {
+        "name": "Lauderdale",
+        "aliases": [],
+        "cameraHeightFt": 145.0,
+        "viewshedId": "pano-lauderdale",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Kittitas",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/e35c46162fed454abe4f2f507dbac766"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.7938105,
+          47.160323
+        ]
+      },
+      "properties": {
+        "name": "Lookout Ranch",
+        "aliases": [],
+        "cameraHeightFt": 120.0,
+        "viewshedId": "pano-lookout-ranch",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Kittitas",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/07a8d21e13f34515b2a0ef34a9f8b78b"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.9368305,
+          47.1924225
+        ]
+      },
+      "properties": {
+        "name": "Goat Peak",
+        "aliases": [],
+        "cameraHeightFt": 119.0,
+        "viewshedId": "pano-goat-peak",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Kittitas",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/f060fbddff7d4fc592d80335c91fa3bc"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.441851,
+          48.539571
+        ]
+      },
+      "properties": {
+        "name": "Skagit Marble",
+        "aliases": [],
+        "cameraHeightFt": 185.0,
+        "viewshedId": "pano-skagit-marble",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Skagit",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/7d049ebcb2f247f6abf83e3e48d194e4"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.288509,
+          47.380854
+        ]
+      },
+      "properties": {
+        "name": "Wenatchee Heights",
+        "aliases": [],
+        "cameraHeightFt": 46.0,
+        "viewshedId": "pano-wenatchee-heights",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Chelan",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/71e733f86704406c9422b29ba7becc44"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.691221,
+          47.450283
+        ]
+      },
+      "properties": {
+        "name": "Taylor",
+        "aliases": [],
+        "cameraHeightFt": 156.8,
+        "viewshedId": "pano-taylor",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "King",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/d1e8ff07824543c2a0ef3a24faea8e22"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.795752,
+          48.554223
+        ]
+      },
+      "properties": {
+        "name": "Rebar",
+        "aliases": [],
+        "cameraHeightFt": 169.9,
+        "viewshedId": "pano-rebar",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Skagit",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/87d10215e38b410fb478bb4c64d56b5a"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.427635,
+          47.4203395
+        ]
+      },
+      "properties": {
+        "name": "Denny",
+        "aliases": [],
+        "cameraHeightFt": 125.0,
+        "viewshedId": "pano-denny",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "King",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/2b0ca5df175e427cbf9925027abc2b78"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.4420895,
+          46.886965
+        ]
+      },
+      "properties": {
+        "name": "Manastash",
+        "aliases": [],
+        "cameraHeightFt": 94.8,
+        "viewshedId": "pano-manastash",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Kittitas",
+        "state": "WA",
+        "feed": "https://pse.wildfirewatch.com/station/803d0d43f02c477cb3e9d063c8903de7"
+      }
     }
   ]
 }

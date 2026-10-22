@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "generated_utc": "2026-10-12T21:20:48+00:00",
+  "generated_utc": "2026-10-22T19:00:30+00:00",
   "config_hash": "1fc319aaf4acf161f84b3f6c5c31c3614d1ef1b830b541849cb2953bc3242bc6",
   "web_processing": {
     "resolution_m": 50.0,
@@ -1011,7 +1011,19 @@
       "exact_polygon": "polygons_exact/gold_hill.gpkg"
     },
     {
-      "source_id": 77,
+      "source_id": 78,
+      "viewshed_id": "dry-mountain",
+      "site_name": "Dry Mountain",
+      "aliases": [],
+      "longitude": -119.563696,
+      "latitude": 43.671954,
+      "height_ft": 70.0,
+      "status": "complete",
+      "web_geojson": "web/dry-mountain.geojson",
+      "exact_polygon": "polygons_exact/dry_mountain.gpkg"
+    },
+    {
+      "source_id": 79,
       "viewshed_id": "mt-defiance",
       "site_name": "Mt Defiance",
       "aliases": [
@@ -1026,19 +1038,7 @@
       "exact_polygon": "polygons_exact/mt_defiance.gpkg"
     },
     {
-      "source_id": 78,
-      "viewshed_id": "dry-mountain",
-      "site_name": "Dry Mountain",
-      "aliases": [],
-      "longitude": -119.563696,
-      "latitude": 43.671954,
-      "height_ft": 70.0,
-      "status": "complete",
-      "web_geojson": "web/dry-mountain.geojson",
-      "exact_polygon": "polygons_exact/dry_mountain.gpkg"
-    },
-    {
-      "source_id": 78,
+      "source_id": 80,
       "viewshed_id": "halfway",
       "site_name": "Halfway",
       "aliases": [
@@ -1053,7 +1053,7 @@
       "exact_polygon": "polygons_exact/halfway.gpkg"
     },
     {
-      "source_id": 79,
+      "source_id": 81,
       "viewshed_id": "jim-creek-butte",
       "site_name": "Jim Creek Butte",
       "aliases": [
@@ -1067,7 +1067,7 @@
       "exact_polygon": "polygons_exact/jim_creek_butte.gpkg"
     },
     {
-      "source_id": 80,
+      "source_id": 82,
       "viewshed_id": "satus",
       "site_name": "Satus",
       "aliases": [
@@ -1081,7 +1081,7 @@
       "exact_polygon": "polygons_exact/satus.gpkg"
     },
     {
-      "source_id": 81,
+      "source_id": 83,
       "viewshed_id": "elephant",
       "site_name": "Elephant",
       "aliases": [
@@ -1095,7 +1095,7 @@
       "exact_polygon": "polygons_exact/elephant.gpkg"
     },
     {
-      "source_id": 82,
+      "source_id": 84,
       "viewshed_id": "two-rivers",
       "site_name": "Two Rivers",
       "aliases": [
@@ -1109,7 +1109,7 @@
       "exact_polygon": "polygons_exact/two_rivers.gpkg"
     },
     {
-      "source_id": 83,
+      "source_id": 85,
       "viewshed_id": "round-mountain-chelan",
       "site_name": "Round Mountain Chelan",
       "aliases": [
@@ -1121,6 +1121,48 @@
       "status": "complete",
       "web_geojson": "web/round-mountain-chelan.geojson",
       "exact_polygon": "polygons_exact/round_mountain_chelan.gpkg"
+    },
+    {
+      "source_id": 86,
+      "viewshed_id": "natapoc-ridge-north",
+      "site_name": "Natapoc Ridge North",
+      "aliases": [
+        "Axis-NatapocRidge2"
+      ],
+      "longitude": -120.693583,
+      "latitude": 47.780322,
+      "height_ft": 84.0,
+      "status": "complete",
+      "web_geojson": "web/natapoc-ridge-north.geojson",
+      "exact_polygon": "polygons_exact/natapoc_ridge_north.gpkg"
+    },
+    {
+      "source_id": 87,
+      "viewshed_id": "natapoc-ridge",
+      "site_name": "Natapoc Ridge",
+      "aliases": [
+        "Axis-NatapocRidge"
+      ],
+      "longitude": -120.697653,
+      "latitude": 47.77465,
+      "height_ft": 89.0,
+      "status": "complete",
+      "web_geojson": "web/natapoc-ridge.geojson",
+      "exact_polygon": "polygons_exact/natapoc_ridge.gpkg"
+    },
+    {
+      "source_id": 88,
+      "viewshed_id": "anderson",
+      "site_name": "Anderson",
+      "aliases": [
+        "Axis-Anderson"
+      ],
+      "longitude": -119.898909,
+      "latitude": 46.459168,
+      "height_ft": 50.0,
+      "status": "complete",
+      "web_geojson": "web/anderson.geojson",
+      "exact_polygon": "polygons_exact/anderson.gpkg"
     }
   ]
 }
