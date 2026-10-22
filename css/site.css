@@ -134,29 +134,86 @@ textarea {
     width: min(1040px, 100%);
 }
 
-/* the story column scrolls on its own so the partner lists stay in view */
+/* fixed height so switching tabs doesn't resize the dialog */
+.modal__dialog.about-modal__dialog {
+    height: min(540px, 92vh);
+}
+
+.about-modal__dialog .modal__header {
+    align-items: stretch;
+    padding: 0 16px;
+}
+
+.about-modal__dialog .modal__header h2 {
+    align-self: center;
+    padding: 14px 0;
+}
+
+.about-modal__dialog .modal__close {
+    align-self: center;
+}
+
+.about-modal__tabs {
+    display: flex;
+    flex: 1 1 auto;
+    gap: 4px;
+    margin-left: 16px;
+}
+
+.about-modal__tab {
+    margin-bottom: -1px;
+    padding: 16px 14px 13px;
+    color: #c8c8c8;
+    background: transparent;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 120ms ease, border-color 120ms ease;
+}
+
+.about-modal__tab:hover {
+    color: #fff;
+}
+
+.about-modal__tab.is-active {
+    color: #fff;
+    border-bottom-color: var(--ohaz-yellow);
+}
+
+.about-modal__tab:focus-visible {
+    outline: 2px solid var(--ohaz-yellow);
+    outline-offset: -2px;
+}
+
 .modal__body.about-modal__body {
-    display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr);
-    grid-template-rows: minmax(0, 1fr);
     flex: 1 1 auto;
     min-height: 0;
-    padding: 0;
-    overflow: hidden;
+    padding: 22px 28px 26px;
 }
 
-.about-modal__main {
-    padding: 20px 28px 24px 24px;
-    overflow: auto;
+.about-modal__panel > p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.65;
 }
 
-.about-modal__side {
-    padding: 20px 24px 24px;
-    overflow: auto;
-    border-left: 1px solid #444;
+.about-modal__partners {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
 }
 
-.about-modal__lead {
+.about-modal__partners .about-modal__section + .about-modal__section {
+    margin-top: 0;
+}
+
+.about-modal__partners .about-modal__heading {
+    text-decoration: none;
+}
+
+.about-modal__panel > .about-modal__lead {
     margin: 0 0 20px;
     padding-bottom: 18px;
     border-bottom: 1px solid #444;
@@ -242,24 +299,22 @@ textarea {
 }
 
 .about-modal__goal {
-    margin: 14px 0 0;
+    margin: 18px 0 0;
     padding: 12px 16px;
     background: rgba(248, 225, 9, 0.08);
     border-left: 4px solid var(--ohaz-yellow);
     border-radius: 0 var(--ui-radius-sm) var(--ui-radius-sm) 0;
 }
 
-.about-modal__section .about-modal__goal p {
+.about-modal__goal p {
+    margin: 0;
+    line-height: 1.6;
     font-size: 16px;
     font-style: italic;
 }
 
-.about-modal__side .about-modal__heading {
-    text-decoration: none;
-}
-
-.about-modal__section .about-modal__closing {
-    margin-top: 14px;
+.about-modal__panel > .about-modal__closing {
+    margin-top: 18px;
 }
 
 .about-modal__orgs {
@@ -277,25 +332,16 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .site-banner__about {
+    .site-banner__about,
+    .about-modal__tab {
         transition: none;
     }
 }
 
 @media (max-width: 760px) {
-    .modal__body.about-modal__body {
-        display: block;
-        overflow: auto;
-    }
-
-    .about-modal__main {
-        overflow: visible;
-    }
-
-    .about-modal__side {
-        overflow: visible;
-        border-top: 1px solid #444;
-        border-left: 0;
+    .about-modal__partners {
+        grid-template-columns: 1fr;
+        gap: 26px;
     }
 }
 
