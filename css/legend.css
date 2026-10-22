@@ -247,6 +247,19 @@
     background: var(--legend-swatch-color);
 }
 
+/* blends the layer's fill opacity over a light land tone, so it reads as it does on the map
+   rather than darkening against the menu */
+.legend-swatch--translucent {
+    background: color-mix(in srgb, var(--legend-swatch-color) var(--legend-swatch-opacity), #efeee4);
+    border-width: 1px;
+}
+
+/* translucent points have no white ring on the map */
+.legend-swatch--circle.legend-swatch--translucent {
+    border: 0;
+    box-shadow: none;
+}
+
 .legend-swatch--burn-probability {
     background: linear-gradient(to right, #f2774f, #b83745);
 }

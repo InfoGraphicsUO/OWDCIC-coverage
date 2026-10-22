@@ -414,6 +414,10 @@ function createLegendSwatch(item) {
   if (item.swatchShape === 'circle') classes.push('legend-swatch--circle');
   if (item.swatchBorder === false) classes.push('legend-swatch--fill');
   if (item.swatchClass) classes.push(item.swatchClass);
+  if (item.swatchOpacity !== undefined) {
+    classes.push('legend-swatch--translucent');
+    swatch.style.setProperty('--legend-swatch-opacity', `${item.swatchOpacity * 100}%`);
+  }
   swatch.className = classes.join(' ');
   swatch.style.setProperty('--legend-swatch-color', item.swatchColor);
   setSwatchImage(swatch, item.swatchImage);
