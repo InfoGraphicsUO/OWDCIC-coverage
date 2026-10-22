@@ -1,6 +1,6 @@
 import { openModal } from './modal.js';
 
-const SUMMARY = 'Fire Camera Coverage shows where wildfire detection cameras in Oregon and Washington can see, so partners can review combined coverage across camera networks, find gaps, and plan new sites without conflicts.';
+const SUMMARY = 'The Fire Camera Coverage Map shows where wildfire detection cameras in Oregon and Washington can see, so partners can review combined coverage across camera networks, find gaps, and plan new sites without conflicts.';
 
 // dated milestones shown down the left edge of the history section
 const TIMELINE = Object.freeze([
