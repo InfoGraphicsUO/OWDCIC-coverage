@@ -97,7 +97,7 @@
     background: transparent;
     border: 0;
     border-radius: 50%;
-    font: 21px/1 "Merriweather", "Segoe UI", sans-serif;
+    font: 21px/1 "Clarity City", "Segoe UI", sans-serif;
     cursor: pointer;
     transition: color 120ms ease, background-color 120ms ease;
 }
@@ -113,7 +113,7 @@
 }
 
 .cam-popup {
-    font: 13px/1.4 "Merriweather", "Segoe UI", sans-serif;
+    font: 13px/1.4 "Clarity City", "Segoe UI", sans-serif;
 }
 
 .cam-title {

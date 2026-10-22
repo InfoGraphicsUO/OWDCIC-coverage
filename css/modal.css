@@ -53,7 +53,7 @@
     padding: 4px 8px;
     color: #fff;
     background: transparent;
-    font: 600 24px/1 "Merriweather", sans-serif;
+    font: 600 24px/1 "Clarity City", sans-serif;
     cursor: pointer;
 }
 
@@ -85,7 +85,7 @@
     color: var(--ohaz-grey, #2f2e2e);
     background: var(--ohaz-yellow, #f8e109);
     border-radius: var(--ui-radius-sm, 6px);
-    font: 600 13px/1.2 "Merriweather", sans-serif;
+    font: 600 13px/1.2 "Clarity City", sans-serif;
     cursor: pointer;
 }
 

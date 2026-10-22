@@ -811,7 +811,7 @@ function renderDonut(host, landMix) {
     showlegend: false,
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
-    font: { color: '#fff', family: 'Merriweather, sans-serif' },
+    font: { color: '#fff', family: '"Clarity City", sans-serif' },
   }, {
     displayModeBar: false,
     responsive: true,
@@ -829,7 +829,7 @@ const EXPORT_LEGEND_WIDTH = 320;
 
 // legend and results cards draw at this share of their design size so more of the map shows
 const EXPORT_CARD_SCALE = 0.7;
-const EXPORT_FONT = 'Merriweather, "Segoe UI", sans-serif';
+const EXPORT_FONT = '"Clarity City", "Segoe UI", sans-serif';
 const EXPORT_LEGEND_SWATCH_SIZE = 20;
 const EXPORT_LEGEND_SWATCH_GAP = 10;
 const EXPORT_LEGEND_TEXT_OFFSET = EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_SWATCH_GAP;
@@ -896,7 +896,7 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
             text: LAND_MIX_TITLE,
             x: 0.5,
             xanchor: 'center',
-            font: { color: '#fff', family: 'Merriweather, sans-serif', size: 15 },
+            font: { color: '#fff', family: '"Clarity City", sans-serif', size: 15 },
           },
         },
       } : chart;
@@ -1048,7 +1048,7 @@ const reportDateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'long' })
 // overview map, a comparison table in list order, the same table from most to least covered,
 // then four area cards per page
 async function composeSummaryPages({ title, group, total, members, mapImage }) {
-  // canvas text falls back silently if Merriweather has not finished loading
+  // canvas text falls back silently if Clarity City has not finished loading
   await document.fonts?.ready;
   const map = await loadImage(mapImage);
   const ranked = rankByCoverage(members);

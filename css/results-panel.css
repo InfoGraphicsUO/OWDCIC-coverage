@@ -20,7 +20,7 @@
     border: 1px solid #444;
     border-radius: var(--ui-radius, 10px);
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.38);
-    font-family: "Merriweather", "Segoe UI", sans-serif;
+    font-family: "Clarity City", "Segoe UI", sans-serif;
 }
 
 .results-panel[hidden] {
@@ -102,7 +102,7 @@
     color: var(--ohaz-grey, #2f2e2e);
     background: var(--ohaz-yellow, #f8e109);
     border-radius: var(--ui-radius-sm, 6px);
-    font: 600 13px/1.2 "Merriweather", sans-serif;
+    font: 600 13px/1.2 "Clarity City", sans-serif;
     cursor: pointer;
 }
 
@@ -423,7 +423,7 @@
     background: #3a3939;
     border: 1px solid #555;
     border-radius: var(--ui-radius-sm, 6px);
-    font: 13px/1.4 "Merriweather", sans-serif;
+    font: 13px/1.4 "Clarity City", sans-serif;
     text-align: left;
     cursor: pointer;
 }
