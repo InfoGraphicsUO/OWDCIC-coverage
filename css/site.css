@@ -145,6 +145,10 @@ textarea {
 .about-modal__dialog .modal__header h2 {
     align-self: center;
     padding: 12px 0;
+}
+
+.about-modal__dialog .modal__header h2,
+.settings-modal__dialog .modal__header h2 {
     font-family: var(--font-heading);
     font-size: 24px;
     font-weight: 600;
