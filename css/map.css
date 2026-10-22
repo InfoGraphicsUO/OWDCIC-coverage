@@ -88,7 +88,9 @@
     border-radius: var(--ui-radius);
     box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
     cursor: pointer;
-    font: 600 12px/1.15 "Clarity City", "Segoe UI", sans-serif;
+    font: 600 11px/1.15 "Clarity City", "Segoe UI", sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .control-rail__button:hover { background: #3a3939; }
