@@ -56,7 +56,9 @@
     min-width: 0;
     margin: 0;
     color: #fff;
-    font-size: 18px;
+    font-family: var(--font-heading);
+    font-size: 21px;
+    font-weight: 600;
     line-height: 1.25;
 }
 
@@ -64,7 +66,7 @@
 .results-panel__header .modal__close {
     padding: 0 8px;
     font-size: 28px;
-    line-height: 22.5px;
+    line-height: 26.25px;
 }
 
 .results-panel__subtitle {

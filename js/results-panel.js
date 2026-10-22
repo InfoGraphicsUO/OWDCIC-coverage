@@ -871,6 +871,7 @@ const EXPORT_LEGEND_WIDTH = 320;
 // legend and results cards draw at this share of their design size so more of the map shows
 const EXPORT_CARD_SCALE = 0.7;
 const EXPORT_FONT = '"Clarity City", "Segoe UI", sans-serif';
+const EXPORT_HEADING_FONT = '"Roboto Condensed", "Clarity City", "Segoe UI", sans-serif';
 const EXPORT_LEGEND_SWATCH_SIZE = 20;
 const EXPORT_LEGEND_SWATCH_GAP = 10;
 const EXPORT_LEGEND_TEXT_OFFSET = EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_SWATCH_GAP;
@@ -927,12 +928,22 @@ const EXPORT_VIEWSHED_OUTLINES = Object.freeze({
   satellite: '#F4F1EA',
 });
 
+// canvas text falls back silently if a web font has not finished loading, and the heading
+// font only loads on its own once something on the page uses it
+async function loadExportFonts() {
+  await Promise.all([
+    document.fonts?.load(`600 16px ${EXPORT_HEADING_FONT}`),
+    document.fonts?.ready,
+  ]);
+}
+
 async function composeExport({ mapCanvas, map, basemap, legendItems, title, current, chart }) {
   // fail early before creating a blank or misleading preview
   if (!mapCanvas || typeof mapCanvas.toDataURL !== 'function' || mapCanvas.width < 2 || mapCanvas.height < 2) {
     throw new Error('Map canvas unavailable');
   }
 
+  await loadExportFonts();
   const mapImage = await loadImage(mapCanvas.toDataURL('image/png'));
   let chartImage = null;
   if (chart && typeof window.Plotly?.toImage === 'function') {
@@ -1104,8 +1115,7 @@ const reportDateFormat = new Intl.DateTimeFormat('en-US', { dateStyle: 'long' })
 // overview map, a comparison table in list order, the same table from most to least covered,
 // then four area cards per page
 async function composeSummaryPages({ title, group, total, members, mapImage }) {
-  // canvas text falls back silently if Clarity City has not finished loading
-  await document.fonts?.ready;
+  await loadExportFonts();
   const map = await loadImage(mapImage);
   const ranked = rankByCoverage(members);
   const cardPages = [];
@@ -1138,7 +1148,7 @@ function drawReportPage({ title, date, pageCount }, pageNumber, drawBody) {
   const right = REPORT_PAGE_WIDTH - REPORT_MARGIN;
 
   ctx.fillStyle = REPORT_TEXT;
-  ctx.font = `700 18px ${EXPORT_FONT}`;
+  ctx.font = `600 18px ${EXPORT_HEADING_FONT}`;
   ctx.fillText(`${title}: camera coverage summary`, REPORT_MARGIN, REPORT_MARGIN + 14);
   ctx.fillStyle = REPORT_MUTED;
   ctx.font = `10px ${EXPORT_FONT}`;
@@ -1181,7 +1191,7 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
   const covered = finite(total.cameraViewshedAreaSqKm);
   const area = finite(total.landAreaSqKm);
   ctx.fillStyle = REPORT_TEXT;
-  ctx.font = `700 14px ${EXPORT_FONT}`;
+  ctx.font = `600 14px ${EXPORT_HEADING_FONT}`;
   ctx.fillText(heading, REPORT_MARGIN, top + 4);
   ctx.font = `11px ${EXPORT_FONT}`;
   if (coverage != null && covered != null && area != null) {
@@ -1304,7 +1314,7 @@ function drawReportCard(ctx, x, y, width, height, properties) {
 
   ctx.fillStyle = REPORT_TEXT;
   const name = properties.name || properties.label || '';
-  ctx.font = `700 ${fitFontSize(ctx, name, width - pad * 2, 13, 9, '700')}px ${EXPORT_FONT}`;
+  ctx.font = `600 ${fitFontSize(ctx, name, width - pad * 2, 13, 9, '600', EXPORT_HEADING_FONT)}px ${EXPORT_HEADING_FONT}`;
   ctx.fillText(name, x + pad, y + 24);
   ctx.font = `600 11px ${EXPORT_FONT}`;
   ctx.fillText(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`, x + pad, y + 44);
@@ -1348,12 +1358,12 @@ function splitToWidth(ctx, text, maxWidth) {
 }
 
 // the largest font size from size down to minSize that fits the text in maxWidth
-function fitFontSize(ctx, text, maxWidth, size, minSize, weight = '') {
+function fitFontSize(ctx, text, maxWidth, size, minSize, weight = '', font = EXPORT_FONT) {
   let fitted = size;
-  ctx.font = `${weight} ${fitted}px ${EXPORT_FONT}`;
+  ctx.font = `${weight} ${fitted}px ${font}`;
   while (fitted > minSize && ctx.measureText(text).width > maxWidth) {
     fitted -= 0.5;
-    ctx.font = `${weight} ${fitted}px ${EXPORT_FONT}`;
+    ctx.font = `${weight} ${fitted}px ${font}`;
   }
   return fitted;
 }
@@ -1646,7 +1656,7 @@ function layoutStatsPanel({ ctx, width, title, leadLine, bodyLines, landMixRows,
   const leadSize = 16;
   const bodySize = 14;
   const lineGap = 4;
-  ctx.font = `700 ${titleSize}px ${EXPORT_FONT}`;
+  ctx.font = `600 ${titleSize}px ${EXPORT_HEADING_FONT}`;
   const titleLines = wrapExportLines([title], 30);
   ctx.font = `${bodySize}px ${EXPORT_FONT}`;
 
@@ -1691,7 +1701,7 @@ function drawLegendOverlay(ctx, x, y, layout) {
 
   let textY = y + layout.padY + 18;
   ctx.fillStyle = '#fff';
-  ctx.font = `700 18px ${EXPORT_FONT}`;
+  ctx.font = `600 18px ${EXPORT_HEADING_FONT}`;
   ctx.fillText('Fire Camera Coverage', x + layout.padX, textY);
   textY += layout.titleHeight - 8;
   ctx.font = `15px ${EXPORT_FONT}`;
@@ -1895,7 +1905,7 @@ function drawStatsOverlay(ctx, x, y, layout, chartImage) {
 
   let textY = y + layout.padY + layout.titleSize;
   ctx.fillStyle = '#fff';
-  ctx.font = `700 ${layout.titleSize}px ${EXPORT_FONT}`;
+  ctx.font = `600 ${layout.titleSize}px ${EXPORT_HEADING_FONT}`;
   layout.titleLines.forEach((line) => {
     ctx.fillText(line, x + layout.padX, textY);
     textY += layout.titleSize + 4;
