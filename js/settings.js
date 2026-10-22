@@ -53,7 +53,7 @@ function setSetting(key, value) {
 function openSettingsModal(onClose) {
   const { dialog } = openModal({
     id: 'settings',
-    title: 'Settings',
+    title: 'Map settings',
     closeLabel: 'Close settings',
     className: 'settings-modal',
     onClose,
