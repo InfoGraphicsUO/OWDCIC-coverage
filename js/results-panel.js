@@ -1148,7 +1148,7 @@ function drawReportPage({ title, date, pageCount }, pageNumber, drawBody) {
   const right = REPORT_PAGE_WIDTH - REPORT_MARGIN;
 
   ctx.fillStyle = REPORT_TEXT;
-  ctx.font = `600 18px ${EXPORT_HEADING_FONT}`;
+  ctx.font = `700 18px ${EXPORT_FONT}`;
   ctx.fillText(`${title}: camera coverage summary`, REPORT_MARGIN, REPORT_MARGIN + 14);
   ctx.fillStyle = REPORT_MUTED;
   ctx.font = `10px ${EXPORT_FONT}`;
@@ -1191,7 +1191,7 @@ function drawReportTable(ctx, { heading, group, total, members, top, bottom }) {
   const covered = finite(total.cameraViewshedAreaSqKm);
   const area = finite(total.landAreaSqKm);
   ctx.fillStyle = REPORT_TEXT;
-  ctx.font = `600 14px ${EXPORT_HEADING_FONT}`;
+  ctx.font = `700 14px ${EXPORT_FONT}`;
   ctx.fillText(heading, REPORT_MARGIN, top + 4);
   ctx.font = `11px ${EXPORT_FONT}`;
   if (coverage != null && covered != null && area != null) {
@@ -1314,7 +1314,7 @@ function drawReportCard(ctx, x, y, width, height, properties) {
 
   ctx.fillStyle = REPORT_TEXT;
   const name = properties.name || properties.label || '';
-  ctx.font = `600 ${fitFontSize(ctx, name, width - pad * 2, 13, 9, '600', EXPORT_HEADING_FONT)}px ${EXPORT_HEADING_FONT}`;
+  ctx.font = `700 ${fitFontSize(ctx, name, width - pad * 2, 13, 9, '700')}px ${EXPORT_FONT}`;
   ctx.fillText(name, x + pad, y + 24);
   ctx.font = `600 11px ${EXPORT_FONT}`;
   ctx.fillText(coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% covered by fire detection cameras`, x + pad, y + 44);
