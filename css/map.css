@@ -625,7 +625,8 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     bottom: 0 !important;
 }
 
-.mapboxgl-ctrl-home i {
+.mapboxgl-ctrl-home i,
+.mapboxgl-ctrl-settings i {
     display: block;
     margin: auto;
     color: var(--control-chrome-text);

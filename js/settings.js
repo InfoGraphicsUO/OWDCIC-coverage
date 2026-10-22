@@ -33,10 +33,9 @@ export function onSettingChange(key, callback) {
   return () => listeners.delete(listener);
 }
 
-export function initSettings() {
-  const button = document.getElementById('settings-button');
-  if (!button) return;
-
+export function bindSettingsButton(button) {
+  button.setAttribute('aria-haspopup', 'dialog');
+  button.setAttribute('aria-expanded', 'false');
   button.addEventListener('click', () => {
     button.setAttribute('aria-expanded', 'true');
     openSettingsModal(() => button.setAttribute('aria-expanded', 'false'));
