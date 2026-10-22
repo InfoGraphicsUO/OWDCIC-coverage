@@ -1086,7 +1086,7 @@ function drawReportPage({ title, date, pageCount }, pageNumber, drawBody) {
   ctx.fillText(`${title}: camera coverage summary`, REPORT_MARGIN, REPORT_MARGIN + 14);
   ctx.fillStyle = REPORT_MUTED;
   ctx.font = `10px ${EXPORT_FONT}`;
-  ctx.fillText('Fire Camera Coverage Map, Oregon & Washington', REPORT_MARGIN, REPORT_MARGIN + 31);
+  ctx.fillText('Fire Camera Coverage, Oregon & Washington', REPORT_MARGIN, REPORT_MARGIN + 31);
   ctx.textAlign = 'right';
   ctx.fillText(date, right, REPORT_MARGIN + 31);
   ctx.textAlign = 'left';
