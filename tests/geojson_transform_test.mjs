@@ -60,14 +60,14 @@ for (const f of attachViewshedIds(halfwayHeads, manifest, { features: [pendingHa
 
 const panoSites = JSON.parse(readFileSync(new URL('../data/pano-sites.geojson', import.meta.url), 'utf8'));
 const panoCameras = providerSitesToCameras(panoSites, 'Pano AI').features;
-assert.equal(panoCameras.length, 69);
-assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 69);
+assert.equal(panoCameras.length, 90);
+assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 90);
 
 // each owner's table lands in the one Pano layer
 const owners = (name) => panoCameras.filter(f => f.properties.owner === name).length;
 assert.deepEqual(
-  ['Portland General Electric', 'Pacific Power', 'Washington DNR'].map(owners),
-  [38, 5, 26],
+  ['Portland General Electric', 'Pacific Power', 'Washington DNR', 'Puget Sound Energy'].map(owners),
+  [38, 5, 26, 21],
 );
 
 // every site links to its page on its owner's public viewer
@@ -75,6 +75,7 @@ const viewerHosts = {
   'Portland General Electric': 'portlandgeneral',
   'Pacific Power': 'pacificpower',
   'Washington DNR': 'wadnr',
+  'Puget Sound Energy': 'pse',
 };
 assert.ok(panoCameras.every(f => f.properties.feed?.startsWith(
   `https://${viewerHosts[f.properties.owner]}.wildfirewatch.com/station/`)));

@@ -1,17 +1,1 @@
-[
-  {
-    "provider": "alertwest",
-    "name": "Natapoc Ridge North",
-    "reason": "Confirm sheet height assignment to archived camera ID; North is provisionally the northern point."
-  },
-  {
-    "provider": "alertwest",
-    "name": "Natapoc Ridge",
-    "reason": "Confirm sheet height assignment to archived camera ID; North is provisionally the northern point."
-  },
-  {
-    "provider": "alertwest",
-    "name": "Anderson",
-    "reason": "Missing coordinates"
-  }
-]
+[]

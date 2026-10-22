@@ -7,13 +7,7 @@
       "reason": "Sheet coordinates (46.85, -106.01) are in Montana; held out until clarified."
     }
   ],
-  "unmapped": [
-    {
-      "sheetName": "Anderson",
-      "provider": "alertwest",
-      "reason": "Missing coordinates"
-    }
-  ],
+  "unmapped": [],
   "outsideApi": [
     {
       "sheetName": "Bear Mountain",
@@ -171,7 +165,7 @@
       "alertwestSiteIds": [
         15871
       ],
-      "viewshedReview": "Confirm sheet height assignment to archived camera ID; North is provisionally the northern point."
+      "heightNote": "The sheet's 84 ft height is assigned to the northern camera (15871) by name; kept as a valid camera on October 22, 2026."
     },
     {
       "sheetName": "Natapoc Ridge",
@@ -190,7 +184,7 @@
       "alertwestSiteIds": [
         8603
       ],
-      "viewshedReview": "Confirm sheet height assignment to archived camera ID; North is provisionally the northern point."
+      "heightNote": "The sheet's 89 ft height is assigned to the southern camera (8603) by name; kept as a valid camera on October 22, 2026."
     },
     {
       "sheetName": "Dry Mountain",
@@ -198,6 +192,26 @@
       "provider": "alertwest",
       "aliases": [],
       "digitizedId": "digitized-camera-30"
+    },
+    {
+      "sheetName": "Anderson",
+      "name": "Anderson",
+      "provider": "alertwest",
+      "aliases": [
+        "Axis-Anderson"
+      ],
+      "coordinates": [
+        -119.898909,
+        46.459168
+      ],
+      "locationSource": "alertwest-api",
+      "source": "https://api.cdn.prod.alertwest.com/api/firecams/v0/cameras",
+      "sourceDate": "2026-10-22T18:40:09Z",
+      "alertwestSiteIds": [
+        16734
+      ],
+      "cameraHeightEstimated": true,
+      "heightNote": "Leland's estimate from the camera view and adjacent towers (#159); the sheet marks it estimated."
     },
     {
       "sheetName": "Sycan Substation",

@@ -15,7 +15,7 @@ def read(name):
 class CameraSiteDataTests(unittest.TestCase):
     def test_digitized_priority_and_unique_provider_points(self):
         digitized = {f['properties']['id']: f['geometry'] for f in read('digitized-camera-sources.geojson')['features']}
-        for provider, count in [('alertwest', 87), ('pano', 69), ('envirovision', 87)]:
+        for provider, count in [('alertwest', 88), ('pano', 90), ('envirovision', 87)]:
             features = read(f'{provider}-sites.geojson')['features']
             self.assertEqual(len(features), count)
             self.assertEqual(len({tuple(f['geometry']['coordinates']) for f in features}), count)
@@ -40,7 +40,7 @@ class CameraSiteDataTests(unittest.TestCase):
             self.assertEqual((entries[name]['status'], entries[name]['height_ft']), ('complete', height))
 
         blocked = {r['name'] for r in read('camera-viewsheds-blocked.json')}
-        self.assertTrue({'Natapoc Ridge', 'Natapoc Ridge North', 'Anderson'} <= blocked)
+        self.assertFalse({'Natapoc Ridge', 'Natapoc Ridge North', 'Anderson'} & blocked)
         self.assertNotIn('Midnight Gulch', blocked)
         self.assertNotIn('Phoenix Water Tank', blocked)
 
@@ -48,7 +48,7 @@ class CameraSiteDataTests(unittest.TestCase):
         pano = {f['properties']['name']: f['properties'] for f in read('pano-sites.geojson')['features']}
         self.assertNotIn('Clearwater Wind Farm', pano)
         self.assertEqual({p.get('owner') for p in pano.values()},
-                         {'Portland General Electric', 'Pacific Power', 'Washington DNR'})
+                         {'Portland General Electric', 'Pacific Power', 'Washington DNR', 'Puget Sound Energy'})
         # WA DNR heights are written with a foot mark in the sheet
         self.assertEqual(pano['Capitol Peak']['cameraHeightFt'], 270)
         self.assertEqual((pano['Mullan Substation']['cameraHeightFt'], pano['Round Butte']['cameraHeightFt']), (64.99, 81.99))
@@ -64,7 +64,7 @@ class CameraSiteDataTests(unittest.TestCase):
 
         modeled = {e['site_name'] for provider in ['alertwest', 'pano']
                    for e in read(f'{provider}-viewshed-manifest.json')['viewsheds'] if e['status'] == 'complete'}
-        self.assertTrue({'Gold Hill', 'Dry Mountain', 'Sycan Substation', 'Takilma', 'Midnight Gulch'} <= modeled)
+        self.assertTrue({'Gold Hill', 'Dry Mountain', 'Sycan Substation', 'Takilma', 'Midnight Gulch', 'Anderson', 'McDonald Mountain', 'Natapoc Ridge', 'Natapoc Ridge North'} <= modeled)
 
     def test_envirovision_sites(self):
         sites = {f['properties']['name']: f for f in read('envirovision-sites.geojson')['features']}

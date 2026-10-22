@@ -921,6 +921,7 @@ const OPTION_SEARCH_ALIASES = {
   'eugene water & electric board': ['eweb'],
   'portland general electric': ['pge', 'portland general'],
   'pacific power (pacificorp)': ['pacific power', 'pacificorp'],
+  'puget sound energy': ['pse'],
 };
 
 function optionMatchesQuery(option, query) {
