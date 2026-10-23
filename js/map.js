@@ -362,9 +362,11 @@ function initLocationSearch(map) {
         border: 1px solid rgba(255, 255, 255, .18);
         border-radius: 10px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
+        overflow: hidden;
+      }
+      [class$="--Results"] {
         -webkit-backdrop-filter: var(--overlay-backdrop);
         backdrop-filter: var(--overlay-backdrop);
-        overflow: hidden;
       }
       [class*="--ResultsList"], [class*="--ResultsAttribution"] {
         border: 0; border-radius: 0; box-shadow: none; background: transparent;

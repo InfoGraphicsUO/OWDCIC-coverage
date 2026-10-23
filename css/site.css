@@ -5,8 +5,8 @@
     --banner-height: 81px;
     --font-heading: "Roboto Condensed", "Clarity City", sans-serif;
     /* how solid and how blurred everything floating over the map is */
-    --overlay-opacity: 82%;
-    --overlay-light-opacity: 78%;
+    --overlay-opacity: 90%;
+    --overlay-light-opacity: 84%;
     --overlay-blur: 12px;
     --overlay-backdrop: blur(var(--overlay-blur)) saturate(140%);
     --overlay-dark-bg: color-mix(in srgb, var(--ohaz-grey) var(--overlay-opacity), transparent);

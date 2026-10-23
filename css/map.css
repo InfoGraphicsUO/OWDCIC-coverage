@@ -380,6 +380,9 @@
     padding: 0;
     color: var(--control-chrome-text);
     background: transparent;
+    /* a blur nested in the blurred sidebar only sees the sidebar's own tint, so it reads as a solid block */
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     border-radius: 0;
     box-shadow: none;
     font: inherit;
@@ -558,6 +561,27 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 
 .mapboxgl-ctrl-top-left .location-search.is-expanded {
     width: 300px;
+}
+
+/* the blur sits on a backing layer so the results dropdown inside isn't a nested blur */
+.mapboxgl-ctrl-top-left .mapboxgl-ctrl-group.location-search {
+    /* isolating traps the dropdown's stacking, so lift the whole control above the buttons below it */
+    z-index: 1;
+    isolation: isolate;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+.mapboxgl-ctrl-top-left .location-search::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--control-chrome-bg);
+    -webkit-backdrop-filter: var(--overlay-backdrop);
+    backdrop-filter: var(--overlay-backdrop);
+    border-radius: calc(var(--ui-radius) - 1px);
+    content: "";
 }
 
 .location-search .mapboxgl-ctrl,
