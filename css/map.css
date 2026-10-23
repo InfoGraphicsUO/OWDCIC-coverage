@@ -453,6 +453,8 @@
     padding-top: 6px;
     padding-bottom: 6px;
     padding-left: 12px;
+    /* a tighter gap leaves the longest provider label room on one line */
+    gap: 8px;
     border-bottom: 0;
     font-size: 14px;
     font-weight: 500;
