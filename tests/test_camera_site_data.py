@@ -15,7 +15,7 @@ def read(name):
 class CameraSiteDataTests(unittest.TestCase):
     def test_digitized_priority_and_unique_provider_points(self):
         digitized = {f['properties']['id']: f['geometry'] for f in read('digitized-camera-sources.geojson')['features']}
-        for provider, count in [('alertwest', 88), ('pano', 108), ('envirovision', 87)]:
+        for provider, count in [('alertwest', 88), ('pano', 105), ('envirovision', 87)]:
             features = read(f'{provider}-sites.geojson')['features']
             self.assertEqual(len(features), count)
             self.assertEqual(len({tuple(f['geometry']['coordinates']) for f in features}), count)
@@ -69,15 +69,16 @@ class CameraSiteDataTests(unittest.TestCase):
     def test_avista_stations(self):
         avista = {f['properties']['name']: f for f in read('pano-sites.geojson')['features']
                   if f['properties'].get('owner') == 'Avista Utilities'}
-        # Washington stations plus the Idaho ones whose viewsheds reach Washington
-        self.assertEqual(len(avista), 18)
-        self.assertFalse({'Gold Mountain', 'St Maries', 'Orofino', 'Clearwater', 'Grangeville'} & set(avista))
-        self.assertEqual(sum(f['properties']['state'] == 'ID' for f in avista.values()), 5)
+        # Washington stations plus the Idaho ones that see well into Washington
+        self.assertEqual(len(avista), 15)
+        self.assertFalse({'Gold Mountain', 'St Maries', 'Orofino', 'Clearwater', 'Grangeville',
+                          'Gold Cup Mountain', 'Maryanna', 'Sander Grade'} & set(avista))
+        self.assertEqual(sum(f['properties']['state'] == 'ID' for f in avista.values()), 2)
         self.assertEqual(avista['Lilienthal Mountain']['properties']['cameraHeightFt'], 199)
         self.assertEqual(avista['Layton Hill']['properties']['viewshedId'], 'pano-layton-hill')
         self.assertEqual(avista['Hoodoo Mountain']['properties']['county'], 'Bonner')
-        # three stations are missing from Avista's public viewer, so they keep its front page
-        self.assertEqual({n for n, f in avista.items() if 'feed' not in f['properties']}, {'Sander Grade', 'Maryanna', 'Lewiston'})
+        # Lewiston is missing from Avista's public viewer, so it keeps the front page
+        self.assertEqual({n for n, f in avista.items() if 'feed' not in f['properties']}, {'Lewiston'})
 
     def test_envirovision_sites(self):
         sites = {f['properties']['name']: f for f in read('envirovision-sites.geojson')['features']}

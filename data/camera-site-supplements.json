@@ -30,6 +30,21 @@
       "sheetName": "Grangeville",
       "provider": "pano",
       "reason": "Avista Utilities station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+    },
+    {
+      "sheetName": "Gold Cup Mountain",
+      "provider": "pano",
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed covers under 10 km² of Washington (#162)."
+    },
+    {
+      "sheetName": "Maryanna",
+      "provider": "pano",
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed covers under 10 km² of Washington (#162)."
+    },
+    {
+      "sheetName": "Sander Grade",
+      "provider": "pano",
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed covers under 10 km² of Washington (#162)."
     }
   ],
   "unmapped": [],
@@ -57,27 +72,9 @@
       "state": "ID"
     },
     {
-      "sheetName": "Gold Cup Mountain",
-      "provider": "pano",
-      "county": "Bonner",
-      "state": "ID"
-    },
-    {
       "sheetName": "Blossom Mountain",
       "provider": "pano",
       "county": "Kootenai",
-      "state": "ID"
-    },
-    {
-      "sheetName": "Maryanna",
-      "provider": "pano",
-      "county": "Kootenai",
-      "state": "ID"
-    },
-    {
-      "sheetName": "Sander Grade",
-      "provider": "pano",
-      "county": "Nez Perce",
       "state": "ID"
     }
   ],

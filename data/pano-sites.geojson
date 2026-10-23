@@ -2153,8 +2153,7 @@
         "owner": "Avista Utilities",
         "county": "Lincoln",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/bff0e60618674504bf1356b9cc27ab1c",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/bff0e60618674504bf1356b9cc27ab1c"
       }
     },
     {
@@ -2175,8 +2174,7 @@
         "owner": "Avista Utilities",
         "county": "Lincoln",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/3f75e3dbd3224fc0b6acecb5fbe7f34b",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/3f75e3dbd3224fc0b6acecb5fbe7f34b"
       }
     },
     {
@@ -2197,8 +2195,7 @@
         "owner": "Avista Utilities",
         "county": "Spokane",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/6152cf70ea59406092c72af86920cea7",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/6152cf70ea59406092c72af86920cea7"
       }
     },
     {
@@ -2219,8 +2216,7 @@
         "owner": "Avista Utilities",
         "county": "Stevens",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/748448f29faa48c7a3d9ff3a0a7d6200",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/748448f29faa48c7a3d9ff3a0a7d6200"
       }
     },
     {
@@ -2241,8 +2237,7 @@
         "owner": "Avista Utilities",
         "county": "Spokane",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/b9f572e57f3945bc87dbe7c2bf1befc7",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/b9f572e57f3945bc87dbe7c2bf1befc7"
       }
     },
     {
@@ -2263,8 +2258,7 @@
         "owner": "Avista Utilities",
         "county": "Stevens",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/d9057f5d752b4ae6a518f6bdf38f0daf",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/d9057f5d752b4ae6a518f6bdf38f0daf"
       }
     },
     {
@@ -2285,8 +2279,7 @@
         "owner": "Avista Utilities",
         "county": "Bonner",
         "state": "ID",
-        "feed": "https://avista.wildfirewatch.com/station/8923711853cc4598ae76cc8ccae1393c",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/8923711853cc4598ae76cc8ccae1393c"
       }
     },
     {
@@ -2307,30 +2300,7 @@
         "owner": "Avista Utilities",
         "county": "Stevens",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/93f44c953bad4b3a98f48cf3cb20698e",
-        "viewshedStatus": "pending"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -116.804654,
-          48.18741
-        ]
-      },
-      "properties": {
-        "name": "Gold Cup Mountain",
-        "aliases": [],
-        "cameraHeightFt": 100.0,
-        "viewshedId": "pano-gold-cup-mountain",
-        "provider": "pano",
-        "owner": "Avista Utilities",
-        "county": "Bonner",
-        "state": "ID",
-        "feed": "https://avista.wildfirewatch.com/station/c28354b46e084947aff4330f8d658b72",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/93f44c953bad4b3a98f48cf3cb20698e"
       }
     },
     {
@@ -2351,8 +2321,7 @@
         "owner": "Avista Utilities",
         "county": "Adams",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/189ef98c128d48f7a400fce23389d387",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/189ef98c128d48f7a400fce23389d387"
       }
     },
     {
@@ -2373,8 +2342,7 @@
         "owner": "Avista Utilities",
         "county": "Lincoln",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/65eb75b4b88a40d286d4bd6bba1df8b5",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/65eb75b4b88a40d286d4bd6bba1df8b5"
       }
     },
     {
@@ -2395,8 +2363,7 @@
         "owner": "Avista Utilities",
         "county": "Grant",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/280f3762b88240409933f3d2d8d66b4d",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/280f3762b88240409933f3d2d8d66b4d"
       }
     },
     {
@@ -2417,8 +2384,7 @@
         "owner": "Avista Utilities",
         "county": "Whitman",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/e2a9f886a1fb431a8136964dbc2ba983",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/e2a9f886a1fb431a8136964dbc2ba983"
       }
     },
     {
@@ -2439,8 +2405,7 @@
         "owner": "Avista Utilities",
         "county": "Spokane",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/3fd7745d505c47728f50580560765ee3",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/3fd7745d505c47728f50580560765ee3"
       }
     },
     {
@@ -2461,50 +2426,7 @@
         "owner": "Avista Utilities",
         "county": "Kootenai",
         "state": "ID",
-        "feed": "https://avista.wildfirewatch.com/station/6e35fedea98640ea9790af4c67554974",
-        "viewshedStatus": "pending"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -116.806726,
-          46.345724
-        ]
-      },
-      "properties": {
-        "name": "Sander Grade",
-        "aliases": [],
-        "cameraHeightFt": 109.9,
-        "viewshedId": "pano-sander-grade",
-        "provider": "pano",
-        "owner": "Avista Utilities",
-        "county": "Nez Perce",
-        "state": "ID",
-        "viewshedStatus": "pending"
-      }
-    },
-    {
-      "type": "Feature",
-      "geometry": {
-        "type": "Point",
-        "coordinates": [
-          -116.787531,
-          47.767923
-        ]
-      },
-      "properties": {
-        "name": "Maryanna",
-        "aliases": [],
-        "cameraHeightFt": 55.0,
-        "viewshedId": "pano-maryanna",
-        "provider": "pano",
-        "owner": "Avista Utilities",
-        "county": "Kootenai",
-        "state": "ID",
-        "viewshedStatus": "pending"
+        "feed": "https://avista.wildfirewatch.com/station/6e35fedea98640ea9790af4c67554974"
       }
     },
     {
@@ -2524,8 +2446,7 @@
         "provider": "pano",
         "owner": "Avista Utilities",
         "county": "Asotin",
-        "state": "WA",
-        "viewshedStatus": "pending"
+        "state": "WA"
       }
     }
   ]
