@@ -1,6 +1,6 @@
 // mockup only: ?banner=cameras fills the banner behind the title and About with drifting
-// cameras, each ringed by a few viewshed circles, fading out around the text. each camera's
-// rings are solid, so a larger camera covers the smaller ones beneath it
+// cameras, each ringed by viewshed circles from img/viewshed-rings.svg, fading out around the
+// text. the rings are solid, so a larger camera covers the smaller ones beneath it
 (() => {
     if (new URLSearchParams(window.location.search).get("banner") !== "cameras") return;
 
@@ -21,13 +21,12 @@
     // spacing between cameras, and how far each one wanders from its home spot
     const SPACING = 52;
     const DRIFT = 3;
-    // each outer ring is wider and fainter than the one inside it
-    const RINGS = [
-        { scale: 1, alpha: 0.5 },
-        { scale: 1.3, alpha: 0.32 },
-        { scale: 1.6, alpha: 0.2 },
-        { scale: 1.9, alpha: 0.12 },
-    ];
+    // the rings come from an SVG whose inner ring has radius 50 in a 200-wide viewBox,
+    // so the image is drawn at 4x a camera's radius
+    const RINGS_SVG = "img/viewshed-rings.svg";
+    const RINGS_PER_RADIUS = 4;
+    // rasterized once at this size, then scaled down each frame
+    const RINGS_RASTER = 512;
     // how far from the title and About the cameras take to fade fully in
     const FADE = 110;
 
@@ -35,6 +34,7 @@
     let height = 0;
     let nodes = [];
     let clearRects = [];
+    let rings = null;
     let frame = 0;
 
     // seeded so the cameras keep the same layout on every load and resize
@@ -116,7 +116,7 @@
     function draw(time) {
         ctx.clearRect(0, 0, width, height);
         const t = reduceMotion.matches ? 0 : time;
-        const background = getComputedStyle(banner).backgroundColor;
+        if (!rings) return;
 
         for (const node of nodes) {
             node.x = node.homeX + Math.cos(t * node.speed + node.phase) * DRIFT;
@@ -124,26 +124,15 @@
             node.fade = fadeAt(node.x, node.y);
         }
 
-        ctx.lineWidth = 1;
         for (const node of nodes) {
             if (node.fade < 0.01) continue;
 
             // the rings breathe very slightly, as if the viewshed is scanning
             const breathe = reduceMotion.matches ? 1 : 1 + 0.04 * Math.sin(t * 0.0008 + node.pulse);
-            const outer = RINGS[RINGS.length - 1];
-
-            // fill the outer ring with the banner colour so it hides anything underneath
-            ctx.fillStyle = background;
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, node.r * outer.scale * breathe + 0.5, 0, Math.PI * 2);
-            ctx.fill();
-
-            for (const ring of RINGS) {
-                ctx.strokeStyle = `rgba(255, 255, 255, ${ring.alpha * node.fade})`;
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, node.r * ring.scale * breathe, 0, Math.PI * 2);
-                ctx.stroke();
-            }
+            const size = node.r * RINGS_PER_RADIUS * breathe;
+            ctx.globalAlpha = node.fade;
+            ctx.drawImage(rings, node.x - size / 2, node.y - size / 2, size, size);
+            ctx.globalAlpha = 1;
 
             // the camera dot brightens and dims slowly
             const glow = reduceMotion.matches ? 0.6 : 0.45 + 0.35 * Math.sin(t * 0.0012 + node.pulse);
@@ -164,6 +153,17 @@
         if (reduceMotion.matches) draw(0);
         else frame = requestAnimationFrame(loop);
     }
+
+    // rasterize the SVG once so each frame only scales a bitmap
+    const ringsImage = new Image();
+    ringsImage.addEventListener("load", () => {
+        rings = document.createElement("canvas");
+        rings.width = RINGS_RASTER;
+        rings.height = RINGS_RASTER;
+        rings.getContext("2d").drawImage(ringsImage, 0, 0, RINGS_RASTER, RINGS_RASTER);
+        draw(performance.now());
+    });
+    ringsImage.src = RINGS_SVG;
 
     new ResizeObserver(resize).observe(banner);
     // the title width changes once its web font loads
