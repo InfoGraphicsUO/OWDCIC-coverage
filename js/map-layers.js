@@ -2162,20 +2162,6 @@ function addViewshedLayers(map) {
   // both hooks call back immediately, so the first pass may precede the other's value
   let basemap = 'outdoors';
 
-  addViewshedHover(map, LAYER_IDS.combinedViewshedsFill, {
-    title: () => 'Camera viewshed',
-    symbol: () => viewshedSymbol(null, basemap),
-  });
-  for (const provider of providers) {
-    addViewshedHover(map, provider.viewshedFillLayerId, {
-      // provider names only mean something while each provider has its own color
-      title: () => getSetting(SEPARATE_VIEWSHED_COLORS_SETTING)
-        ? `${provider.name} camera viewshed`
-        : 'Camera viewshed',
-      symbol: () => viewshedSymbol(provider, basemap),
-    });
-  }
-
   onBasemapChange((selected) => {
     basemap = selected;
     applyViewshedSymbology(map, basemap);
@@ -2185,11 +2171,6 @@ function addViewshedLayers(map) {
     syncViewshedFills(map);
   });
   legendControl.onChange(() => syncViewshedFills(map));
-}
-
-// viewsheds cover so much that their entries go after whatever else is under the cursor
-function addViewshedHover(map, layerId, { title, symbol }) {
-  addHoverLayer(map, layerId, { kind: 'label', title, symbol, background: true });
 }
 
 // shared-color providers draw through the combined fill so overlaps do not darken

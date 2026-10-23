@@ -13,10 +13,9 @@ export function pointerCanHover() {
 
 /**
  * show a feature's info beside the cursor while the pointer is over it
- * `symbol` and `title` are values, or functions reading them from the hovered feature
- * `background` layers cover wide areas, so their entries go after the more specific ones
+ * `symbol` is a value, or a function reading it from the hovered feature
  */
-export function addHoverLayer(map, layerId, { kind, symbol, title, background = false }) {
+export function addHoverLayer(map, layerId, { kind, symbol }) {
   let layers = HOVER_LAYERS.get(map);
   if (!layers) {
     layers = new Map();
@@ -24,7 +23,7 @@ export function addHoverLayer(map, layerId, { kind, symbol, title, background = 
     bindHoverInfo(map, layers);
   }
 
-  layers.set(layerId, { kind, symbol, title, background });
+  layers.set(layerId, { kind, symbol });
 }
 
 // one map-wide handler gathers every feature still visible under the cursor into one tooltip
@@ -69,19 +68,10 @@ function hoveredEntries(map, layers, event) {
   const visible = opaqueIndex < 0 ? features : features.slice(0, opaqueIndex + 1);
 
   // one entry per layer, since lines meeting at a substation would otherwise fill the screen
-  const unique = visible.filter((feature, index) =>
-    visible.findIndex(({ layer }) => layer.id === feature.layer.id) === index);
-
-  // background layers stack last in the order they were added, once per title
-  const foreground = unique.filter(({ layer }) => !layers.get(layer.id).background);
-  const background = layerIds.flatMap((layerId) =>
-    unique.filter(({ layer }) => layer.id === layerId && layers.get(layerId).background));
-
-  const entries = [];
-  for (const entry of [...foreground, ...background].map((feature) => describe(layers, feature))) {
-    if (!entries.some(({ title }) => title && title === entry.title)) entries.push(entry);
-  }
-  return entries;
+  return visible
+    .filter((feature, index) =>
+      visible.findIndex(({ layer }) => layer.id === feature.layer.id) === index)
+    .map((feature) => describe(layers, feature));
 }
 
 // markers are drawn solid, while lines and translucent fills leave what lies beneath readable
@@ -96,11 +86,6 @@ function isOpaque(map, layerId) {
 }
 
 function describe(layers, feature) {
-  const { kind, symbol, title } = layers.get(feature.layer.id);
-  return {
-    feature,
-    kind,
-    symbol: typeof symbol === 'function' ? symbol(feature) : symbol,
-    title: typeof title === 'function' ? title(feature) : title,
-  };
+  const { kind, symbol } = layers.get(feature.layer.id);
+  return { feature, kind, symbol: typeof symbol === 'function' ? symbol(feature) : symbol };
 }
