@@ -19,6 +19,7 @@ PANO_VIEWERS = {
     'Pacific Power': 'https://pacificpower.wildfirewatch.com/',
     'Washington DNR': 'https://wadnr.wildfirewatch.com/',
     'Puget Sound Energy': 'https://pse.wildfirewatch.com/',
+    'Avista Utilities': 'https://avista.wildfirewatch.com/',
 }
 PROVIDER_LABELS = {'alertwest': 'ALERTWest', 'pano': 'Pano AI', 'envirovision': 'EnviroVision'}
 # counts in this doc sit between <!-- name --> and <!-- /name --> and are rewritten on every build
@@ -31,11 +32,18 @@ def supplement_sites(by_provider, text, converter):
     digitized = {f['properties']['id']: f for f in json.loads((data / 'digitized-camera-sources.geojson').read_text())['features']}
     counties = converter.load_counties(converter.DEFAULT_COUNTIES)
     supplements = json.loads((data / 'camera-site-supplements.json').read_text())
-    # rows held out of the map until the sheet is clarified
+    # rows held out of the map, either until the sheet is clarified or as outside the region
     excluded = {(r['provider'], r['sheetName']) for r in supplements.get('excluded', [])}
 
     for provider, collection in by_provider.items():
         collection['features'] = [f for f in collection['features'] if (provider, f['properties']['name']) not in excluded]
+
+    # sites outside the Oregon and Washington county polygons, such as Avista's Idaho stations
+    for record in supplements.get('outsideRegion', []):
+        site = next((f for f in by_provider[record['provider']]['features'] if f['properties']['name'] == record['sheetName']), None)
+        if site is None:
+            raise ValueError(f"Unknown outsideRegion site: {record['sheetName']}")
+        site['properties'].update(county=record['county'], state=record['state'])
 
     # live sites ALERTWest keeps out of its API, so the map draws their markers from this file
     for record in supplements.get('outsideApi', []):

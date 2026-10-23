@@ -5,6 +5,46 @@
       "sheetName": "Clearwater Wind Farm",
       "provider": "pano",
       "reason": "Sheet coordinates (46.85, -106.01) are in Montana; held out until clarified."
+    },
+    {
+      "sheetName": "Gold Mountain",
+      "provider": "pano",
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+    },
+    {
+      "sheetName": "St Maries",
+      "provider": "pano",
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+    },
+    {
+      "sheetName": "Orofino",
+      "provider": "pano",
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+    },
+    {
+      "sheetName": "Clearwater",
+      "provider": "pano",
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+    },
+    {
+      "sheetName": "Grangeville",
+      "provider": "pano",
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+    },
+    {
+      "sheetName": "Gold Cup Mountain",
+      "provider": "pano",
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed covers under 10 km² of Washington (#162)."
+    },
+    {
+      "sheetName": "Maryanna",
+      "provider": "pano",
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed covers under 10 km² of Washington (#162)."
+    },
+    {
+      "sheetName": "Sander Grade",
+      "provider": "pano",
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed covers under 10 km² of Washington (#162)."
     }
   ],
   "unmapped": [],
@@ -22,6 +62,20 @@
       "county": "Douglas",
       "state": "OR",
       "reason": "Kept out of the ALERTWest API for landowner privacy; ALERTWest allowed a manual map marker without camera images (issue #147)."
+    }
+  ],
+  "outsideRegion": [
+    {
+      "sheetName": "Hoodoo Mountain",
+      "provider": "pano",
+      "county": "Bonner",
+      "state": "ID"
+    },
+    {
+      "sheetName": "Blossom Mountain",
+      "provider": "pano",
+      "county": "Kootenai",
+      "state": "ID"
     }
   ],
   "sites": [
