@@ -126,8 +126,8 @@
 .filter-panel__item:focus-visible { background: rgba(255, 255, 255, .08); }
 
 .filter-panel__item[aria-selected="true"] {
-    background: rgba(248, 225, 9, .14);
-    box-shadow: inset 3px 0 0 var(--ohaz-yellow);
+    background: var(--sidebar-selected-bg);
+    box-shadow: var(--sidebar-selected-bar);
 }
 
 .filter-panel__item--step::after {

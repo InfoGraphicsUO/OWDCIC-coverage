@@ -15,6 +15,9 @@
     /* shared by every sidebar list row: coverage types, layers, and basemaps */
     --sidebar-row-padding: 10px 16px;
     --sidebar-row-font: 600 15px/1.3 "Clarity City", "Segoe UI", sans-serif;
+    /* the chosen coverage, basemap, and every layer that's on */
+    --sidebar-selected-bg: rgba(248, 225, 9, .14);
+    --sidebar-selected-bar: inset 3px 0 0 var(--ohaz-yellow);
 }
 
 #map {
@@ -362,8 +365,8 @@
 }
 
 .basemap-picker__option input:checked + .basemap-picker__row {
-    background: rgba(248, 225, 9, .14);
-    box-shadow: inset 3px 0 0 var(--ohaz-yellow);
+    background: var(--sidebar-selected-bg);
+    box-shadow: var(--sidebar-selected-bar);
 }
 
 .basemap-picker__option input:checked + .basemap-picker__row .basemap-picker__preview {
@@ -422,6 +425,11 @@
     background: rgba(255, 255, 255, .08);
 }
 
+.control-menu .legend-row:has(> input[type="checkbox"]:checked) {
+    background: var(--sidebar-selected-bg);
+    box-shadow: var(--sidebar-selected-bar);
+}
+
 /* a group reads as one row with its children hanging off a thin guide, divided only from its neighbors */
 .control-menu .legend-group__parent {
     border-bottom: 0;
@@ -446,13 +454,15 @@
 /* the guide runs down from the parent checkbox's center */
 .control-menu .legend-group__children {
     margin: 0 0 6px 24px;
+    padding-left: 0;
     border-left: 1px solid var(--control-chrome-border);
 }
 
 .control-menu .legend-group__child {
     padding-top: 6px;
     padding-bottom: 6px;
-    padding-left: 12px;
+    /* rows start at the guide, so a layer that's on turns its stretch of the guide yellow */
+    padding-left: 31px;
     /* a tighter gap leaves the longest provider label room on one line */
     gap: 8px;
     border-bottom: 0;
@@ -488,8 +498,8 @@
     color: #fff;
 }
 
-.control-menu .legend-row:focus-within,
-.control-menu .legend-group:focus-within {
+/* only keyboard focus outlines a row, not the checkbox someone just clicked */
+.control-menu .legend-row:has(:focus-visible) {
     outline: 2px solid var(--ohaz-yellow);
     outline-offset: -2px;
 }
