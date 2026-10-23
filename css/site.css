@@ -71,9 +71,9 @@ textarea {
 }
 
 .site-banner__title {
-    /* the bottom margin lifts the text so the space above the letters and below the
-       descenders matches the gap to the logo */
-    margin: 0 0 0.15em 14px;
+    /* the negative bottom margin lowers the text so the space above the capitals matches
+       the space below the baseline */
+    margin: 0 0 -0.06em 14px;
     font-family: var(--font-heading);
     font-size: clamp(24px, 2.9vw, 42px);
     font-weight: 500;
