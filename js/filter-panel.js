@@ -52,7 +52,7 @@ export function initFilterPanel({
 
   const title = document.createElement('h2');
   title.className = 'filter-panel__title';
-  title.textContent = 'Coverage by';
+  title.textContent = 'Coverage by...';
 
   header.append(backButton, title);
 
@@ -104,7 +104,7 @@ export function initFilterPanel({
     : null);
 
   const showCategoryView = ({ animate = true } = {}) => {
-    title.textContent = 'Coverage by';
+    title.textContent = 'Coverage by...';
     backButton.classList.remove('is-visible');
 
     // render again so the current search term and active type are reflected
@@ -113,7 +113,7 @@ export function initFilterPanel({
   };
 
   const showOptionView = ({ animate = true } = {}) => {
-    title.textContent = activeType ? `Coverage by ${activeType.label}` : 'Coverage by';
+    title.textContent = activeType ? `Coverage by ${activeType.label}` : 'Coverage by...';
     const parent = parentType();
     backButton.setAttribute('aria-label', parent ? `Back to ${parent.label}` : 'Back to coverage types');
     backButton.classList.add('is-visible');
