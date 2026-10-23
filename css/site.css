@@ -53,6 +53,14 @@ textarea {
     object-fit: contain;
 }
 
+.site-banner__network {
+    position: absolute;
+    top: 0;
+    pointer-events: none;
+    /* fade the network in and out so it never meets the title or About with a hard edge */
+    mask-image: linear-gradient(to right, transparent, #000 18%, #000 85%, transparent);
+}
+
 .site-banner__logo--wide {
     width: auto;
     max-width: 260px;
