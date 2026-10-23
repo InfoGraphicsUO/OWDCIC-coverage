@@ -1,5 +1,5 @@
-// mockup only: ?banner=cameras fills the empty banner space between the title and About
-// with a small drifting network of cameras (rings) linked by viewshed lines
+// mockup only: ?banner=cameras fills the banner behind the title and About with a drifting
+// network of cameras (rings) linked by viewshed lines, fading out around the text
 (() => {
     if (new URLSearchParams(window.location.search).get("banner") !== "cameras") return;
 
@@ -18,16 +18,19 @@
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     // spacing between cameras, and how far each one wanders from its home spot
-    const SPACING = 21;
-    const DRIFT = 2;
-    const LINE_ALPHA = 0.28;
-    const RING_ALPHA = 0.42;
+    const SPACING = 30;
+    const DRIFT = 2.5;
+    const LINE_ALPHA = 0.3;
+    const RING_ALPHA = 0.5;
+    // how far from the title and About the network takes to fade fully in
+    const FADE = 110;
 
     let width = 0;
     let height = 0;
     let nodes = [];
     let links = [];
     let rays = [];
+    let clearRects = [];
     let frame = 0;
 
     // seeded so the network keeps the same shape on every load and resize
@@ -54,7 +57,7 @@
                 nodes.push({
                     homeX: (col + 0.2 + rand() * 0.6) * cellW,
                     homeY: (row + 0.2 + rand() * 0.6) * cellH,
-                    r: 2.2 + rand() * 1.8,
+                    r: 4.5 + rand() * 3,
                     phase: rand() * Math.PI * 2,
                     speed: 0.00025 + rand() * 0.00035,
                     pulse: rand() * Math.PI * 2,
@@ -85,7 +88,7 @@
 
         // a few loose sight lines run out from cameras toward the edges
         rays = nodes
-            .map((node, i) => ({ i, angle: rand() * Math.PI * 2, length: 8 + rand() * 16, keep: rand() < 0.35 }))
+            .map((node, i) => ({ i, angle: rand() * Math.PI * 2, length: 10 + rand() * 20, keep: rand() < 0.35 }))
             .filter((ray) => ray.keep);
     }
 
@@ -93,10 +96,16 @@
         const bannerRect = banner.getBoundingClientRect();
         const titleRect = title.getBoundingClientRect();
         const aboutRect = about.getBoundingClientRect();
-        const left = titleRect.right - bannerRect.left + 24;
-        const right = aboutRect.left - bannerRect.left - 16;
+        const left = titleRect.left - bannerRect.left;
 
-        width = Math.max(0, right - left);
+        width = Math.max(0, bannerRect.width - left);
+        // the text the network fades away from, in canvas coordinates
+        clearRects = [titleRect, aboutRect].map((rect) => ({
+            left: rect.left - bannerRect.left - left,
+            right: rect.right - bannerRect.left - left,
+            top: rect.top - bannerRect.top,
+            bottom: rect.bottom - bannerRect.top,
+        }));
         height = bannerRect.height - 5;
         canvas.style.left = `${left}px`;
         canvas.style.width = `${width}px`;
@@ -117,6 +126,18 @@
         return [from.x + Math.cos(angle) * (r + 1), from.y + Math.sin(angle) * (r + 1)];
     }
 
+    // 0 on top of the title or About, rising smoothly to 1 at FADE pixels away
+    function fadeAt(x, y) {
+        let nearest = Infinity;
+        for (const rect of clearRects) {
+            const dx = Math.max(rect.left - x, 0, x - rect.right);
+            const dy = Math.max(rect.top - y, 0, y - rect.bottom);
+            nearest = Math.min(nearest, Math.hypot(dx, dy));
+        }
+        const t = Math.min(nearest / FADE, 1);
+        return t * t * (3 - 2 * t);
+    }
+
     function draw(time) {
         ctx.clearRect(0, 0, width, height);
         const t = reduceMotion.matches ? 0 : time;
@@ -124,14 +145,17 @@
         for (const node of nodes) {
             node.x = node.homeX + Math.cos(t * node.speed + node.phase) * DRIFT;
             node.y = node.homeY + Math.sin(t * node.speed * 1.3 + node.phase) * DRIFT;
+            node.fade = fadeAt(node.x, node.y);
         }
 
-        ctx.lineWidth = 0.6;
-        ctx.strokeStyle = `rgba(255, 255, 255, ${LINE_ALPHA})`;
-        ctx.beginPath();
+        ctx.lineWidth = 0.8;
         for (const { a, b, bend } of links) {
             const from = nodes[a];
             const to = nodes[b];
+            const fade = Math.min(from.fade, to.fade);
+            if (fade < 0.01) continue;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${LINE_ALPHA * fade})`;
+            ctx.beginPath();
             if (bend) {
                 const midX = (from.x + to.x) / 2 - (to.y - from.y) * bend;
                 const midY = (from.y + to.y) / 2 + (to.x - from.x) * bend;
@@ -143,28 +167,34 @@
                 ctx.moveTo(...edgePoint(from, to, from.r));
                 ctx.lineTo(...edgePoint(to, from, to.r));
             }
+            ctx.stroke();
         }
         for (const { i, angle, length } of rays) {
             const node = nodes[i];
+            if (node.fade < 0.01) continue;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${LINE_ALPHA * node.fade})`;
+            ctx.beginPath();
             const sway = reduceMotion.matches ? 0 : Math.sin(t * node.speed * 2 + node.pulse) * 0.15;
             const cos = Math.cos(angle + sway);
             const sin = Math.sin(angle + sway);
             ctx.moveTo(node.x + cos * (node.r + 1), node.y + sin * (node.r + 1));
             ctx.lineTo(node.x + cos * (node.r + length), node.y + sin * (node.r + length));
+            ctx.stroke();
         }
-        ctx.stroke();
 
+        ctx.lineWidth = 1;
         for (const node of nodes) {
-            ctx.strokeStyle = `rgba(255, 255, 255, ${RING_ALPHA})`;
+            if (node.fade < 0.01) continue;
+            ctx.strokeStyle = `rgba(255, 255, 255, ${RING_ALPHA * node.fade})`;
             ctx.beginPath();
             ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
             ctx.stroke();
 
             // the camera dot breathes slowly
             const glow = reduceMotion.matches ? 0.6 : 0.45 + 0.35 * Math.sin(t * 0.0012 + node.pulse);
-            ctx.fillStyle = `rgba(255, 255, 255, ${glow})`;
+            ctx.fillStyle = `rgba(255, 255, 255, ${glow * node.fade})`;
             ctx.beginPath();
-            ctx.arc(node.x, node.y, 0.8, 0, Math.PI * 2);
+            ctx.arc(node.x, node.y, 1.4, 0, Math.PI * 2);
             ctx.fill();
         }
     }

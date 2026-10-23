@@ -57,8 +57,12 @@ textarea {
     position: absolute;
     top: 0;
     pointer-events: none;
-    /* fade the network in and out so it never meets the title or About with a hard edge */
-    mask-image: linear-gradient(to right, transparent, #000 18%, #000 85%, transparent);
+}
+
+/* keep the title and About painted above the network canvas */
+.site-banner--network .site-banner__title,
+.site-banner--network .site-banner__about {
+    position: relative;
 }
 
 .site-banner__logo--wide {
@@ -82,7 +86,7 @@ textarea {
 
 .site-banner__about {
     height: 42px;
-    margin-left: auto;
+    margin-left: 20px;
     padding: 0 10px;
     color: #fff;
     background: transparent;
