@@ -2295,7 +2295,9 @@ function readLegendRowsFromDom() {
 }
 
 function parseLegendRowFromDom(row) {
-  const label = row.dataset?.exportLabel || row.querySelector('.legend-label')?.textContent?.trim();
+  const label = row.dataset?.exportLabel
+    || row.dataset?.legendLabel
+    || row.querySelector('.legend-label')?.textContent?.trim();
   if (!label) return null;
   const visualRoot = row.querySelector('.legend-visual');
   const visual = visualRoot ? parseLegendVisualFromDom(visualRoot) : exportLegendVisualForLabel(label);

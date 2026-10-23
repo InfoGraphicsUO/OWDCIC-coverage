@@ -51,7 +51,7 @@ export function initFilterPanel({
   backButton.innerHTML = '<i class="fa-solid fa-arrow-left" aria-hidden="true"></i>';
 
   const title = document.createElement('h2');
-  title.className = 'filter-panel__title';
+  title.className = 'control-menu__title filter-panel__title';
   title.textContent = 'Coverage by...';
 
   header.append(backButton, title);

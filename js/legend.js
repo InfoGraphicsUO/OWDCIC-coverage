@@ -270,6 +270,8 @@ function createLegendGroup(item, getMap, notifyChange) {
 function createLegendRow(item, getMap, onToggle, notifyChange) {
   const row = document.createElement('div');
   row.className = 'legend-row';
+  // readers like the export use the full label, which a shorter display label may not show
+  row.setAttribute('data-legend-label', item.label);
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
@@ -305,7 +307,7 @@ function createLegendRow(item, getMap, onToggle, notifyChange) {
   const visual = createLegendVisual(icon, item.loading === true, item.label);
 
   const label = document.createElement('span');
-  label.textContent = item.label;
+  label.textContent = item.displayLabel ?? item.label;
 
   const labelText = document.createElement('label');
   labelText.htmlFor = checkbox.id;

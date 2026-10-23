@@ -495,7 +495,7 @@ const resultsControl = initResultsPanel({
   getLegendItems: () => [...document.querySelectorAll('#legend .legend-row')]
     .filter((row) => row.querySelector('input[type="checkbox"]')?.checked)
     .filter((row) => !row.hidden && !row.closest('.legend-group[hidden]'))
-    .map((row) => row.querySelector('.legend-label')?.textContent?.trim())
+    .map((row) => row.dataset.legendLabel ?? row.querySelector('.legend-label')?.textContent?.trim())
     .filter(Boolean),
   getSelectionLegendItems: selectionLegendItems,
   // the summary report lists each area inside a combined option, e.g. every ODF district
@@ -2679,6 +2679,8 @@ function legendItems() {
       layerIds: CAMERA_PROVIDERS.flatMap(viewshedLayerIds),
       children: CAMERA_PROVIDERS.map((provider) => ({
         label: provider.viewshedLabel,
+        // the group row already says "camera", and the full label wraps in the sidebar
+        displayLabel: `${provider.name} viewsheds`,
         swatchColor: viewshedColors(provider).outdoors,
         swatchBorder: false,
         infoText: 'Loading camera viewshed count…',

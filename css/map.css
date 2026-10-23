@@ -12,6 +12,12 @@
     --sidebar-duration: 340ms;
     --sidebar-ease: cubic-bezier(.32, .72, 0, 1);
     --menu-fade-duration: 110ms;
+    /* shared by every sidebar list row: coverage types, layers, and basemaps */
+    --sidebar-row-padding: 10px 16px;
+    --sidebar-row-font: 600 15px/1.3 "Clarity City", "Segoe UI", sans-serif;
+    /* the chosen coverage, basemap, and every layer that's on */
+    --sidebar-selected-bg: rgba(248, 225, 9, .14);
+    --sidebar-selected-bar: inset 3px 0 0 var(--ohaz-yellow);
 }
 
 #map {
@@ -55,9 +61,8 @@
     min-width: 0;
     min-height: 0;
     color: var(--control-chrome-text);
-    background: var(--control-chrome-bg);
-    -webkit-backdrop-filter: var(--overlay-backdrop);
-    backdrop-filter: var(--overlay-backdrop);
+    /* solid like the banner; only the controls floating over the map are see-through */
+    background: var(--ohaz-grey);
     border-right: 1px solid var(--control-chrome-border);
     transition: transform var(--sidebar-duration) var(--sidebar-ease);
     will-change: transform;
@@ -187,13 +192,12 @@
     to { opacity: 0; }
 }
 
+/* every sidebar menu title, including the coverage panel's */
 .control-menu__title {
     margin: 0;
-    padding: 18px 16px 10px;
+    padding: 14px 16px 10px;
     color: var(--control-chrome-text);
-    font-size: 20px;
-    font-weight: 700;
-    line-height: 1.2;
+    font: 700 20px/1.2 "Clarity City", "Segoe UI", sans-serif;
 }
 
 .control-shell__clear {
@@ -234,9 +238,7 @@
     height: 54px;
     padding: 0;
     color: #fff;
-    background: var(--control-chrome-bg);
-    -webkit-backdrop-filter: var(--overlay-backdrop);
-    backdrop-filter: var(--overlay-backdrop);
+    background: var(--ohaz-grey);
     border: 1px solid rgba(0, 0, 0, .35);
     border-left: 0;
     border-radius: 0 var(--ui-radius-sm) var(--ui-radius-sm) 0;
@@ -325,21 +327,21 @@
     align-items: center;
     gap: 14px;
     min-width: 0;
-    padding: 14px 16px;
+    padding: var(--sidebar-row-padding);
     color: var(--control-chrome-text);
     background: transparent;
     border: 0;
     border-bottom: 1px solid var(--control-chrome-border);
     text-align: left;
-    font: 600 16px/1.3 "Clarity City", "Segoe UI", sans-serif;
+    font: var(--sidebar-row-font);
 }
 
 .basemap-picker__preview {
     display: block;
     box-sizing: border-box;
-    width: 72px;
-    height: 72px;
-    flex: 0 0 72px;
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
     padding: 0;
     overflow: hidden;
     background: #fff center / cover no-repeat;
@@ -360,8 +362,8 @@
 }
 
 .basemap-picker__option input:checked + .basemap-picker__row {
-    background: rgba(248, 225, 9, .14);
-    box-shadow: inset 3px 0 0 var(--ohaz-yellow);
+    background: var(--sidebar-selected-bg);
+    box-shadow: var(--sidebar-selected-bar);
 }
 
 .basemap-picker__option input:checked + .basemap-picker__row .basemap-picker__preview {
@@ -398,14 +400,14 @@
     margin: 0;
     cursor: pointer;
     user-select: none;
-    font: 600 16px/1.3 "Clarity City", "Segoe UI", sans-serif;
+    font: var(--sidebar-row-font);
 }
 
 .control-menu .legend-row {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 14px 16px;
+    padding: var(--sidebar-row-padding);
     border: 0;
     border-bottom: 1px solid var(--control-chrome-border);
 }
@@ -420,14 +422,25 @@
     background: rgba(255, 255, 255, .08);
 }
 
-.control-menu .legend-group__parent {
-    background: rgba(255, 255, 255, .035);
-    border-bottom-color: rgba(255, 255, 255, .24);
-    font-weight: 700;
+.control-menu .legend-row:has(> input[type="checkbox"]:checked),
+.control-menu .legend-group:has(input[type="checkbox"]:checked) {
+    background: var(--sidebar-selected-bg);
+    box-shadow: var(--sidebar-selected-bar);
 }
 
-.control-menu .legend-group__parent:hover {
-    background: rgba(255, 255, 255, .1);
+/* a group that's on highlights as one block, so its rows don't stack their own tint and bar */
+.control-menu .legend-group .legend-row:has(> input[type="checkbox"]:checked) {
+    background: transparent;
+    box-shadow: none;
+}
+
+.control-menu .legend-group .legend-row:hover {
+    background: rgba(255, 255, 255, .06);
+}
+
+/* a group reads as one row with its children hanging off a thin guide, divided only from its neighbors */
+.control-menu .legend-group__parent {
+    border-bottom: 0;
 }
 
 .control-menu .legend-label {
@@ -446,14 +459,26 @@
     cursor: pointer;
 }
 
+/* the guide runs down from the parent checkbox's center */
 .control-menu .legend-group__children {
-    margin-left: 16px;
-    border-left: 2px solid rgba(248, 225, 9, .38);
+    margin: 0 0 6px 24px;
+    padding-left: 0;
+    border-left: 1px solid var(--control-chrome-border);
+}
+
+/* the tinted block brightens the guide so it still reads */
+.control-menu .legend-group:has(input[type="checkbox"]:checked) .legend-group__children {
+    border-left-color: rgba(248, 225, 9, .45);
 }
 
 .control-menu .legend-group__child {
-    padding-left: 14px;
-    font-size: 15px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 31px;
+    /* a tighter gap leaves the longest provider label room on one line */
+    gap: 8px;
+    border-bottom: 0;
+    font-size: 14px;
     font-weight: 500;
 }
 
@@ -462,18 +487,9 @@
     flex-wrap: wrap;
     gap: 8px 12px;
     margin: 0;
-    padding: 8px 16px 10px 30px;
+    padding: 0 16px 6px 37px;
     color: var(--control-chrome-muted);
     font-size: 11px;
-}
-
-.control-menu .legend-group__parent .legend-visual {
-    display: grid;
-}
-
-/* group rows marked hidden show only the checkbox and label; the empty slot keeps labels aligned */
-.control-menu .legend-group__parent .legend-visual:has(.legend-swatch--hidden) {
-    visibility: hidden;
 }
 
 .control-menu .legend-info {
@@ -485,8 +501,8 @@
     color: #fff;
 }
 
-.control-menu .legend-row:focus-within,
-.control-menu .legend-group:focus-within {
+/* only keyboard focus outlines a row, not the checkbox someone just clicked */
+.control-menu .legend-row:has(:focus-visible) {
     outline: 2px solid var(--ohaz-yellow);
     outline-offset: -2px;
 }
