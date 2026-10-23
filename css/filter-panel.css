@@ -14,19 +14,14 @@
     align-items: center;
     gap: 8px;
     box-sizing: border-box;
-    min-height: 56px;
-    /* a title that wraps to two lines keeps clear of the bar above and the search below */
-    padding: 10px 16px;
+    padding: 0 16px;
 }
 
+/* type and spacing come from .control-menu__title; the header supplies the side padding */
 .filter-panel__title {
     flex: 1;
     min-width: 0;
-    margin: 0;
-    color: inherit;
-    font-size: 20px;
-    font-weight: 400;
-    line-height: 1.2;
+    padding-inline: 0;
 }
 
 .filter-panel__back {
@@ -81,13 +76,13 @@
 
 .filter-panel__search {
     display: block;
-    margin: 0 16px 10px;
+    margin: 0 16px 8px;
 }
 
 .filter-panel__search input {
     box-sizing: border-box;
     width: 100%;
-    padding: 11px 12px;
+    padding: 8px 10px;
     color: #222;
     background: #fff;
     border: 1px solid rgba(255, 255, 255, .35);
@@ -117,14 +112,14 @@
     justify-content: space-between;
     gap: 10px;
     width: 100%;
-    padding: 14px 16px;
+    padding: var(--sidebar-row-padding);
     color: inherit;
     background: transparent;
     border: 0;
     border-bottom: 1px solid var(--control-chrome-border, rgba(255, 255, 255, .18));
     cursor: pointer;
     text-align: left;
-    font: 600 16px/1.3 "Clarity City", "Segoe UI", sans-serif;
+    font: var(--sidebar-row-font);
 }
 
 .filter-panel__item:hover { background: rgba(255, 255, 255, .08); }
@@ -171,19 +166,22 @@
     justify-content: space-between;
     gap: 10px;
     width: 100%;
-    padding: 14px 16px;
+    padding: var(--sidebar-row-padding);
     color: inherit;
     background: transparent;
     border: 0;
     cursor: pointer;
     text-align: left;
-    font: 600 16px/1.3 "Clarity City", "Segoe UI", sans-serif;
+    font: var(--sidebar-row-font);
 }
 
+/* same hover as the plain rows; only keyboard focus gets the outline */
 .filter-panel__group-toggle:hover,
 .filter-panel__group-toggle:focus-visible {
     background: rgba(255, 255, 255, .08);
-    outline: 2px solid var(--ohaz-yellow);
+}
+
+.filter-panel__group-toggle:focus-visible {
     outline-offset: -2px;
 }
 

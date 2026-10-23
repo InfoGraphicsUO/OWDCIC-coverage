@@ -12,6 +12,9 @@
     --overlay-dark-bg: color-mix(in srgb, var(--ohaz-grey) var(--overlay-opacity), transparent);
     --overlay-dark-bg-hover: color-mix(in srgb, #3a3939 var(--overlay-opacity), transparent);
     --overlay-light-bg: color-mix(in srgb, #fff var(--overlay-light-opacity), transparent);
+    /* the sidebar holds the most text, so it sits more solid than the floating buttons */
+    --sidebar-opacity: 92%;
+    --sidebar-bg: color-mix(in srgb, var(--ohaz-grey) var(--sidebar-opacity), transparent);
     --panel-background: var(--overlay-light-bg);
     --panel-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     --ui-radius: 10px;

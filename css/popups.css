@@ -4,7 +4,8 @@
     --popup-origin-x: 50%;
 
     position: absolute;
-    z-index: 3;
+    /* under the map's control corners (2) and the sidebar and rail (3) alike */
+    z-index: 1;
     box-sizing: border-box;
 
     /* 24px preserves a 12px gutter on both sides of narrow containers */
