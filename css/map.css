@@ -447,6 +447,11 @@
     font-weight: 500;
 }
 
+/* the group's own bottom border closes the list, so the last child doesn't double it */
+.control-menu .legend-group__child:last-child {
+    border-bottom: 0;
+}
+
 .control-menu .legend-group__key {
     display: flex;
     flex-wrap: wrap;
