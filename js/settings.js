@@ -4,6 +4,7 @@ import { openModal } from './modal.js';
 const STORAGE_KEY = 'owdcic-settings';
 const DEFAULT_SETTINGS = Object.freeze({
   separateViewshedColors: false,
+  showZoomLevel: false,
 });
 
 // each row is one boolean preference shown in the settings popup
@@ -12,6 +13,11 @@ const SETTING_FIELDS = Object.freeze([
     key: 'separateViewshedColors',
     label: 'Color viewsheds by camera provider',
     description: 'Each provider\'s viewsheds use their own color instead of sharing one.',
+  }),
+  Object.freeze({
+    key: 'showZoomLevel',
+    label: 'Show zoom level',
+    description: 'Displays the current map zoom at the top of the map.',
   }),
 ]);
 

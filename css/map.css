@@ -285,6 +285,8 @@
     font: 13px/1 "Clarity City", "Segoe UI", sans-serif;
 }
 
+.zoom-viewer[hidden] { display: none; }
+
 .basemap-picker {
     box-sizing: border-box;
     display: flex;
