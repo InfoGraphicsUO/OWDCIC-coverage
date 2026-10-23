@@ -3,6 +3,8 @@
     width: 100%;
     padding: 10px 12px;
     background: var(--panel-background);
+    -webkit-backdrop-filter: var(--overlay-backdrop);
+    backdrop-filter: var(--overlay-backdrop);
     border-radius: var(--ui-radius);
     box-shadow: var(--panel-shadow);
     font: 13px/1.4 "Clarity City", "Segoe UI", sans-serif;

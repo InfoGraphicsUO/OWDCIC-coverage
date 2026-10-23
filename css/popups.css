@@ -11,9 +11,9 @@
     width: min(280px, calc(100% - 24px));
     padding: 14px;
     color: #20252b;
-    background: rgba(255, 255, 255, 0.72);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    background: var(--overlay-light-bg);
+    -webkit-backdrop-filter: var(--overlay-backdrop);
+    backdrop-filter: var(--overlay-backdrop);
     border: 1px solid rgba(31, 41, 51, 0.12);
     border-radius: var(--ui-radius-lg);
     box-shadow:
