@@ -42,7 +42,8 @@ import { onSettingChange } from './settings.js';
     let rings = null;
     let frame = 0;
 
-    // seeded so the cameras keep the same layout on every load and resize
+    // a new seed each page load gives a fresh layout, and reusing it keeps that layout on resize
+    const SEED = Math.floor(Math.random() * 4294967296);
     function random(seed) {
         let state = seed >>> 0;
         return () => {
@@ -52,7 +53,7 @@ import { onSettingChange } from './settings.js';
     }
 
     function build() {
-        const rand = random(135);
+        const rand = random(SEED);
         const columns = Math.max(1, Math.floor(width / SPACING));
         const cellW = width / columns;
 
