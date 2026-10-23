@@ -1,4 +1,434 @@
 {
   "type": "FeatureCollection",
-  "features": []
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.848083,
+          47.828096
+        ]
+      },
+      "properties": {
+        "name": "Devils Gap",
+        "aliases": [],
+        "cameraHeightFt": 144.98,
+        "viewshedId": "pano-devils-gap",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 188,
+        "county": "Lincoln",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/bff0e60618674504bf1356b9cc27ab1c",
+        "viewshedStatus": "pending",
+        "sourceId": 91
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.235261,
+          47.908553
+        ]
+      },
+      "properties": {
+        "name": "Lilienthal Mountain",
+        "aliases": [],
+        "cameraHeightFt": 199.02,
+        "viewshedId": "pano-lilienthal-mountain",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 268,
+        "county": "Lincoln",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/3f75e3dbd3224fc0b6acecb5fbe7f34b",
+        "viewshedStatus": "pending",
+        "sourceId": 92
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.298917,
+          47.59292
+        ]
+      },
+      "properties": {
+        "name": "Krell Ridge",
+        "aliases": [],
+        "cameraHeightFt": 120.01,
+        "viewshedId": "pano-krell-ridge",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 272,
+        "county": "Spokane",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/6152cf70ea59406092c72af86920cea7",
+        "viewshedStatus": "pending",
+        "sourceId": 93
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.8974,
+          48.57309
+        ]
+      },
+      "properties": {
+        "name": "Colville Mountain",
+        "aliases": [],
+        "cameraHeightFt": 119.98,
+        "viewshedId": "pano-colville-mountain",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 274,
+        "county": "Stevens",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/748448f29faa48c7a3d9ff3a0a7d6200",
+        "viewshedStatus": "pending",
+        "sourceId": 94
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.114071,
+          47.922027
+        ]
+      },
+      "properties": {
+        "name": "Mount Spokane",
+        "aliases": [],
+        "cameraHeightFt": 45.01,
+        "viewshedId": "pano-mount-spokane",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 279,
+        "county": "Spokane",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/b9f572e57f3945bc87dbe7c2bf1befc7",
+        "viewshedStatus": "pending",
+        "sourceId": 95
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.675948,
+          47.950086
+        ]
+      },
+      "properties": {
+        "name": "Scoop Mountain",
+        "aliases": [],
+        "cameraHeightFt": 54.99,
+        "viewshedId": "pano-scoop-mountain",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 283,
+        "county": "Stevens",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/d9057f5d752b4ae6a518f6bdf38f0daf",
+        "viewshedStatus": "pending",
+        "sourceId": 96
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -116.954031,
+          48.078877
+        ]
+      },
+      "properties": {
+        "name": "Hoodoo Mountain",
+        "aliases": [],
+        "cameraHeightFt": 98.0,
+        "viewshedId": "pano-hoodoo-mountain",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 284,
+        "county": "Bonner",
+        "state": "ID",
+        "feed": "https://avista.wildfirewatch.com/station/8923711853cc4598ae76cc8ccae1393c",
+        "viewshedStatus": "pending",
+        "sourceId": 97
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.989918,
+          48.181752
+        ]
+      },
+      "properties": {
+        "name": "Stranger Mountain",
+        "aliases": [],
+        "cameraHeightFt": 104.99,
+        "viewshedId": "pano-stranger-mountain",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 285,
+        "county": "Stevens",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/93f44c953bad4b3a98f48cf3cb20698e",
+        "viewshedStatus": "pending",
+        "sourceId": 98
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -116.804654,
+          48.18741
+        ]
+      },
+      "properties": {
+        "name": "Gold Cup Mountain",
+        "aliases": [],
+        "cameraHeightFt": 100.0,
+        "viewshedId": "pano-gold-cup-mountain",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 294,
+        "county": "Bonner",
+        "state": "ID",
+        "feed": "https://avista.wildfirewatch.com/station/c28354b46e084947aff4330f8d658b72",
+        "viewshedStatus": "pending",
+        "sourceId": 99
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.282388,
+          46.764861
+        ]
+      },
+      "properties": {
+        "name": "Saddle Mountain East",
+        "aliases": [],
+        "cameraHeightFt": 50.0,
+        "viewshedId": "pano-saddle-mountain-east",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 316,
+        "county": "Adams",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/189ef98c128d48f7a400fce23389d387",
+        "viewshedStatus": "pending",
+        "sourceId": 100
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -118.1513995,
+          47.730108
+        ]
+      },
+      "properties": {
+        "name": "Teel Hill",
+        "aliases": [],
+        "cameraHeightFt": 129.99,
+        "viewshedId": "pano-teel-hill",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 317,
+        "county": "Lincoln",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/65eb75b4b88a40d286d4bd6bba1df8b5",
+        "viewshedStatus": "pending",
+        "sourceId": 101
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -119.265332,
+          47.604863
+        ]
+      },
+      "properties": {
+        "name": "Coulee City",
+        "aliases": [],
+        "cameraHeightFt": 170.01,
+        "viewshedId": "pano-coulee-city",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 368,
+        "county": "Grant",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/280f3762b88240409933f3d2d8d66b4d",
+        "viewshedStatus": "pending",
+        "sourceId": 102
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.373836,
+          47.005422
+        ]
+      },
+      "properties": {
+        "name": "Steptoe",
+        "aliases": [],
+        "cameraHeightFt": 154.99,
+        "viewshedId": "pano-steptoe",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 369,
+        "county": "Whitman",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/e2a9f886a1fb431a8136964dbc2ba983",
+        "viewshedStatus": "pending",
+        "sourceId": 103
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.396937,
+          47.870858
+        ]
+      },
+      "properties": {
+        "name": "Layton Hill",
+        "aliases": [],
+        "cameraHeightFt": 131.23,
+        "viewshedId": "pano-layton-hill",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 785,
+        "county": "Spokane",
+        "state": "WA",
+        "feed": "https://avista.wildfirewatch.com/station/3fd7745d505c47728f50580560765ee3",
+        "viewshedStatus": "pending",
+        "sourceId": 104
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -116.949106,
+          47.662334
+        ]
+      },
+      "properties": {
+        "name": "Blossom Mountain",
+        "aliases": [],
+        "cameraHeightFt": 94.16,
+        "viewshedId": "pano-blossom-mountain",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 1082,
+        "county": "Kootenai",
+        "state": "ID",
+        "feed": "https://avista.wildfirewatch.com/station/6e35fedea98640ea9790af4c67554974",
+        "viewshedStatus": "pending",
+        "sourceId": 105
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -116.806726,
+          46.345724
+        ]
+      },
+      "properties": {
+        "name": "Sander Grade",
+        "aliases": [],
+        "cameraHeightFt": 109.91,
+        "viewshedId": "pano-sander-grade",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 1106,
+        "county": "Nez Perce",
+        "state": "ID",
+        "viewshedStatus": "pending",
+        "sourceId": 106
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -116.787531,
+          47.767923
+        ]
+      },
+      "properties": {
+        "name": "Maryanna",
+        "aliases": [],
+        "cameraHeightFt": 54.99,
+        "viewshedId": "pano-maryanna",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 1169,
+        "county": "Kootenai",
+        "state": "ID",
+        "viewshedStatus": "pending",
+        "sourceId": 107
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -117.043163,
+          46.330081
+        ]
+      },
+      "properties": {
+        "name": "Lewiston",
+        "aliases": [],
+        "cameraHeightFt": 102.0,
+        "viewshedId": "pano-lewiston",
+        "provider": "pano",
+        "owner": "Avista Utilities",
+        "panoStationId": 1192,
+        "county": "Asotin",
+        "state": "WA",
+        "viewshedStatus": "pending",
+        "sourceId": 108
+      }
+    }
+  ]
 }

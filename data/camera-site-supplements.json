@@ -5,6 +5,31 @@
       "sheetName": "Clearwater Wind Farm",
       "provider": "pano",
       "reason": "Sheet coordinates (46.85, -106.01) are in Montana; held out until clarified."
+    },
+    {
+      "sheetName": "Gold Mountain",
+      "provider": "pano",
+      "reason": "Avista station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+    },
+    {
+      "sheetName": "St Maries",
+      "provider": "pano",
+      "reason": "Avista station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+    },
+    {
+      "sheetName": "Orofino",
+      "provider": "pano",
+      "reason": "Avista station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+    },
+    {
+      "sheetName": "Clearwater",
+      "provider": "pano",
+      "reason": "Avista station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+    },
+    {
+      "sheetName": "Grangeville",
+      "provider": "pano",
+      "reason": "Avista station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
     }
   ],
   "unmapped": [],
@@ -22,6 +47,33 @@
       "county": "Douglas",
       "state": "OR",
       "reason": "Kept out of the ALERTWest API for landowner privacy; ALERTWest allowed a manual map marker without camera images (issue #147)."
+    }
+  ],
+  "avistaOutsideRegion": [
+    {
+      "name": "Hoodoo Mountain",
+      "county": "Bonner",
+      "state": "ID"
+    },
+    {
+      "name": "Gold Cup Mountain",
+      "county": "Bonner",
+      "state": "ID"
+    },
+    {
+      "name": "Blossom Mountain",
+      "county": "Kootenai",
+      "state": "ID"
+    },
+    {
+      "name": "Maryanna",
+      "county": "Kootenai",
+      "state": "ID"
+    },
+    {
+      "name": "Sander Grade",
+      "county": "Nez Perce",
+      "state": "ID"
     }
   ],
   "sites": [

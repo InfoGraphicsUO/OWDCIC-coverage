@@ -60,14 +60,14 @@ for (const f of attachViewshedIds(halfwayHeads, manifest, { features: [pendingHa
 
 const panoSites = JSON.parse(readFileSync(new URL('../data/pano-sites.geojson', import.meta.url), 'utf8'));
 const panoCameras = providerSitesToCameras(panoSites, 'Pano AI').features;
-assert.equal(panoCameras.length, 90);
-assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 90);
+assert.equal(panoCameras.length, 108);
+assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 108);
 
 // each owner's table lands in the one Pano layer
 const owners = (name) => panoCameras.filter(f => f.properties.owner === name).length;
 assert.deepEqual(
-  ['Portland General Electric', 'Pacific Power', 'Washington DNR', 'Puget Sound Energy'].map(owners),
-  [38, 5, 26, 21],
+  ['Portland General Electric', 'Pacific Power', 'Washington DNR', 'Puget Sound Energy', 'Avista Utilities'].map(owners),
+  [38, 5, 26, 21, 18],
 );
 
 // every site links to its page on its owner's public viewer
@@ -76,8 +76,12 @@ const viewerHosts = {
   'Pacific Power': 'pacificpower',
   'Washington DNR': 'wadnr',
   'Puget Sound Energy': 'pse',
+  'Avista Utilities': 'avista',
 };
-assert.ok(panoCameras.every(f => f.properties.feed?.startsWith(
+// Avista's public viewer leaves out three of its stations
+const linked = panoCameras.filter(f => f.properties.feed);
+assert.equal(linked.length, 105);
+assert.ok(linked.every(f => f.properties.feed.startsWith(
   `https://${viewerHosts[f.properties.owner]}.wildfirewatch.com/station/`)));
 
 // EnviroVision sites flag a shared ALERTWest tower themselves instead of borrowing its point

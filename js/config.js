@@ -6,6 +6,7 @@ export const PANO_VIEWERS = Object.freeze({
   'Pacific Power': { url: 'https://pacificpower.wildfirewatch.com/', name: 'Pacific Power Wildfire Watch' },
   'Washington DNR': { url: 'https://wadnr.wildfirewatch.com/', name: 'WA DNR Wildfire Watch' },
   'Puget Sound Energy': { url: 'https://pse.wildfirewatch.com/', name: 'PSE Wildfire Watch' },
+  'Avista Utilities': { url: 'https://avista.wildfirewatch.com/', name: 'Avista Wildfire Watch' },
 });
 
 // hosted tilesets and provider endpoints used by the map layers

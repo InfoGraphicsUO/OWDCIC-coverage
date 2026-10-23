@@ -19,7 +19,10 @@ PANO_VIEWERS = {
     'Pacific Power': 'https://pacificpower.wildfirewatch.com/',
     'Washington DNR': 'https://wadnr.wildfirewatch.com/',
     'Puget Sound Energy': 'https://pse.wildfirewatch.com/',
+    'Avista Utilities': 'https://avista.wildfirewatch.com/',
 }
+# Avista's Pano AI station export, kept separate from the installation sheet
+AVISTA_STATIONS = 'Avista Station Camera Heights(Query result).csv'
 PROVIDER_LABELS = {'alertwest': 'ALERTWest', 'pano': 'Pano AI', 'envirovision': 'EnviroVision'}
 # counts in this doc sit between <!-- name --> and <!-- /name --> and are rewritten on every build
 STATUS_DOC = Path(__file__).resolve().parent.parent / 'cameras-without-viewsheds.md'
@@ -31,6 +34,8 @@ def supplement_sites(by_provider, text, converter):
     digitized = {f['properties']['id']: f for f in json.loads((data / 'digitized-camera-sources.geojson').read_text())['features']}
     counties = converter.load_counties(converter.DEFAULT_COUNTIES)
     supplements = json.loads((data / 'camera-site-supplements.json').read_text())
+    add_avista_stations(by_provider['pano'], data / AVISTA_STATIONS, supplements, counties, converter)
+
     # rows held out of the map until the sheet is clarified
     excluded = {(r['provider'], r['sheetName']) for r in supplements.get('excluded', [])}
 
@@ -186,6 +191,40 @@ def supplement_sites(by_provider, text, converter):
     blocked += [{'provider': r['provider'], 'name': r['sheetName'], 'reason': r['reason']} for r in supplements.get('unmapped', [])]
     (data / 'camera-viewsheds-blocked.json').write_text(json.dumps(blocked, indent=2) + '\n', encoding='utf-8')
     update_status_doc(published, queued, len(blocked), max(published_dates, default=None))
+
+
+def add_avista_stations(collection, path, supplements, counties, converter):
+    """appends Avista's stations after the sheet's Pano sites so earlier sourceIds stay put"""
+    if not path.exists():
+        return
+
+    # Idaho stations sit outside the county polygons, so the file carries their county
+    outside = {r['name']: r for r in supplements.get('avistaOutsideRegion', [])}
+    names = {f['properties']['name'] for f in collection['features']}
+
+    for row in csv.DictReader(path.read_text(encoding='utf-8-sig').splitlines()):
+        name = row['Name'].strip()
+        if name in names:
+            raise ValueError(f"Avista station duplicates a Pano site: {name}")
+
+        point = [float(row['Long']), float(row['Lat'])]
+        props = {
+            'name': name,
+            'aliases': [],
+            # the export derives feet from meters to ten decimals
+            'cameraHeightFt': round(float(row['HeightFt']), 2),
+            'viewshedId': 'pano-' + converter.slugify(name),
+            'provider': 'pano',
+            'owner': 'Avista Utilities',
+            'panoStationId': int(row['ID']),
+        }
+        county = converter.county_at(point, counties)
+        if county:
+            props.update(county=county['name'], state=county['state'])
+        elif name in outside:
+            props.update(county=outside[name]['county'], state=outside[name]['state'])
+
+        collection['features'].append({'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': point}, 'properties': props})
 
 
 def update_status_doc(published, queued, blocked_count, published_utc):
