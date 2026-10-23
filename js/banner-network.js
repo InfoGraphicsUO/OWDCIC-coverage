@@ -1,5 +1,6 @@
 // mockup only: ?banner=cameras fills the banner behind the title and About with drifting
-// cameras, each ringed by a few overlapping viewshed circles, fading out around the text
+// cameras, each ringed by a few viewshed circles, fading out around the text. each camera's
+// rings are solid, so a larger camera covers the smaller ones beneath it
 (() => {
     if (new URLSearchParams(window.location.search).get("banner") !== "cameras") return;
 
@@ -18,7 +19,7 @@
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     // spacing between cameras, and how far each one wanders from its home spot
-    const SPACING = 62;
+    const SPACING = 80;
     const DRIFT = 3;
     // each outer ring is wider and fainter than the one inside it
     const RINGS = [
@@ -57,7 +58,7 @@
                 nodes.push({
                     homeX: (col + 0.1 + rand() * 0.8) * cellW,
                     homeY: height * (0.15 + rand() * 0.7),
-                    r: 9 + rand() * 9,
+                    r: 15 + rand() * 12,
                     phase: rand() * Math.PI * 2,
                     speed: 0.00025 + rand() * 0.00035,
                     pulse: rand() * Math.PI * 2,
@@ -67,6 +68,8 @@
                 });
             }
         }
+        // draw the smallest first so larger cameras land on top
+        nodes.sort((a, b) => a.r - b.r);
     }
 
     function resize() {
@@ -112,6 +115,7 @@
     function draw(time) {
         ctx.clearRect(0, 0, width, height);
         const t = reduceMotion.matches ? 0 : time;
+        const background = getComputedStyle(banner).backgroundColor;
 
         for (const node of nodes) {
             node.x = node.homeX + Math.cos(t * node.speed + node.phase) * DRIFT;
@@ -125,6 +129,14 @@
 
             // the rings breathe very slightly, as if the viewshed is scanning
             const breathe = reduceMotion.matches ? 1 : 1 + 0.04 * Math.sin(t * 0.0008 + node.pulse);
+            const outer = RINGS[RINGS.length - 1];
+
+            // fill the outer ring with the banner colour so it hides anything underneath
+            ctx.fillStyle = background;
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, node.r * outer.scale * breathe + 0.5, 0, Math.PI * 2);
+            ctx.fill();
+
             for (const ring of RINGS) {
                 ctx.strokeStyle = `rgba(255, 255, 255, ${ring.alpha * node.fade})`;
                 ctx.beginPath();
