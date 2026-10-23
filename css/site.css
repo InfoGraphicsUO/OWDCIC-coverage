@@ -2,7 +2,7 @@
     --ohaz-grey: #2f2e2e;
     --ohaz-yellow: #f8e109;
     --ohaz-green: #3c6b03;
-    --banner-height: 82px;
+    --banner-height: 81px;
     --font-heading: "Roboto Condensed", "Clarity City", sans-serif;
     --panel-background: rgba(255, 255, 255, 0.94);
     --panel-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
@@ -71,10 +71,12 @@ textarea {
 }
 
 .site-banner__title {
-    margin: 0 0 0 14px;
+    /* the bottom margin lifts the text so the space above the letters and below the
+       descenders matches the gap to the logo */
+    margin: 0 0 0.15em 14px;
     font-family: var(--font-heading);
     font-size: clamp(24px, 2.9vw, 42px);
-    font-weight: 600;
+    font-weight: 500;
     line-height: 1.1;
     letter-spacing: 0.01em;
 }
