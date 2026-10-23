@@ -63,6 +63,7 @@ import {
 import { addHoverLayer, pointerCanHover } from './hover-info.js';
 import { showFeaturePopup } from './popups.js';
 import { getSetting, initSettings, onSettingChange } from './settings.js';
+import { initAbout } from './about.js';
 
 const LABEL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
@@ -474,6 +475,7 @@ const FIRE_MARKER_SIZES = [
 
 // render control shells before Mapbox and providers finish loading
 initSettings();
+initAbout();
 
 // rows left out of js/visible-content.js are kept aside so their layers stay off
 const legendRows = visibleLegendItems(legendItems(), VISIBLE_LAYERS);

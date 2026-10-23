@@ -65,7 +65,7 @@ textarea {
     place-items: center;
     width: 42px;
     height: 42px;
-    margin-left: auto;
+    margin-left: 6px;
     padding: 0;
     color: #fff;
     background: transparent;
@@ -76,12 +76,30 @@ textarea {
     transition: color 120ms ease;
 }
 
+.site-banner__about {
+    height: 42px;
+    margin-left: auto;
+    padding: 0 12px;
+    color: #fff;
+    background: transparent;
+    border: 0;
+    border-radius: var(--ui-radius-sm);
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 120ms ease;
+}
+
+.site-banner__about:hover,
+.site-banner__about:focus-visible,
+.site-banner__about[aria-expanded="true"],
 .site-banner__settings:hover,
 .site-banner__settings:focus-visible,
 .site-banner__settings[aria-expanded="true"] {
     color: var(--ohaz-yellow);
 }
 
+.site-banner__about:focus-visible,
 .site-banner__settings:focus-visible {
     outline: 2px solid var(--ohaz-yellow);
     outline-offset: 2px;
@@ -118,9 +136,228 @@ textarea {
     line-height: 1.4;
 }
 
+.modal__dialog.about-modal__dialog {
+    width: min(1040px, 100%);
+}
+
+/* equal side columns keep the tabs centered on the dialog */
+.about-modal__dialog .modal__header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: stretch;
+    padding: 0 16px;
+}
+
+.about-modal__dialog .modal__header h2 {
+    align-self: center;
+    padding: 14px 0;
+}
+
+.about-modal__dialog .modal__close {
+    align-self: center;
+    justify-self: end;
+}
+
+.about-modal__tabs {
+    display: flex;
+    gap: 4px;
+}
+
+.about-modal__tab {
+    margin-bottom: -1px;
+    padding: 16px 14px 13px;
+    color: #c8c8c8;
+    background: transparent;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 120ms ease, border-color 120ms ease;
+}
+
+.about-modal__tab:hover {
+    color: #fff;
+}
+
+.about-modal__tab.is-active {
+    color: #fff;
+    border-bottom-color: var(--ohaz-yellow);
+}
+
+.about-modal__tab:focus-visible {
+    outline: 2px solid var(--ohaz-yellow);
+    outline-offset: -2px;
+}
+
+/* panels share one grid cell so the dialog is as tall as the longest tab
+   and doesn't resize when switching */
+.modal__body.about-modal__body {
+    display: grid;
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 22px 28px 26px;
+}
+
+.about-modal__panel {
+    grid-area: 1 / 1;
+    visibility: hidden;
+}
+
+.about-modal__panel.is-active {
+    visibility: visible;
+}
+
+.about-modal__panel > p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.65;
+}
+
+.about-modal__partners {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
+}
+
+.about-modal__partners .about-modal__section + .about-modal__section {
+    margin-top: 0;
+}
+
+.about-modal__partners .about-modal__heading {
+    text-decoration: none;
+}
+
+.about-modal__panel > .about-modal__lead {
+    margin: 0 0 20px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #444;
+    font-size: 19px;
+    line-height: 1.6;
+}
+
+.about-modal__section + .about-modal__section {
+    margin-top: 26px;
+}
+
+.about-modal__heading {
+    margin: 0 0 12px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    text-decoration: underline var(--ohaz-yellow) 2px;
+    text-underline-offset: 5px;
+}
+
+.about-modal__section p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.about-modal__timeline {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.about-modal__milestone {
+    position: relative;
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 14px;
+    padding-bottom: 16px;
+}
+
+/* yellow rail joining the milestone dots */
+.about-modal__milestone::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    bottom: -8px;
+    left: 96px;
+    width: 2px;
+    background: rgba(248, 225, 9, 0.35);
+}
+
+.about-modal__milestone:last-child {
+    padding-bottom: 0;
+}
+
+.about-modal__milestone:last-child::before {
+    display: none;
+}
+
+.about-modal__milestone p {
+    position: relative;
+    padding-left: 16px;
+}
+
+.about-modal__milestone p::before {
+    content: "";
+    position: absolute;
+    top: 7px;
+    left: -11px;
+    width: 10px;
+    height: 10px;
+    background: var(--ohaz-yellow);
+    border: 2px solid var(--ohaz-grey);
+    border-radius: 50%;
+}
+
+.about-modal__date {
+    padding-top: 1px;
+    color: var(--ohaz-yellow);
+    font-size: 15px;
+    font-weight: 700;
+    text-align: right;
+}
+
+.about-modal__goal {
+    margin: 18px 0 0;
+    padding: 12px 16px;
+    background: rgba(248, 225, 9, 0.08);
+    border-left: 4px solid var(--ohaz-yellow);
+    border-radius: 0 var(--ui-radius-sm) var(--ui-radius-sm) 0;
+}
+
+.about-modal__goal p {
+    margin: 0;
+    line-height: 1.6;
+    font-size: 16px;
+    font-style: italic;
+}
+
+.about-modal__panel > .about-modal__closing {
+    margin-top: 18px;
+}
+
+.about-modal__orgs {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+.about-modal__acronym {
+    color: #9a9a9a;
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .site-banner__settings {
+    .site-banner__about,
+    .site-banner__settings,
+    .about-modal__tab {
         transition: none;
+    }
+}
+
+@media (max-width: 760px) {
+    .about-modal__partners {
+        grid-template-columns: 1fr;
+        gap: 26px;
     }
 }
 
