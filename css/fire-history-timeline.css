@@ -15,7 +15,7 @@
     border: 1px solid var(--control-chrome-border);
     border-radius: var(--ui-radius);
     box-shadow: 0 2px 10px rgba(0, 0, 0, .3);
-    font: 12px/1.2 "Merriweather", "Segoe UI", sans-serif;
+    font: 12px/1.2 "Clarity City", "Segoe UI", sans-serif;
     /* closed, it sits just below its spot and fades out before turning invisible */
     opacity: 0;
     visibility: hidden;

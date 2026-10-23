@@ -2,7 +2,8 @@
     --ohaz-grey: #2f2e2e;
     --ohaz-yellow: #f8e109;
     --ohaz-green: #3c6b03;
-    --banner-height: 82px;
+    --banner-height: 81px;
+    --font-heading: "Roboto Condensed", "Clarity City", sans-serif;
     --panel-background: rgba(255, 255, 255, 0.94);
     --panel-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
     --ui-radius: 10px;
@@ -19,7 +20,7 @@ body {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    font-family: "Merriweather", "Segoe UI", sans-serif;
+    font-family: "Clarity City", "Segoe UI", sans-serif;
 }
 
 button,
@@ -38,7 +39,7 @@ textarea {
     display: flex;
     align-items: center;
     height: var(--banner-height);
-    padding: 8px 22px;
+    padding: 6px 14px;
     color: #fff;
     background: var(--ohaz-grey);
     border-bottom: 5px solid var(--ohaz-yellow);
@@ -52,55 +53,64 @@ textarea {
     object-fit: contain;
 }
 
+.site-banner__network {
+    position: absolute;
+    top: 0;
+    pointer-events: none;
+}
+
+/* keep the title and About painted above the network canvas */
+.site-banner--network .site-banner__title,
+.site-banner--network .site-banner__about {
+    position: relative;
+}
+
+.site-banner__logo--wide {
+    width: auto;
+    max-width: 260px;
+}
+
 .site-banner__title {
-    margin: 0 0 0 18px;
-    font-size: clamp(21px, 2.3vw, 32px);
-    font-weight: 700;
+    /* the negative bottom margin lowers the text so the space above the capitals matches
+       the space below the baseline */
+    margin: 0 0 -0.06em 14px;
+    font-family: var(--font-heading);
+    font-size: clamp(24px, 2.9vw, 42px);
+    font-weight: 500;
     line-height: 1.1;
     letter-spacing: 0.01em;
 }
 
-.site-banner__settings {
-    display: grid;
-    place-items: center;
-    width: 42px;
-    height: 42px;
-    margin-left: 6px;
-    padding: 0;
-    color: #fff;
-    background: transparent;
-    border: 0;
-    border-radius: var(--ui-radius-sm);
-    font-size: 22px;
-    cursor: pointer;
-    transition: color 120ms ease;
+.site-banner__region {
+    margin-left: 0.15em;
+    font-size: 0.7em;
+    font-weight: 300;
+    opacity: 0.7;
 }
 
 .site-banner__about {
     height: 42px;
     margin-left: auto;
-    padding: 0 12px;
+    padding: 0 10px;
     color: #fff;
     background: transparent;
     border: 0;
     border-radius: var(--ui-radius-sm);
     font-size: 16px;
     font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: color 120ms ease;
+    transition: background-color 120ms ease;
 }
 
 .site-banner__about:hover,
 .site-banner__about:focus-visible,
-.site-banner__about[aria-expanded="true"],
-.site-banner__settings:hover,
-.site-banner__settings:focus-visible,
-.site-banner__settings[aria-expanded="true"] {
-    color: var(--ohaz-yellow);
+.site-banner__about[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.1);
 }
 
-.site-banner__about:focus-visible,
-.site-banner__settings:focus-visible {
+.site-banner__about:focus-visible {
     outline: 2px solid var(--ohaz-yellow);
     outline-offset: 2px;
 }
@@ -150,7 +160,14 @@ textarea {
 
 .about-modal__dialog .modal__header h2 {
     align-self: center;
-    padding: 14px 0;
+    padding: 12px 0;
+}
+
+.about-modal__dialog .modal__header h2,
+.settings-modal__dialog .modal__header h2 {
+    font-family: var(--font-heading);
+    font-size: 24px;
+    font-weight: 600;
 }
 
 .about-modal__dialog .modal__close {
@@ -160,34 +177,34 @@ textarea {
 
 .about-modal__tabs {
     display: flex;
+    align-items: center;
     gap: 4px;
 }
 
 .about-modal__tab {
-    margin-bottom: -1px;
-    padding: 16px 14px 13px;
-    color: #c8c8c8;
+    height: 36px;
+    padding: 0 10px;
+    color: #fff;
     background: transparent;
     border: 0;
-    border-bottom: 3px solid transparent;
-    font-size: 15px;
+    border-radius: var(--ui-radius-sm);
+    font-size: 14px;
     font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: color 120ms ease, border-color 120ms ease;
+    transition: background-color 120ms ease;
 }
 
-.about-modal__tab:hover {
-    color: #fff;
-}
-
+.about-modal__tab:hover,
+.about-modal__tab:focus-visible,
 .about-modal__tab.is-active {
-    color: #fff;
-    border-bottom-color: var(--ohaz-yellow);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .about-modal__tab:focus-visible {
     outline: 2px solid var(--ohaz-yellow);
-    outline-offset: -2px;
+    outline-offset: 2px;
 }
 
 /* panels share one grid cell so the dialog is as tall as the longest tab
@@ -348,7 +365,6 @@ textarea {
 
 @media (prefers-reduced-motion: reduce) {
     .site-banner__about,
-    .site-banner__settings,
     .about-modal__tab {
         transition: none;
     }
@@ -376,8 +392,19 @@ textarea {
         height: 52px;
     }
 
+    .site-banner__logo--wide {
+        width: auto;
+        max-width: 96px;
+    }
+
     .site-banner__title {
-        margin-left: 12px;
-        font-size: 19px;
+        margin-left: 10px;
+        font-size: 20px;
+    }
+
+    /* the wider logo leaves room for one line of title, so the region drops below it */
+    .site-banner__region {
+        display: block;
+        margin-left: 0;
     }
 }

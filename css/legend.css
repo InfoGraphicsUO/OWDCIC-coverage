@@ -5,7 +5,7 @@
     background: var(--panel-background);
     border-radius: var(--ui-radius);
     box-shadow: var(--panel-shadow);
-    font: 13px/1.4 "Merriweather", "Segoe UI", sans-serif;
+    font: 13px/1.4 "Clarity City", "Segoe UI", sans-serif;
 }
 
 .legend-title {
@@ -162,7 +162,7 @@
     border-radius: 50%;
     background: #c62828;
     color: #fff;
-    font: 700 11px/15px "Merriweather", "Segoe UI", sans-serif;
+    font: 700 11px/15px "Clarity City", "Segoe UI", sans-serif;
     text-align: center;
 }
 
@@ -192,7 +192,7 @@
     background: #333;
     color: #fff;
     content: attr(data-tooltip);
-    font: 12px/1.3 "Merriweather", "Segoe UI", sans-serif;
+    font: 12px/1.3 "Clarity City", "Segoe UI", sans-serif;
     opacity: 0;
     pointer-events: none;
     transform: translate(-50%, 3px);

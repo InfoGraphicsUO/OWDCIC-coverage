@@ -2,7 +2,7 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8">
-        <title>OWDCIC Camera Coverage</title>
+        <title>Fire Camera Coverage Map, Oregon &amp; Washington</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <!-- the gl script and css load without cors, the style and tiles with it -->
         <link rel="preconnect" href="https://api.mapbox.com">
@@ -12,7 +12,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link rel="icon" href="img/OHAZ-logo.png" type="image/png">
 
-        <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Clarity+City:wght@400;500;600;700&family=Roboto+Condensed:wght@300;400;600&display=swap" rel="stylesheet">
 
         <!-- mapboxgl global must exist before js/map.js initializes the map -->
         <link href="https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.css" rel="stylesheet">
@@ -33,18 +33,17 @@
         <link rel="stylesheet" href="css/popups.css">
         <link rel="stylesheet" href="css/loading.css">
 
+        <script defer src="js/logo-mockup.js"></script>
+        <script type="module" src="js/banner-network.js"></script>
         <script type="module" src="js/map-layers.js"></script>
     </head>
     <body>
 
         <header class="site-banner">
-            <img class="site-banner__logo" src="img/OHAZ-logo.png" alt="OHAZ">
-            <h1 class="site-banner__title">OWDCIC Camera Coverage Map</h1>
+            <img class="site-banner__logo site-banner__logo--wide" src="img/logos/ohaz-uo-alertwest-cameras.png" alt="OHAZ and University of Oregon">
+            <h1 class="site-banner__title">Fire Camera Coverage <span class="site-banner__region">OR/WA</span></h1>
             <button id="about-button" class="site-banner__about" type="button" aria-haspopup="dialog" aria-expanded="false">
                 About
-            </button>
-            <button id="settings-button" class="site-banner__settings" type="button" aria-label="Settings" aria-haspopup="dialog" aria-expanded="false">
-                <i class="fa-solid fa-gear" aria-hidden="true"></i>
             </button>
         </header>
 

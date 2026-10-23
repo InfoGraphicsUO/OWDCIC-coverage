@@ -4,6 +4,8 @@ import { openModal } from './modal.js';
 const STORAGE_KEY = 'owdcic-settings';
 const DEFAULT_SETTINGS = Object.freeze({
   separateViewshedColors: false,
+  showZoomLevel: false,
+  animateBanner: false,
 });
 
 // each row is one boolean preference shown in the settings popup
@@ -12,6 +14,16 @@ const SETTING_FIELDS = Object.freeze([
     key: 'separateViewshedColors',
     label: 'Color viewsheds by camera provider',
     description: 'Each provider\'s viewsheds use their own color instead of sharing one.',
+  }),
+  Object.freeze({
+    key: 'showZoomLevel',
+    label: 'Show zoom level',
+    description: 'Displays the current map zoom at the top of the map.',
+  }),
+  Object.freeze({
+    key: 'animateBanner',
+    label: 'Animate banner',
+    description: 'The camera viewsheds in the banner drift slowly.',
   }),
 ]);
 
@@ -33,10 +45,9 @@ export function onSettingChange(key, callback) {
   return () => listeners.delete(listener);
 }
 
-export function initSettings() {
-  const button = document.getElementById('settings-button');
-  if (!button) return;
-
+export function bindSettingsButton(button) {
+  button.setAttribute('aria-haspopup', 'dialog');
+  button.setAttribute('aria-expanded', 'false');
   button.addEventListener('click', () => {
     button.setAttribute('aria-expanded', 'true');
     openSettingsModal(() => button.setAttribute('aria-expanded', 'false'));
@@ -54,7 +65,7 @@ function setSetting(key, value) {
 function openSettingsModal(onClose) {
   const { dialog } = openModal({
     id: 'settings',
-    title: 'Settings',
+    title: 'Map settings',
     closeLabel: 'Close settings',
     className: 'settings-modal',
     onClose,

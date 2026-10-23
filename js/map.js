@@ -1,6 +1,7 @@
 import { restoreMarkerIcons } from './marker-icons.js';
 import { registerOutsideHatch } from './states-highlight.js';
 import { REGION_DATA_BOUNDS } from './config.js';
+import { bindSettingsButton, onSettingChange } from './settings.js';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiaW5mb2dyYXBoaWNzIiwiYSI6ImNqaTR0eHhnODBjeTUzdmx0N3U2dWU5NW8ifQ.fVbTCmIrqILIzv5QGtVJ2Q';
@@ -214,6 +215,7 @@ async function initializeMap() {
   );
   map.addControl(new HomeControl(), 'top-left');
   initLocationSearch(map);
+  map.addControl(new SettingsControl(), 'top-left');
 
   map.addControl(new mapboxgl.AttributionControl({
     customAttribution: '<a href="https://infographics.uoregon.edu/" target="_blank" rel="noopener noreferrer">UO InfoGraphics Lab</a> | <a href="https://ohaz.uoregon.edu/" target="_blank" rel="noopener noreferrer">OHAZ</a>'
@@ -266,6 +268,7 @@ function initZoomViewer(map) {
 
   updateZoom();
   map.on('zoom', updateZoom);
+  onSettingChange('showZoomLevel', (show) => { viewer.hidden = !show; });
 }
 
 class HomeControl {
@@ -296,6 +299,33 @@ class HomeControl {
     // Mapbox may remove the control when rebuilding its UI
     this.container?.remove();
     this.map = undefined;
+  }
+}
+
+class SettingsControl {
+  onAdd() {
+    const container = document.createElement('div');
+    container.className = 'mapboxgl-ctrl mapboxgl-ctrl-group';
+
+    const button = document.createElement('button');
+    button.className = 'mapboxgl-ctrl-settings';
+    button.type = 'button';
+    button.title = 'Map settings';
+    button.setAttribute('aria-label', button.title);
+
+    const icon = document.createElement('i');
+    icon.className = 'fa-solid fa-gear';
+    icon.setAttribute('aria-hidden', 'true');
+    button.append(icon);
+    bindSettingsButton(button);
+
+    container.append(button);
+    this.container = container;
+    return container;
+  }
+
+  onRemove() {
+    this.container?.remove();
   }
 }
 

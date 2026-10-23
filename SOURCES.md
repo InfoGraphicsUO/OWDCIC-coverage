@@ -82,5 +82,5 @@ The DEM tile lists were filtered once from National Map CSV exports to the newes
 - **Mapbox terrain elevation tiles:** `mapbox://mapbox.mapbox-terrain-dem-v1`.
 - **Annual burn probability:** [Pacific Northwest QWRA burn-probability tiles](https://tiles.arcgis.com/tiles/CD5mKowwN6nIaqd8/arcgis/rest/services/project_wre_bp_tile_package/MapServer/tile/{z}/{y}/{x})
 - **QGIS project basemap:** [OpenStreetMap raster tiles](https://tile.openstreetmap.org/{z}/{x}/{y}.png)
-- **Browser libraries and fonts:** [Mapbox GL JS/CSS 3.28.1](https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.js), [Plotly 2.35.2](https://cdn.plot.ly/plotly-2.35.2.min.js) (loaded the first time a land status chart shows), [Font Awesome kit](https://kit.fontawesome.com/be4ea184d4.js), and [Google Fonts — Merriweather](https://fonts.googleapis.com/css2?family=Merriweather:wght@400;500;600;700&display=swap).
+- **Browser libraries and fonts:** [Mapbox GL JS/CSS 3.28.1](https://api.mapbox.com/mapbox-gl-js/v3.28.1/mapbox-gl.js), [Plotly 2.35.2](https://cdn.plot.ly/plotly-2.35.2.min.js) (loaded the first time a land status chart shows), [Font Awesome kit](https://kit.fontawesome.com/be4ea184d4.js), and [Google Fonts — Clarity City and Roboto Condensed](https://fonts.googleapis.com/css2?family=Clarity+City:wght@400;500;600;700&family=Roboto+Condensed:wght@400;600&display=swap).
 

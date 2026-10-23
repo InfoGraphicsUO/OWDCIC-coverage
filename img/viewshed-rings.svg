@@ -1,0 +1,10 @@
+<!-- one camera's viewshed rings for the banner background in js/banner-network.js; the inner ring (r=50) is the camera's base size, and the fill matches the banner grey (ohaz-grey in css/site.css) so larger cameras hide the ones beneath them; width and height are set because canvas drawImage needs an intrinsic size -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -100 200 200" width="200" height="200">
+  <circle r="96" fill="#2f2e2e"/>
+  <g fill="none" stroke="#fff" stroke-width="2.5">
+    <circle r="95" stroke-opacity="0.12"/>
+    <circle r="80" stroke-opacity="0.2"/>
+    <circle r="65" stroke-opacity="0.32"/>
+    <circle r="50" stroke-opacity="0.5"/>
+  </g>
+</svg>

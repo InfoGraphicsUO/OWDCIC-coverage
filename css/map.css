@@ -79,16 +79,16 @@
     flex: 0 0 72px;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     gap: 6px;
-    padding: 6px 4px;
+    padding: 6px 3px 9px;
     color: var(--control-chrome-text);
     background: var(--control-chrome-bg);
     border: 1px solid var(--control-chrome-border);
     border-radius: var(--ui-radius);
     box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
     cursor: pointer;
-    font: 600 12px/1.15 "Merriweather", "Segoe UI", sans-serif;
+    font: 600 12px/1.15 "Clarity City", "Segoe UI", sans-serif;
 }
 
 .control-rail__button:hover { background: #3a3939; }
@@ -106,10 +106,10 @@
 
 .control-rail__icon {
     display: flex;
+    flex: 1;
     align-items: center;
     justify-content: center;
     width: 28px;
-    height: 28px;
     font-size: 22px;
     line-height: 1;
 }
@@ -202,7 +202,7 @@
     border: 1px solid var(--ohaz-yellow, #f8e109);
     border-radius: var(--ui-radius-sm);
     cursor: pointer;
-    font: 600 13px/1.2 "Merriweather", sans-serif;
+    font: 600 13px/1.2 "Clarity City", sans-serif;
 }
 
 .control-shell__clear:hover:not(:disabled),
@@ -282,8 +282,10 @@
     right: min(360px, 32vw);
     z-index: 1;
     color: #000;
-    font: 13px/1 "Merriweather", "Segoe UI", sans-serif;
+    font: 13px/1 "Clarity City", "Segoe UI", sans-serif;
 }
+
+.zoom-viewer[hidden] { display: none; }
 
 .basemap-picker {
     box-sizing: border-box;
@@ -322,7 +324,7 @@
     border: 0;
     border-bottom: 1px solid var(--control-chrome-border);
     text-align: left;
-    font: 600 16px/1.3 "Merriweather", "Segoe UI", sans-serif;
+    font: 600 16px/1.3 "Clarity City", "Segoe UI", sans-serif;
 }
 
 .basemap-picker__preview {
@@ -386,7 +388,7 @@
     margin: 0;
     cursor: pointer;
     user-select: none;
-    font: 600 16px/1.3 "Merriweather", "Segoe UI", sans-serif;
+    font: 600 16px/1.3 "Clarity City", "Segoe UI", sans-serif;
 }
 
 .control-menu .legend-row {
@@ -502,7 +504,8 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl {
     float: none;
-    margin: 0 0 var(--panel-gap);
+    /* the extra 4px over three gaps lines the gear's bottom up with the 72px rail buttons */
+    margin: 0 0 calc(var(--panel-gap) + 4px / 3);
 }
 
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group {
@@ -625,7 +628,8 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     bottom: 0 !important;
 }
 
-.mapboxgl-ctrl-home i {
+.mapboxgl-ctrl-home i,
+.mapboxgl-ctrl-settings i {
     display: block;
     margin: auto;
     color: var(--control-chrome-text);
@@ -644,6 +648,8 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     .control-rail__button { flex-basis: 64px; font-size: 11px; }
     .control-rail__icon { width: 24px; height: 24px; font-size: 18px; }
     .zoom-viewer { display: none; }
+    /* the map controls already run taller than the shorter rail here */
+    .mapboxgl-ctrl-top-left .mapboxgl-ctrl { margin-bottom: var(--panel-gap); }
 }
 
 @media (max-width: 900px) {
