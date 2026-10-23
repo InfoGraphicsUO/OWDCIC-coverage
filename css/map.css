@@ -61,9 +61,8 @@
     min-width: 0;
     min-height: 0;
     color: var(--control-chrome-text);
-    background: var(--sidebar-bg);
-    -webkit-backdrop-filter: var(--overlay-backdrop);
-    backdrop-filter: var(--overlay-backdrop);
+    /* solid like the banner; only the controls floating over the map are see-through */
+    background: var(--ohaz-grey);
     border-right: 1px solid var(--control-chrome-border);
     transition: transform var(--sidebar-duration) var(--sidebar-ease);
     will-change: transform;
@@ -239,9 +238,7 @@
     height: 54px;
     padding: 0;
     color: #fff;
-    background: var(--sidebar-bg);
-    -webkit-backdrop-filter: var(--overlay-backdrop);
-    backdrop-filter: var(--overlay-backdrop);
+    background: var(--ohaz-grey);
     border: 1px solid rgba(0, 0, 0, .35);
     border-left: 0;
     border-radius: 0 var(--ui-radius-sm) var(--ui-radius-sm) 0;
