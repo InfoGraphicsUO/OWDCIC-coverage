@@ -40,6 +40,7 @@ SECTION_OWNERS = {
     "PACIFIC POWER": "Pacific Power",
     "WASHINGTON DEPT OF NATURAL RESOURCES": "Washington DNR",
     "PUGET SOUND ENERGY": "Puget Sound Energy",
+    "AVISTA UTILITIES": "Avista Utilities",
 }
 ESTIMATED_HEIGHT = re.compile(r"estimated", re.I)
 PROVIDER_OUTPUTS = {"pano": HERE.parent / "data" / "pano-sites.geojson"}

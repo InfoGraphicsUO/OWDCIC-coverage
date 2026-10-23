@@ -9,27 +9,27 @@
     {
       "sheetName": "Gold Mountain",
       "provider": "pano",
-      "reason": "Avista station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
     },
     {
       "sheetName": "St Maries",
       "provider": "pano",
-      "reason": "Avista station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
     },
     {
       "sheetName": "Orofino",
       "provider": "pano",
-      "reason": "Avista station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
     },
     {
       "sheetName": "Clearwater",
       "provider": "pano",
-      "reason": "Avista station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
     },
     {
       "sheetName": "Grangeville",
       "provider": "pano",
-      "reason": "Avista station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
+      "reason": "Avista Utilities station in Idaho whose 12 mi viewshed does not reach Oregon or Washington."
     }
   ],
   "unmapped": [],
@@ -49,29 +49,34 @@
       "reason": "Kept out of the ALERTWest API for landowner privacy; ALERTWest allowed a manual map marker without camera images (issue #147)."
     }
   ],
-  "avistaOutsideRegion": [
+  "outsideRegion": [
     {
-      "name": "Hoodoo Mountain",
+      "sheetName": "Hoodoo Mountain",
+      "provider": "pano",
       "county": "Bonner",
       "state": "ID"
     },
     {
-      "name": "Gold Cup Mountain",
+      "sheetName": "Gold Cup Mountain",
+      "provider": "pano",
       "county": "Bonner",
       "state": "ID"
     },
     {
-      "name": "Blossom Mountain",
+      "sheetName": "Blossom Mountain",
+      "provider": "pano",
       "county": "Kootenai",
       "state": "ID"
     },
     {
-      "name": "Maryanna",
+      "sheetName": "Maryanna",
+      "provider": "pano",
       "county": "Kootenai",
       "state": "ID"
     },
     {
-      "name": "Sander Grade",
+      "sheetName": "Sander Grade",
+      "provider": "pano",
       "county": "Nez Perce",
       "state": "ID"
     }

@@ -73,8 +73,9 @@ class CameraSiteDataTests(unittest.TestCase):
         self.assertEqual(len(avista), 18)
         self.assertFalse({'Gold Mountain', 'St Maries', 'Orofino', 'Clearwater', 'Grangeville'} & set(avista))
         self.assertEqual(sum(f['properties']['state'] == 'ID' for f in avista.values()), 5)
-        self.assertEqual(avista['Lilienthal Mountain']['properties']['cameraHeightFt'], 199.02)
+        self.assertEqual(avista['Lilienthal Mountain']['properties']['cameraHeightFt'], 199)
         self.assertEqual(avista['Layton Hill']['properties']['viewshedId'], 'pano-layton-hill')
+        self.assertEqual(avista['Hoodoo Mountain']['properties']['county'], 'Bonner')
         # three stations are missing from Avista's public viewer, so they keep its front page
         self.assertEqual({n for n, f in avista.items() if 'feed' not in f['properties']}, {'Sander Grade', 'Maryanna', 'Lewiston'})
 
