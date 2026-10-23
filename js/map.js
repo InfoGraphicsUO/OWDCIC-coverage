@@ -345,10 +345,11 @@ function initLocationSearch(map) {
   searchBox.theme = {
     variables: {
       fontFamily: 'inherit',
-      colorBackground: '#2f2e2e',
+      // custom properties cross the shadow root, so the dropdown follows the global overlay opacity
+      colorBackground: 'var(--overlay-dark-bg)',
       colorText: '#ffffff',
-      colorBackgroundHover: '#3a3939',
-      colorBackgroundActive: '#3a3939',
+      colorBackgroundHover: 'var(--overlay-dark-bg-hover)',
+      colorBackgroundActive: 'var(--overlay-dark-bg-hover)',
       borderRadius: '10px',
     },
     // the dropdown renders in a shadow root, so its chrome is set here instead of in map.css
@@ -362,6 +363,10 @@ function initLocationSearch(map) {
         border-radius: 10px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
         overflow: hidden;
+      }
+      [class$="--Results"] {
+        -webkit-backdrop-filter: var(--overlay-backdrop);
+        backdrop-filter: var(--overlay-backdrop);
       }
       [class*="--ResultsList"], [class*="--ResultsAttribution"] {
         border: 0; border-radius: 0; box-shadow: none; background: transparent;

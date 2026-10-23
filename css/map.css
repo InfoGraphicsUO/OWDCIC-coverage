@@ -3,7 +3,8 @@
     --rail-width: 76px;
     --collapse-tab-width: 25px;
     --panel-gap: 12px;
-    --control-chrome-bg: var(--ohaz-grey);
+    --control-chrome-bg: var(--overlay-dark-bg);
+    --control-chrome-bg-hover: var(--overlay-dark-bg-hover);
     --control-chrome-text: #fff;
     --control-chrome-border: rgba(255, 255, 255, .18);
     --control-chrome-muted: rgba(255, 255, 255, .72);
@@ -55,6 +56,8 @@
     min-height: 0;
     color: var(--control-chrome-text);
     background: var(--control-chrome-bg);
+    -webkit-backdrop-filter: var(--overlay-backdrop);
+    backdrop-filter: var(--overlay-backdrop);
     border-right: 1px solid var(--control-chrome-border);
     transition: transform var(--sidebar-duration) var(--sidebar-ease);
     will-change: transform;
@@ -84,6 +87,8 @@
     padding: 6px 3px 9px;
     color: var(--control-chrome-text);
     background: var(--control-chrome-bg);
+    -webkit-backdrop-filter: var(--overlay-backdrop);
+    backdrop-filter: var(--overlay-backdrop);
     border: 1px solid var(--control-chrome-border);
     border-radius: var(--ui-radius);
     box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
@@ -91,9 +96,9 @@
     font: 600 12px/1.15 "Clarity City", "Segoe UI", sans-serif;
 }
 
-.control-rail__button:hover { background: #3a3939; }
+.control-rail__button:hover { background: var(--control-chrome-bg-hover); }
 .control-rail__button:focus-visible {
-    background: #3a3939;
+    background: var(--control-chrome-bg-hover);
     outline: 2px solid var(--ohaz-yellow);
     outline-offset: 1px;
 }
@@ -160,7 +165,7 @@
     overflow: auto;
     overscroll-behavior: contain;
     color: var(--control-chrome-text);
-    background: var(--control-chrome-bg);
+    background: transparent;
 }
 
 .control-menu[hidden] { display: none; }
@@ -230,6 +235,8 @@
     padding: 0;
     color: #fff;
     background: var(--control-chrome-bg);
+    -webkit-backdrop-filter: var(--overlay-backdrop);
+    backdrop-filter: var(--overlay-backdrop);
     border: 1px solid rgba(0, 0, 0, .35);
     border-left: 0;
     border-radius: 0 var(--ui-radius-sm) var(--ui-radius-sm) 0;
@@ -295,7 +302,7 @@
     margin: 0;
     padding: 0 0 12px;
     gap: 0;
-    background: var(--control-chrome-bg);
+    background: transparent;
     border: 0;
     font: inherit;
 }
@@ -320,7 +327,7 @@
     min-width: 0;
     padding: 14px 16px;
     color: var(--control-chrome-text);
-    background: var(--control-chrome-bg);
+    background: transparent;
     border: 0;
     border-bottom: 1px solid var(--control-chrome-border);
     text-align: left;
@@ -373,6 +380,9 @@
     padding: 0;
     color: var(--control-chrome-text);
     background: transparent;
+    /* a blur nested in the blurred sidebar only sees the sidebar's own tint, so it reads as a solid block */
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     border-radius: 0;
     box-shadow: none;
     font: inherit;
@@ -511,6 +521,8 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group {
     overflow: hidden;
     background: var(--control-chrome-bg);
+    -webkit-backdrop-filter: var(--overlay-backdrop);
+    backdrop-filter: var(--overlay-backdrop);
     border: 1px solid var(--control-chrome-border);
     border-radius: var(--ui-radius);
     box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
@@ -518,7 +530,7 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group button {
     color: var(--control-chrome-text);
-    background: var(--control-chrome-bg);
+    background: transparent;
 }
 
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group button + button {
@@ -526,7 +538,7 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 }
 
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group button:hover:not(:disabled) {
-    background: #3a3939;
+    background: var(--control-chrome-bg-hover);
 }
 
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group button:focus-visible {
@@ -549,6 +561,29 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 
 .mapboxgl-ctrl-top-left .location-search.is-expanded {
     width: 300px;
+}
+
+/* the blur sits on a backing layer so the results dropdown inside isn't a nested blur */
+.mapboxgl-ctrl-top-left .mapboxgl-ctrl-group.location-search {
+    /* isolating traps the dropdown's stacking, so lift the whole control above the buttons below it */
+    z-index: 1;
+    isolation: isolate;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+.mapboxgl-ctrl-top-left .location-search::before {
+    position: absolute;
+    /* covers the border box, so it paints over the control's own border and draws its own instead */
+    inset: -1px;
+    z-index: -1;
+    background: var(--control-chrome-bg);
+    -webkit-backdrop-filter: var(--overlay-backdrop);
+    backdrop-filter: var(--overlay-backdrop);
+    border-radius: var(--ui-radius);
+    box-shadow: inset 0 0 0 1px var(--control-chrome-border);
+    content: "";
 }
 
 .location-search .mapboxgl-ctrl,
@@ -612,6 +647,11 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 
 .location-search div[class*="--SearchIcon"] {
     display: none;
+}
+
+/* the see-through toggle no longer covers the clear button while collapsed */
+.location-search:not(.is-expanded) [class*="--ClearBtn"] {
+    visibility: hidden;
 }
 
 .mapboxgl-ctrl-bottom-left {
