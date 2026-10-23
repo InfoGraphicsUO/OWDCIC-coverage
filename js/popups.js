@@ -39,7 +39,6 @@ const POPUP_CONTENT = Object.freeze({
   digitizedCamera: createDigitizedCameraPopup,
   fire: createFirePopup,
   fireHistory: createFireHistoryPopup,
-  label: createLabelPopup,
   lookout: createLookoutPopup,
   prescribed: createPrescribedPopup,
   transmissionLine: createTransmissionLinePopup,
@@ -68,12 +67,10 @@ export function showFeaturePopup(map, event, kind, symbol) {
 
 /**
  * tooltip beside the cursor carrying the same details as the clicked box
- * each entry is `{ feature, kind, symbol, title }`, and several stack in one tooltip
+ * each entry is `{ feature, kind, symbol }`, and several stack in one tooltip
  */
 export function showHoverTooltip(map, point, entries) {
-  const key = entries
-    .map(({ feature, title }) => `${hoverKey(feature)}:${title ?? ''}`)
-    .join('|');
+  const key = entries.map(({ feature }) => hoverKey(feature)).join('|');
 
   // the pinned box already shows this feature beside the cursor
   if (entries.length === 1 && ACTIVE_POPUPS.get(map)?.featureKey === hoverKey(entries[0].feature)) {
@@ -88,8 +85,8 @@ export function showHoverTooltip(map, point, entries) {
   }
 
   tooltip.show(point, key, () =>
-    entries.map(({ feature, kind, symbol, title }) =>
-      POPUP_CONTENT[kind](feature.properties || {}, symbol, { hover: true, title })
+    entries.map(({ feature, kind, symbol }) =>
+      POPUP_CONTENT[kind](feature.properties || {}, symbol, { hover: true })
     )
   );
 }
@@ -403,11 +400,6 @@ function createFirePopup(properties, symbol) {
   if (location) popup.append(createMetaLine(location));
 
   return popup;
-}
-
-// layers like viewsheds only need naming, with the name chosen by the caller
-function createLabelPopup(properties, symbol, { title }) {
-  return createPopupContainer(title, symbol);
 }
 
 function createFireHistoryPopup(properties, symbol) {
