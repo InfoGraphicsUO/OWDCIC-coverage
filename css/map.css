@@ -422,9 +422,20 @@
     background: rgba(255, 255, 255, .08);
 }
 
-.control-menu .legend-row:has(> input[type="checkbox"]:checked) {
+.control-menu .legend-row:has(> input[type="checkbox"]:checked),
+.control-menu .legend-group:has(input[type="checkbox"]:checked) {
     background: var(--sidebar-selected-bg);
     box-shadow: var(--sidebar-selected-bar);
+}
+
+/* a group that's on highlights as one block, so its rows don't stack their own tint and bar */
+.control-menu .legend-group .legend-row:has(> input[type="checkbox"]:checked) {
+    background: transparent;
+    box-shadow: none;
+}
+
+.control-menu .legend-group .legend-row:hover {
+    background: rgba(255, 255, 255, .06);
 }
 
 /* a group reads as one row with its children hanging off a thin guide, divided only from its neighbors */
@@ -455,10 +466,14 @@
     border-left: 1px solid var(--control-chrome-border);
 }
 
+/* the tinted block brightens the guide so it still reads */
+.control-menu .legend-group:has(input[type="checkbox"]:checked) .legend-group__children {
+    border-left-color: rgba(248, 225, 9, .45);
+}
+
 .control-menu .legend-group__child {
     padding-top: 6px;
     padding-bottom: 6px;
-    /* rows start at the guide, so a layer that's on turns its stretch of the guide yellow */
     padding-left: 31px;
     /* a tighter gap leaves the longest provider label room on one line */
     gap: 8px;
