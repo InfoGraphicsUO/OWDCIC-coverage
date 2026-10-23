@@ -79,16 +79,16 @@
     flex: 0 0 72px;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-end;
     gap: 6px;
-    padding: 6px 4px;
+    padding: 6px 3px 9px;
     color: var(--control-chrome-text);
     background: var(--control-chrome-bg);
     border: 1px solid var(--control-chrome-border);
     border-radius: var(--ui-radius);
     box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
     cursor: pointer;
-    font: 600 11px/1.15 "Clarity City", "Segoe UI", sans-serif;
+    font: 600 10px/1.15 "Clarity City", "Segoe UI", sans-serif;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
@@ -108,10 +108,10 @@
 
 .control-rail__icon {
     display: flex;
+    flex: 1;
     align-items: center;
     justify-content: center;
     width: 28px;
-    height: 28px;
     font-size: 22px;
     line-height: 1;
 }
