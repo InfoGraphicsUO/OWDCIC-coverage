@@ -87,6 +87,8 @@
     padding: 6px 3px 9px;
     color: var(--control-chrome-text);
     background: var(--control-chrome-bg);
+    /* the fill stops inside the border so the faint border reads as a light ring over the map */
+    background-clip: padding-box;
     -webkit-backdrop-filter: var(--overlay-backdrop);
     backdrop-filter: var(--overlay-backdrop);
     border: 1px solid var(--control-chrome-border);
@@ -521,6 +523,7 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group {
     overflow: hidden;
     background: var(--control-chrome-bg);
+    background-clip: padding-box;
     -webkit-backdrop-filter: var(--overlay-backdrop);
     backdrop-filter: var(--overlay-backdrop);
     border: 1px solid var(--control-chrome-border);
@@ -575,14 +578,13 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 
 .mapboxgl-ctrl-top-left .location-search::before {
     position: absolute;
-    /* covers the border box, so it paints over the control's own border and draws its own instead */
-    inset: -1px;
+    /* stops inside the border, matching the other buttons' light ring */
+    inset: 0;
     z-index: -1;
     background: var(--control-chrome-bg);
     -webkit-backdrop-filter: var(--overlay-backdrop);
     backdrop-filter: var(--overlay-backdrop);
-    border-radius: var(--ui-radius);
-    box-shadow: inset 0 0 0 1px var(--control-chrome-border);
+    border-radius: calc(var(--ui-radius) - 1px);
     content: "";
 }
 
