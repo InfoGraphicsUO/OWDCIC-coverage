@@ -19,13 +19,14 @@
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     // spacing between cameras, and how far each one wanders from its home spot
-    const SPACING = 80;
+    const SPACING = 52;
     const DRIFT = 3;
     // each outer ring is wider and fainter than the one inside it
     const RINGS = [
         { scale: 1, alpha: 0.5 },
-        { scale: 1.7, alpha: 0.28 },
-        { scale: 2.5, alpha: 0.14 },
+        { scale: 1.3, alpha: 0.32 },
+        { scale: 1.6, alpha: 0.2 },
+        { scale: 1.9, alpha: 0.12 },
     ];
     // how far from the title and About the cameras take to fade fully in
     const FADE = 110;
