@@ -1,6 +1,8 @@
 // mockup only: ?banner=cameras fills the banner behind the title and About with drifting
 // cameras, each ringed by viewshed circles from img/viewshed-rings.svg, fading out around the
 // text. the rings are solid, so a larger camera covers the smaller ones beneath it
+import { onSettingChange } from './settings.js';
+
 (() => {
     if (new URLSearchParams(window.location.search).get("banner") !== "cameras") return;
 
@@ -17,6 +19,9 @@
 
     const ctx = canvas.getContext("2d");
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    // still unless the viewer turns on animation in settings, and always still with reduced motion
+    let animate = false;
+    const still = () => !animate || reduceMotion.matches;
 
     // spacing between cameras, and how far each one wanders from its home spot
     const SPACING = 52;
@@ -123,7 +128,7 @@
 
     function draw(time) {
         ctx.clearRect(0, 0, width, height);
-        const t = reduceMotion.matches ? 0 : time;
+        const t = still() ? 0 : time;
         if (!rings) return;
 
         for (const node of nodes) {
@@ -133,12 +138,12 @@
 
         for (const node of nodes) {
             // the rings breathe very slightly, as if the viewshed is scanning
-            const breathe = reduceMotion.matches ? 1 : 1 + 0.04 * Math.sin(t * 0.0008 + node.pulse);
+            const breathe = still() ? 1 : 1 + 0.04 * Math.sin(t * 0.0008 + node.pulse);
             const size = node.r * RINGS_PER_RADIUS * breathe;
             ctx.drawImage(rings, node.x - size / 2, node.y - size / 2, size, size);
 
             // the camera dot brightens and dims slowly
-            const glow = reduceMotion.matches ? 0.6 : 0.45 + 0.35 * Math.sin(t * 0.0012 + node.pulse);
+            const glow = still() ? 0.6 : 0.45 + 0.35 * Math.sin(t * 0.0012 + node.pulse);
             ctx.fillStyle = `rgba(255, 255, 255, ${glow})`;
             ctx.beginPath();
             ctx.arc(node.x, node.y, 1.6, 0, Math.PI * 2);
@@ -155,7 +160,7 @@
 
     function start() {
         cancelAnimationFrame(frame);
-        if (reduceMotion.matches) draw(0);
+        if (still()) draw(0);
         else frame = requestAnimationFrame(loop);
     }
 
@@ -175,5 +180,9 @@
     document.fonts?.ready.then(resize);
     reduceMotion.addEventListener("change", start);
     resize();
-    start();
+    // calls back right away with the stored value, which starts the first draw
+    onSettingChange("animateBanner", (value) => {
+        animate = value;
+        start();
+    });
 })();

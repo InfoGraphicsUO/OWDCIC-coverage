@@ -5,6 +5,7 @@ const STORAGE_KEY = 'owdcic-settings';
 const DEFAULT_SETTINGS = Object.freeze({
   separateViewshedColors: false,
   showZoomLevel: false,
+  animateBanner: false,
 });
 
 // each row is one boolean preference shown in the settings popup
@@ -18,6 +19,11 @@ const SETTING_FIELDS = Object.freeze([
     key: 'showZoomLevel',
     label: 'Show zoom level',
     description: 'Displays the current map zoom at the top of the map.',
+  }),
+  Object.freeze({
+    key: 'animateBanner',
+    label: 'Animate banner',
+    description: 'The camera viewsheds in the banner drift slowly.',
   }),
 ]);
 
