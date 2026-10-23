@@ -1,11 +1,9 @@
-// mockup only: ?banner=cameras fills the banner behind the title and About with drifting
+// fills the banner behind the title and About with drifting
 // cameras, each ringed by viewshed circles from img/viewshed-rings.svg, fading out around the
 // text. the rings are solid, so a larger camera covers the smaller ones beneath it
 import { onSettingChange } from './settings.js';
 
 (() => {
-    if (new URLSearchParams(window.location.search).get("banner") !== "cameras") return;
-
     const banner = document.querySelector(".site-banner");
     const title = banner?.querySelector(".site-banner__title");
     const about = banner?.querySelector(".site-banner__about");
