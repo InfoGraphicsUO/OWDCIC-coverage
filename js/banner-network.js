@@ -27,8 +27,8 @@
     const RINGS_PER_RADIUS = 4;
     // rasterized once at this size, then scaled down each frame
     const RINGS_RASTER = 512;
-    // how far from the title and About the cameras take to fade fully in
-    const FADE = 110;
+    // how far either side of the title and About the rings take to fade out
+    const FADE = 56;
 
     let width = 0;
     let height = 0;
@@ -65,7 +65,6 @@
                     pulse: rand() * Math.PI * 2,
                     x: 0,
                     y: 0,
-                    fade: 1,
                 });
             }
         }
@@ -81,7 +80,7 @@
 
         width = Math.max(0, bannerRect.width - left);
         height = bannerRect.height - 5;
-        // the text the cameras fade away from, in canvas coordinates
+        // the text the rings fade away from, in canvas coordinates
         clearRects = [titleRect, aboutRect].map((rect) => ({
             left: rect.left - bannerRect.left - left,
             right: rect.right - bannerRect.left - left,
@@ -101,16 +100,25 @@
         draw(performance.now());
     }
 
-    // 0 on top of the title or About, rising smoothly to 1 at FADE pixels away
-    function fadeAt(x, y) {
-        let nearest = Infinity;
+    // erase the rings over the title and About, easing them out over FADE pixels either side,
+    // so rings can run right up to the text without ever sitting behind it
+    function clearAroundText() {
+        ctx.globalCompositeOperation = "destination-out";
         for (const rect of clearRects) {
-            const dx = Math.max(rect.left - x, 0, x - rect.right);
-            const dy = Math.max(rect.top - y, 0, y - rect.bottom);
-            nearest = Math.min(nearest, Math.hypot(dx, dy));
+            const from = rect.left - FADE;
+            const span = rect.right - rect.left + FADE * 2;
+            const edge = FADE / span;
+            const gradient = ctx.createLinearGradient(from, 0, from + span, 0);
+            gradient.addColorStop(0, "rgba(0, 0, 0, 0)");
+            gradient.addColorStop(edge * 0.5, "rgba(0, 0, 0, 0.5)");
+            gradient.addColorStop(edge, "#000");
+            gradient.addColorStop(1 - edge, "#000");
+            gradient.addColorStop(1 - edge * 0.5, "rgba(0, 0, 0, 0.5)");
+            gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+            ctx.fillStyle = gradient;
+            ctx.fillRect(from, 0, span, height);
         }
-        const t = Math.min(nearest / FADE, 1);
-        return t * t * (3 - 2 * t);
+        ctx.globalCompositeOperation = "source-over";
     }
 
     function draw(time) {
@@ -121,26 +129,23 @@
         for (const node of nodes) {
             node.x = node.homeX + Math.cos(t * node.speed + node.phase) * DRIFT;
             node.y = node.homeY + Math.sin(t * node.speed * 1.3 + node.phase) * DRIFT;
-            node.fade = fadeAt(node.x, node.y);
         }
 
         for (const node of nodes) {
-            if (node.fade < 0.01) continue;
-
             // the rings breathe very slightly, as if the viewshed is scanning
             const breathe = reduceMotion.matches ? 1 : 1 + 0.04 * Math.sin(t * 0.0008 + node.pulse);
             const size = node.r * RINGS_PER_RADIUS * breathe;
-            ctx.globalAlpha = node.fade;
             ctx.drawImage(rings, node.x - size / 2, node.y - size / 2, size, size);
-            ctx.globalAlpha = 1;
 
             // the camera dot brightens and dims slowly
             const glow = reduceMotion.matches ? 0.6 : 0.45 + 0.35 * Math.sin(t * 0.0012 + node.pulse);
-            ctx.fillStyle = `rgba(255, 255, 255, ${glow * node.fade})`;
+            ctx.fillStyle = `rgba(255, 255, 255, ${glow})`;
             ctx.beginPath();
             ctx.arc(node.x, node.y, 1.6, 0, Math.PI * 2);
             ctx.fill();
         }
+
+        clearAroundText();
     }
 
     function loop(time) {
