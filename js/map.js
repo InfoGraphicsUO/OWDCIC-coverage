@@ -109,11 +109,17 @@ export function mapPanelPadding(map) {
   // phone panels stack up from the tab bar under the banner pill
   if (isPhoneLayout()) {
     const banner = document.querySelector('.site-banner');
-    const tabBarHeight = sidebar?.querySelector('.control-rail')?.offsetHeight ?? 0;
+    const rail = sidebar?.querySelector('.control-rail');
+    const top = (banner?.getBoundingClientRect().bottom ?? 0) + 24;
+    // on its side the phone stacks the panels in a column on the left instead
+    if (container.clientWidth > container.clientHeight) {
+      return { top, right: 24, bottom: 24, left: Math.min((rail?.offsetWidth ?? 0) + 24, widthCap) };
+    }
+    const tabBarHeight = rail?.offsetHeight ?? 0;
     const resultsHeight = resultsVisible ? results.offsetHeight : 0;
     const sheet = sidebar ? sheetHeight(sidebar) : 0;
     return {
-      top: (banner?.getBoundingClientRect().bottom ?? 0) + 24,
+      top,
       right: 24,
       bottom: Math.min(tabBarHeight + Math.max(sheet, resultsHeight) + 24, heightCap),
       left: 24,

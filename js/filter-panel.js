@@ -255,7 +255,7 @@ export function initFilterPanel({
       // reopening the loaded category should preserve its current option selection
       showOptionView();
       renderOptions();
-      if (focusSearch) optionSearch.input.focus();
+      if (focusSearch && !isPhoneLayout()) optionSearch.input.focus();
       return;
     }
 
@@ -289,7 +289,7 @@ export function initFilterPanel({
       await onTypeSelected(type.value);
 
       // focus only after the new options exist in the DOM
-      if (focusSearch) optionSearch.input.focus();
+      if (focusSearch && !isPhoneLayout()) optionSearch.input.focus();
     } catch (error) {
       // only the current request owns the visible error state
       if (request !== requestId) return;
@@ -353,8 +353,8 @@ export function initFilterPanel({
 
     showCategoryView();
 
-    // return focus to the search that led into this category
-    categorySearch.input.focus();
+    // return focus to the search that led into this category; on phones that would raise the keyboard
+    if (!isPhoneLayout()) categorySearch.input.focus();
   });
 
   clearButton.addEventListener('click', reset);
