@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "generated_utc": "2026-10-23T20:01:19+00:00",
+  "generated_utc": "2026-10-26T18:35:16+00:00",
   "config_hash": "1fc319aaf4acf161f84b3f6c5c31c3614d1ef1b830b541849cb2953bc3242bc6",
   "web_processing": {
     "resolution_m": 50.0,
@@ -1115,6 +1115,18 @@
     },
     {
       "source_id": 91,
+      "viewshed_id": "pano-maple",
+      "site_name": "Maple",
+      "aliases": [],
+      "longitude": -122.02609,
+      "latitude": 48.93057,
+      "height_ft": 135.0,
+      "status": "complete",
+      "web_geojson": "web/pano-maple.geojson",
+      "exact_polygon": "polygons_exact/pano_maple.gpkg"
+    },
+    {
+      "source_id": 92,
       "viewshed_id": "pano-devils-gap",
       "site_name": "Devils Gap",
       "aliases": [],
@@ -1126,7 +1138,7 @@
       "exact_polygon": "polygons_exact/pano_devils_gap.gpkg"
     },
     {
-      "source_id": 92,
+      "source_id": 93,
       "viewshed_id": "pano-lilienthal-mountain",
       "site_name": "Lilienthal Mountain",
       "aliases": [],
@@ -1138,7 +1150,7 @@
       "exact_polygon": "polygons_exact/pano_lilienthal_mountain.gpkg"
     },
     {
-      "source_id": 93,
+      "source_id": 94,
       "viewshed_id": "pano-krell-ridge",
       "site_name": "Krell Ridge",
       "aliases": [],
@@ -1150,7 +1162,7 @@
       "exact_polygon": "polygons_exact/pano_krell_ridge.gpkg"
     },
     {
-      "source_id": 94,
+      "source_id": 95,
       "viewshed_id": "pano-colville-mountain",
       "site_name": "Colville Mountain",
       "aliases": [],
@@ -1162,7 +1174,7 @@
       "exact_polygon": "polygons_exact/pano_colville_mountain.gpkg"
     },
     {
-      "source_id": 95,
+      "source_id": 96,
       "viewshed_id": "pano-mount-spokane",
       "site_name": "Mount Spokane",
       "aliases": [],
@@ -1174,7 +1186,7 @@
       "exact_polygon": "polygons_exact/pano_mount_spokane.gpkg"
     },
     {
-      "source_id": 96,
+      "source_id": 97,
       "viewshed_id": "pano-scoop-mountain",
       "site_name": "Scoop Mountain",
       "aliases": [],
@@ -1186,7 +1198,7 @@
       "exact_polygon": "polygons_exact/pano_scoop_mountain.gpkg"
     },
     {
-      "source_id": 97,
+      "source_id": 98,
       "viewshed_id": "pano-hoodoo-mountain",
       "site_name": "Hoodoo Mountain",
       "aliases": [],
@@ -1198,7 +1210,7 @@
       "exact_polygon": "polygons_exact/pano_hoodoo_mountain.gpkg"
     },
     {
-      "source_id": 98,
+      "source_id": 99,
       "viewshed_id": "pano-stranger-mountain",
       "site_name": "Stranger Mountain",
       "aliases": [],
@@ -1210,7 +1222,7 @@
       "exact_polygon": "polygons_exact/pano_stranger_mountain.gpkg"
     },
     {
-      "source_id": 99,
+      "source_id": 100,
       "viewshed_id": "pano-saddle-mountain-east",
       "site_name": "Saddle Mountain East",
       "aliases": [],
@@ -1222,7 +1234,7 @@
       "exact_polygon": "polygons_exact/pano_saddle_mountain_east.gpkg"
     },
     {
-      "source_id": 100,
+      "source_id": 101,
       "viewshed_id": "pano-teel-hill",
       "site_name": "Teel Hill",
       "aliases": [],
@@ -1234,7 +1246,7 @@
       "exact_polygon": "polygons_exact/pano_teel_hill.gpkg"
     },
     {
-      "source_id": 101,
+      "source_id": 102,
       "viewshed_id": "pano-coulee-city",
       "site_name": "Coulee City",
       "aliases": [],
@@ -1246,7 +1258,7 @@
       "exact_polygon": "polygons_exact/pano_coulee_city.gpkg"
     },
     {
-      "source_id": 102,
+      "source_id": 103,
       "viewshed_id": "pano-steptoe",
       "site_name": "Steptoe",
       "aliases": [],
@@ -1258,7 +1270,7 @@
       "exact_polygon": "polygons_exact/pano_steptoe.gpkg"
     },
     {
-      "source_id": 103,
+      "source_id": 104,
       "viewshed_id": "pano-layton-hill",
       "site_name": "Layton Hill",
       "aliases": [],
@@ -1270,7 +1282,7 @@
       "exact_polygon": "polygons_exact/pano_layton_hill.gpkg"
     },
     {
-      "source_id": 104,
+      "source_id": 105,
       "viewshed_id": "pano-blossom-mountain",
       "site_name": "Blossom Mountain",
       "aliases": [],
@@ -1282,7 +1294,7 @@
       "exact_polygon": "polygons_exact/pano_blossom_mountain.gpkg"
     },
     {
-      "source_id": 105,
+      "source_id": 106,
       "viewshed_id": "pano-lewiston",
       "site_name": "Lewiston",
       "aliases": [],

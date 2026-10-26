@@ -60,14 +60,14 @@ for (const f of attachViewshedIds(halfwayHeads, manifest, { features: [pendingHa
 
 const panoSites = JSON.parse(readFileSync(new URL('../data/pano-sites.geojson', import.meta.url), 'utf8'));
 const panoCameras = providerSitesToCameras(panoSites, 'Pano AI').features;
-assert.equal(panoCameras.length, 105);
-assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 105);
+assert.equal(panoCameras.length, 106);
+assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 106);
 
 // each owner's table lands in the one Pano layer
 const owners = (name) => panoCameras.filter(f => f.properties.owner === name).length;
 assert.deepEqual(
   ['Portland General Electric', 'Pacific Power', 'Washington DNR', 'Puget Sound Energy', 'Avista Utilities'].map(owners),
-  [38, 5, 26, 21, 15],
+  [38, 5, 26, 22, 15],
 );
 
 // every site links to its page on its owner's public viewer
