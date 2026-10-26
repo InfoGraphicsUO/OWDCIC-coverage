@@ -257,8 +257,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--publish-site-data",
         action="store_true",
-        help="after the run, replace the provider's manifest in data/ and regenerate the "
-        "site GeoJSON and viewshed queues from it, so the map shows the new coverage",
+        help="regenerate the site GeoJSON and viewshed queues from the installation sheet "
+        "before the run, then afterwards replace the provider's manifest in data/ and "
+        "regenerate them again, so the map shows the new coverage",
     )
     parser.add_argument(
         "--publish-metrics",
@@ -2092,6 +2093,12 @@ def run_script(
         raise RuntimeError(f"{script.name} failed ({process.returncode})")
 
 
+def refresh_site_data(args: argparse.Namespace, log: Callable[[str], None]) -> None:
+    """rebuilds the site files from the installation sheet so the run sees sites it added"""
+    if args.publish_site_data:
+        run_script(SITE_DATA_BUILDER, [], log)
+
+
 def publish(manifest: Path, name: str, args: argparse.Namespace, emitter: ProgressEmitter) -> None:
     """carries a finished run into the data the live map reads"""
     emitter.finishing_stage("site_data", "publishing manifest and site data")
@@ -2143,6 +2150,8 @@ def main() -> int:
     apply_qgis_environment(args.qgis_app)
     require_gdal()
 
+    # a site added to the sheet is only queued once the site files are rebuilt
+    refresh_site_data(args, lambda line: print(line, flush=True))
     sites = load_sites(args.sites)
     selected = select_sites(sites, args)
     emitter = ProgressEmitter(args.json_progress, selected)
