@@ -15,7 +15,7 @@ def read(name):
 class CameraSiteDataTests(unittest.TestCase):
     def test_digitized_priority_and_unique_provider_points(self):
         digitized = {f['properties']['id']: f['geometry'] for f in read('digitized-camera-sources.geojson')['features']}
-        for provider, count in [('alertwest', 88), ('pano', 105), ('envirovision', 87)]:
+        for provider, count in [('alertwest', 88), ('pano', 106), ('envirovision', 87)]:
             features = read(f'{provider}-sites.geojson')['features']
             self.assertEqual(len(features), count)
             self.assertEqual(len({tuple(f['geometry']['coordinates']) for f in features}), count)

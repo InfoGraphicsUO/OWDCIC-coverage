@@ -180,14 +180,14 @@ class SelectionDataTests(unittest.TestCase):
 
     def test_cameras_are_not_reported_as_zero_when_viewshed_is_missing(self):
         data = json.loads((ROOT / 'data/camera-coverage.json').read_text())
-        # 88 ALERTWest + 105 Pano AI + 87 EnviroVision viewsheds; none is currently missing coverage
-        self.assertEqual(len(data['viewsheds']), 280)
+        # 88 ALERTWest + 106 Pano AI + 87 EnviroVision viewsheds; none is currently missing coverage
+        self.assertEqual(len(data['viewsheds']), 281)
         self.assertEqual(data['metadata']['areaCrs'], 'EPSG:5070')
         self.assertEqual(data['metadata']['denominator'], 'individual viewshed land footprint')
         available = [key for key, result in data['viewsheds'].items() if result['coverageAvailable']]
         unavailable = [key for key, result in data['viewsheds'].items() if not result['coverageAvailable']]
-        self.assertEqual(len(available), 280)
-        self.assertEqual(sum(key.startswith('pano-') for key in available), 105)
+        self.assertEqual(len(available), 281)
+        self.assertEqual(sum(key.startswith('pano-') for key in available), 106)
         self.assertEqual(len(unavailable), 0)
 
         for result in data['viewsheds'].values():

@@ -2140,6 +2140,26 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
+          -122.02609,
+          48.93057
+        ]
+      },
+      "properties": {
+        "name": "Maple",
+        "aliases": [],
+        "cameraHeightFt": 135.0,
+        "viewshedId": "pano-maple",
+        "provider": "pano",
+        "owner": "Puget Sound Energy",
+        "county": "Whatcom",
+        "state": "WA"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
           -117.848083,
           47.828096
         ]
