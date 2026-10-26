@@ -92,15 +92,16 @@ STAGE_SPANS = {
     "complete": (1.00, 1.00),
 }
 # steps that run once every camera is done, in the order they run, with their run time in seconds
-# from the same run; only the ratios matter
+# from the October 26, 2026 Pano run that added one camera (metrics timed as a cached rebuild);
+# only the ratios matter
 FINISHING_STAGES = {
-    "combined_exact": 24,
-    "web_polygons": 6,
-    "web_coverage": 129,
-    "mbtiles": 29,
-    "combined_coverage": 488,
+    "combined_exact": 31,
+    "web_polygons": 10,
+    "web_coverage": 203,
+    "mbtiles": 42,
+    "combined_coverage": 885,
     "site_data": 1,
-    "coverage_metrics": 1249,
+    "coverage_metrics": 439,
 }
 # share of the whole run held back for those steps, so the bar is not full while they run
 # (the cameras took 68 s of a 33 min run, and fewer when most are already saved)
