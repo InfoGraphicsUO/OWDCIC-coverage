@@ -2,7 +2,7 @@ import { restoreMarkerIcons } from './marker-icons.js';
 import { registerOutsideHatch } from './states-highlight.js';
 import { REGION_DATA_BOUNDS } from './config.js';
 import { bindSettingsButton, onSettingChange } from './settings.js';
-import { SHEET_CHANGE_EVENT, isPhoneLayout, sheetHeight } from './bottom-sheet.js';
+import { SHEET_CHANGE_EVENT, bindResultsSheet, isPhoneLayout, sheetHeight } from './bottom-sheet.js';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiaW5mb2dyYXBoaWNzIiwiYSI6ImNqaTR0eHhnODBjeTUzdmx0N3U2dWU5NW8ifQ.fVbTCmIrqILIzv5QGtVJ2Q';
@@ -271,6 +271,12 @@ function initControlShellSync(map) {
     tab.addEventListener('click', () => requestAnimationFrame(refreshPadding));
   }
   sidebar.addEventListener(SHEET_CHANGE_EVENT, refreshPadding);
+
+  const results = document.getElementById('results-panel');
+  if (results) {
+    bindResultsSheet(results);
+    results.addEventListener(SHEET_CHANGE_EVENT, () => requestAnimationFrame(refreshPadding));
+  }
 }
 
 function initZoomViewer(map) {

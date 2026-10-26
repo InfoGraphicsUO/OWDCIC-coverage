@@ -1,15 +1,20 @@
 /* phones: the banner floats as a pill over a full screen map, the sidebar becomes a bottom
-   sheet, and its rail turns into a tab bar under it. js/bottom-sheet.js sets --sheet-height */
+   sheet, and its rail turns into a tab bar under it. js/bottom-sheet.js sets --sheet-height
+   and drags the sheet and the results panel */
 @media (max-width: 640px) {
     :root {
         --panel-gap: 10px;
         --pill-top: calc(env(safe-area-inset-top, 0px) + var(--panel-gap));
         --pill-height: 52px;
         --pill-bottom: calc(var(--pill-top) + var(--pill-height));
-        --tab-size: 58px;
-        --tabbar-padding: 8px;
-        --tabbar-height: calc(var(--tab-size) + var(--tabbar-padding) * 2 + env(safe-area-inset-bottom, 0px));
+        --tabbar-content-height: 54px;
+        --tabbar-height: calc(var(--tabbar-content-height) + env(safe-area-inset-bottom, 0px));
         --sheet-handle-height: 22px;
+        --sheet-radius: 16px;
+        --sheet-shadow: 0 -4px 16px rgba(0, 0, 0, .35);
+        --sidebar-row-padding: 13px 16px;
+        --switch-width: 44px;
+        --switch-height: 26px;
     }
 
     #map,
@@ -101,14 +106,19 @@
         height: var(--sheet-height, 50dvh);
         padding-top: var(--sheet-handle-height);
         border-right: 0;
-        border-top: 1px solid var(--control-chrome-border);
-        border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0;
-        box-shadow: 0 -4px 16px rgba(0, 0, 0, .35);
+        border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+        box-shadow: var(--sheet-shadow);
     }
 
     .control-shell.is-collapsed .control-shell__body,
     .control-shell.is-collapsed .control-shell__collapse {
         transform: translateY(calc(var(--sheet-height, 50dvh) + var(--sheet-handle-height)));
+    }
+
+    .control-menu__title {
+        padding-top: 4px;
+        padding-bottom: 12px;
+        font-size: 22px;
     }
 
     /* the collapse tab becomes the sheet's grab handle */
@@ -118,22 +128,24 @@
         left: 0;
         right: 0;
         bottom: calc(var(--tabbar-height) + var(--sheet-height, 50dvh) - var(--sheet-handle-height));
+        align-items: flex-start;
         width: auto;
-        height: calc(var(--sheet-handle-height) + 8px);
+        height: calc(var(--sheet-handle-height) + 12px);
+        padding-top: 8px;
         background: transparent;
         border: 0;
-        border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0;
+        border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
         cursor: grab;
         touch-action: none;
         transform: none;
     }
 
     .control-shell__collapse span,
-    .control-shell.is-collapsed .control-shell__collapse span {
-        width: 38px;
+    .control-shell.is-collapsed .control-shell__collapse span,
+    .results-panel__handle::before {
+        width: 36px;
         height: 5px;
-        margin-bottom: 8px;
-        background: rgba(255, 255, 255, .38);
+        background: rgba(255, 255, 255, .35);
         border: 0;
         border-radius: 3px;
         transform: none;
@@ -141,7 +153,16 @@
 
     .control-shell.is-dragging .control-shell__collapse { cursor: grabbing; }
 
-    /* tab bar */
+    /* clearing only makes sense next to the coverage list */
+    .control-shell:not(:has(#filter-menu.is-open)) .control-shell__clear { display: none; }
+
+    .control-shell__clear {
+        padding: 13px 12px;
+        font-size: 14px;
+    }
+
+    /* tab bar: flat tabs on the banner grey; the open one is yellow with the sidebar's
+       selected bar along its top edge */
     .control-rail,
     .control-shell.is-collapsed .control-rail {
         top: auto;
@@ -150,29 +171,189 @@
         bottom: 0;
         z-index: 3;
         flex-direction: row;
-        justify-content: center;
         width: auto;
-        padding: var(--tabbar-padding) var(--panel-gap) calc(var(--tabbar-padding) + env(safe-area-inset-bottom, 0px));
-        gap: var(--panel-gap);
+        padding: 0 0 env(safe-area-inset-bottom, 0px);
+        gap: 0;
         background: var(--ohaz-grey);
         border-top: 1px solid var(--control-chrome-border);
         transform: none;
     }
 
-    .control-rail__button {
-        flex: 0 0 auto;
-        width: calc(var(--tab-size) + 22px);
-        height: var(--tab-size);
+    .control-rail__button,
+    .control-rail__button[data-control-tab="basemap"] {
+        flex: 1 1 0;
+        justify-content: center;
+        gap: 4px;
+        height: var(--tabbar-content-height);
+        padding: 4px 0 0;
+        color: var(--control-chrome-muted);
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
         font-size: 11px;
+        -webkit-text-stroke: 0;
+        text-shadow: none;
+    }
+
+    /* color only, so the basemap tab keeps the preview image its icon inherits */
+    .control-rail__button:hover,
+    .control-rail__button[data-control-tab="basemap"]:hover,
+    .control-rail__button[data-control-tab="basemap"]:focus-visible {
+        background-color: transparent;
+    }
+
+    .control-rail__button.is-active,
+    .control-rail__button[data-control-tab="basemap"].is-active {
+        color: var(--ohaz-yellow);
+        border: 0;
+        box-shadow: inset 0 3px 0 var(--ohaz-yellow);
     }
 
     .control-rail__icon {
-        width: 24px;
+        flex: none;
+        width: 26px;
         height: 24px;
-        font-size: 19px;
+        font-size: 20px;
     }
 
-    /* map controls sit under the pill on the right, clear of the sheet */
+    /* the basemap tab keeps its preview, shrunk to an icon; the image stays on the button
+       (set per basemap in map.css) so the icon can inherit it */
+    .control-rail__button[data-control-tab="basemap"] { background-size: 0 0; }
+
+    .control-rail__button[data-control-tab="basemap"]::before {
+        content: "";
+        box-sizing: border-box;
+        width: 26px;
+        height: 24px;
+        background: inherit;
+        background-size: cover;
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        border-radius: 6px;
+    }
+
+    .control-rail__button[data-control-tab="basemap"].is-active::before {
+        border-color: var(--ohaz-yellow);
+    }
+
+    /* coverage list */
+    .filter-panel__search input {
+        padding: 10px 12px 10px 36px;
+        color: #fff;
+        background:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%23ffffffb3' d='M416 208c0 45.9-14.9 88.3-40 122.7l126.6 126.7a32 32 0 0 1-45.3 45.3L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0s208 93.1 208 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z'/%3E%3C/svg%3E")
+            12px center / 15px no-repeat,
+            rgba(255, 255, 255, .12);
+        border: 0;
+        border-radius: var(--ui-radius);
+        /* 16px keeps iOS from zooming the page when the field takes focus */
+        font-size: 16px;
+    }
+
+    .filter-panel__search input::placeholder { color: var(--control-chrome-muted); }
+
+    /* layers: rows switch on and off; the switch stands in for the selected tint */
+    .control-menu .legend-row:has(> input[type="checkbox"]:checked),
+    .control-menu .legend-group:has(input[type="checkbox"]:checked) {
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .control-menu .legend-group:has(input[type="checkbox"]:checked) .legend-group__children {
+        border-left-color: var(--control-chrome-border);
+    }
+
+    .control-menu .legend-row input[type="checkbox"],
+    .control-menu .legend-group__parent input[type="checkbox"] {
+        order: 10;
+        position: relative;
+        flex: 0 0 var(--switch-width);
+        width: var(--switch-width);
+        height: var(--switch-height);
+        background: rgba(255, 255, 255, .22);
+        border-radius: calc(var(--switch-height) / 2);
+        transition: background-color 160ms ease;
+        appearance: none;
+    }
+
+    .control-menu .legend-row input[type="checkbox"]::after,
+    .control-menu .legend-group__parent input[type="checkbox"]::after {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: calc(var(--switch-height) - 6px);
+        height: calc(var(--switch-height) - 6px);
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+        transition: transform 160ms ease;
+    }
+
+    .control-menu .legend-row input[type="checkbox"]:checked,
+    .control-menu .legend-group__parent input[type="checkbox"]:checked {
+        background: var(--ohaz-yellow);
+    }
+
+    .control-menu .legend-row input[type="checkbox"]:checked::after,
+    .control-menu .legend-group__parent input[type="checkbox"]:checked::after {
+        transform: translateX(calc(var(--switch-width) - var(--switch-height)));
+    }
+
+    .control-menu .legend-row input[type="checkbox"]:indeterminate {
+        background: color-mix(in srgb, var(--ohaz-yellow) 50%, transparent);
+    }
+
+    .control-menu .legend-row input[type="checkbox"]:indeterminate::after {
+        transform: translateX(calc((var(--switch-width) - var(--switch-height)) / 2));
+    }
+
+    .control-menu .legend-group__children { margin-left: 16px; }
+
+    .control-menu .legend-group__child {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    /* basemaps: three previews across, the way phones pick a map style */
+    .basemap-picker {
+        flex-direction: row;
+        gap: var(--panel-gap);
+        padding: 0 16px 16px;
+    }
+
+    .basemap-picker__option { flex: 1 1 0; min-width: 0; }
+
+    .basemap-picker__row,
+    .basemap-picker__option input:checked + .basemap-picker__row {
+        flex-direction: column;
+        gap: 8px;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        font-size: 14px;
+    }
+
+    .basemap-picker__preview {
+        width: 100%;
+        height: auto;
+        flex: none;
+        aspect-ratio: 1;
+        border-radius: var(--ui-radius);
+    }
+
+    .basemap-picker__option input:checked + .basemap-picker__row .basemap-picker__preview {
+        box-shadow: inset 0 0 0 3px var(--ohaz-yellow);
+    }
+
+    .basemap-picker__option input:checked + .basemap-picker__row .basemap-picker__label {
+        color: var(--ohaz-yellow);
+    }
+
+    /* map controls: compass and home only, under the pill on the right */
     .mapboxgl-ctrl-top-left,
     body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-top-left {
         top: calc(var(--pill-bottom) + var(--panel-gap));
@@ -184,13 +365,11 @@
 
     .mapboxgl-ctrl-top-left .mapboxgl-ctrl { margin-bottom: var(--panel-gap); }
 
-    /* pinching zooms, so only the compass stays from the navigation group */
+    /* pinching zooms, and search and settings stay on desktop */
     .mapboxgl-ctrl-zoom-in,
-    .mapboxgl-ctrl-zoom-out { display: none !important; }
-
-    .mapboxgl-ctrl-top-left .location-search.is-expanded {
-        width: calc(100vw - var(--panel-gap) * 2);
-    }
+    .mapboxgl-ctrl-zoom-out,
+    .mapboxgl-ctrl-top-left .location-search,
+    .mapboxgl-ctrl-group:has(.mapboxgl-ctrl-settings) { display: none !important; }
 
     .mapboxgl-ctrl-bottom-left,
     .mapboxgl-ctrl-bottom-right,
@@ -205,28 +384,62 @@
         left: 0;
         right: 0;
         bottom: var(--tabbar-height);
-        max-height: min(55dvh, calc(100dvh - var(--tabbar-height) - var(--pill-bottom) - var(--panel-gap)));
+        height: var(--results-height, auto);
+        max-height: calc(100dvh - var(--tabbar-height) - var(--pill-bottom) - var(--panel-gap));
         padding-bottom: 0;
+        background: var(--ohaz-grey);
         border: 0;
-        border-top: 4px solid var(--ohaz-yellow);
-        border-radius: var(--ui-radius-lg) var(--ui-radius-lg) 0 0;
-        box-shadow: 0 -4px 16px rgba(0, 0, 0, .35);
+        border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+        box-shadow: var(--sheet-shadow);
+        transition: height var(--sidebar-duration) var(--sidebar-ease);
     }
 
-    .results-panel__handle {
-        width: 38px;
-        height: 5px;
-        background: rgba(255, 255, 255, .38);
-        border-radius: 3px;
+    /* until it is dragged, the panel fits its content up to about half the screen */
+    .results-panel:not([style*="--results-height"]) {
+        max-height: min(55dvh, calc(100dvh - var(--tabbar-height) - var(--pill-bottom) - var(--panel-gap)));
     }
+
+    #results-panel.is-dragging { transition: none; }
+
+    /* the handle and header together are the drag area */
+    .results-panel__handle {
+        display: flex;
+        justify-content: center;
+        flex: none;
+        width: auto;
+        height: auto;
+        margin: 0;
+        padding: 8px 0 4px;
+        background: none;
+        cursor: grab;
+        touch-action: none;
+    }
+
+    .results-panel__handle::before { content: ""; }
+
+    .results-panel__header {
+        padding: 4px 16px 12px;
+        touch-action: none;
+    }
+
+    .results-panel__content { padding: 4px 16px 12px; }
+    .results-panel__footer { padding: 12px 16px; }
 
     .results-panel__land-mix,
     .results-panel__export { display: none; }
 
-    .results-panel__share { padding: 13px 12px; }
+    .results-panel__share {
+        padding: 13px 12px;
+        font-size: 14px;
+    }
+
+    /* lowered to its title, the panel leaves the map clear but keeps the selection */
+    .results-panel.is-peeking .results-panel__content,
+    .results-panel.is-peeking .results-panel__footer { visibility: hidden; }
 }
 
 @media (max-width: 640px) and (prefers-reduced-motion: reduce) {
     .control-shell__body,
-    .control-shell__collapse { transition: none; }
+    .control-shell__collapse,
+    .results-panel { transition: none; }
 }
