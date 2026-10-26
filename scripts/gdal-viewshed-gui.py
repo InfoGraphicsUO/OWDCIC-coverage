@@ -706,7 +706,7 @@ class ViewshedWindow(QMainWindow):
         form.addRow(with_help(self.combined, self.combined,
             "When the run finishes, also dissolves this provider's new coverage with the other providers' saved coverage into the combined tileset. Adds a few minutes. Full runs only."))
         form.addRow(with_help(self.publish_sites, self.publish_sites,
-            "When the run finishes without failures, replaces this provider's manifest in the data folder and regenerates the camera site files and viewshed queues, so the map treats the new cameras as having coverage. Skipped if the output folder is missing viewsheds that are already published. Full runs only."))
+            "Before the run, regenerates the camera site files and viewshed queues from the installation sheet so newly added sites are included. When the run finishes without failures, replaces this provider's manifest in the data folder and regenerates the camera site files and viewshed queues, so the map treats the new cameras as having coverage. Skipped if the output folder is missing viewsheds that are already published. Full runs only."))
         form.addRow(with_help(self.publish_metrics, self.publish_metrics,
             "After publishing, also recalculates land coverage for every division and camera so the results panel includes the new viewsheds. This is the slowest finishing step, so leave it off for test runs."))
         form.addRow(with_help("Maximum distance", self.radius,

@@ -498,6 +498,21 @@ class PublishTests(unittest.TestCase):
             self.assertEqual(lines, ["step.py: built"])
             self.assertEqual(handled, ["@@step"])
 
+    def test_publishing_runs_refresh_site_data_first(self):
+        with tempfile.TemporaryDirectory() as directory:
+            script = Path(directory) / "csv-to-geojson.py"
+            script.write_text("print('rebuilt')\n")
+            original, viewsheds.SITE_DATA_BUILDER = viewsheds.SITE_DATA_BUILDER, script
+            lines = []
+
+            try:
+                viewsheds.refresh_site_data(viewsheds.parse_args([]), lines.append)
+                self.assertEqual(lines, [])
+                viewsheds.refresh_site_data(viewsheds.parse_args(["--publish-site-data"]), lines.append)
+                self.assertEqual(lines, ["csv-to-geojson.py: rebuilt"])
+            finally:
+                viewsheds.SITE_DATA_BUILDER = original
+
     def test_metrics_need_published_site_data(self):
         with self.assertRaises(SystemExit):
             viewsheds.parse_args(["--publish-metrics"])
