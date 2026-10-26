@@ -11,6 +11,7 @@
  * a type with parent { type, option } opens from that option of its parent type
  * instead of listing on its own, and its back button returns to the parent
  */
+import { bindBottomSheet, isPhoneLayout } from './bottom-sheet.js';
 export function initFilterPanel({
   types = [],
   loadOptions,
@@ -479,6 +480,11 @@ function bindControlShell() {
 
   for (const tab of tabs) {
     tab.addEventListener('click', () => {
+      // on phones the open tab hides the sheet, like the collapse tab does on desktop
+      if (isPhoneLayout() && tab.classList.contains('is-active') && !shell.classList.contains('is-collapsed')) {
+        setCollapsed(true);
+        return;
+      }
       activateTab(tab, { expand: true });
     });
 
@@ -516,6 +522,7 @@ function bindControlShell() {
     },
   };
 
+  bindBottomSheet(shell, { setCollapsed });
   shell._controlShellApi = api;
   return api;
 }

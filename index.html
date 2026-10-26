@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <title>Fire Camera Coverage Map, Oregon &amp; Washington</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
         <!-- the gl script and css load without cors, the style and tiles with it -->
         <link rel="preconnect" href="https://api.mapbox.com">
         <link rel="preconnect" href="https://api.mapbox.com" crossorigin>
@@ -32,6 +32,8 @@
         <link rel="stylesheet" href="css/modal.css">
         <link rel="stylesheet" href="css/popups.css">
         <link rel="stylesheet" href="css/loading.css">
+        <!-- last so the phone layout overrides the desktop and narrow rules above -->
+        <link rel="stylesheet" href="css/mobile.css">
 
         <script defer src="js/logo-mockup.js"></script>
         <script type="module" src="js/banner-network.js"></script>
@@ -43,7 +45,8 @@
             <img class="site-banner__logo site-banner__logo--wide" src="img/logos/ohaz-uo-alertwest-cameras.png" alt="OHAZ and University of Oregon">
             <h1 class="site-banner__title">Fire Camera Coverage <span class="site-banner__region">OR/WA</span></h1>
             <button id="about-button" class="site-banner__about" type="button" aria-haspopup="dialog" aria-expanded="false">
-                About
+                <i class="site-banner__about-icon fa-solid fa-circle-info" aria-hidden="true"></i>
+                <span class="site-banner__about-label">About</span>
             </button>
         </header>
 

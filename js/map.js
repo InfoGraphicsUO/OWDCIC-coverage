@@ -2,6 +2,7 @@ import { restoreMarkerIcons } from './marker-icons.js';
 import { registerOutsideHatch } from './states-highlight.js';
 import { REGION_DATA_BOUNDS } from './config.js';
 import { bindSettingsButton, onSettingChange } from './settings.js';
+import { SHEET_CHANGE_EVENT, isPhoneLayout, sheetHeight } from './bottom-sheet.js';
 
 mapboxgl.accessToken =
   'pk.eyJ1IjoiaW5mb2dyYXBoaWNzIiwiYSI6ImNqaTR0eHhnODBjeTUzdmx0N3U2dWU5NW8ifQ.fVbTCmIrqILIzv5QGtVJ2Q';
@@ -104,6 +105,20 @@ export function mapPanelPadding(map) {
   const widthCap = container.clientWidth * 0.4;
   // reserve 120px of map height when the viewport allows it
   const heightCap = Math.max(32, container.clientHeight - 120);
+
+  // phone panels stack up from the tab bar under the banner pill
+  if (isPhoneLayout()) {
+    const banner = document.querySelector('.site-banner');
+    const tabBarHeight = sidebar?.querySelector('.control-rail')?.offsetHeight ?? 0;
+    const resultsHeight = resultsVisible ? results.offsetHeight : 0;
+    const sheet = sidebar ? sheetHeight(sidebar) : 0;
+    return {
+      top: (banner?.getBoundingClientRect().bottom ?? 0) + 24,
+      right: 24,
+      bottom: Math.min(tabBarHeight + Math.max(sheet, resultsHeight) + 24, heightCap),
+      left: 24,
+    };
+  }
 
   if (!window.matchMedia(NARROW_LAYOUT_QUERY).matches) {
     // desktop panels occupy opposite sides of the map
@@ -255,6 +270,7 @@ function initControlShellSync(map) {
   for (const tab of sidebar.querySelectorAll('[data-control-tab]')) {
     tab.addEventListener('click', () => requestAnimationFrame(refreshPadding));
   }
+  sidebar.addEventListener(SHEET_CHANGE_EVENT, refreshPadding);
 }
 
 function initZoomViewer(map) {
