@@ -1,4 +1,4 @@
-"""helpers shared by the builders that write data/divisions/
+"""helpers shared by the builders that write data/source/divisions/
 
 the builders run as standalone scripts, and this folder is on their import
 path, so each one imports this module directly. Shapely is imported lazily
@@ -14,7 +14,7 @@ from urllib.parse import urlencode
 from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "data" / "divisions"
+OUT = ROOT / "data" / "source" / "divisions"
 
 
 def arcgis_query(url: str, params: dict[str, str], timeout: int = 120) -> tuple[dict, str, str]:

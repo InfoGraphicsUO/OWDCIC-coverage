@@ -28,10 +28,11 @@ STATUS_DOC = Path(__file__).resolve().parent.parent / 'cameras-without-viewsheds
 
 def supplement_sites(by_provider, text, converter):
     data = Path(__file__).resolve().parent.parent / "data"
+    live, source = data / "live", data / "source"
     rows = {r[0].strip(): r for r in csv.reader(text.splitlines()) if r and r[0].strip()}
-    digitized = {f['properties']['id']: f for f in json.loads((data / 'digitized-camera-sources.geojson').read_text())['features']}
+    digitized = {f['properties']['id']: f for f in json.loads((live / 'digitized-camera-sources.geojson').read_text())['features']}
     counties = converter.load_counties(converter.DEFAULT_COUNTIES)
-    supplements = json.loads((data / 'camera-site-supplements.json').read_text())
+    supplements = json.loads((source / 'camera-site-supplements.json').read_text())
     # rows held out of the map, either until the sheet is clarified or as outside the region
     excluded = {(r['provider'], r['sheetName']) for r in supplements.get('excluded', [])}
 
@@ -68,7 +69,7 @@ def supplement_sites(by_provider, text, converter):
                 raise ValueError(f"Provider mismatch: {record['name']}")
 
             point = feature['geometry']['coordinates']
-            props.update(locationSource='digitized', digitizedId=record['digitizedId'], source='data/digitized-camera-sources.geojson')
+            props.update(locationSource='digitized', digitizedId=record['digitizedId'], source='data/live/digitized-camera-sources.geojson')
         else:
             point = record['coordinates']
 
@@ -111,7 +112,7 @@ def supplement_sites(by_provider, text, converter):
         features.append({'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': point}, 'properties': props})
 
     # hand-collected viewer pages; rows without a link keep the panel's general viewer link
-    links_path = data / 'pano-camera-links.csv'
+    links_path = source / 'pano-camera-links.csv'
     if links_path.exists():
 
         pano = {}
@@ -147,14 +148,14 @@ def supplement_sites(by_provider, text, converter):
     published, queued, published_dates = {}, {}, []
 
     for provider in EXTERNAL_PROVIDERS:
-        path = data / f'{provider}-sites.geojson'
+        path = live / f'{provider}-sites.geojson'
         if path.exists():
             external[provider] = json.loads(path.read_text())
             for feature in external[provider]['features']:
                 feature['properties'].pop('viewshedStatus', None)
 
     for provider, collection in {**by_provider, **external}.items():
-        manifest_path = data / f'{provider}-viewshed-manifest.json'
+        manifest_path = live / f'{provider}-viewshed-manifest.json'
         manifest = json.loads(manifest_path.read_text()) if manifest_path.exists() else {'viewsheds': []}
         entries = {e['viewshed_id']: e for e in manifest['viewsheds']}
         ready = []
@@ -184,15 +185,15 @@ def supplement_sites(by_provider, text, converter):
                 # sourceId keeps the site's position in the full file when the queue is merged
                 ready.append({**feature, 'properties': {**props, 'sourceId': source_id}})
 
-        converter.write_geojson(data / f'{provider}-sites-needing-viewsheds.geojson', {'type': 'FeatureCollection', 'features': ready})
+        converter.write_geojson(source / f'{provider}-sites-needing-viewsheds.geojson', {'type': 'FeatureCollection', 'features': ready})
         queued[provider] = len(ready)
 
     for provider, collection in external.items():
-        converter.write_geojson(data / f'{provider}-sites.geojson', collection)
+        converter.write_geojson(live / f'{provider}-sites.geojson', collection)
 
     # sheet rows with no usable location never become features, so list them here
     blocked += [{'provider': r['provider'], 'name': r['sheetName'], 'reason': r['reason']} for r in supplements.get('unmapped', [])]
-    (data / 'camera-viewsheds-blocked.json').write_text(json.dumps(blocked, indent=2) + '\n', encoding='utf-8')
+    (source / 'camera-viewsheds-blocked.json').write_text(json.dumps(blocked, indent=2) + '\n', encoding='utf-8')
     update_status_doc(published, queued, len(blocked), max(published_dates, default=None))
 
 

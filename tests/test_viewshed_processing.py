@@ -111,7 +111,7 @@ class ConfigurationTests(unittest.TestCase):
 
 class BoundaryDataTests(unittest.TestCase):
     def test_checked_in_boundary_is_one_regional_land_feature(self):
-        boundary_path = SCRIPTS.parent / "data/pacific-northwest-land-mask.geojson"
+        boundary_path = SCRIPTS.parent / "data/source/pacific-northwest-land-mask.geojson"
         boundary = json.loads(boundary_path.read_text(encoding="utf-8"))
 
         self.assertEqual(boundary["type"], "FeatureCollection")
@@ -605,20 +605,20 @@ class SampleSelectionTests(unittest.TestCase):
 
 class ProductNameTests(unittest.TestCase):
     def test_queue_file_keeps_its_provider(self):
-        args = SimpleNamespace(product_name=None, sites=Path("data/alertwest-sites-needing-viewsheds.geojson"))
+        args = SimpleNamespace(product_name=None, sites=Path("data/source/alertwest-sites-needing-viewsheds.geojson"))
         self.assertEqual(viewsheds.product_name(args), "alertwest-camera-viewsheds")
 
     def test_provider_comes_from_sites_file_name(self):
         for sites, expected in (
-            ("data/alertwest-sites.geojson", "alertwest-camera-viewsheds"),
-            ("data/pano-sites.geojson", "pano-camera-viewsheds"),
-            ("data/sites.geojson", "camera-viewsheds"),
+            ("data/live/alertwest-sites.geojson", "alertwest-camera-viewsheds"),
+            ("data/live/pano-sites.geojson", "pano-camera-viewsheds"),
+            ("data/live/sites.geojson", "camera-viewsheds"),
         ):
             args = SimpleNamespace(sites=Path(sites), product_name=None)
             self.assertEqual(viewsheds.product_name(args), expected)
 
     def test_explicit_name_wins(self):
-        args = SimpleNamespace(sites=Path("data/pano-sites.geojson"), product_name="Test Run")
+        args = SimpleNamespace(sites=Path("data/live/pano-sites.geojson"), product_name="Test Run")
         self.assertEqual(viewsheds.product_name(args), "test-run")
 
 

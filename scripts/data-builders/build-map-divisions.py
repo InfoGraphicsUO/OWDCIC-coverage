@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """builds the simplified division copies the web map loads, plus a names-only search index
 
-data/divisions/ keeps full detail for the metrics and data release builds;
-this writes lighter copies to data/map-divisions/ with the same properties,
-and data/map-divisions/options.json so the filter search can list names
+data/source/divisions/ keeps full detail for the metrics and data release builds;
+this writes lighter copies to data/live/map-divisions/ with the same properties,
+and data/live/map-divisions/options.json so the filter search can list names
 without downloading any geometry. rerun it after any division or metrics
 build. needs shapely 2.1 or newer, which the QGIS Python ships
 """
@@ -19,7 +19,7 @@ from shapely.geometry import MultiPolygon, Polygon, shape
 
 from division_common import OUT as SOURCE, ROOT, write_collection
 
-DEFAULT_OUTPUT = ROOT / "data" / "map-divisions"
+DEFAULT_OUTPUT = ROOT / "data" / "live" / "map-divisions"
 
 # degrees, about 10 m in Oregon and Washington, finer than a pixel at the map's zoom-10 fit
 TOLERANCE = 0.0001
@@ -72,7 +72,7 @@ def build(kind: str, output: Path) -> list[dict]:
         feature["geometry"] = json.loads(to_geojson(geometry))
 
     collection.setdefault("metadata", {})["mapCopy"] = {
-        "source": f"data/divisions/{kind}.geojson",
+        "source": f"data/source/divisions/{kind}.geojson",
         "simplifyToleranceDegrees": TOLERANCE,
     }
     write_collection(output / f"{kind}.geojson", collection)

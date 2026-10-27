@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import { attachViewshedIds, countPointsInGeometry, outsideApiSitesToCameras, providerSitesToCameras } from '../js/geojson-transform.js';
 
-const manifest = JSON.parse(readFileSync(new URL('../data/alertwest-viewshed-manifest.json', import.meta.url), 'utf8'));
+const manifest = JSON.parse(readFileSync(new URL('../data/live/alertwest-viewshed-manifest.json', import.meta.url), 'utf8'));
 const entry = (id) => manifest.viewsheds.find((item) => item.viewshed_id === id);
 
 const camera = (id, name, lon, lat) => ({
@@ -44,7 +44,7 @@ assert.equal(attachViewshedIds({ features: [{ type: 'Feature', geometry: null, p
 console.log('geojson transform tests passed');
 
 // known site corrections must move both camera heads without inventing coverage
-const newSites = JSON.parse(readFileSync(new URL('../data/alertwest-sites.geojson', import.meta.url), 'utf8'));
+const newSites = JSON.parse(readFileSync(new URL('../data/live/alertwest-sites.geojson', import.meta.url), 'utf8'));
 const halfway = newSites.features.find(f => f.properties.name === 'Halfway');
 const halfwayHeads = { features: [camera(18030, 'Axis-Halfway1', -117.0316, 44.8814), camera(18031, 'Axis-Halfway2', -117.0316, 44.8814)] };
 for (const f of attachViewshedIds(halfwayHeads, manifest, newSites).features) {
@@ -58,7 +58,7 @@ for (const f of attachViewshedIds(halfwayHeads, manifest, { features: [pendingHa
   assert.equal(f.properties.viewshed_id, null);
 }
 
-const panoSites = JSON.parse(readFileSync(new URL('../data/pano-sites.geojson', import.meta.url), 'utf8'));
+const panoSites = JSON.parse(readFileSync(new URL('../data/live/pano-sites.geojson', import.meta.url), 'utf8'));
 const panoCameras = providerSitesToCameras(panoSites, 'Pano AI').features;
 assert.equal(panoCameras.length, 106);
 assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 106);
@@ -85,7 +85,7 @@ assert.ok(linked.every(f => f.properties.feed.startsWith(
   `https://${viewerHosts[f.properties.owner]}.wildfirewatch.com/station/`)));
 
 // EnviroVision sites flag a shared ALERTWest tower themselves instead of borrowing its point
-const enviroVisionSites = JSON.parse(readFileSync(new URL('../data/envirovision-sites.geojson', import.meta.url), 'utf8'));
+const enviroVisionSites = JSON.parse(readFileSync(new URL('../data/live/envirovision-sites.geojson', import.meta.url), 'utf8'));
 const enviroVisionCameras = providerSitesToCameras(enviroVisionSites, 'EnviroVision').features;
 assert.equal(enviroVisionCameras.length, 88);
 assert.equal(enviroVisionCameras.filter(f => f.properties.viewshed_id).length, 88);
@@ -97,7 +97,7 @@ pendingWithHeight.properties.viewshedStatus = 'pending';
 assert.equal(providerSitesToCameras({ features: [pendingWithHeight] }, 'Pano AI').features[0].properties.viewshed_id, null);
 
 // live sites ALERTWest keeps out of its API get a marker from the sites file, with no feed or image
-const alertWestSites = JSON.parse(readFileSync(new URL('../data/alertwest-sites.geojson', import.meta.url), 'utf8'));
+const alertWestSites = JSON.parse(readFileSync(new URL('../data/live/alertwest-sites.geojson', import.meta.url), 'utf8'));
 const outsideApi = attachViewshedIds({ features: outsideApiSitesToCameras(alertWestSites) }, manifest, alertWestSites).features;
 assert.deepEqual(outsideApi.map(f => [f.properties.name, f.properties.viewshed_id]),
   [['Callahan Ridge', 'callahan-ridge'], ['Bear Mountain', 'bear-mountain']]);

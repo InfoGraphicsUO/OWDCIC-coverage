@@ -671,7 +671,7 @@
         ],
         "county": "Lake",
         "state": "OR",
-        "source": "data/digitized-camera-sources.geojson",
+        "source": "data/live/digitized-camera-sources.geojson",
         "feed": "https://portlandgeneral.wildfirewatch.com/station/50ef1efb2c6b431cbd221db96e82fcc9"
       }
     },
@@ -699,7 +699,7 @@
         ],
         "county": "Lake",
         "state": "OR",
-        "source": "data/digitized-camera-sources.geojson",
+        "source": "data/live/digitized-camera-sources.geojson",
         "feed": "https://portlandgeneral.wildfirewatch.com/station/8abcd4dbf1894e5689d81e87af47ae01"
       }
     },
@@ -732,7 +732,7 @@
         "locationNote": "PGE and digitized sources identify Round Butte and Warm Springs as separate locations; preserve both.",
         "candidateTowerHeightFt": 100,
         "heightNote": "PGE-towers_reduced1.csv tower height, not verified camera observer height.",
-        "source": "data/digitized-camera-sources.geojson",
+        "source": "data/live/digitized-camera-sources.geojson",
         "feed": "https://portlandgeneral.wildfirewatch.com/station/ce74c5ae32f7499d81f15cc7d61632a6"
       }
     },
@@ -760,7 +760,7 @@
         ],
         "county": "Sherman",
         "state": "OR",
-        "source": "data/digitized-camera-sources.geojson",
+        "source": "data/live/digitized-camera-sources.geojson",
         "feed": "https://portlandgeneral.wildfirewatch.com/station/cb02b887bfbe440f9317aab6e21c117c"
       }
     },
@@ -788,7 +788,7 @@
         ],
         "county": "Wasco",
         "state": "OR",
-        "source": "data/digitized-camera-sources.geojson",
+        "source": "data/live/digitized-camera-sources.geojson",
         "feed": "https://portlandgeneral.wildfirewatch.com/station/3c0efd2b0a5747cb83d4fcdfb69714ff"
       }
     },
@@ -816,7 +816,7 @@
         ],
         "county": "Marion",
         "state": "OR",
-        "source": "data/digitized-camera-sources.geojson",
+        "source": "data/live/digitized-camera-sources.geojson",
         "feed": "https://portlandgeneral.wildfirewatch.com/station/348d2b4c36fe4b1fb5c0fdb98f3e47f8"
       }
     },
@@ -919,7 +919,7 @@
         "county": "Jefferson",
         "state": "OR",
         "locationNote": "PGE and digitized sources identify Round Butte and Warm Springs as separate locations; preserve both.",
-        "source": "data/digitized-camera-sources.geojson",
+        "source": "data/live/digitized-camera-sources.geojson",
         "feed": "https://portlandgeneral.wildfirewatch.com/station/6ed6dab8a5b345caa4d09ca724133670"
       }
     },

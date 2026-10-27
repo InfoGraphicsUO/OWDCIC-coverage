@@ -88,7 +88,7 @@ RELEASES_URL = "https://github.com/InfoGraphicsUO/OWDCIC-coverage/releases"
 # names for the published manifests the release packages
 PROVIDER_LABELS = {"alertwest": "ALERTWest", "pano": "Pano AI", "envirovision": "EnviroVision"}
 DEFAULT_QGIS_ROOT = default_qgis_root()
-DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
+DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest"
 # test runs merge into whatever folder they write to, so they get their own
@@ -520,7 +520,7 @@ class ViewshedWindow(QMainWindow):
         lines = []
 
         for provider, label in PROVIDER_LABELS.items():
-            path = PROJECT_ROOT / f"data/{provider}-viewshed-manifest.json"
+            path = PROJECT_ROOT / f"data/live/{provider}-viewshed-manifest.json"
 
             try:
                 manifest = json.loads(path.read_text(encoding="utf-8"))
@@ -602,8 +602,8 @@ class ViewshedWindow(QMainWindow):
         form = QFormLayout(group)
         form.setSpacing(10)
         form.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
-        self.sites = PathRow(PROJECT_ROOT / "data/alertwest-sites.geojson", False)
-        self.dems = PathRow(PROJECT_ROOT / "data/dems", True)
+        self.sites = PathRow(PROJECT_ROOT / "data/live/alertwest-sites.geojson", False)
+        self.dems = PathRow(PROJECT_ROOT / "data/source/dems", True)
         # the window opens on the test run preset
         self.output = PathRow(TEST_OUTPUT, True)
         self.saved_output = str(DEFAULT_OUTPUT)

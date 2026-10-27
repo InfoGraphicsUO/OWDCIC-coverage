@@ -22,6 +22,8 @@ STANDARD_PARALLELS = (43.0, 45.5)
 CENTRAL_MERIDIAN = -120.5
 FALSE_EASTING_FEET = 1_312_335.958005249
 METERS_PER_FOOT = 0.3048
+# the map only loads the GeoJSON, so the spreadsheet copies sit with the other inputs
+DEFAULT_TABULAR_DIR = Path(__file__).resolve().parents[2] / "data/source"
 
 
 def parse_args() -> argparse.Namespace:
@@ -30,8 +32,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("output", type=Path, help="GeoJSON output path")
     parser.add_argument(
         "--tabular",
-        action="store_true",
-        help="also write .csv and .xlsx next to the GeoJSON output",
+        nargs="?",
+        type=Path,
+        const=DEFAULT_TABULAR_DIR,
+        metavar="DIR",
+        help="also write .csv and .xlsx copies to DIR (default: data/source/)",
     )
 
     return parser.parse_args()
@@ -356,8 +361,9 @@ def main() -> None:
     )
 
     if args.tabular:
-        write_csv(args.output.with_suffix(".csv"), features)
-        write_xlsx(args.output.with_suffix(".xlsx"), features)
+        args.tabular.mkdir(parents=True, exist_ok=True)
+        write_csv(args.tabular / f"{args.output.stem}.csv", features)
+        write_xlsx(args.tabular / f"{args.output.stem}.xlsx", features)
 
     operators = Counter(feature["properties"]["operator"] for feature in features)
     statuses = Counter(feature["properties"]["status"] for feature in features)

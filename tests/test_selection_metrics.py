@@ -179,7 +179,7 @@ class SelectionMetricsTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, r"missing from --viewsheds: \['pano-b'\]"):
             self.module.check_published_viewsheds({'a': None}, published)
 
-        with self.assertRaisesRegex(RuntimeError, r"not in a data/ manifest: \['new'\]"):
+        with self.assertRaisesRegex(RuntimeError, r"not in a data/live/ manifest: \['new'\]"):
             self.module.check_published_viewsheds({'a': None, 'pano-b': None, 'new': None}, published)
 
     def test_hydro_cache_rejects_empty_input(self):

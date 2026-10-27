@@ -23,9 +23,9 @@ HISTORY_URL = f'{SERVICES}/InterAgencyFirePerimeterHistory_All_Years_View/Featur
 PERIMETERS_URL = f'{SERVICES}/WFIGS_Interagency_Perimeters/FeatureServer/0/query'
 INCIDENTS_URL = f'{SERVICES}/WFIGS_Incident_Locations/FeatureServer/0/query'
 
-DEFAULT_PERIMETERS = PROJECT_ROOT / 'data/fire-history-perimeters.geojson'
-DEFAULT_IGNITIONS = PROJECT_ROOT / 'data/fire-history-ignitions.geojson'
-REGION_FOCUS = PROJECT_ROOT / 'data/region-focus.geojson'
+DEFAULT_PERIMETERS = PROJECT_ROOT / 'data/live/fire-history-perimeters.geojson'
+DEFAULT_IGNITIONS = PROJECT_ROOT / 'data/live/fire-history-ignitions.geojson'
+REGION_FOCUS = PROJECT_ROOT / 'data/live/region-focus.geojson'
 # Oregon and Washington state FIPS codes in region-focus.geojson
 STATE_IDS = ('41', '53')
 

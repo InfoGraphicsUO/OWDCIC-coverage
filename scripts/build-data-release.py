@@ -10,7 +10,7 @@ describing the fields:
     owdcic-viewsheds-or-wa.zip        every camera and all coverage
 
 The viewsheds are the smoothed, land-clipped polygons the map shows, read from
-each provider's published manifest in data/ and the per-camera web polygons
+each provider's published manifest in data/live/ and the per-camera web polygons
 in outputs/. Asset names stay the same between releases, so the README can
 link straight to the latest download.
 
@@ -48,7 +48,7 @@ _spec.loader.exec_module(viewsheds)
 
 DATA_DIR = viewsheds.DATA_DIR
 DEFAULT_OUTPUT = viewsheds.PROJECT_ROOT / "outputs/data_release"
-STATE_BOUNDARIES = DATA_DIR / "divisions/state.geojson"
+STATE_BOUNDARIES = viewsheds.SOURCE_DATA_DIR / "divisions/state.geojson"
 REPOSITORY = "InfoGraphicsUO/OWDCIC-coverage"
 MAP_URL = "https://infographicsuo.github.io/OWDCIC-coverage"
 ASSET_PREFIX = "owdcic-viewsheds"

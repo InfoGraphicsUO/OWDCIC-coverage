@@ -26,7 +26,8 @@ from osgeo import ogr, osr
 ogr.UseExceptions()
 
 ROOT = Path(__file__).resolve().parents[2]
-DATA = ROOT / "data"
+LIVE = ROOT / "data/live"
+SOURCE = ROOT / "data/source"
 SITE_DATA_BUILDER = ROOT / "scripts/csv-to-geojson.py"
 PROVIDER = "envirovision"
 # ODF's planning default; the source says many were never updated after installation
@@ -57,8 +58,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("source", type=Path, help="EVS_DetectionCameraLocations.gdb or its .zip")
     parser.add_argument("--updates", type=Path, help="a later CSV export of the same layer from ODF")
-    parser.add_argument("--sites", type=Path, default=DATA / "envirovision-sites.geojson")
-    parser.add_argument("--cameras", type=Path, default=DATA / "envirovision-cameras.csv")
+    parser.add_argument("--sites", type=Path, default=LIVE / "envirovision-sites.geojson")
+    parser.add_argument("--cameras", type=Path, default=SOURCE / "envirovision-cameras.csv")
 
     return parser.parse_args()
 
@@ -199,7 +200,7 @@ def build_sites(cameras: list[dict], converter) -> list[dict]:
             site["name"] = f"{site['name']} ({site['members'][0]['protectionUnit']})"
 
     counties = converter.load_counties(converter.DEFAULT_COUNTIES)
-    alertwest = json.loads((DATA / "alertwest-sites.geojson").read_text(encoding="utf-8"))["features"]
+    alertwest = json.loads((LIVE / "alertwest-sites.geojson").read_text(encoding="utf-8"))["features"]
     features = []
 
     for site in sorted(sites, key=lambda site: site["name"]):

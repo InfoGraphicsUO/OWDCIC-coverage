@@ -1,6 +1,6 @@
-data/dems/
-data/dems.zip
-data/camera-viewsheds.geojson
+data/source/dems/
+data/source/dems.zip
+data/source/camera-viewsheds.geojson
 .DS_Store
 .AppleDouble
 ._*

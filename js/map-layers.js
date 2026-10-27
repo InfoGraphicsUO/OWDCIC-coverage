@@ -231,7 +231,7 @@ const CAMERA_PROVIDERS = Object.freeze([
   }),
 ]);
 
-// providers whose cameras and viewshed ids come from a sites file in data/
+// providers whose cameras and viewshed ids come from a sites file in data/live/
 const SITE_FILE_PROVIDERS = Object.freeze([
   Object.freeze({
     operator: PANO_OPERATOR,
@@ -281,7 +281,7 @@ const DIVISION_TYPES = Object.freeze(FILTER_TYPES
       layerId: `${prefix}-line`,
       labelLayerId: `${prefix}-labels`,
       selectedLayerId: `${prefix}-selected`,
-      dataUrl: `data/map-divisions/${value}.geojson`,
+      dataUrl: `data/live/map-divisions/${value}.geojson`,
     });
   }));
 

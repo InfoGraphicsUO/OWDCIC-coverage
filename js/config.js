@@ -14,9 +14,9 @@ export const DATA_URLS = Object.freeze({
   cameraViewsheds: 'mapbox://infographics.qn8uiv', // latest ALERTWest camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.qn8uiv/
   cameraViewshedsSourceLayer: 'camera_viewsheds',
   cameraViewshedsCoverageSourceLayer: 'camera_viewshed_coverage',
-  viewshedManifest: 'data/alertwest-viewshed-manifest.json',
+  viewshedManifest: 'data/live/alertwest-viewshed-manifest.json',
   // per-camera coverage and land status for the camera results
-  cameraCoverage: 'data/camera-coverage.json',
+  cameraCoverage: 'data/live/camera-coverage.json',
   // latest Pano AI camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.3eiwtk/
   // an empty value shows the legend row as unpublished instead of requesting tiles
   panoCameraViewsheds: 'mapbox://infographics.3eiwtk',
@@ -25,19 +25,19 @@ export const DATA_URLS = Object.freeze({
   // every provider's coverage dissolved together, drawn when they share one fill color https://console.mapbox.com/studio/tilesets/infographics.4qzk4g/
   // built by scripts/build-combined-viewshed-coverage.py; empty falls back to stacked provider fills
   combinedCameraViewsheds: 'mapbox://infographics.4qzk4g',
-  panoCameraSites: 'data/pano-sites.geojson',
-  enviroVisionCameraSites: 'data/envirovision-sites.geojson',
-  alertWestCameraSites: 'data/alertwest-sites.geojson',
-  digitizedCameraSources: 'data/digitized-camera-sources.geojson',
-  standingLookouts: 'data/standing-lookouts.geojson',
-  transmissionLines: 'data/transmission-lines.geojson',
+  panoCameraSites: 'data/live/pano-sites.geojson',
+  enviroVisionCameraSites: 'data/live/envirovision-sites.geojson',
+  alertWestCameraSites: 'data/live/alertwest-sites.geojson',
+  digitizedCameraSources: 'data/live/digitized-camera-sources.geojson',
+  standingLookouts: 'data/live/standing-lookouts.geojson',
+  transmissionLines: 'data/live/transmission-lines.geojson',
   // past wildfires of 100+ acres since 2016, built by scripts/data-builders/build-fire-history.py
-  fireHistoryPerimeters: 'data/fire-history-perimeters.geojson',
-  fireHistoryIgnitions: 'data/fire-history-ignitions.geojson',
+  fireHistoryPerimeters: 'data/live/fire-history-perimeters.geojson',
+  fireHistoryIgnitions: 'data/live/fire-history-ignitions.geojson',
   // names of every division option, so the filter search needs no geometry
-  divisionOptions: 'data/map-divisions/options.json',
+  divisionOptions: 'data/live/map-divisions/options.json',
   // the region outline and the hatched states and Canada around it
-  regionFocus: 'data/region-focus.geojson',
+  regionFocus: 'data/live/region-focus.geojson',
   nifcFires:
     'https://services3.arcgis.com/T4QMspbfLg3qTGWY/arcgis/rest/services/WFIGS_Incident_Locations_Current/FeatureServer/0',
   nifcPerimeters:
@@ -162,7 +162,7 @@ export const LEGEND_LAYERS = Object.freeze({
 
 // every filter group the code can build, as [type id, label shown in the panel]
 // js/visible-content.js picks which of these the site shows and in what order
-// camera is the only non-polygon type; the others load data/map-divisions/<type id>.geojson
+// camera is the only non-polygon type; the others load data/live/map-divisions/<type id>.geojson
 export const FILTER_TYPES = Object.freeze([
   ['state', 'State'],
   ['county', 'County'],
