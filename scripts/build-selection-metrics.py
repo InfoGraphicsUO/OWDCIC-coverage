@@ -29,7 +29,7 @@ from shapely.ops import transform
 from shapely.validation import explain_validity
 
 ROOT = Path(__file__).resolve().parents[1]
-DIVISIONS = ROOT / 'data/divisions'
+DIVISIONS = ROOT / 'data/source/divisions'
 # every official provider's web viewsheds; area coverage counts all of them together
 VIEWSHEDS = (
     ROOT / 'outputs/gdal_viewsheds_alertwest/mapbox/camera_viewsheds_web_epsg5070.gpkg',
@@ -39,11 +39,11 @@ VIEWSHEDS = (
 # report and CSV split coverage by provider, keyed by the web package's output folder
 PROVIDER_FOLDER_PREFIX = 'gdal_viewsheds_'
 # published manifests name every viewshed the map shows; metrics must cover the same set
-MANIFESTS = ROOT / 'data'
-MASK = ROOT / 'data/pacific-northwest-land-mask.geojson'
+MANIFESTS = ROOT / 'data/live'
+MASK = ROOT / 'data/source/pacific-northwest-land-mask.geojson'
 HYDRO_CACHE = ROOT / 'outputs/source-cache/census-areal-hydro-2025.geojsonl'
 PADUS_FEE_CACHE = ROOT / 'outputs/source-cache/padus-4.1-or-wa-fee-5070.geojsonl'
-CAMERA_OUT = ROOT / 'data/camera-coverage.json'
+CAMERA_OUT = ROOT / 'data/live/camera-coverage.json'
 CACHE = ROOT / 'outputs/source-cache/selection-metrics-cache.json'
 # bump when a change to the math makes cached results stale
 CACHE_VERSION = 1
@@ -274,7 +274,7 @@ def check_published_viewsheds(individual, published):
         raise RuntimeError(
             'viewsheds do not match the published manifests'
             + (f'; missing from --viewsheds: {missing}' if missing else '')
-            + (f'; not in a data/ manifest: {unpublished}' if unpublished else ''))
+            + (f'; not in a data/live/ manifest: {unpublished}' if unpublished else ''))
 
 
 def load_all_viewsheds(paths):

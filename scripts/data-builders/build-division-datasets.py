@@ -186,7 +186,7 @@ def clip_to_project_boundary(features):
     """cuts each feature to the OR/WA project boundary and drops those with next to nothing inside it
 
     Forest Service units run into CA, ID and NV, so each is clipped to
-    data/or-wa-boundary.geojson, which keeps the shown area and the coverage
+    data/source/or-wa-boundary.geojson, which keeps the shown area and the coverage
     metrics to the project region
     """
     from pyproj import Transformer
@@ -197,7 +197,7 @@ def clip_to_project_boundary(features):
 
     # areas are measured in EPSG:5070 (equal area, meters), not in degrees
     to_equal_area = Transformer.from_crs(4326, 5070, always_xy=True).transform
-    boundary = shape(json.loads((ROOT / "data" / "or-wa-boundary.geojson").read_text())["features"][0]["geometry"])
+    boundary = shape(json.loads((ROOT / "data" / "source" / "or-wa-boundary.geojson").read_text())["features"][0]["geometry"])
     clipped, dropped = [], []
 
     for feature in features:
@@ -243,7 +243,7 @@ def main():
 
         if kind == "national-forest":
             result["features"], outside = clip_to_project_boundary(result["features"])
-            result["metadata"]["clippedTo"] = "data/or-wa-boundary.geojson"
+            result["metadata"]["clippedTo"] = "data/source/or-wa-boundary.geojson"
             result["metadata"]["excludedOutsideBoundaryFeatures"] = outside
             states, portions = state_combined_features(result["features"], dtype, args.output / "state.geojson")
             result["features"] = [combined_feature(result["features"], dtype), *states, *result["features"], *portions]

@@ -24,7 +24,7 @@ os.environ.setdefault("PROJ_DATA", str(qgis_runtime().proj_data))
 from osgeo import gdal
 
 
-DEFAULT_OUTPUT = PROJECT_ROOT / "data/transmission-lines.geojson"
+DEFAULT_OUTPUT = PROJECT_ROOT / "data/live/transmission-lines.geojson"
 
 # matches REGION_DATA_BOUNDS in js/config.js
 REGION_BOUNDS = (-124.85, 41.99, -116.4, 49.01)

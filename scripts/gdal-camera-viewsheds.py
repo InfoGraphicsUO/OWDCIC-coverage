@@ -45,8 +45,8 @@ from qgis_runtime import default_qgis_root, qgis_runtime
 # paths to default files and directories
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_QGIS_ROOT = default_qgis_root()
-DEFAULT_SITES = PROJECT_ROOT / "data/alertwest-sites.geojson"
-DEFAULT_DEMS = PROJECT_ROOT / "data/dems"
+DEFAULT_SITES = PROJECT_ROOT / "data/live/alertwest-sites.geojson"
+DEFAULT_DEMS = PROJECT_ROOT / "data/source/dems"
 DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest"
 # every provider's output folder, for the combined coverage tileset
 PROVIDER_OUTPUTS = {
@@ -57,9 +57,10 @@ PROVIDER_OUTPUTS = {
 WEB_PACKAGE = "mapbox/camera_viewsheds_web_epsg5070.gpkg"
 DEFAULT_COMBINED_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_combined/mapbox"
 COMBINED_PRODUCT_NAME = "combined-camera-viewshed-coverage"
-DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/pacific-northwest-land-mask.geojson"
+DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.geojson"
 # published data the live map reads, and the scripts that rebuild it after a run
-DATA_DIR = PROJECT_ROOT / "data"
+DATA_DIR = PROJECT_ROOT / "data/live"
+SOURCE_DATA_DIR = PROJECT_ROOT / "data/source"
 SITE_DATA_BUILDER = PROJECT_ROOT / "scripts/csv-to-geojson.py"
 METRICS_BUILDER = PROJECT_ROOT / "scripts/build-selection-metrics.py"
 METRICS_PROGRESS_PREFIX = "@@METRICS@@"
@@ -259,7 +260,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--publish-site-data",
         action="store_true",
         help="regenerate the site GeoJSON and viewshed queues from the installation sheet "
-        "before the run, then afterwards replace the provider's manifest in data/ and "
+        "before the run, then afterwards replace the provider's manifest in data/live/ and "
         "regenerate them again, so the map shows the new coverage",
     )
     parser.add_argument(

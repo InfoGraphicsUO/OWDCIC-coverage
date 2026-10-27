@@ -26,7 +26,7 @@ class SelectionDataTests(unittest.TestCase):
     def test_all_categories_have_named_valid_complete_features(self):
         for kind in KINDS:
             with self.subTest(kind=kind):
-                data = json.loads((ROOT / f'data/divisions/{kind}.geojson').read_text())
+                data = json.loads((ROOT / f'data/source/divisions/{kind}.geojson').read_text())
                 self.assertTrue(data['features'])
                 self.assertEqual(len(data['features']), EXPECTED_COUNTS[kind])
                 meta = data['metadata']
@@ -74,7 +74,7 @@ class SelectionDataTests(unittest.TestCase):
                     self.assertAlmostEqual(sum(row['percentage'] for row in shares), 100, places=1)
 
     def test_expected_oregon_washington_options(self):
-        state = json.loads((ROOT / 'data/divisions/state.geojson').read_text())
+        state = json.loads((ROOT / 'data/source/divisions/state.geojson').read_text())
         self.assertEqual({f['properties']['name'] for f in state['features']},
                          {'Oregon', 'Washington'})
         categories = set(state['metadata']['designationPriority'])
@@ -84,7 +84,7 @@ class SelectionDataTests(unittest.TestCase):
                          } <= categories)
         self.assertNotIn('National Forest', categories)
         self.assertNotIn('National Park', categories)
-        utility = json.loads((ROOT / 'data/divisions/utility.geojson').read_text())
+        utility = json.loads((ROOT / 'data/source/divisions/utility.geojson').read_text())
         names = {f['properties']['name'] for f in utility['features']}
         self.assertTrue(any('Portland General Electric' in name for name in names))
         self.assertTrue(any('Pacific Power' in name for name in names))
@@ -99,7 +99,7 @@ class SelectionDataTests(unittest.TestCase):
         self.assertNotIn('exact', meta['coverageNote'].lower())
 
     def test_all_odf_districts_combines_every_district(self):
-        data = json.loads((ROOT / 'data/divisions/odf-protection-district.geojson').read_text())
+        data = json.loads((ROOT / 'data/source/divisions/odf-protection-district.geojson').read_text())
         combined = [f for f in data['features'] if 'memberDivisionIds' in f['properties']]
         self.assertEqual([f['properties']['name'] for f in combined], ['All ODF districts'])
         members = [f for f in data['features'] if f not in combined]
@@ -111,7 +111,7 @@ class SelectionDataTests(unittest.TestCase):
                                    sum(f['properties'][key] for f in members), delta=0.1)
 
     def test_all_national_forests_combines_every_forest(self):
-        data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
+        data = json.loads((ROOT / 'data/source/divisions/national-forest.geojson').read_text())
         combined = [f for f in data['features'] if 'memberDivisionIds' in f['properties']]
         self.assertEqual([f['properties']['name'] for f in combined],
                          ['All National Forests', 'Oregon National Forests', 'Washington National Forests'])
@@ -127,7 +127,7 @@ class SelectionDataTests(unittest.TestCase):
             self.assertGreater(combined[0]['properties'][key], total * 0.99)
 
     def test_state_national_forests_split_forests_at_the_state_line(self):
-        data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
+        data = json.loads((ROOT / 'data/source/divisions/national-forest.geojson').read_text())
         features = {f['id']: f['properties'] for f in data['features']}
         everything, oregon, washington = (features[f'national-forest:{key}'] for key in ('all', 'or', 'wa'))
         portions = [p for p in features.values() if 'partOfDivisionId' in p]
@@ -150,7 +150,7 @@ class SelectionDataTests(unittest.TestCase):
             self.assertAlmostEqual(oregon[key] + washington[key], everything[key], delta=everything[key] * 0.005)
 
     def test_national_forest_is_clipped_to_the_project_boundary(self):
-        data = json.loads((ROOT / 'data/divisions/national-forest.geojson').read_text())
+        data = json.loads((ROOT / 'data/source/divisions/national-forest.geojson').read_text())
         names = {feature['properties']['name'] for feature in data['features']}
         self.assertIn('Malheur National Forest', names)
         self.assertIn('Gifford Pinchot National Forest', names)
@@ -173,13 +173,13 @@ class SelectionDataTests(unittest.TestCase):
             self.assertLessEqual(maxy, north)
 
     def test_tribal_land_keeps_hoh_reservation(self):
-        data = json.loads((ROOT / 'data/divisions/tribal-land.geojson').read_text())
+        data = json.loads((ROOT / 'data/source/divisions/tribal-land.geojson').read_text())
         names = {feature['properties']['name'] for feature in data['features']}
         self.assertIn('Hoh Indian Reservation', names)
         self.assertEqual(len(data['features']), 66)
 
     def test_cameras_are_not_reported_as_zero_when_viewshed_is_missing(self):
-        data = json.loads((ROOT / 'data/camera-coverage.json').read_text())
+        data = json.loads((ROOT / 'data/live/camera-coverage.json').read_text())
         # 88 ALERTWest + 106 Pano AI + 88 EnviroVision viewsheds; none is currently missing coverage
         self.assertEqual(len(data['viewsheds']), 282)
         self.assertEqual(data['metadata']['areaCrs'], 'EPSG:5070')
@@ -205,7 +205,7 @@ class SelectionDataTests(unittest.TestCase):
     def test_written_polygons_are_valid(self):
         for kind in KINDS:
             with self.subTest(kind=kind):
-                data = json.loads((ROOT / f'data/divisions/{kind}.geojson').read_text())
+                data = json.loads((ROOT / f'data/source/divisions/{kind}.geojson').read_text())
                 for feature in data['features']:
                     geometry = shape(feature['geometry'])
                     self.assertIn(geometry.geom_type, ('Polygon', 'MultiPolygon'))
@@ -215,11 +215,11 @@ class SelectionDataTests(unittest.TestCase):
 
     def test_map_copies_match_the_full_divisions(self):
         # scripts/data-builders/build-map-divisions.py must rerun after any division or metrics build
-        options = json.loads((ROOT / 'data/map-divisions/options.json').read_text())
+        options = json.loads((ROOT / 'data/live/map-divisions/options.json').read_text())
         for kind in KINDS:
             with self.subTest(kind=kind):
-                full = json.loads((ROOT / f'data/divisions/{kind}.geojson').read_text())['features']
-                copy = json.loads((ROOT / f'data/map-divisions/{kind}.geojson').read_text())['features']
+                full = json.loads((ROOT / f'data/source/divisions/{kind}.geojson').read_text())['features']
+                copy = json.loads((ROOT / f'data/live/map-divisions/{kind}.geojson').read_text())['features']
                 self.assertEqual([(f['id'], f['properties']) for f in copy],
                                  [(f['id'], f['properties']) for f in full])
                 self.assertEqual([entry['divisionId'] for entry in options[kind]],

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""builds data/region-focus.geojson, the shapes behind the map's region outline and outside hatching
+"""builds data/live/region-focus.geojson, the shapes behind the map's region outline and outside hatching
 
 the western states come from Census TIGERweb and Canada from Esri's generalized
 world countries, simplified on the service as the map used to request them on
@@ -15,7 +15,7 @@ from pathlib import Path
 
 from division_common import ROOT, arcgis_query
 
-DEFAULT_OUTPUT = ROOT / "data" / "region-focus.geojson"
+DEFAULT_OUTPUT = ROOT / "data" / "live" / "region-focus.geojson"
 
 STATES_URL = "https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer/10/query"
 COUNTRIES_URL = ("https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/"

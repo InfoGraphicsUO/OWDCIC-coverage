@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """convert a CSV with latitude/longitude columns to GeoJSON points
 
-    python scripts/csv-to-geojson.py data/standing-lookouts.csv
-    python scripts/csv-to-geojson.py data/sites.csv data/alertwest-sites.geojson --sites
+    python scripts/csv-to-geojson.py data/source/standing-lookouts.csv
+    python scripts/csv-to-geojson.py data/source/sites.csv data/live/alertwest-sites.geojson --sites
 
 sites mode writes ALERTWest sites to the main output and each provider section
 (e.g. PANO.AI) to its own file, moving sites onto matching digitized camera
@@ -19,10 +19,12 @@ import re
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-DEFAULT_INPUT = HERE.parent / "data" / "Site Installation Dates(Site, Coordinates, & Elevation).csv"
-DEFAULT_OUTPUT = HERE.parent / "data" / "alertwest-sites.geojson"
-DEFAULT_DIGITIZED = HERE.parent / "data" / "digitized-camera-sources.geojson"
-DEFAULT_COUNTIES = HERE.parent / "data" / "divisions" / "county.geojson"
+LIVE = HERE.parent / "data" / "live"
+SOURCE = HERE.parent / "data" / "source"
+DEFAULT_INPUT = SOURCE / "Site Installation Dates(Site, Coordinates, & Elevation).csv"
+DEFAULT_OUTPUT = LIVE / "alertwest-sites.geojson"
+DEFAULT_DIGITIZED = LIVE / "digitized-camera-sources.geojson"
+DEFAULT_COUNTIES = SOURCE / "divisions" / "county.geojson"
 
 AW_LIVE = re.compile(r"^AW\s*\(Live\)$", re.I)
 LAT_ALIASES = ["latitude", "lattitude", "lat"]
@@ -43,7 +45,7 @@ SECTION_OWNERS = {
     "AVISTA UTILITIES": "Avista Utilities",
 }
 ESTIMATED_HEIGHT = re.compile(r"estimated", re.I)
-PROVIDER_OUTPUTS = {"pano": HERE.parent / "data" / "pano-sites.geojson"}
+PROVIDER_OUTPUTS = {"pano": LIVE / "pano-sites.geojson"}
 # prefixed so viewshed ids stay unique across provider tilesets
 PROVIDER_VIEWSHED_PREFIXES = {"pano": "pano-"}
 # digitized operators that count as the same camera for each provider
@@ -63,7 +65,7 @@ def main(argv: list[str] | None = None) -> None:
     output_path = args.output
 
     if output_path is None:
-        output_path = DEFAULT_OUTPUT if input_path == DEFAULT_INPUT else input_path.with_suffix(".geojson")
+        output_path = DEFAULT_OUTPUT if input_path == DEFAULT_INPUT else default_output(input_path)
 
     text = input_path.read_text(encoding="utf-8-sig")
     if use_sites_mode(text, force_sites=args.sites, force_generic=args.generic):
@@ -93,6 +95,12 @@ def main(argv: list[str] | None = None) -> None:
     write_geojson(output_path, geojson)
 
 
+def default_output(input_path: Path) -> Path:
+    # the map loads the GeoJSON, so a CSV kept in data/source/ converts into data/live/
+    output = input_path.with_suffix(".geojson")
+    return LIVE / output.name if input_path.resolve().parent == SOURCE.resolve() else output
+
+
 def write_geojson(path: Path, geojson: dict) -> None:
     path.write_text(json.dumps(geojson, indent=2) + "\n", encoding="utf-8")
     moved = sum(
@@ -118,7 +126,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         nargs="?",
         type=Path,
         default=None,
-        help="GeoJSON path (default: alongside the CSV, or data/alertwest-sites.geojson for the camera sheet)",
+        help="GeoJSON path (default: data/live/ for a CSV in data/source/, otherwise alongside the CSV; data/live/alertwest-sites.geojson for the camera sheet)",
     )
     parser.add_argument("--lat", metavar="COLUMN", help="Latitude column name")
     parser.add_argument("--lon", metavar="COLUMN", help="Longitude column name")

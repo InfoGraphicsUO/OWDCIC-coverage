@@ -114,7 +114,7 @@ def write_division_type(path: Path, division_type: str, source: str, source_payl
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    mask = json.loads((ROOT / "data" / "or-wa-boundary.geojson").read_text())
+    mask = json.loads((ROOT / "data" / "source" / "or-wa-boundary.geojson").read_text())
 
     park_params = {
         "where": "STATE IN ('OR','WA')",

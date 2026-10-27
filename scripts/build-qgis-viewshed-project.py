@@ -11,7 +11,7 @@ from qgis_runtime import QgisRuntime, default_qgis_root, qgis_runtime
 
 
 DEFAULT_QGIS_ROOT = default_qgis_root()
-DEFAULT_BOUNDARY = Path(__file__).resolve().parents[1] / "data/or-wa-boundary.geojson"
+DEFAULT_BOUNDARY = Path(__file__).resolve().parents[1] / "data/source/or-wa-boundary.geojson"
 
 
 def parse_args() -> argparse.Namespace:

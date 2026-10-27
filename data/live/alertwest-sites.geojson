@@ -1399,7 +1399,7 @@
           43.672058
         ],
         "viewshedId": "dry-mountain",
-        "source": "data/digitized-camera-sources.geojson"
+        "source": "data/live/digitized-camera-sources.geojson"
       }
     },
     {
@@ -1426,7 +1426,7 @@
         "viewshedId": "mt-defiance",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-43",
-        "source": "data/digitized-camera-sources.geojson",
+        "source": "data/live/digitized-camera-sources.geojson",
         "alertWestLive": false
       }
     },
@@ -1459,7 +1459,7 @@
         "viewshedId": "halfway",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-53",
-        "source": "data/digitized-camera-sources.geojson",
+        "source": "data/live/digitized-camera-sources.geojson",
         "alertWestLive": false
       }
     },

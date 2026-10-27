@@ -25,19 +25,19 @@
 //     // ['Oregon', 'Washington'],
 //
 //   'County': 'all',
-//     // 75 options, see data/divisions/county.geojson
+//     // 75 options, see data/source/divisions/county.geojson
 //     // a name shared by both states (e.g. 'Columbia') matches both; use the
 //     // divisionId instead to pick one, e.g. 'county:41009'
 //
 //   'State House': 'all',
-//     // 109 options, see data/divisions/house.geojson
+//     // 109 options, see data/source/divisions/house.geojson
 //
 //   'US House': 'all',
-//     // 16 options, see data/divisions/us-house.geojson
+//     // 16 options, see data/source/divisions/us-house.geojson
 //     // district names repeat across states; use the divisionId to pick one, e.g. 'us-house:4101'
 //
 //   'State Senate': 'all',
-//     // 79 options, see data/divisions/senate.geojson
+//     // 79 options, see data/source/divisions/senate.geojson
 //
 //   'Utility provider': 'all',
 //     // or pick from:
@@ -114,7 +114,7 @@
 //     // the Forest Service land; the panel lists options in the order given here
 //
 //   'Tribal land': 'all',
-//     // 66 options, see data/divisions/tribal-land.geojson
+//     // 66 options, see data/source/divisions/tribal-land.geojson
 //
 //   'ODF protection district': 'all',
 //     // or pick from:
