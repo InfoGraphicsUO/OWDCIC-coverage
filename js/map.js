@@ -113,7 +113,7 @@ export function mapPanelPadding(map) {
     const top = (banner?.getBoundingClientRect().bottom ?? 0) + 24;
     // on its side the phone stacks the panels in a column on the left instead
     if (container.clientWidth > container.clientHeight) {
-      return { top, right: 24, bottom: 24, left: Math.min((rail?.offsetWidth ?? 0) + 24, widthCap) };
+      return { top, right: 24, bottom: 24, left: (rail?.offsetWidth ?? 0) + 24 };
     }
     const tabBarHeight = rail?.offsetHeight ?? 0;
     const resultsHeight = resultsVisible ? results.offsetHeight : 0;
@@ -183,7 +183,8 @@ async function initializeMap() {
     projection: 'mercator',
     center: DEFAULT_VIEW.center,
     zoom: DEFAULT_VIEW.zoom,
-    minZoom: 5,
+    // phones zoom out further so a whole state fits between the banner pill and the sheets
+    minZoom: isPhoneLayout() ? 4 : 5,
     // maxZoom: 12,
     maxBounds: MAP_BOUNDS,
     attributionControl: false,
@@ -239,6 +240,8 @@ async function initializeMap() {
   map.addControl(new SettingsControl(), 'top-left');
 
   map.addControl(new mapboxgl.AttributionControl({
+    // phones keep the credits behind the (i) so they fit beside the logo
+    compact: isPhoneLayout() || undefined,
     customAttribution: '<a href="https://infographics.uoregon.edu/" target="_blank" rel="noopener noreferrer">UO InfoGraphics Lab</a> | <a href="https://ohaz.uoregon.edu/" target="_blank" rel="noopener noreferrer">OHAZ</a>'
   }));
   initZoomViewer(map);
@@ -263,10 +266,25 @@ function initControlShellSync(map) {
 
   const refreshPadding = () => {
     // padding changes can interrupt an active drag or camera animation
-    if (!map.isMoving()) {
-      map.setPadding(mapPanelPadding(map));
-    }
+    if (map.isMoving()) return;
+    // on phones the sheets move a lot, so the map glides to its new middle instead of jumping
+    if (isPhoneLayout()) map.easeTo({ padding: mapPanelPadding(map), duration: motionDuration(250) });
+    else map.setPadding(mapPanelPadding(map));
   };
+
+  // phones open on the whole region, framed between the banner pill and the tab bar
+  if (isPhoneLayout()) map.fitBounds(REGION_DATA_BOUNDS, { padding: mapPanelPadding(map), duration: 0 });
+
+  // turning a phone swaps its panels between the bottom and a left column
+  map.on('resize', () => requestAnimationFrame(refreshPadding));
+
+  // a tap on the map hands it the screen, hiding a phone's sheet
+  map.on('click', () => {
+    if (isPhoneLayout() && !sidebar.classList.contains('is-collapsed')) {
+      sidebar._controlShellApi?.collapse();
+      requestAnimationFrame(refreshPadding);
+    }
+  });
 
   // wait for collapse and tab layout changes before measuring panel widths
   sidebar.querySelector('.control-shell__collapse')?.addEventListener('click', () => {
@@ -282,6 +300,16 @@ function initControlShellSync(map) {
   if (results) {
     bindResultsSheet(results);
     results.addEventListener(SHEET_CHANGE_EVENT, () => requestAnimationFrame(refreshPadding));
+    // results grow as their figures arrive and vanish when closed, so the framing follows their size
+    let pending = false;
+    new ResizeObserver(() => {
+      if (!isPhoneLayout() || pending) return;
+      pending = true;
+      requestAnimationFrame(() => {
+        pending = false;
+        refreshPadding();
+      });
+    }).observe(results);
   }
 }
 
@@ -453,13 +481,20 @@ function resetMapView(map) {
   // listeners clear the active filter before the camera returns home
   map.fire(MAP_HOME_EVENT);
 
+  const padding = mapPanelPadding(map);
+  // a phone's home is the whole region, since the desktop view doesn't fit its screen
+  if (isPhoneLayout()) {
+    map.fitBounds(REGION_DATA_BOUNDS, { padding, bearing: 0, pitch: 0, duration: motionDuration(700) });
+    return;
+  }
+
   map.easeTo({
     center: DEFAULT_VIEW.center,
     zoom: DEFAULT_VIEW.zoom,
     bearing: 0,
     pitch: 0,
     duration: motionDuration(700),
-    padding: mapPanelPadding(map),
+    padding,
   });
 }
 

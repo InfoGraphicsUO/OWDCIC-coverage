@@ -5,8 +5,10 @@
 export const PHONE_LAYOUT_QUERY = '(max-width: 640px), (max-height: 500px) and (pointer: coarse)';
 export const SHEET_CHANGE_EVENT = 'sheetchange';
 
-// a press that moves less than this is a tap and is left to the click that follows
+// a press that moves less than this is a tap and is left to the click that follows; the tab bar
+// allows a fingertip's usual wobble, since a press there is far more often a tap than a drag
 const DRAG_THRESHOLD = 8;
+const TAB_BAR_DRAG_THRESHOLD = 16;
 // a release faster than this (px/ms) moves one stop in the flick's direction
 const FLICK_SPEED = 0.45;
 // how far back the release speed is measured
@@ -15,11 +17,15 @@ const VELOCITY_WINDOW = 100;
 const CLICK_AFTER_DRAG = 350;
 // below this height there's no room for a half stop, so the sheet opens straight to full
 const SHORT_VIEWPORT = 500;
+// the half stop never drops below this, so short phones still show a few rows of a list
+const MIN_HALF_HEIGHT = 300;
 
 let lastDragEnd = -Infinity;
 
-// one capture listener drops the click a browser sends after a mouse or pen drag; touch pans don't
-// send one, so instead of a flag that waits for a click, the drop only applies right after a drag
+// one capture listener drops the click a browser sends after a mouse or pen drag. touch pans don't
+// send one, so the drop only applies right after a drag and ends at the next press, which a
+// drag's own click always comes before
+window.addEventListener('pointerdown', () => { lastDragEnd = -Infinity; }, { capture: true });
 window.addEventListener('click', (event) => {
   if (performance.now() - lastDragEnd > CLICK_AFTER_DRAG) return;
   lastDragEnd = -Infinity;
@@ -48,7 +54,9 @@ export function bindBottomSheet(shell, { setCollapsed }) {
 
   const detents = () => {
     const full = Math.max(0, window.innerHeight - rail.offsetHeight - sheetTop());
-    const half = window.innerHeight < SHORT_VIEWPORT ? full : Math.min(full, Math.round(window.innerHeight * 0.45));
+    const half = window.innerHeight < SHORT_VIEWPORT
+      ? full
+      : Math.min(full, Math.max(MIN_HALF_HEIGHT, Math.round(window.innerHeight * 0.45)));
     return { half, full };
   };
 
@@ -94,16 +102,30 @@ export function bindBottomSheet(shell, { setCollapsed }) {
   };
 
   trackDrag(shell, handle, drag);
-  trackDrag(shell, rail, drag);
+  trackDrag(shell, rail, { ...drag, threshold: TAB_BAR_DRAG_THRESHOLD });
+
+  // the keyboard covers the lower half of the screen, so searching opens the sheet all the way
+  shell.addEventListener('focusin', (event) => {
+    if (!phone.matches || !event.target.matches('input[type="search"], input[type="text"]')) return;
+    setHeight(detents().full);
+    shell.dispatchEvent(new CustomEvent(SHEET_CHANGE_EVENT));
+  });
 
   phone.addEventListener('change', reset);
-  // a hidden sheet keeps its height too, so clamp the stored value rather than the visible one
+  // turning the phone starts the sheet over at half; otherwise a hidden sheet keeps its height
+  // too, so clamp the stored value rather than the visible one
+  let landscape = window.innerWidth > window.innerHeight;
   window.addEventListener('resize', () => {
     if (!phone.matches) return;
-    const { full } = detents();
-    if (inlineHeight(shell, '--sheet-height') > full) setHeight(full);
+    const turned = (window.innerWidth > window.innerHeight) !== landscape;
+    landscape = window.innerWidth > window.innerHeight;
+    const { half, full } = detents();
+    if (turned) setHeight(half);
+    else if (inlineHeight(shell, '--sheet-height') > full) setHeight(full);
   });
   reset();
+  // phones open on the map, with the sheet a tap or drag away on the tab bar
+  if (phone.matches) setCollapsed(true);
   // the banner and tab bar can still be settling on the first pass, so measure again once loaded
   requestAnimationFrame(reset);
   window.addEventListener('load', reset, { once: true });
@@ -121,9 +143,13 @@ export function bindResultsSheet(panel) {
 
   const tabBarHeight = () => document.querySelector('#control-sidebar .control-rail')?.offsetHeight ?? 0;
   const atFit = () => !panel.style.getPropertyValue('--results-height');
+  // the panel's height with nothing cut off, so full never leaves empty space under short results
+  const contentHeight = () => [...panel.children].reduce((sum, child) => sum + (
+    child.matches('[data-results-content]') ? child.scrollHeight : child.offsetHeight
+  ), 0);
   const detents = () => {
     if (atFit()) fitHeight = panel.offsetHeight;
-    const full = Math.max(0, window.innerHeight - tabBarHeight() - sheetTop());
+    const full = Math.min(contentHeight(), Math.max(0, window.innerHeight - tabBarHeight() - sheetTop()));
     const peek = handle.offsetHeight + header.offsetHeight;
     return { peek, fit: clamp(fitHeight || full, peek, full), full };
   };
@@ -190,14 +216,14 @@ export function bindResultsSheet(panel) {
 // a press that never passes the threshold is left alone so its click still runs. moves are
 // followed on the window until then, since a mouse can leave a small handle before it counts
 // as a drag, and capturing on press would send a tab's click to the tab bar instead
-function trackDrag(sheet, target, { canStart, start, move, end, cancel }) {
+function trackDrag(sheet, target, { canStart, start, move, end, cancel, threshold = DRAG_THRESHOLD }) {
   let drag = null;
 
   const onMove = (event) => {
     if (!drag || event.pointerId !== drag.pointerId) return;
     const delta = drag.startY - event.clientY;
     if (!drag.moved) {
-      if (Math.abs(delta) < DRAG_THRESHOLD) return;
+      if (Math.abs(delta) < threshold) return;
       drag.moved = true;
       drag.startHeight = start();
       sheet.classList.add('is-dragging');

@@ -299,6 +299,9 @@
 
     .filter-panel__search input::placeholder { color: var(--control-chrome-muted); }
 
+    /* the browser's blue clear button doesn't belong on the dark field */
+    .filter-panel__search input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
     /* layers: rows switch on and off; the switch stands in for the selected tint */
     .control-menu .legend-row:has(> input[type="checkbox"]:checked),
     .control-menu .legend-group:has(input[type="checkbox"]:checked) {
@@ -521,6 +524,25 @@
     .results-panel__land-mix,
     .results-panel__export { display: none; }
 
+    /* a camera with no public image gets a line of text, not an empty frame */
+    .results-panel__camera-preview:not(:has(img)) {
+        aspect-ratio: auto;
+        place-items: start;
+    }
+
+    .results-panel__camera-preview:not(:has(img)) .results-panel__camera-placeholder {
+        padding: 10px 12px;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .feature-popup__close {
+        top: 2px;
+        right: 2px;
+        width: 40px;
+        height: 40px;
+    }
+
     .results-panel__share {
         padding: 13px 12px;
         font-size: 14px;
@@ -533,7 +555,9 @@
     /* about: title and close share a row, the tabs scroll along their own row under it */
     .modal { padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px calc(env(safe-area-inset-bottom, 0px) + 10px); }
 
-    .modal__dialog { max-height: 100%; }
+    .modal__dialog {
+        max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 20px);
+    }
 
     .about-modal__dialog { overflow: clip; }
 
@@ -615,9 +639,10 @@
         left: auto;
     }
 
+    /* above the Mapbox logo and credits along the bottom edge */
     .fire-timeline {
         left: calc(var(--phone-column) + (100% - var(--phone-column)) / 2);
-        bottom: var(--panel-gap);
+        bottom: 34px;
         width: min(460px, calc(100% - var(--phone-column) - 2 * var(--panel-gap)));
     }
 
