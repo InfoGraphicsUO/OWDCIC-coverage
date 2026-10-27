@@ -163,6 +163,27 @@ class GeometryRepairTests(unittest.TestCase):
         self.assertFalse(repaired.IsEmpty())
         self.assertTrue(repaired.IsValid())
 
+    def test_coverage_geojson_keeps_holes_and_winds_outer_rings_counter_clockwise(self):
+        # a clockwise square with a hole, as GEOS returns dissolved coverage
+        geometry = viewsheds.ogr.CreateGeometryFromWkt(
+            "MULTIPOLYGON (((0 0, 0 4, 4 4, 4 0, 0 0), (1 1, 3 1, 3 3, 1 3, 1 1)), ((5 0, 5 1, 6 1, 6 0, 5 0)))")
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "coverage.geojson"
+            viewsheds.write_coverage_geojson(path, geometry, {"coverage_id": "all"})
+            data = json.loads(path.read_text())
+            self.assertEqual(viewsheds.validate_vector(path, None, 1), 1)
+
+        self.assertEqual(data["features"][0]["properties"], {"coverage_id": "all"})
+        polygons = data["features"][0]["geometry"]["coordinates"]
+        self.assertEqual([len(polygon) for polygon in polygons], [2, 1])
+
+        def signed_area(ring):
+            return sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in zip(ring, ring[1:])) / 2
+
+        # RFC 7946: outer rings counter-clockwise (positive), holes clockwise (negative)
+        self.assertEqual([signed_area(ring) > 0 for polygon in polygons for ring in polygon], [True, False, True])
+
 
 class ResumeTests(unittest.TestCase):
     def make_state(self, root: Path, **overrides):
