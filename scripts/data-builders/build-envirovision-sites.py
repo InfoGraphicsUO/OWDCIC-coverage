@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """convert ODF's EnviroVision (ForestWatch) camera geodatabase to site GeoJSON and a camera CSV
 
-    python scripts/data-builders/build-envirovision-sites.py EVS_DetectionCameraLocations.gdb.zip
+    python scripts/data-builders/build-envirovision-sites.py EVS_DetectionCameraLocations.gdb.zip \
+        [--updates EVS_DetectionCameraLocations_Draft_0.csv]
 
 runs under the QGIS Python for its bundled GDAL. ODF keeps one record per camera,
 so cameras sharing a point are merged into one site; the viewshed is modeled once
-per site from its tallest camera
+per site from its tallest camera. --updates applies a later CSV export of the same
+layer: its camera list and attributes win, but cameras already in the geodatabase
+keep its point so a re-projection difference does not queue every site again
 """
 
 from __future__ import annotations
@@ -40,11 +43,20 @@ CSV_FIELDS = [
     "site", "camera", "latitude", "longitude", "ground_elevation_ft", "camera_height_ft",
     "protection_district", "protection_unit", "detection_center", "site_id",
 ]
+# geodatabase field name for each column of ODF's CSV export
+CSV_EXPORT_FIELDS = {
+    "Ground Elevation": "groundElevationFt",
+    "Offset": "cameraHeightFt",
+    "Protection District": "ProtectionDistrict",
+    "Protection Unit": "ProtectionUnit",
+    "Detection Center": "DetectionCenter",
+}
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("source", type=Path, help="EVS_DetectionCameraLocations.gdb or its .zip")
+    parser.add_argument("--updates", type=Path, help="a later CSV export of the same layer from ODF")
     parser.add_argument("--sites", type=Path, default=DATA / "envirovision-sites.geojson")
     parser.add_argument("--cameras", type=Path, default=DATA / "envirovision-cameras.csv")
 
@@ -60,7 +72,7 @@ def load_converter():
     return module
 
 
-def read_cameras(source: Path) -> list[dict]:
+def read_cameras(source: Path, updates: Path | None = None) -> list[dict]:
     path = f"/vsizip/{source}" if source.suffix == ".zip" else str(source)
     dataset = ogr.Open(path)
     layer = dataset.GetLayer(0)
@@ -101,7 +113,50 @@ def read_cameras(source: Path) -> list[dict]:
 
         cameras.append(camera)
 
+    if updates:
+        cameras = apply_updates(cameras, updates, domains, to_wgs84)
+
     return cameras
+
+
+def apply_updates(cameras: list[dict], updates: Path, domains: dict, to_wgs84) -> list[dict]:
+    """the CSV export's GlobalIDs differ from the geodatabase's, so cameras match by name and site id"""
+    existing = {(camera["camera"], camera["siteId"]): camera for camera in cameras}
+    to_source = to_wgs84.GetInverse()
+    updated = []
+
+    with updates.open(encoding="utf-8-sig", newline="") as stream:
+        for row in csv.DictReader(stream):
+            name, site_id = row["Site"].strip(), int(row["Site_ID"])
+            camera = existing.pop((name, site_id), None)
+
+            if camera is None:
+                # x and y are WGS84; the key is taken in the source CRS like the geodatabase's
+                longitude, latitude = float(row["x"]), float(row["y"])
+                x, y, _ = to_source.TransformPoint(longitude, latitude)
+                camera = {
+                    "key": (round(x, 1), round(y, 1)),
+                    "camera": name,
+                    "longitude": round(longitude, 6),
+                    "latitude": round(latitude, 6),
+                    "siteId": site_id,
+                }
+                print(f"added {name} (site id {site_id})")
+
+            for column, field in CSV_EXPORT_FIELDS.items():
+                value = row[column].strip()
+
+                if field in domains:
+                    camera[DOMAIN_FIELDS[field]] = domains[field].get(value, value) if value else None
+                else:
+                    camera[field] = float(value) if value else None
+
+            updated.append(camera)
+
+    for name, site_id in existing:
+        print(f"dropped {name} (site id {site_id}), which the update no longer lists")
+
+    return updated
 
 
 def site_name(names: list[str]) -> str:
@@ -208,7 +263,7 @@ def write_cameras(path: Path, cameras: list[dict]) -> None:
 def main() -> None:
     args = parse_args()
     converter = load_converter()
-    cameras = read_cameras(args.source)
+    cameras = read_cameras(args.source, args.updates)
     features = build_sites(cameras, converter)
     converter.write_geojson(args.sites, {"type": "FeatureCollection", "features": features})
     write_cameras(args.cameras, cameras)

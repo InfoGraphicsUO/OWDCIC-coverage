@@ -87,8 +87,8 @@ assert.ok(linked.every(f => f.properties.feed.startsWith(
 // EnviroVision sites flag a shared ALERTWest tower themselves instead of borrowing its point
 const enviroVisionSites = JSON.parse(readFileSync(new URL('../data/envirovision-sites.geojson', import.meta.url), 'utf8'));
 const enviroVisionCameras = providerSitesToCameras(enviroVisionSites, 'EnviroVision').features;
-assert.equal(enviroVisionCameras.length, 87);
-assert.equal(enviroVisionCameras.filter(f => f.properties.viewshed_id).length, 87);
+assert.equal(enviroVisionCameras.length, 88);
+assert.equal(enviroVisionCameras.filter(f => f.properties.viewshed_id).length, 88);
 assert.equal(enviroVisionCameras.filter(f => f.properties.sharesAlertWestSite).length, 5);
 
 const pendingWithHeight = structuredClone(panoSites.features.find(f => f.properties.name === 'Midnight Gulch'));

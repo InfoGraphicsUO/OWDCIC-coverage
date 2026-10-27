@@ -816,7 +816,7 @@
       "properties": {
         "name": "Green Peter",
         "aliases": [],
-        "cameraHeightFt": 39.0,
+        "cameraHeightFt": 98.0,
         "cameraCount": 1,
         "groundElevationFt": 3888.0,
         "viewshedId": "envirovision-green-peter",
@@ -1129,10 +1129,6 @@
         "groundElevationFt": 5131.0,
         "viewshedId": "envirovision-little-grayback",
         "provider": "envirovision",
-        "cameraHeightsFt": [
-          98.0,
-          164.0
-        ],
         "protectionDistrict": "Southwest Oregon",
         "protectionUnit": "Grants Pass",
         "detectionCenter": "ODF - Medford",
@@ -1380,7 +1376,7 @@
       "properties": {
         "name": "Mt Scott",
         "aliases": [],
-        "cameraHeightFt": 84.0,
+        "cameraHeightFt": 164.0,
         "cameraCount": 1,
         "groundElevationFt": 4252.0,
         "viewshedId": "envirovision-mt-scott",
@@ -1485,12 +1481,11 @@
           "Parker Mountain 1",
           "Parker Mountain 2"
         ],
-        "cameraHeightFt": 60.0,
+        "cameraHeightFt": 40.0,
         "cameraCount": 2,
         "groundElevationFt": 5210.0,
         "viewshedId": "envirovision-parker-mountain",
         "provider": "envirovision",
-        "cameraHeightEstimated": true,
         "protectionDistrict": "Klamath-Lake",
         "protectionUnit": "Klamath",
         "detectionCenter": "Lakeview Interagency (LIFC)",
@@ -1594,10 +1589,6 @@
         "groundElevationFt": 4017.0,
         "viewshedId": "envirovision-reuben",
         "provider": "envirovision",
-        "cameraHeightsFt": [
-          62.0,
-          98.0
-        ],
         "protectionDistrict": "Southwest Oregon",
         "protectionUnit": "Grants Pass",
         "detectionCenter": "ODF - Medford",
@@ -2010,15 +2001,11 @@
           "Tombstone East",
           "Tombstone West"
         ],
-        "cameraHeightFt": 89.0,
+        "cameraHeightFt": 75.0,
         "cameraCount": 2,
         "groundElevationFt": 3831.0,
         "viewshedId": "envirovision-tombstone",
         "provider": "envirovision",
-        "cameraHeightsFt": [
-          75.0,
-          89.0
-        ],
         "protectionDistrict": "Southwest Oregon",
         "protectionUnit": "Medford",
         "detectionCenter": "ODF - Medford",
@@ -2075,6 +2062,30 @@
         "protectionUnit": "Veneta",
         "detectionCenter": "DFPA - Roseburg",
         "county": "Lane",
+        "state": "OR"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -120.301523,
+          42.231103
+        ]
+      },
+      "properties": {
+        "name": "Warner Canyon",
+        "aliases": [],
+        "cameraHeightFt": 54.0,
+        "cameraCount": 1,
+        "groundElevationFt": 6465.0,
+        "viewshedId": "envirovision-warner-canyon",
+        "provider": "envirovision",
+        "protectionDistrict": "Klamath-Lake",
+        "protectionUnit": "Lake",
+        "detectionCenter": "Lakeview Interagency (LIFC)",
+        "county": "Lake",
         "state": "OR"
       }
     },
@@ -2171,12 +2182,11 @@
           "Weston High",
           "Weston Low"
         ],
-        "cameraHeightFt": 60.0,
+        "cameraHeightFt": 185.0,
         "cameraCount": 2,
         "groundElevationFt": 2984.0,
         "viewshedId": "envirovision-weston",
         "provider": "envirovision",
-        "cameraHeightEstimated": true,
         "protectionDistrict": "Northeast Oregon",
         "protectionUnit": "Pendleton",
         "detectionCenter": "BMIDC - La Grande",
