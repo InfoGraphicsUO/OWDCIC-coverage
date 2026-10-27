@@ -93,14 +93,15 @@ STAGE_SPANS = {
     "complete": (1.00, 1.00),
 }
 # steps that run once every camera is done, in the order they run, with their run time in seconds
-# from the October 26, 2026 Pano run that added one camera (metrics timed as a cached rebuild);
+# from the October 26, 2026 Pano run that added one camera (metrics timed as a cached rebuild,
+# combined coverage with its Shapely-written GeoJSON);
 # only the ratios matter
 FINISHING_STAGES = {
     "combined_exact": 31,
     "web_polygons": 10,
     "web_coverage": 203,
     "mbtiles": 42,
-    "combined_coverage": 885,
+    "combined_coverage": 330,
     "site_data": 1,
     "coverage_metrics": 439,
 }
@@ -1013,6 +1014,28 @@ def write_features(
     return count
 
 
+def write_coverage_geojson(path: Path, geometry: Any, properties: dict[str, Any]) -> None:
+    """writes one region-wide coverage feature as GeoJSON for tippecanoe
+
+    GDAL's GeoJSON writer took about 9 minutes on the combined coverage, and in
+    RFC 7946 mode its 9-decimal rounding collapsed tiny rings, which it then
+    rebuilt into a GeometryCollection with stray line fragments. Shapely writes
+    the same polygons in seconds at full precision, with counter-clockwise outer
+    rings as RFC 7946 asks; tippecanoe snaps them to its tile grid either way.
+    """
+    import shapely
+
+    shape = shapely.orient_polygons(shapely.from_wkb(bytes(geometry.ExportToWkb())), exterior_cw=False)
+    feature = json.dumps({"type": "Feature", "properties": properties, "geometry": None})
+    head, tail = feature.split('"geometry": null')
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with path.open("w", encoding="utf-8") as stream:
+        stream.write('{"type": "FeatureCollection", "features": [')
+        stream.write(head + '"geometry": ' + shapely.to_geojson(shape) + tail)
+        stream.write("]}\n")
+
+
 def validate_vector(path: Path, layer_name: str | None, expected_count: int | None = None) -> int:
     """re-opens an output and checks that every geometry is present and valid"""
     _, features = read_features(path, layer_name)
@@ -1920,15 +1943,7 @@ def build_combined_coverage(providers: list[Path], output_dir: Path, log: Callab
     output_dir.mkdir(parents=True, exist_ok=True)
     geojson = output_dir / f"{COMBINED_PRODUCT_NAME}.geojson"
     mbtiles = output_dir / f"{COMBINED_PRODUCT_NAME}-z5.mbtiles"
-    write_features(
-        geojson,
-        "GeoJSON",
-        COVERAGE_LAYER,
-        web_srs,
-        COVERAGE_FIELDS,
-        [(coverage, {"coverage_id": "all"})],
-        ["RFC7946=YES", "COORDINATE_PRECISION=9"],
-    )
+    write_coverage_geojson(geojson, coverage, {"coverage_id": "all"})
     validate_vector(geojson, None, 1)
 
     tippecanoe = find_tippecanoe()
