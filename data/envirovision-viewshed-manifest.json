@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "generated_utc": "2026-10-12T22:38:40+00:00",
+  "generated_utc": "2026-10-27T21:48:53+00:00",
   "config_hash": "1fc319aaf4acf161f84b3f6c5c31c3614d1ef1b830b541849cb2953bc3242bc6",
   "web_processing": {
     "resolution_m": 50.0,
@@ -449,7 +449,7 @@
       "aliases": [],
       "longitude": -122.58321,
       "latitude": 44.483224,
-      "height_ft": 39.0,
+      "height_ft": 98.0,
       "status": "complete",
       "web_geojson": "web/envirovision-green-peter.geojson",
       "exact_polygon": "polygons_exact/envirovision_green_peter.gpkg"
@@ -743,7 +743,7 @@
       "aliases": [],
       "longitude": -123.064387,
       "latitude": 43.371832,
-      "height_ft": 84.0,
+      "height_ft": 164.0,
       "status": "complete",
       "web_geojson": "web/envirovision-mt-scott.geojson",
       "exact_polygon": "polygons_exact/envirovision_mt_scott.gpkg"
@@ -800,7 +800,7 @@
       ],
       "longitude": -122.278887,
       "latitude": 42.105557,
-      "height_ft": 60.0,
+      "height_ft": 40.0,
       "status": "complete",
       "web_geojson": "web/envirovision-parker-mountain.geojson",
       "exact_polygon": "polygons_exact/envirovision_parker_mountain.gpkg"
@@ -1073,7 +1073,7 @@
       ],
       "longitude": -122.750433,
       "latitude": 42.298398,
-      "height_ft": 89.0,
+      "height_ft": 75.0,
       "status": "complete",
       "web_geojson": "web/envirovision-tombstone.geojson",
       "exact_polygon": "polygons_exact/envirovision_tombstone.gpkg"
@@ -1107,6 +1107,18 @@
     },
     {
       "source_id": 82,
+      "viewshed_id": "envirovision-warner-canyon",
+      "site_name": "Warner Canyon",
+      "aliases": [],
+      "longitude": -120.301523,
+      "latitude": 42.231103,
+      "height_ft": 54.0,
+      "status": "complete",
+      "web_geojson": "web/envirovision-warner-canyon.geojson",
+      "exact_polygon": "polygons_exact/envirovision_warner_canyon.gpkg"
+    },
+    {
+      "source_id": 83,
       "viewshed_id": "envirovision-warner-mountain",
       "site_name": "Warner Mountain",
       "aliases": [
@@ -1121,7 +1133,7 @@
       "exact_polygon": "polygons_exact/envirovision_warner_mountain.gpkg"
     },
     {
-      "source_id": 83,
+      "source_id": 84,
       "viewshed_id": "envirovision-wasco-butte",
       "site_name": "Wasco Butte",
       "aliases": [],
@@ -1133,7 +1145,7 @@
       "exact_polygon": "polygons_exact/envirovision_wasco_butte.gpkg"
     },
     {
-      "source_id": 84,
+      "source_id": 85,
       "viewshed_id": "envirovision-wastina-butte",
       "site_name": "Wastina Butte",
       "aliases": [
@@ -1148,7 +1160,7 @@
       "exact_polygon": "polygons_exact/envirovision_wastina_butte.gpkg"
     },
     {
-      "source_id": 85,
+      "source_id": 86,
       "viewshed_id": "envirovision-weston",
       "site_name": "Weston",
       "aliases": [
@@ -1157,13 +1169,13 @@
       ],
       "longitude": -118.37586,
       "latitude": 45.800075,
-      "height_ft": 60.0,
+      "height_ft": 185.0,
       "status": "complete",
       "web_geojson": "web/envirovision-weston.geojson",
       "exact_polygon": "polygons_exact/envirovision_weston.gpkg"
     },
     {
-      "source_id": 86,
+      "source_id": 87,
       "viewshed_id": "envirovision-yainax-butte",
       "site_name": "Yainax Butte",
       "aliases": [
@@ -1178,7 +1190,7 @@
       "exact_polygon": "polygons_exact/envirovision_yainax_butte.gpkg"
     },
     {
-      "source_id": 87,
+      "source_id": 88,
       "viewshed_id": "envirovision-yellow-butte",
       "site_name": "Yellow Butte",
       "aliases": [],
