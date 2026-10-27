@@ -639,7 +639,7 @@ class ViewshedWindow(QMainWindow):
 
         self.combined = QCheckBox("Also rebuild the combined coverage tileset")
         self.publish_sites = QCheckBox("Publish the manifest and site data to the map")
-        # off by default: the rebuild is the slowest step and a test run does not need it
+        # off by default: a test run does not need it
         self.publish_metrics = QCheckBox("Rebuild coverage metrics for the results panel")
         # shapefiles-only runs make no coverage to combine or publish
         self.products.currentIndexChanged.connect(self.sync_finishing_options)
@@ -708,7 +708,7 @@ class ViewshedWindow(QMainWindow):
         form.addRow(with_help(self.publish_sites, self.publish_sites,
             "Before the run, regenerates the camera site files and viewshed queues from the installation sheet so newly added sites are included. When the run finishes without failures, replaces this provider's manifest in the data folder and regenerates the camera site files and viewshed queues, so the map treats the new cameras as having coverage. Skipped if the output folder is missing viewsheds that are already published. Full runs only."))
         form.addRow(with_help(self.publish_metrics, self.publish_metrics,
-            "After publishing, also recalculates land coverage for every division and camera so the results panel includes the new viewsheds. This is the slowest finishing step, so leave it off for test runs."))
+            "After publishing, also recalculates land coverage for every division and camera so the results panel includes the new viewsheds. Divisions the new viewsheds do not reach keep their saved results, so this usually takes a few minutes; it takes about an hour when the land, water or ownership data has changed. Leave it off for test runs."))
         form.addRow(with_help("Maximum distance", self.radius,
             "How far from each camera to check visibility. Larger distances cover more ground and take more time and memory."), self.radius)
         form.addRow(with_help("Analysis cell size", self.cell_size,

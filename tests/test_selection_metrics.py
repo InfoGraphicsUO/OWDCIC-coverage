@@ -31,22 +31,69 @@ class SelectionMetricsTests(unittest.TestCase):
         ]
         for coverage, expected in cases:
             with self.subTest(expected=expected):
-                got = self.module.coverage_metrics(selected, coverage)
+                got, _ = self.module.selection_coverage(selected, {'alertwest': coverage})
                 self.assertEqual(got['cameraViewshedCoveragePct'], expected)
                 self.assertAlmostEqual(got['cameraViewshedAreaSqKm'], expected / 100)
 
     def test_provider_coverage_keeps_overlapping_providers_separate(self):
         selected = box(0, 0, 1000, 1000)
-        coverages = {'alertwest': box(0, 0, 600, 1000), 'pano': box(400, 0, 1000, 1000)}
-        got = self.module.provider_coverage(selected, coverages, self.module.exclusive_coverages(coverages))
-        self.assertEqual([row['provider'] for row in got], ['alertwest', 'pano'])
-        self.assertEqual([row['cameraViewshedCoveragePct'] for row in got], [60, 60])
+        coverages = {'alertwest': box(0, 0, 600, 1000), 'pano': box(400, 0, 1000, 1000),
+                     'envirovision': box(5000, 0, 6000, 1000)}
+        total, got = self.module.selection_coverage(selected, coverages)
+        self.assertEqual(total['cameraViewshedCoveragePct'], 100)
+        self.assertEqual([row['provider'] for row in got], ['alertwest', 'pano', 'envirovision'])
+        self.assertEqual([row['cameraViewshedCoveragePct'] for row in got], [60, 60, 0])
 
         # 40% each is seen by one provider alone; the 20% overlap belongs to neither
-        self.assertEqual([row['exclusiveCoveragePct'] for row in got], [40, 40])
+        self.assertEqual([row['exclusiveCoveragePct'] for row in got], [40, 40, 0])
+        # the region-wide dissolve gives the same figures as clipping per selection
+        self.assertEqual(self.module.selection_coverage(
+            selected, coverages, self.module.dissolve_coverages(coverages)), (total, got))
         self.assertNotIn('landAreaSqKm', got[0])
         self.assertEqual(self.module.provider_key(
             Path('outputs/gdal_viewsheds_envirovision/mapbox/camera_viewsheds_web_epsg5070.gpkg')), 'envirovision')
+
+    def test_only_divisions_near_changed_viewsheds_are_recomputed(self):
+        m = self.module
+        individual = {'a': box(0, 0, 10, 10), 'b': box(100, 0, 110, 10)}
+        owners = {'a': 'pano', 'b': 'pano'}
+        coverages = {'pano': union_all(list(individual.values()))}
+        before = m.viewshed_state(individual, owners, coverages)
+        self.assertEqual(len(m.changed_area(before, before, individual).geometries), 0)
+        self.assertIsNone(m.changed_area(None, before, individual))
+
+        # b is reshaped and c is added; a division far from both keeps its numbers
+        individual = {'a': individual['a'], 'b': box(100, 0, 120, 10), 'c': box(300, 0, 310, 10)}
+        owners['c'] = 'pano'
+        coverages = {'pano': union_all(list(individual.values()))}
+        changed = m.changed_area(before, m.viewshed_state(individual, owners, coverages), individual)
+        self.assertFalse(m.touches_change(changed, box(0, 0, 10, 10)))
+        self.assertTrue(m.touches_change(changed, box(115, 0, 118, 5)))
+        self.assertTrue(m.touches_change(changed, box(305, 0, 306, 5)))
+
+        # a removed viewshed is known by its old bounds
+        after = m.viewshed_state({'a': individual['a']}, owners, {'pano': individual['a']})
+        changed = m.changed_area(m.viewshed_state(individual, owners, coverages), after, {'a': individual['a']})
+        self.assertTrue(m.touches_change(changed, box(305, 0, 306, 5)))
+
+    def test_coverage_change_without_a_viewshed_change_recomputes_everything(self):
+        m = self.module
+        individual = {'a': box(0, 0, 10, 10)}
+        before = m.viewshed_state(individual, {'a': 'pano'}, {'pano': box(0, 0, 10, 10)})
+        after = m.viewshed_state(individual, {'a': 'pano'}, {'pano': box(0, 0, 9, 10)})
+        self.assertIsNone(m.changed_area(before, after, individual))
+        # a new provider changes every division's provider split
+        added = m.viewshed_state(individual, {'a': 'pano'}, {'pano': box(0, 0, 10, 10), 'alertwest': box(0, 0, 1, 1)})
+        self.assertIsNone(m.changed_area(before, added, individual))
+
+    def test_cache_is_dropped_when_land_inputs_change_or_full_is_asked(self):
+        m = self.module
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'cache.json'
+            m.save_cache(path, {'landKey': 'old', 'kinds': {'county': {}}, 'cameras': {}})
+            self.assertEqual(m.load_cache(path, 'old', False)['kinds'], {'county': {}})
+            self.assertEqual(m.load_cache(path, 'new', False)['kinds'], {})
+            self.assertEqual(m.load_cache(path, 'old', True)['kinds'], {})
 
     def test_designation_priority_and_remainder_sum_to_100(self):
         selected = box(0, 0, 1000, 1000)

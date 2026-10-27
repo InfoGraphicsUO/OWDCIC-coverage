@@ -3,6 +3,11 @@
 
 run with the QGIS bundled Python/GDAL runtime; source downloads are cached in
 outputs/source-cache so repeat builds use the same Census hydro snapshot
+
+results are cached there too, so a run after adding or changing a few viewsheds
+only recomputes the divisions those viewsheds touch and the land mix of new
+geometries; a change to the land, water or ownership inputs rebuilds everything,
+and --full ignores the cache
 """
 from __future__ import annotations
 
@@ -16,7 +21,7 @@ from urllib.request import urlopen
 
 from osgeo import ogr
 from pyproj import Transformer
-from shapely import (STRtree, area, disjoint_subset_union_all, from_wkb,
+from shapely import (STRtree, area, box, disjoint_subset_union_all, from_wkb,
                      intersection, is_empty, make_valid, union_all)
 from shapely.errors import GEOSException
 from shapely.geometry import shape, mapping
@@ -39,6 +44,9 @@ MASK = ROOT / 'data/pacific-northwest-land-mask.geojson'
 HYDRO_CACHE = ROOT / 'outputs/source-cache/census-areal-hydro-2025.geojsonl'
 PADUS_FEE_CACHE = ROOT / 'outputs/source-cache/padus-4.1-or-wa-fee-5070.geojsonl'
 CAMERA_OUT = ROOT / 'data/camera-coverage.json'
+CACHE = ROOT / 'outputs/source-cache/selection-metrics-cache.json'
+# bump when a change to the math makes cached results stale
+CACHE_VERSION = 1
 HYDRO_URL = 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Hydro/MapServer/1'
 ENVELOPE = '-124.8,41.8,-116.3,49.1'
 TYPES = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
@@ -270,10 +278,11 @@ def check_published_viewsheds(individual, published):
 
 
 def load_all_viewsheds(paths):
-    """merges providers into one dissolved coverage and one id -> viewshed lookup,
-    keeping each provider's own coverage for the per-provider split"""
+    """each provider's dissolved coverage, one id -> viewshed lookup, and the
+    provider of each viewshed"""
     coverages = {}
     individual = {}
+    owners = {}
 
     for path in paths:
         _, coverage, provider_viewsheds = load_viewsheds(path)
@@ -284,8 +293,9 @@ def load_all_viewsheds(paths):
 
         coverages[provider_key(path)] = coverage
         individual.update(provider_viewsheds)
+        owners.update(dict.fromkeys(provider_viewsheds, provider_key(path)))
 
-    return union_all(list(coverages.values())), coverages, individual
+    return coverages, individual, owners
 
 
 def provider_key(path: Path):
@@ -293,28 +303,145 @@ def provider_key(path: Path):
     return path.parent.parent.name.removeprefix(PROVIDER_FOLDER_PREFIX)
 
 
-def exclusive_coverages(coverages):
-    """the part of each provider's coverage no other provider sees"""
-    return {provider: coverage.difference(union_all([other for key, other in coverages.items() if key != provider]))
-            for provider, coverage in coverages.items()}
+def dissolve_coverages(coverages):
+    """the coverage of all providers together and the part of each provider's
+    coverage no other provider sees"""
+    return union_all(list(coverages.values())), {
+        provider: coverage.difference(union_all([other for key, other in coverages.items() if key != provider]))
+        for provider, coverage in coverages.items()}
 
 
-def provider_coverage(selection, coverages, exclusives):
-    """each provider's own coverage of the selection and the part only it covers
+def clip(selection, geometry):
+    overlap = selection.intersection(geometry)
+    return overlap if overlap.is_valid else make_valid(overlap)
 
-    Providers can overlap, so their own coverage can add to more than the total;
-    the exclusive parts plus the overlap add to exactly the total.
+
+def selection_coverage(selection, coverages, dissolved=None):
+    """the selection's coverage by all providers together, plus each provider's own
+    coverage and the part only it covers
+
+    With dissolved (from dissolve_coverages) each figure is one intersection, which
+    is faster when most divisions are recomputed. Without it each provider is
+    clipped to the selection first, so the unions and differences only handle the
+    coverage inside it; that skips the region-wide dissolve when only a few
+    divisions changed. Providers can overlap, so their own coverage can add to more
+    than the total; the exclusive parts plus the overlap add to exactly the total.
     """
+    area = selection.area
+    if not math.isfinite(area) or area <= 0:
+        raise ValueError('selected land area must be positive and finite')
+
+    clipped = {provider: clip(selection, coverage) for provider, coverage in coverages.items()}
+
+    if dissolved:
+        total, exclusives = dissolved
+        covered = clip(selection, total).area
+        exclusive_areas = {provider: clip(selection, exclusives[provider]).area for provider in clipped}
+    else:
+        covered = union_all(list(clipped.values())).area
+        exclusive_areas = {
+            provider: own.difference(union_all([other for key, other in clipped.items() if key != provider])).area
+            if not own.is_empty else 0.0
+            for provider, own in clipped.items()}
+
     rows = []
-    for provider, coverage in coverages.items():
-        own = coverage_metrics(selection, coverage)
-        exclusive = coverage_metrics(selection, exclusives[provider])
+
+    for provider, own in clipped.items():
+        exclusive = exclusive_areas[provider]
+        own_fields = coverage_fields(area, own.area)
+        exclusive_fields = coverage_fields(area, exclusive)
         rows.append({'provider': provider,
-                     'cameraViewshedAreaSqKm': own['cameraViewshedAreaSqKm'],
-                     'cameraViewshedCoveragePct': own['cameraViewshedCoveragePct'],
-                     'exclusiveAreaSqKm': exclusive['cameraViewshedAreaSqKm'],
-                     'exclusiveCoveragePct': exclusive['cameraViewshedCoveragePct']})
-    return rows
+                     'cameraViewshedAreaSqKm': own_fields['cameraViewshedAreaSqKm'],
+                     'cameraViewshedCoveragePct': own_fields['cameraViewshedCoveragePct'],
+                     'exclusiveAreaSqKm': exclusive_fields['cameraViewshedAreaSqKm'],
+                     'exclusiveCoveragePct': exclusive_fields['cameraViewshedCoveragePct']})
+
+    return coverage_fields(area, covered), rows
+
+
+def geometry_hash(geometry):
+    """a viewshed's identity in the cache; any change to its shape changes it"""
+    return hashlib.sha256(geometry.wkb).hexdigest()
+
+
+def feature_hash(feature):
+    return hashlib.sha256(json.dumps(feature['geometry'], sort_keys=True,
+                                     separators=(',', ':')).encode()).hexdigest()
+
+
+def land_key(args):
+    """everything a land mix or land area depends on besides the selection itself"""
+    parts = [CACHE_VERSION, SIMPLIFY_TOLERANCE_M, MAX_SIMPLIFY_AREA_CHANGE,
+             digest(args.mask), digest(args.hydro_cache), digest(args.padus_fee_cache),
+             *(digest(DIVISIONS / name) for name in
+               ('state.geojson', 'tribal-land.geojson', 'federal-land.geojson'))]
+    return hashlib.sha256(json.dumps(parts).encode()).hexdigest()
+
+
+def load_cache(path: Path, key, full):
+    """the previous run's results, or an empty cache when the land inputs changed"""
+    empty = {'landKey': key, 'kinds': {}, 'cameras': {}}
+    if full or not path.exists():
+        return empty
+
+    try:
+        cache = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        return empty
+
+    return cache if cache.get('landKey') == key else empty
+
+
+def save_cache(path: Path, cache):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    pending = path.with_suffix('.partial')
+    pending.write_text(json.dumps(cache, separators=(',', ':')))
+    pending.replace(path)
+
+
+def viewshed_state(individual, owners, coverages):
+    """what a division's coverage was computed from, so the next run can tell what changed"""
+    return {'viewsheds': {identifier: [owners[identifier], geometry_hash(geometry), list(geometry.bounds)]
+                          for identifier, geometry in individual.items()},
+            'coverage': {provider: geometry_hash(coverage) for provider, coverage in coverages.items()}}
+
+
+def changed_area(previous, current, individual):
+    """an index of the viewsheds that were added, removed, moved to another provider
+    or reshaped since previous; None when every division has to be recomputed
+
+    A removed or old shape is only known by its bounds, which is a safe overestimate.
+    """
+    if previous is None or previous['coverage'].keys() != current['coverage'].keys():
+        return None
+
+    shapes = []
+    changed_providers = set()
+
+    for identifier in previous['viewsheds'].keys() | current['viewsheds'].keys():
+        old = previous['viewsheds'].get(identifier)
+        new = current['viewsheds'].get(identifier)
+
+        if old == new:
+            continue
+
+        if new:
+            shapes.append(individual[identifier])
+            changed_providers.add(new[0])
+        if old:
+            shapes.append(box(*old[2]))
+            changed_providers.add(old[0])
+
+    # a provider's dissolved coverage can only change through its own viewsheds
+    for provider, coverage_hash in current['coverage'].items():
+        if coverage_hash != previous['coverage'][provider] and provider not in changed_providers:
+            return None
+
+    return STRtree(shapes) if shapes else STRtree([])
+
+
+def touches_change(changed, polygon):
+    return len(changed.query(polygon, predicate='intersects')) > 0
 
 
 def load_viewsheds(path: Path):
@@ -488,16 +615,8 @@ def mix_for(geometry, total, designation):
     return result
 
 
-def coverage_metrics(selection, dissolved_coverage):
-    area = selection.area
-    if not math.isfinite(area) or area <= 0:
-        raise ValueError('selected land area must be positive and finite')
-
-    overlap = selection.intersection(dissolved_coverage)
-    if not overlap.is_valid:
-        overlap = make_valid(overlap)
-
-    covered = min(area, max(0.0, overlap.area))
+def coverage_fields(area, covered):
+    covered = min(area, max(0.0, covered))
 
     return {
         'landAreaSqKm': area_sqkm(area),
@@ -514,8 +633,7 @@ def report(args, step, total, label, done, count):
 
 
 def run(args):
-    coverage, provider_coverages, individual = load_all_viewsheds(args.viewsheds)
-    provider_exclusives = exclusive_coverages(provider_coverages)
+    provider_coverages, individual, owners = load_all_viewsheds(args.viewsheds)
     print('loaded viewsheds:', len(individual), flush=True)
     # checked before anything is written, so a mismatch leaves the data untouched
     check_published_viewsheds(individual, published_viewshed_ids(MANIFESTS))
@@ -566,6 +684,10 @@ def run(args):
                   path.parent.parent.name: digest(path) for path in args.viewsheds
               },
               'padusFeeSha256': digest(args.padus_fee_cache)}
+    cache = load_cache(args.cache, land_key(args), args.full)
+    # built the first time a division type has to be recomputed in full
+    dissolved = None
+    current_state = viewshed_state(individual, owners, provider_coverages)
     kinds = tuple(args.only) if args.only else TYPES
     divisions = []
 
@@ -583,12 +705,39 @@ def run(args):
     for step, (kind, path, data) in enumerate(divisions, start=1):
         retained = []
         skipped = []
+        previous = cache['kinds'].get(kind)
+        changed = changed_area(previous and previous['state'], current_state, individual)
+        cached_features = previous['features'] if previous else {}
+        kind_cache = {'state': current_state, 'features': {}}
+        recomputed = 0
+
+        if changed is None and dissolved is None:
+            print('dissolving coverage across providers', flush=True)
+            dissolved = dissolve_coverages(provider_coverages)
 
         for i, feature in enumerate(data['features']):
             report(args, step, steps, LABELS[kind], i + 1, len(data['features']))
             repair_feature_geometry(feature)
             assert_valid_polygon(feature)
             polygon = project(feature['geometry'])
+            shape_hash = feature_hash(feature)
+            entry = cached_features.get(feature['id'])
+            entry = entry if entry and entry['geometry'] == shape_hash else None
+
+            # land overlap depends only on the land inputs, which the cache key covers
+            if entry and 'skipped' in entry:
+                skipped.append(entry['skipped'])
+                kind_cache['features'][feature['id']] = entry
+                continue
+
+            # nothing that feeds this division's coverage changed since the cached run
+            if entry and changed is not None and not touches_change(changed, polygon):
+                feature['properties'].update(entry['metrics'])
+                kind_cache['features'][feature['id']] = entry
+                retained.append(feature)
+                continue
+
+            recomputed += 1
             selected = polygon.intersection(land)
             area = selected.area
 
@@ -600,18 +749,23 @@ def run(args):
 
             if not math.isfinite(area) or area <= 0:
                 if kind in ('national-forest', 'national-park', 'federal-land', 'tribal-land'):
-                    skipped.append({
+                    record = {
                         'id': feature['id'],
                         'name': feature.get('properties', {}).get('name'),
                         'reason': 'no land overlap with OR/WA coastal mask minus Census hydrography',
-                    })
+                    }
+                    skipped.append(record)
+                    kind_cache['features'][feature['id']] = {'geometry': shape_hash, 'skipped': record}
                     continue
                 raise ValueError(f'{kind}:{feature["id"]} has no land area')
 
-            p = feature['properties']
-            p.update(coverage_metrics(selected, coverage))
-            p['providerCoverage'] = provider_coverage(selected, provider_coverages, provider_exclusives)
-            p['landMix'] = mix_for(selected, area, designation)
+            fields, providers = selection_coverage(selected, provider_coverages,
+                                                   dissolved if changed is None else None)
+            metrics = {**fields, 'providerCoverage': providers,
+                       # the land mix ignores viewsheds, so a cached one still holds
+                       'landMix': entry['metrics']['landMix'] if entry else mix_for(selected, area, designation)}
+            feature['properties'].update(metrics)
+            kind_cache['features'][feature['id']] = {'geometry': shape_hash, 'metrics': metrics}
             retained.append(feature)
 
             if i % 25 == 0:
@@ -650,27 +804,35 @@ def run(args):
         rendered = json.dumps(data, ensure_ascii=False, allow_nan=False,
                               separators=(',', ':')) + '\n'
         path.write_text(rendered)
-        print(kind, 'complete', len(retained), flush=True)
+        # saved after each type, so an interrupted run keeps the types it finished
+        cache['kinds'][kind] = kind_cache
+        save_cache(args.cache, cache)
+        print(kind, 'complete', len(retained), f'({recomputed} recomputed)', flush=True)
 
     camera_data = json.loads(CAMERA_OUT.read_text()) if CAMERA_OUT.exists() else {'viewsheds': {}}
     viewsheds = camera_data.setdefault('viewsheds', {})
 
+    camera_cache = {}
+
     for i, (identifier, geometry) in enumerate(individual.items()):
         report(args, steps, steps, CAMERA_LABEL, i + 1, len(individual))
-        selection = geometry.intersection(land)
-        area = selection.area
+        shape_hash = current_state['viewsheds'][identifier][1]
+        land_fields = cache['cameras'].get(shape_hash)
 
-        if not math.isfinite(area) or area <= 0:
-            selection = geometry.intersection(state_land)
+        if land_fields is None:
+            selection = geometry.intersection(land)
             area = selection.area
 
+            if not math.isfinite(area) or area <= 0:
+                selection = geometry.intersection(state_land)
+                area = selection.area
+
+            land_fields = {'landAreaSqKm': area_sqkm(area) if area > 0 else 0.0,
+                           'landMix': mix_for(selection, area, designation) if area > 0 else []}
+
+        camera_cache[shape_hash] = land_fields
         result = viewsheds.setdefault(identifier, {})
-        result.update({
-            'landAreaSqKm': area_sqkm(area) if area > 0 else 0.0,
-            'landMix': mix_for(selection, area, designation) if area > 0 else [],
-            'coverageAvailable': True,
-            'status': 'complete',
-        })
+        result.update({**land_fields, 'coverageAvailable': True, 'status': 'complete'})
         result.pop('coverageMessage', None)
 
     unavailable = []
@@ -710,6 +872,8 @@ def run(args):
 
     CAMERA_OUT.write_text(json.dumps(camera_data, ensure_ascii=False,
                                      allow_nan=False, separators=(',', ':')) + '\n')
+    cache['cameras'] = camera_cache
+    save_cache(args.cache, cache)
     print('camera viewsheds:', len(individual), 'unavailable:', unavailable, flush=True)
 
 
@@ -721,6 +885,9 @@ def main():
     parser.add_argument('--padus-fee-cache', type=Path, default=PADUS_FEE_CACHE)
     parser.add_argument('--only', nargs='*', choices=TYPES,
                         help='limit division types; camera metrics still run')
+    parser.add_argument('--cache', type=Path, default=CACHE)
+    parser.add_argument('--full', action='store_true',
+                        help='recompute everything instead of reusing cached results')
     parser.add_argument('--json-progress', action='store_true',
                         help='print machine-readable step progress for the viewshed runner')
     run(parser.parse_args())
