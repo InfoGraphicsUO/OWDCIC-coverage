@@ -46,6 +46,11 @@ const MAP_BOUNDS = [
   [-135, 38],
   [-106, 53],
 ];
+// phones frame selections above a tall results panel, which needs room to pan further south
+const PHONE_MAP_BOUNDS = [
+  [-140, 28],
+  [-100, 55],
+];
 
 // layer setup waits on this shared map promise
 export const mapReady = initializeMap();
@@ -186,7 +191,7 @@ async function initializeMap() {
     // phones zoom out further so a whole state fits between the banner pill and the sheets
     minZoom: isPhoneLayout() ? 4 : 5,
     // maxZoom: 12,
-    maxBounds: MAP_BOUNDS,
+    maxBounds: isPhoneLayout() ? PHONE_MAP_BOUNDS : MAP_BOUNDS,
     attributionControl: false,
     // map exports read pixels back from this canvas
     preserveDrawingBuffer: true,
@@ -248,13 +253,15 @@ async function initializeMap() {
 
   map.once('load', () => {
     initBasemapPicker(map);
+    // account for the panels before the first view is drawn; phones fit the region instead
+    if (!isPhoneLayout()) {
+      map.jumpTo({
+        center: DEFAULT_VIEW.center,
+        zoom: DEFAULT_VIEW.zoom,
+        padding: mapPanelPadding(map),
+      });
+    }
     initControlShellSync(map);
-    // account for the panels before the first view is drawn
-    map.jumpTo({
-      center: DEFAULT_VIEW.center,
-      zoom: DEFAULT_VIEW.zoom,
-      padding: mapPanelPadding(map),
-    });
   });
 
   return map;
@@ -265,8 +272,11 @@ function initControlShellSync(map) {
   if (!sidebar) return;
 
   const refreshPadding = () => {
-    // padding changes can interrupt an active drag or camera animation
-    if (map.isMoving()) return;
+    // padding changes can interrupt an active drag or camera animation, so wait for it to end
+    if (map.isMoving()) {
+      map.once('moveend', () => requestAnimationFrame(refreshPadding));
+      return;
+    }
     // on phones the sheets move a lot, so the map glides to its new middle instead of jumping
     if (isPhoneLayout()) map.easeTo({ padding: mapPanelPadding(map), duration: motionDuration(250) });
     else map.setPadding(mapPanelPadding(map));

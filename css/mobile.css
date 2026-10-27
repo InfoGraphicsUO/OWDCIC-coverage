@@ -183,8 +183,9 @@
         -webkit-touch-callout: none;
     }
 
-    /* clearing only makes sense next to the coverage list, once there's something to clear */
+    /* clearing only makes sense next to the coverage list, once an option has been picked */
     .control-shell:not(:has(#filter-menu.is-open)) .control-shell__clear,
+    .control-shell:not(:has(.filter-panel__item[aria-selected="true"])) .control-shell__clear,
     .control-shell__clear:disabled { display: none; }
 
     .control-shell__clear {
@@ -536,6 +537,9 @@
         text-align: left;
     }
 
+    /* popups open over the compass and home buttons rather than under them */
+    .mapboxgl-popup { z-index: 3; }
+
     .feature-popup__close {
         top: 2px;
         right: 2px;
@@ -647,6 +651,9 @@
     }
 
     body:has(#results-panel:not([hidden])) .fire-timeline { visibility: visible; }
+
+    /* opened, the credits run along the bottom over the logo, so it steps aside */
+    body:has(.mapboxgl-compact-show) .mapboxgl-ctrl-logo { visibility: hidden; }
 }
 
 @media (max-width: 640px) and (prefers-reduced-motion: reduce),
