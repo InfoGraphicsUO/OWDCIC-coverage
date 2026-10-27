@@ -11,6 +11,7 @@
  * a type with parent { type, option } opens from that option of its parent type
  * instead of listing on its own, and its back button returns to the parent
  */
+import { bindBottomSheet, isPhoneLayout } from './bottom-sheet.js';
 export function initFilterPanel({
   types = [],
   loadOptions,
@@ -254,7 +255,7 @@ export function initFilterPanel({
       // reopening the loaded category should preserve its current option selection
       showOptionView();
       renderOptions();
-      if (focusSearch) optionSearch.input.focus();
+      if (focusSearch && !isPhoneLayout()) optionSearch.input.focus();
       return;
     }
 
@@ -288,7 +289,7 @@ export function initFilterPanel({
       await onTypeSelected(type.value);
 
       // focus only after the new options exist in the DOM
-      if (focusSearch) optionSearch.input.focus();
+      if (focusSearch && !isPhoneLayout()) optionSearch.input.focus();
     } catch (error) {
       // only the current request owns the visible error state
       if (request !== requestId) return;
@@ -352,8 +353,8 @@ export function initFilterPanel({
 
     showCategoryView();
 
-    // return focus to the search that led into this category
-    categorySearch.input.focus();
+    // return focus to the search that led into this category; on phones that would raise the keyboard
+    if (!isPhoneLayout()) categorySearch.input.focus();
   });
 
   clearButton.addEventListener('click', reset);
@@ -479,6 +480,11 @@ function bindControlShell() {
 
   for (const tab of tabs) {
     tab.addEventListener('click', () => {
+      // on phones the open tab hides the sheet, like the collapse tab does on desktop
+      if (isPhoneLayout() && tab.classList.contains('is-active') && !shell.classList.contains('is-collapsed')) {
+        setCollapsed(true);
+        return;
+      }
       activateTab(tab, { expand: true });
     });
 
@@ -516,6 +522,7 @@ function bindControlShell() {
     },
   };
 
+  bindBottomSheet(shell, { setCollapsed });
   shell._controlShellApi = api;
   return api;
 }

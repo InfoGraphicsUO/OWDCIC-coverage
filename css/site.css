@@ -112,6 +112,9 @@ textarea {
     transition: background-color 120ms ease;
 }
 
+/* phones swap the About label for this icon */
+.site-banner__about-icon { display: none; }
+
 .site-banner__about:hover,
 .site-banner__about:focus-visible,
 .site-banner__about[aria-expanded="true"] {
@@ -382,37 +385,5 @@ textarea {
     .about-modal__partners {
         grid-template-columns: 1fr;
         gap: 26px;
-    }
-}
-
-@media (max-width: 520px) {
-    :root {
-        --banner-height: 70px;
-    }
-
-    .site-banner {
-        padding: 7px 12px;
-        border-bottom-width: 4px;
-    }
-
-    .site-banner__logo {
-        width: 52px;
-        height: 52px;
-    }
-
-    .site-banner__logo--wide {
-        width: auto;
-        max-width: 96px;
-    }
-
-    .site-banner__title {
-        margin-left: 10px;
-        font-size: 20px;
-    }
-
-    /* the wider logo leaves room for one line of title, so the region drops below it */
-    .site-banner__region {
-        display: block;
-        margin-left: 0;
     }
 }

@@ -116,10 +116,11 @@ function bindRoot(root) {
     if (!button.matches(':hover')) hide();
   });
 
-  // scroll does not bubble, so this only tracks roots that scroll themselves
-  root.addEventListener('scroll', () => {
-    if (activeButton) refresh(activeButton);
-  });
+  // scroll does not bubble, and the list holding the root may scroll rather than the root, so
+  // follow any scroll in the capture phase while one of this root's tooltips is open
+  document.addEventListener('scroll', () => {
+    if (activeButton && root.contains(activeButton)) refresh(activeButton);
+  }, { capture: true, passive: true });
 }
 
 const api = {

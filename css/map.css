@@ -693,21 +693,6 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     line-height: 20px;
 }
 
-@media (max-width: 640px) {
-    :root {
-        --rail-width: 64px;
-        --panel-gap: 8px;
-        /* keep the body, collapse tab, and visible rail inside the viewport */
-        --sidebar-width: calc(100vw - var(--rail-width) - var(--panel-gap) * 2);
-    }
-
-    .control-rail__button { flex-basis: 64px; font-size: 11px; }
-    .control-rail__icon { width: 24px; height: 24px; font-size: 18px; }
-    .zoom-viewer { display: none; }
-    /* the map controls already run taller than the shorter rail here */
-    .mapboxgl-ctrl-top-left .mapboxgl-ctrl { margin-bottom: var(--panel-gap); }
-}
-
 @media (max-width: 900px) {
     .control-shell__collapse {
         top: var(--panel-gap);
@@ -718,17 +703,6 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     .control-shell.is-collapsed .control-shell__collapse {
         top: calc(3 * 72px + 4 * var(--panel-gap));
         transform: translate(calc(var(--collapse-tab-width) - var(--sidebar-width)), 0);
-    }
-}
-
-@media (max-width: 640px) {
-    .control-shell.is-collapsed .control-shell__collapse {
-        top: calc(3 * 64px + 4 * var(--panel-gap));
-    }
-
-    body:not(:has(#control-sidebar.is-collapsed)) .mapboxgl-ctrl-logo {
-        transform: scale(.9);
-        transform-origin: left bottom;
     }
 }
 

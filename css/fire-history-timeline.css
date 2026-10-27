@@ -69,16 +69,6 @@
     font-variant-numeric: tabular-nums;
 }
 
-@media (max-width: 640px) {
-    .fire-timeline {
-        bottom: 40px;
-        column-gap: 8px;
-        padding: 8px 10px 6px;
-    }
-
-    .fire-timeline__year { font-size: 18px; }
-}
-
 @media (prefers-reduced-motion: reduce) {
     .fire-timeline,
     .fire-timeline.is-open {

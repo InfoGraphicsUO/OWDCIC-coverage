@@ -1,0 +1,664 @@
+/* phones: the banner floats as a pill over a full screen map, the sidebar becomes a bottom
+   sheet, and its rail turns into a tab bar under it. js/bottom-sheet.js sets --sheet-height and
+   --results-height and drags both sheets. keep the media query in step with PHONE_LAYOUT_QUERY
+   there; phones in landscape match it too, and get a left hand column further down */
+@media (max-width: 640px), (max-height: 500px) and (pointer: coarse) {
+    :root {
+        --panel-gap: 10px;
+        --pill-top: calc(env(safe-area-inset-top, 0px) + var(--panel-gap));
+        --pill-height: 52px;
+        --pill-bottom: calc(var(--pill-top) + var(--pill-height));
+        --tabbar-content-height: 54px;
+        /* the extra pixel is the tab bar's top border */
+        --tabbar-height: calc(var(--tabbar-content-height) + 1px + env(safe-area-inset-bottom, 0px));
+        --sheet-handle-height: 24px;
+        --sheet-radius: 16px;
+        --sheet-shadow: 0 -4px 16px rgba(0, 0, 0, .35);
+        --sheet-full: calc(100dvh - var(--tabbar-height) - var(--pill-bottom) - var(--panel-gap));
+        --sidebar-row-padding: 13px 16px;
+        --switch-width: 44px;
+        --switch-height: 26px;
+    }
+
+    #map,
+    .map-panels,
+    .map-loading {
+        top: 0;
+    }
+
+    /* the hidden sheet sits below the bottom edge, which mustn't make the page scrollable */
+    .map-panels { overflow: clip; }
+
+    .zoom-viewer { display: none; }
+
+    /* banner */
+    .site-banner {
+        inset: var(--pill-top) calc(var(--panel-gap) + env(safe-area-inset-right, 0px)) auto calc(var(--panel-gap) + env(safe-area-inset-left, 0px));
+        height: var(--pill-height);
+        padding: 0 4px 0 12px;
+        border-bottom-width: 3px;
+        border-radius: calc(var(--pill-height) / 2);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, .45);
+    }
+
+    /* the drifting viewshed rings need more room than the pill leaves around the title */
+    .site-banner__network { display: none; }
+
+    .site-banner__logo--wide {
+        height: 30px;
+        max-width: none;
+    }
+
+    .site-banner__title {
+        min-width: 0;
+        margin-left: 10px;
+        overflow: hidden;
+        font-size: clamp(15px, 4.7vw, 19px);
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .site-banner__region {
+        display: inline;
+        margin-left: 0.15em;
+    }
+
+    .site-banner__about {
+        flex: none;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border-radius: 50%;
+        font-size: 20px;
+    }
+
+    .site-banner__about-icon { display: block; }
+
+    .site-banner__about-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+
+    /* the shell is a zero height anchor on the bottom edge; its parts stack up from it */
+    .control-shell,
+    .control-shell.is-collapsed {
+        top: auto;
+        right: 0;
+        width: auto;
+        height: 0;
+        transition: none;
+    }
+
+    .control-shell__body,
+    .control-shell__collapse {
+        transition:
+            transform var(--sidebar-duration) var(--sidebar-ease),
+            height var(--sidebar-duration) var(--sidebar-ease),
+            bottom var(--sidebar-duration) var(--sidebar-ease),
+            visibility 0s;
+    }
+
+    .control-shell.is-dragging .control-shell__body,
+    .control-shell.is-dragging .control-shell__collapse {
+        transition: none;
+    }
+
+    /* sheet */
+    .control-shell__body,
+    .control-shell.is-collapsed .control-shell__body {
+        top: auto;
+        right: 0;
+        bottom: var(--tabbar-height);
+        width: auto;
+        height: var(--sheet-height, 45dvh);
+        padding-top: var(--sheet-handle-height);
+        border-right: 0;
+        border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+        box-shadow: var(--sheet-shadow);
+    }
+
+    .control-menu__title {
+        padding-top: 4px;
+        padding-bottom: 12px;
+        font-size: 20px;
+    }
+
+    /* the collapse tab becomes a grab handle laid over the top of the sheet */
+    .control-shell__collapse,
+    .control-shell.is-collapsed .control-shell__collapse {
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: calc(var(--tabbar-height) + var(--sheet-height, 45dvh) - var(--sheet-handle-height));
+        align-items: flex-start;
+        width: auto;
+        height: var(--sheet-handle-height);
+        padding-top: 9px;
+        background: transparent;
+        border: 0;
+        border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+        cursor: grab;
+        touch-action: none;
+        transform: none;
+    }
+
+    /* hidden, the sheet and its handle slide below the tab bar and stop taking touches;
+       visibility switches off once the slide has finished */
+    .control-shell.is-collapsed .control-shell__body,
+    .control-shell.is-collapsed .control-shell__collapse {
+        visibility: hidden;
+        pointer-events: none;
+        transform: translateY(calc(var(--sheet-height, 45dvh) + var(--sheet-handle-height)));
+        transition:
+            transform var(--sidebar-duration) var(--sidebar-ease),
+            height var(--sidebar-duration) var(--sidebar-ease),
+            bottom var(--sidebar-duration) var(--sidebar-ease),
+            visibility 0s linear var(--sidebar-duration);
+    }
+
+    .control-shell__collapse span,
+    .control-shell.is-collapsed .control-shell__collapse span,
+    .results-panel__handle::before {
+        width: 36px;
+        height: 5px;
+        background: rgba(255, 255, 255, .35);
+        border: 0;
+        border-radius: 3px;
+        transform: none;
+    }
+
+    .control-shell.is-dragging .control-shell__collapse { cursor: grabbing; }
+
+    /* the drag areas: no text selection or long press menus while dragging */
+    .control-shell__collapse,
+    .control-rail,
+    .results-panel__handle,
+    .results-panel__header {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+    }
+
+    /* clearing only makes sense next to the coverage list, once an option has been picked */
+    .control-shell:not(:has(#filter-menu.is-open)) .control-shell__clear,
+    .control-shell:not(:has(.filter-panel__item[aria-selected="true"])) .control-shell__clear,
+    .control-shell__clear:disabled { display: none; }
+
+    .control-shell__clear {
+        padding: 13px 12px;
+        font-size: 14px;
+    }
+
+    .filter-panel__back {
+        width: 44px;
+        height: 44px;
+        margin-left: -10px;
+    }
+
+    /* tab bar: flat tabs on the banner grey; the open one is yellow with the sidebar's
+       selected bar along its top edge. dragging it up opens a hidden sheet */
+    .control-rail,
+    .control-shell.is-collapsed .control-rail {
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 3;
+        flex-direction: row;
+        width: auto;
+        padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+        gap: 0;
+        background: var(--ohaz-grey);
+        border-top: 1px solid var(--control-chrome-border);
+        transform: none;
+        touch-action: none;
+    }
+
+    .control-rail__button,
+    .control-rail__button[data-control-tab="basemap"] {
+        flex: 1 1 0;
+        justify-content: center;
+        gap: 4px;
+        height: var(--tabbar-content-height);
+        padding: 4px 0 0;
+        color: var(--control-chrome-muted);
+        background-color: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        font-size: 11px;
+        -webkit-text-stroke: 0;
+        text-shadow: none;
+    }
+
+    /* color only, so the basemap tab keeps the preview image its icon inherits */
+    .control-rail__button:hover,
+    .control-rail__button[data-control-tab="basemap"]:hover,
+    .control-rail__button[data-control-tab="basemap"]:focus-visible {
+        background-color: transparent;
+    }
+
+    /* while the sheet is hidden no tab reads as open */
+    .control-shell:not(.is-collapsed) .control-rail__button.is-active {
+        color: var(--ohaz-yellow);
+        border: 0;
+        box-shadow: inset 0 3px 0 var(--ohaz-yellow);
+    }
+
+    .control-shell.is-collapsed .control-rail__button.is-active,
+    .control-shell.is-collapsed .control-rail__button[data-control-tab="basemap"].is-active {
+        color: var(--control-chrome-muted);
+        border: 0;
+        box-shadow: none;
+    }
+
+    .control-rail__icon {
+        flex: none;
+        width: 26px;
+        height: 24px;
+        font-size: 20px;
+    }
+
+    /* the basemap tab keeps its preview, shrunk to an icon; the image stays on the button
+       (set per basemap in map.css) so the icon can inherit it */
+    .control-rail__button[data-control-tab="basemap"] { background-size: 0 0; }
+
+    .control-rail__button[data-control-tab="basemap"]::before {
+        content: "";
+        box-sizing: border-box;
+        width: 26px;
+        height: 24px;
+        background: inherit;
+        background-size: cover;
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        border-radius: 6px;
+    }
+
+    .control-shell:not(.is-collapsed) .control-rail__button[data-control-tab="basemap"].is-active::before {
+        border-color: var(--ohaz-yellow);
+    }
+
+    /* coverage list */
+    .filter-panel__search input {
+        padding: 10px 12px 10px 36px;
+        color: #fff;
+        background:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cpath fill='%23ffffffb3' d='M416 208c0 45.9-14.9 88.3-40 122.7l126.6 126.7a32 32 0 0 1-45.3 45.3L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0s208 93.1 208 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z'/%3E%3C/svg%3E")
+            12px center / 15px no-repeat,
+            rgba(255, 255, 255, .12);
+        border: 0;
+        border-radius: var(--ui-radius);
+        /* 16px keeps iOS from zooming the page when the field takes focus */
+        font-size: 16px;
+    }
+
+    .filter-panel__search input::placeholder { color: var(--control-chrome-muted); }
+
+    /* the browser's blue clear button doesn't belong on the dark field */
+    .filter-panel__search input::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+    /* layers: rows switch on and off; the switch stands in for the selected tint */
+    .control-menu .legend-row:has(> input[type="checkbox"]:checked),
+    .control-menu .legend-group:has(input[type="checkbox"]:checked) {
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .control-menu .legend-group:has(input[type="checkbox"]:checked) .legend-group__children {
+        border-left-color: var(--control-chrome-border);
+    }
+
+    .control-menu .legend-row input[type="checkbox"],
+    .control-menu .legend-group__parent input[type="checkbox"] {
+        order: 10;
+        position: relative;
+        flex: 0 0 var(--switch-width);
+        width: var(--switch-width);
+        height: var(--switch-height);
+        background: rgba(255, 255, 255, .22);
+        border-radius: calc(var(--switch-height) / 2);
+        transition: background-color 160ms ease;
+        appearance: none;
+    }
+
+    .control-menu .legend-row input[type="checkbox"]::after,
+    .control-menu .legend-group__parent input[type="checkbox"]::after {
+        content: "";
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: calc(var(--switch-height) - 6px);
+        height: calc(var(--switch-height) - 6px);
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+        transition: transform 160ms ease;
+    }
+
+    .control-menu .legend-row input[type="checkbox"]:checked,
+    .control-menu .legend-group__parent input[type="checkbox"]:checked {
+        background: var(--ohaz-yellow);
+    }
+
+    .control-menu .legend-row input[type="checkbox"]:checked::after,
+    .control-menu .legend-group__parent input[type="checkbox"]:checked::after {
+        transform: translateX(calc(var(--switch-width) - var(--switch-height)));
+    }
+
+    .control-menu .legend-row input[type="checkbox"]:indeterminate {
+        background: color-mix(in srgb, var(--ohaz-yellow) 50%, transparent);
+    }
+
+    .control-menu .legend-row input[type="checkbox"]:indeterminate::after {
+        transform: translateX(calc((var(--switch-width) - var(--switch-height)) / 2));
+    }
+
+    .control-menu .legend-group__children { margin-left: 16px; }
+
+    .control-menu .legend-group__child {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    /* the info dot stays small but takes a fingertip sized tap */
+    .control-menu .legend-info {
+        width: 32px;
+        height: 32px;
+        margin: -8px 0;
+        font-size: 16px;
+    }
+
+    /* basemaps: three previews across, the way phones pick a map style */
+    .basemap-picker {
+        flex-direction: row;
+        gap: var(--panel-gap);
+        padding: 0 16px 16px;
+    }
+
+    .basemap-picker__option { flex: 1 1 0; min-width: 0; }
+
+    .basemap-picker__row,
+    .basemap-picker__option input:checked + .basemap-picker__row {
+        flex-direction: column;
+        gap: 8px;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+        font-size: 14px;
+    }
+
+    .basemap-picker__preview {
+        width: 100%;
+        max-width: 140px;
+        height: auto;
+        flex: none;
+        aspect-ratio: 1;
+        border-radius: var(--ui-radius);
+    }
+
+    .basemap-picker__option input:checked + .basemap-picker__row .basemap-picker__preview {
+        box-shadow: inset 0 0 0 3px var(--ohaz-yellow);
+    }
+
+    .basemap-picker__option input:checked + .basemap-picker__row .basemap-picker__label {
+        color: var(--ohaz-yellow);
+    }
+
+    /* map controls: compass and home only, under the pill on the right */
+    .mapboxgl-ctrl-top-left,
+    body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-top-left {
+        top: calc(var(--pill-bottom) + var(--panel-gap));
+        left: auto;
+        right: calc(var(--panel-gap) + env(safe-area-inset-right, 0px));
+        align-items: flex-end;
+        transform: none;
+    }
+
+    .mapboxgl-ctrl-top-left .mapboxgl-ctrl { margin-bottom: var(--panel-gap); }
+
+    .mapboxgl-ctrl-top-left .mapboxgl-ctrl-group button {
+        width: 40px;
+        height: 40px;
+    }
+
+    /* pinching zooms, and search and settings stay on desktop */
+    .mapboxgl-ctrl-zoom-in,
+    .mapboxgl-ctrl-zoom-out,
+    .mapboxgl-ctrl-top-left .location-search,
+    .mapboxgl-ctrl-group:has(.mapboxgl-ctrl-settings) { display: none !important; }
+
+    /* the Mapbox logo and credits move under the pill so the sheets never cover them;
+       map.css pins the bottom corners with !important */
+    .mapboxgl-ctrl-bottom-left,
+    body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
+        top: calc(var(--pill-bottom) + 6px);
+        bottom: auto !important;
+        left: calc(var(--panel-gap) + 4px + env(safe-area-inset-left, 0px)) !important;
+        transform: none;
+    }
+
+    .mapboxgl-ctrl-bottom-right {
+        top: calc(var(--pill-bottom) + 6px);
+        bottom: auto !important;
+        right: auto !important;
+        left: calc(var(--panel-gap) + 96px + env(safe-area-inset-left, 0px));
+    }
+
+    .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl,
+    .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl { margin: 0; }
+
+    /* the fire history slider rides above the tab bar, and gives way to the sheet */
+    .fire-timeline {
+        bottom: calc(var(--tabbar-height) + var(--panel-gap));
+        column-gap: 8px;
+        padding: 8px 10px 6px;
+    }
+
+    .fire-timeline__year { font-size: 18px; }
+
+    body:has(#control-sidebar:not(.is-collapsed)) .fire-timeline,
+    body:has(#results-panel:not([hidden])) .fire-timeline { visibility: hidden; }
+
+    /* results sit on the tab bar like the sheet, with only the coverage figures and the link */
+    #results-panel,
+    .results-panel {
+        left: 0;
+        right: 0;
+        bottom: var(--tabbar-height);
+        height: var(--results-height, auto);
+        max-height: var(--sheet-full);
+        padding-bottom: 0;
+        background: var(--ohaz-grey);
+        border: 0;
+        border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+        box-shadow: var(--sheet-shadow);
+        transition: height var(--sidebar-duration) var(--sidebar-ease);
+    }
+
+    /* until it is dragged, the panel fits its content up to about half the screen */
+    #results-panel:not([style*="--results-height"]) {
+        max-height: min(50dvh, var(--sheet-full));
+    }
+
+    #results-panel.is-dragging { transition: none; }
+
+    /* the handle and header together are the drag area */
+    .results-panel__handle {
+        display: flex;
+        justify-content: center;
+        flex: none;
+        width: auto;
+        height: auto;
+        margin: 0;
+        padding: 9px 0 6px;
+        background: none;
+        cursor: grab;
+        touch-action: none;
+    }
+
+    .results-panel__handle::before { content: ""; }
+
+    .results-panel__header {
+        align-items: center;
+        padding: 0 8px 10px 16px;
+        cursor: pointer;
+        touch-action: none;
+    }
+
+    .results-panel__header .modal__close {
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        margin: -6px 0;
+    }
+
+    .results-panel__content { padding: 4px 16px 12px; }
+    .results-panel__footer { padding: 12px 16px; }
+
+    .results-panel__land-mix,
+    .results-panel__export { display: none; }
+
+    /* a camera with no public image gets a line of text, not an empty frame */
+    .results-panel__camera-preview:not(:has(img)) {
+        aspect-ratio: auto;
+        place-items: start;
+    }
+
+    .results-panel__camera-preview:not(:has(img)) .results-panel__camera-placeholder {
+        padding: 10px 12px;
+        font-size: 12px;
+        text-align: left;
+    }
+
+    /* popups open over the compass and home buttons rather than under them */
+    .mapboxgl-popup { z-index: 3; }
+
+    .feature-popup__close {
+        top: 2px;
+        right: 2px;
+        width: 40px;
+        height: 40px;
+    }
+
+    .results-panel__share {
+        padding: 13px 12px;
+        font-size: 14px;
+    }
+
+    /* lowered to its title, the panel leaves the map clear but keeps the selection */
+    .results-panel.is-peeking .results-panel__content,
+    .results-panel.is-peeking .results-panel__footer { visibility: hidden; }
+
+    /* about: title and close share a row, the tabs scroll along their own row under it */
+    .modal { padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px calc(env(safe-area-inset-bottom, 0px) + 10px); }
+
+    .modal__dialog {
+        max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 20px);
+    }
+
+    .about-modal__dialog { overflow: clip; }
+
+    .about-modal__dialog .modal__header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 0 4px 0 16px;
+    }
+
+    .about-modal__dialog .modal__header h2 { flex: 1; }
+
+    .about-modal__dialog .modal__close {
+        order: 1;
+        width: 44px;
+        height: 44px;
+    }
+
+    .about-modal__tabs {
+        order: 2;
+        flex: 1 0 100%;
+        margin: 0 -4px 0 -10px;
+        padding: 0 4px 10px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .about-modal__tab { flex: none; }
+
+    .modal__body.about-modal__body { padding: 18px 16px 22px; }
+}
+
+/* the narrowest phones drop the region from the pill so the title fits */
+@media (max-width: 359px) {
+    .site-banner__region { display: none; }
+}
+
+/* phones on their side: the sheets, tab bar and results stack in a column on the left,
+   leaving the rest of the width to the map */
+@media (max-height: 500px) and (pointer: coarse) and (min-width: 641px) {
+    :root { --phone-column: min(380px, 50vw); }
+
+    .control-shell__body,
+    .control-shell.is-collapsed .control-shell__body,
+    .control-shell__collapse,
+    .control-shell.is-collapsed .control-shell__collapse,
+    .control-rail,
+    .control-shell.is-collapsed .control-rail,
+    #results-panel,
+    .results-panel {
+        right: auto;
+        width: var(--phone-column);
+    }
+
+    .control-rail,
+    .control-shell.is-collapsed .control-rail {
+        width: calc(var(--phone-column) + env(safe-area-inset-left, 0px));
+        border-right: 1px solid var(--control-chrome-border);
+        border-radius: 0 var(--sheet-radius) 0 0;
+    }
+
+    .control-shell__body,
+    .control-shell.is-collapsed .control-shell__body,
+    #results-panel,
+    .results-panel { margin-left: env(safe-area-inset-left, 0px); }
+
+    /* with the column on the left, the credits go back to the bottom right corner */
+    .mapboxgl-ctrl-bottom-left,
+    body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
+        top: auto;
+        bottom: 4px !important;
+        left: calc(var(--phone-column) + env(safe-area-inset-left, 0px) + var(--panel-gap)) !important;
+    }
+
+    .mapboxgl-ctrl-bottom-right {
+        top: auto;
+        bottom: 0 !important;
+        right: env(safe-area-inset-right, 0px) !important;
+        left: auto;
+    }
+
+    /* above the Mapbox logo and credits along the bottom edge */
+    .fire-timeline {
+        left: calc(var(--phone-column) + (100% - var(--phone-column)) / 2);
+        bottom: 34px;
+        width: min(460px, calc(100% - var(--phone-column) - 2 * var(--panel-gap)));
+    }
+
+    body:has(#results-panel:not([hidden])) .fire-timeline { visibility: visible; }
+
+    /* opened, the credits run along the bottom over the logo, so it steps aside */
+    body:has(.mapboxgl-compact-show) .mapboxgl-ctrl-logo { visibility: hidden; }
+}
+
+@media (max-width: 640px) and (prefers-reduced-motion: reduce),
+       (max-height: 500px) and (pointer: coarse) and (prefers-reduced-motion: reduce) {
+    .control-shell__body,
+    .control-shell__collapse,
+    #results-panel { transition: none; }
+}
