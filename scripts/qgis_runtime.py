@@ -34,6 +34,7 @@ def _version_key(path: Path) -> tuple[int, ...]:
 def default_qgis_root(
     platform_name: str = sys.platform,
     environ: Mapping[str, str] | None = None,
+    applications: Path = Path("/Applications"),
 ) -> Path:
     """returns an explicit override or the newest standard QGIS install"""
 
@@ -44,7 +45,9 @@ def default_qgis_root(
             return Path(values[variable])
 
     if platform_name == "darwin":
-        return Path("/Applications/QGIS-final-4_2_1.app")
+        # QGIS names each release's app differently, such as QGIS-final-4_2_1.app or QGIS-LTR.app
+        installed = [path for path in applications.glob("QGIS*.app") if path.is_dir()]
+        return max(installed, key=_version_key) if installed else applications / "QGIS.app"
 
     if platform_name == "win32":
         standalone = []
@@ -134,7 +137,10 @@ def qgis_runtime(
         prefix = qgis_root
         resources = qgis_root / "Contents/Resources/qgis"
         tools = (qgis_root / "Contents/MacOS",)
-        python_paths = (qgis_root / "Contents/Resources/python3.12/site-packages",)
+        # the bundled Python's version changes between QGIS releases
+        python_paths = tuple(sorted((qgis_root / "Contents/Resources").glob("python3*/site-packages"))) or (
+            qgis_root / "Contents/Resources/python3.12/site-packages",
+        )
         qt_plugins = (qgis_root / "Contents/PlugIns",)
         executable = qgis_root / "Contents/MacOS/QGIS"
     elif platform_name == "win32":
