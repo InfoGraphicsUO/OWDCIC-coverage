@@ -62,7 +62,7 @@ except ImportError:
         QWidget,
     )
 
-from qgis_runtime import default_qgis_root, qgis_runtime
+from qgis_runtime import default_qgis_root, find_tippecanoe, qgis_runtime
 
 
 def qt_enum(owner, scope: str, member: str):
@@ -85,15 +85,26 @@ RELEASE_OUTPUT = PROJECT_ROOT / "outputs/data_release"
 READY_TEXT = "Ready to start; choose inputs & check settings before starting a run!"
 RELEASE_READY_TEXT = "Ready to build the release from the published viewsheds"
 RELEASES_URL = "https://github.com/InfoGraphicsUO/OWDCIC-coverage/releases"
-# names for the published manifests the release packages
+# each provider has its own sites file, output folder, and published manifest
 PROVIDER_LABELS = {"alertwest": "ALERTWest", "pano": "Pano AI", "envirovision": "EnviroVision"}
 DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
-DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest"
-# test runs merge into whatever folder they write to, so they get their own
-TEST_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_test"
 PROGRESS_PREFIX = "@@PROGRESS@@"
+
+
+def provider_sites(provider: str) -> Path:
+    return PROJECT_ROOT / f"data/live/{provider}-sites.geojson"
+
+
+def provider_output(provider: str, test: bool) -> Path:
+    """the output folder is the dataset, so each provider, and its test runs, get their own"""
+    return PROJECT_ROOT / f"outputs/gdal_viewsheds_{provider}{'_test' if test else ''}"
+
+
+PROVIDER_OUTPUTS = {
+    provider_output(provider, test): test for provider in PROVIDER_LABELS for test in (False, True)
+}
 
 # each preset starts from the launch values and changes only these settings
 PRESETS = (
@@ -570,12 +581,9 @@ class ViewshedWindow(QMainWindow):
 
         self.applying_preset = False
 
-        # keep the real output folder to return to after a test run
-        if key == "test" and self.output.path() != TEST_OUTPUT:
-            self.saved_output = self.output.edit.text()
-            self.output.edit.setText(str(TEST_OUTPUT))
-        elif key != "test" and self.output.path() == TEST_OUTPUT:
-            self.output.edit.setText(self.saved_output)
+        # test runs write to the provider's test folder, unless a folder was chosen by hand
+        if self.output.path() in PROVIDER_OUTPUTS:
+            self.output.edit.setText(str(provider_output(self.provider.currentData(), key == "test")))
 
         self.sync_preset()
 
@@ -602,19 +610,39 @@ class ViewshedWindow(QMainWindow):
         form = QFormLayout(group)
         form.setSpacing(10)
         form.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
-        self.sites = PathRow(PROJECT_ROOT / "data/live/alertwest-sites.geojson", False)
+        self.provider = QComboBox()
+
+        for provider, label in PROVIDER_LABELS.items():
+            self.provider.addItem(label, provider)
+
+        self.sites = PathRow(provider_sites("alertwest"), False)
         self.dems = PathRow(PROJECT_ROOT / "data/source/dems", True)
         # the window opens on the test run preset
-        self.output = PathRow(TEST_OUTPUT, True)
-        self.saved_output = str(DEFAULT_OUTPUT)
+        self.output = PathRow(provider_output("alertwest", True), True)
+        self.provider.currentIndexChanged.connect(self.choose_provider)
+        form.addRow(with_help("Camera provider", self.provider,
+            "Whose cameras to process. Picks that provider's sites file and output folder, which "
+            "holds every viewshed already made for it."), self.provider)
         form.addRow(with_help("Camera sites", self.sites,
             "The GeoJSON file containing the camera locations to process."), self.sites)
         form.addRow(with_help("DEM folder", self.dems,
             "The folder containing terrain elevation files. These describe hills and valleys used to calculate visibility."), self.dems)
-        form.addRow("Output folder", self.output)
-        form.addRow(reset_button("Inputs and outputs", [self.sites.edit, self.dems.edit, self.output.edit]))
+        form.addRow(with_help("Output folder", self.output,
+            "Where the viewsheds are saved. Each provider keeps its own folder, and a run "
+            "stops if the folder holds another provider's viewsheds."), self.output)
+        # the provider comes first so restoring it does not overwrite the restored paths
+        form.addRow(reset_button("Inputs and outputs", [
+            self.provider, self.sites.edit, self.dems.edit, self.output.edit,
+        ]))
 
         return group
+
+    def choose_provider(self) -> None:
+        provider = self.provider.currentData()
+        self.sites.edit.setText(str(provider_sites(provider)))
+        # keep a test run in a test folder
+        test = PROVIDER_OUTPUTS.get(self.output.path(), self.preset.currentData() == "test")
+        self.output.edit.setText(str(provider_output(provider, test)))
 
     def build_options(self) -> QGroupBox:
         group = QGroupBox("Run settings")
@@ -708,7 +736,7 @@ class ViewshedWindow(QMainWindow):
         form.addRow(with_help(self.publish_sites, self.publish_sites,
             "Before the run, regenerates the camera site files and viewshed queues from the installation sheet so newly added sites are included. When the run finishes without failures, replaces this provider's manifest in the data folder and regenerates the camera site files and viewshed queues, so the map treats the new cameras as having coverage. Skipped if the output folder is missing viewsheds that are already published. Full runs only."))
         form.addRow(with_help(self.publish_metrics, self.publish_metrics,
-            "After publishing, also recalculates land coverage for every division and camera so the results panel includes the new viewsheds. Divisions the new viewsheds do not reach keep their saved results, so this usually takes a few minutes; it takes about an hour when the land, water or ownership data has changed. Leave it off for test runs."))
+            "After publishing, also recalculates land coverage for every division and camera and refreshes the division copies the map loads, so the results panel includes the new viewsheds. Divisions the new viewsheds do not reach keep their saved results, so this usually takes a few minutes; it takes about an hour when the land, water or ownership data has changed. Leave it off for test runs."))
         form.addRow(with_help("Maximum distance", self.radius,
             "How far from each camera to check visibility. Larger distances cover more ground and take more time and memory."), self.radius)
         form.addRow(with_help("Analysis cell size", self.cell_size,
@@ -882,6 +910,14 @@ class ViewshedWindow(QMainWindow):
 
         if not self.qgis_runtime.root.is_dir():
             problems.append(f"QGIS not found: {self.qgis_runtime.root}")
+
+        full_run = self.products.currentData() is None
+        packaging = full_run and (self.publish_sites.isChecked() or self.combined.isChecked())
+        if packaging and not find_tippecanoe():
+            problems.append(
+                "tippecanoe not found; publishing and the combined coverage need it to build "
+                "the Mapbox tilesets. Install it with: brew install tippecanoe"
+            )
 
         if problems:
             QMessageBox.critical(self, "Cannot start", "\n".join(problems))

@@ -7,11 +7,24 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 import re
+import shutil
 import sys
 from typing import Mapping, Sequence
 
 
 QGIS_ROOT_ENV = "OWDCIC_QGIS_ROOT"
+
+
+def find_tippecanoe() -> Path | None:
+    """finds the MBTiles packager, including Homebrew installs a double-clicked launcher's PATH can miss"""
+
+    discovered = shutil.which("tippecanoe")
+    candidates = [
+        Path(discovered) if discovered else None,
+        Path("/opt/homebrew/bin/tippecanoe"),
+        Path("/usr/local/bin/tippecanoe"),
+    ]
+    return next((path for path in candidates if path and path.is_file()), None)
 
 
 def _version_key(path: Path) -> tuple[int, ...]:
