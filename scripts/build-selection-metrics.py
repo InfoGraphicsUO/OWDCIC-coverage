@@ -303,29 +303,59 @@ def provider_key(path: Path):
     return path.parent.parent.name.removeprefix(PROVIDER_FOLDER_PREFIX)
 
 
-def dissolve_coverages(coverages):
-    """the coverage of all providers together and the part of each provider's
-    coverage no other provider sees"""
-    return union_all(list(coverages.values())), {
-        provider: coverage.difference(union_all([other for key, other in coverages.items() if key != provider]))
-        for provider, coverage in coverages.items()}
-
-
 def clip(selection, geometry):
     overlap = selection.intersection(geometry)
     return overlap if overlap.is_valid else make_valid(overlap)
 
 
-def selection_coverage(selection, coverages, dissolved=None):
+def overlap_areas(clipped):
+    """the area of the union of clipped and of the part of each only it covers
+
+    Uses inclusion-exclusion over the intersections of every group of providers:
+    the union is the sum of each group's overlap, added for odd-sized groups and
+    subtracted for even-sized ones, and a provider's exclusive part is the same
+    sum over the groups that include it. On a whole state this is about 4x faster
+    than unioning and differencing the clipped coverage, since intersections only
+    build the shared parts.
+    """
+    covered = 0.0
+    exclusive = dict.fromkeys(clipped, 0.0)
+    # where coverages only touch the selection or each other, intersections also hold
+    # lines and points, which add no area and which GEOS can't intersect further
+    shapes = {provider: polygonal(own) for provider, own in clipped.items()
+              if not own.is_empty and own.area > 0}
+    providers = list(shapes)
+    # (providers in the group, index of its last provider, their shared coverage)
+    groups = [((provider,), i, shapes[provider]) for i, provider in enumerate(providers)]
+
+    while groups:
+        larger = []
+
+        for members, last, shared in groups:
+            sign = 1 if len(members) % 2 else -1
+            covered += sign * shared.area
+            for provider in members:
+                exclusive[provider] += sign * shared.area
+
+            for i in range(last + 1, len(providers)):
+                overlap = clip(shared, shapes[providers[i]])
+                if not overlap.is_empty and overlap.area > 0:
+                    larger.append(((*members, providers[i]), i, polygonal(overlap)))
+
+        groups = larger
+
+    # floating-point cancellation can leave a tiny negative instead of zero
+    return max(covered, 0.0), {provider: max(value, 0.0) for provider, value in exclusive.items()}
+
+
+def selection_coverage(selection, coverages):
     """the selection's coverage by all providers together, plus each provider's own
     coverage and the part only it covers
 
-    With dissolved (from dissolve_coverages) each figure is one intersection, which
-    is faster when most divisions are recomputed. Without it each provider is
-    clipped to the selection first, so the unions and differences only handle the
-    coverage inside it; that skips the region-wide dissolve when only a few
-    divisions changed. Providers can overlap, so their own coverage can add to more
-    than the total; the exclusive parts plus the overlap add to exactly the total.
+    Each provider is clipped to the selection first, so the overlaps between
+    providers only handle the coverage inside it. Providers can overlap, so their
+    own coverage can add to more than the total; the exclusive parts plus the
+    overlap add to exactly the total.
     """
     area = selection.area
     if not math.isfinite(area) or area <= 0:
@@ -333,16 +363,7 @@ def selection_coverage(selection, coverages, dissolved=None):
 
     clipped = {provider: clip(selection, coverage) for provider, coverage in coverages.items()}
 
-    if dissolved:
-        total, exclusives = dissolved
-        covered = clip(selection, total).area
-        exclusive_areas = {provider: clip(selection, exclusives[provider]).area for provider in clipped}
-    else:
-        covered = union_all(list(clipped.values())).area
-        exclusive_areas = {
-            provider: own.difference(union_all([other for key, other in clipped.items() if key != provider])).area
-            if not own.is_empty else 0.0
-            for provider, own in clipped.items()}
+    covered, exclusive_areas = overlap_areas(clipped)
 
     rows = []
 
@@ -685,8 +706,6 @@ def run(args):
               },
               'padusFeeSha256': digest(args.padus_fee_cache)}
     cache = load_cache(args.cache, land_key(args), args.full)
-    # built the first time a division type has to be recomputed in full
-    dissolved = None
     current_state = viewshed_state(individual, owners, provider_coverages)
     kinds = tuple(args.only) if args.only else TYPES
     divisions = []
@@ -710,10 +729,6 @@ def run(args):
         cached_features = previous['features'] if previous else {}
         kind_cache = {'state': current_state, 'features': {}}
         recomputed = 0
-
-        if changed is None and dissolved is None:
-            print('dissolving coverage across providers', flush=True)
-            dissolved = dissolve_coverages(provider_coverages)
 
         for i, feature in enumerate(data['features']):
             report(args, step, steps, LABELS[kind], i + 1, len(data['features']))
@@ -759,8 +774,7 @@ def run(args):
                     continue
                 raise ValueError(f'{kind}:{feature["id"]} has no land area')
 
-            fields, providers = selection_coverage(selected, provider_coverages,
-                                                   dissolved if changed is None else None)
+            fields, providers = selection_coverage(selected, provider_coverages)
             metrics = {**fields, 'providerCoverage': providers,
                        # the land mix ignores viewsheds, so a cached one still holds
                        'landMix': entry['metrics']['landMix'] if entry else mix_for(selected, area, designation)}
