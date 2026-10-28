@@ -176,19 +176,21 @@ class SelectionDataTests(unittest.TestCase):
         data = json.loads((ROOT / 'data/source/divisions/tribal-land.geojson').read_text())
         names = {feature['properties']['name'] for feature in data['features']}
         self.assertIn('Hoh Indian Reservation', names)
-        self.assertEqual(len(data['features']), 66)
 
     def test_cameras_are_not_reported_as_zero_when_viewshed_is_missing(self):
         data = json.loads((ROOT / 'data/live/camera-coverage.json').read_text())
-        # 88 ALERTWest + 106 Pano AI + 88 EnviroVision viewsheds; none is currently missing coverage
-        self.assertEqual(len(data['viewsheds']), 282)
+        # every published viewshed has coverage, so a publish without a metrics rebuild fails here
+        published = {
+            entry['viewshed_id']
+            for path in (ROOT / 'data/live').glob('*-viewshed-manifest.json')
+            for entry in json.loads(path.read_text())['viewsheds']
+            if entry['status'] == 'complete'
+        }
+        self.assertEqual(set(data['viewsheds']), published)
         self.assertEqual(data['metadata']['areaCrs'], 'EPSG:5070')
         self.assertEqual(data['metadata']['denominator'], 'individual viewshed land footprint')
-        available = [key for key, result in data['viewsheds'].items() if result['coverageAvailable']]
         unavailable = [key for key, result in data['viewsheds'].items() if not result['coverageAvailable']]
-        self.assertEqual(len(available), 282)
-        self.assertEqual(sum(key.startswith('pano-') for key in available), 106)
-        self.assertEqual(len(unavailable), 0)
+        self.assertEqual(unavailable, [])
 
         for result in data['viewsheds'].values():
             if result['coverageAvailable']:

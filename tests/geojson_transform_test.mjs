@@ -58,41 +58,43 @@ for (const f of attachViewshedIds(halfwayHeads, manifest, { features: [pendingHa
   assert.equal(f.properties.viewshed_id, null);
 }
 
-const panoSites = JSON.parse(readFileSync(new URL('../data/live/pano-sites.geojson', import.meta.url), 'utf8'));
-const panoCameras = providerSitesToCameras(panoSites, 'Pano AI').features;
-assert.equal(panoCameras.length, 106);
-assert.equal(panoCameras.filter(f => f.properties.viewshed_id).length, 106);
-
-// each owner's table lands in the one Pano layer
-const owners = (name) => panoCameras.filter(f => f.properties.owner === name).length;
-assert.deepEqual(
-  ['Portland General Electric', 'Pacific Power', 'Washington DNR', 'Puget Sound Energy', 'Avista Utilities'].map(owners),
-  [38, 5, 26, 22, 15],
+// counts come from the data files, so adding or removing sites needs no edits here
+const readData = (path) => JSON.parse(readFileSync(new URL(`../data/${path}`, import.meta.url), 'utf8'));
+const publishedIds = (provider) => new Set(readData(`live/${provider}-viewshed-manifest.json`).viewsheds
+  .filter((item) => item.status === 'complete').map((item) => item.viewshed_id));
+// every camera with a published viewshed links to it, and no other camera does
+const assertLinksPublished = (cameras, provider) => assert.deepEqual(
+  new Set(cameras.map((f) => f.properties.viewshed_id).filter(Boolean)),
+  publishedIds(provider),
 );
 
-// every site links to its page on its owner's public viewer
-const viewerHosts = {
-  'Portland General Electric': 'portlandgeneral',
-  'Pacific Power': 'pacificpower',
-  'Washington DNR': 'wadnr',
-  'Puget Sound Energy': 'pse',
-  'Avista Utilities': 'avista',
-};
+const panoSites = readData('live/pano-sites.geojson');
+const panoCameras = providerSitesToCameras(panoSites, 'Pano AI').features;
+assert.equal(panoCameras.length, panoSites.features.length);
+assertLinksPublished(panoCameras, 'pano');
+
+// each owner's table lands in the one Pano layer, and every owner is a listed one
+const panoOwners = readData('source/camera-providers.json').panoOwners;
+assert.ok(panoCameras.every((f) => f.properties.owner in panoOwners));
+
+// every site carries its owner's public viewer, and a feed links to a station page on it
+for (const { properties } of panoCameras) {
+  const owner = panoOwners[properties.owner];
+  assert.deepEqual([properties.viewerUrl, properties.viewerName], [owner.viewerUrl, owner.viewerName]);
+  if (properties.feed) assert.ok(properties.feed.startsWith(`${owner.viewerUrl}station/`), properties.name);
+}
 // Avista's public viewer leaves out Lewiston
-const linked = panoCameras.filter(f => f.properties.feed);
-assert.equal(linked.length, 104);
-assert.ok(linked.every(f => f.properties.feed.startsWith(
-  `https://${viewerHosts[f.properties.owner]}.wildfirewatch.com/station/`)));
-// and carries that viewer for the camera panel
-assert.ok(panoCameras.every(f => f.properties.viewerName
-  && f.properties.viewerUrl === `https://${viewerHosts[f.properties.owner]}.wildfirewatch.com/`));
+assert.equal(panoCameras.find((f) => f.properties.name === 'Lewiston').properties.feed, null);
 
 // EnviroVision sites flag a shared ALERTWest tower themselves instead of borrowing its point
-const enviroVisionSites = JSON.parse(readFileSync(new URL('../data/live/envirovision-sites.geojson', import.meta.url), 'utf8'));
+const enviroVisionSites = readData('live/envirovision-sites.geojson');
 const enviroVisionCameras = providerSitesToCameras(enviroVisionSites, 'EnviroVision').features;
-assert.equal(enviroVisionCameras.length, 88);
-assert.equal(enviroVisionCameras.filter(f => f.properties.viewshed_id).length, 88);
-assert.equal(enviroVisionCameras.filter(f => f.properties.sharesAlertWestSite).length, 5);
+assert.equal(enviroVisionCameras.length, enviroVisionSites.features.length);
+assertLinksPublished(enviroVisionCameras, 'envirovision');
+assert.deepEqual(
+  enviroVisionCameras.map((f) => f.properties.sharesAlertWestSite),
+  enviroVisionSites.features.map((f) => f.properties.sharesAlertWestSite === true),
+);
 
 const pendingWithHeight = structuredClone(panoSites.features.find(f => f.properties.name === 'Midnight Gulch'));
 pendingWithHeight.properties.cameraHeightFt = 100;
