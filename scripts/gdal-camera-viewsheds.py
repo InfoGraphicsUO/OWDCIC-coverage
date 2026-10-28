@@ -2,7 +2,8 @@
 """builds resumable projected camera viewsheds with QGIS-bundled GDAL
 
 Runs under the QGIS Python so GDAL, OGR, NumPy, and QgsGeometry are used
-in-process; the only external tool is the optional tippecanoe packager.
+in-process; the only external tool is tippecanoe, which packages the MBTiles
+that publishing and the combined coverage need.
 """
 
 from __future__ import annotations
@@ -40,7 +41,7 @@ else:
     # trusted generated viewsheds can exceed GDAL 3.12's single-object limit
     gdal.SetConfigOption("OGR_GEOJSON_MAX_OBJ_SIZE", "0")
 
-from qgis_runtime import default_qgis_root, qgis_runtime
+from qgis_runtime import default_qgis_root, find_tippecanoe, qgis_runtime
 
 # paths to default files and directories
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -63,6 +64,8 @@ DATA_DIR = PROJECT_ROOT / "data/live"
 SOURCE_DATA_DIR = PROJECT_ROOT / "data/source"
 SITE_DATA_BUILDER = PROJECT_ROOT / "scripts/csv-to-geojson.py"
 METRICS_BUILDER = PROJECT_ROOT / "scripts/build-selection-metrics.py"
+# the map loads these lighter copies of the divisions the metrics write into
+MAP_DIVISIONS_BUILDER = PROJECT_ROOT / "scripts/data-builders/build-map-divisions.py"
 METRICS_PROGRESS_PREFIX = "@@METRICS@@"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 
@@ -104,6 +107,7 @@ FINISHING_STAGES = {
     "combined_coverage": 330,
     "site_data": 1,
     "coverage_metrics": 439,
+    "map_divisions": 16,
 }
 # share of the whole run held back for those steps, so the bar is not full while they run
 # (the cameras took 68 s of a 33 min run, and fewer when most are already saved)
@@ -268,7 +272,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--publish-metrics",
         action="store_true",
         help="after publishing site data, also rebuild the coverage metrics shown in the "
-        "results panel; needs --publish-site-data",
+        "results panel and the map's division copies; needs --publish-site-data",
     )
     parser.add_argument("--keep-working-dems", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
@@ -308,6 +312,27 @@ def product_name(args: argparse.Namespace) -> str:
     provider = provider if separator else ""
 
     return f"{provider}-camera-viewsheds" if provider else "camera-viewsheds"
+
+
+def manifest_name(name: str) -> str:
+    return f"{name.removesuffix('-camera-viewsheds')}-viewshed-manifest.json"
+
+
+def check_output_provider(output_dir: Path, name: str) -> None:
+    """refuses a folder holding another provider's cameras
+
+    The output folder is the dataset, so a run would merge those cameras into
+    this provider's manifest and tilesets.
+    """
+    others = sorted(
+        path.name for path in output_dir.glob("*-viewshed-manifest.json") if path.name != manifest_name(name)
+    )
+
+    if others:
+        raise RuntimeError(
+            f"{output_dir} already holds another provider's viewsheds ({', '.join(others)}); "
+            "choose this provider's own output folder"
+        )
 
 
 def slugify(value: str) -> str:
@@ -1746,16 +1771,6 @@ def geopackage_feature_count(path: Path, layer: str) -> int | None:
         return None
 
 
-def find_tippecanoe() -> Path | None:
-    discovered = shutil.which("tippecanoe")
-    candidates = [
-        Path(discovered) if discovered else None,
-        Path("/opt/homebrew/bin/tippecanoe"),
-        Path("/usr/local/bin/tippecanoe"),
-    ]
-    return next((path for path in candidates if path and path.is_file()), None)
-
-
 def validate_mbtiles(path: Path) -> None:
     with closing(sqlite3.connect(path)) as connection:
         row = connection.execute("SELECT value FROM metadata WHERE name = 'json'").fetchone()
@@ -2009,7 +2024,7 @@ def write_manifest(
         )
 
     path_keys = {"individual_geojson", "coverage_geojson", "review_geopackage", "mbtiles"}
-    manifest = output_dir / f"{name.removesuffix('-camera-viewsheds')}-viewshed-manifest.json"
+    manifest = output_dir / manifest_name(name)
     write_json(
         manifest,
         {
@@ -2128,6 +2143,8 @@ def publish(manifest: Path, name: str, args: argparse.Namespace, emitter: Progre
         providers = combined_providers(name, args.output_dir)
         arguments = ["--viewsheds", *map(str, providers), "--json-progress"]
         run_script(METRICS_BUILDER, arguments, emitter.log, lambda line: metrics_progress(line, emitter))
+        emitter.finishing_stage("map_divisions", "simplifying divisions for the map")
+        run_script(MAP_DIVISIONS_BUILDER, [], emitter.log)
 
 
 def metrics_progress(line: str, emitter: ProgressEmitter) -> bool:
@@ -2163,6 +2180,16 @@ def main() -> int:
 
     if args.web_clip and args.shapefiles_only != "exact" and not args.web_clip_boundary.is_file():
         raise FileNotFoundError(f"web clip boundary not found: {args.web_clip_boundary}")
+
+    name = product_name(args)
+    check_output_provider(args.output_dir, name)
+
+    # without MBTiles the map would count cameras as covered that its tilesets lack
+    if (args.publish_site_data or args.combined_coverage) and not find_tippecanoe():
+        raise RuntimeError(
+            "tippecanoe is required to publish or rebuild the combined coverage; "
+            "install it (brew install tippecanoe) and run again"
+        )
 
     apply_qgis_environment(args.qgis_app)
     require_gdal()
@@ -2230,6 +2257,7 @@ def main() -> int:
             "combined_coverage": not args.combined_coverage,
             "site_data": not args.publish_site_data,
             "coverage_metrics": not args.publish_metrics,
+            "map_divisions": not args.publish_metrics,
         }
         emitter.plan_finishing(stage for stage in FINISHING_STAGES if not skipped.get(stage))
 
@@ -2277,7 +2305,6 @@ def main() -> int:
         else:
             combined = rebuild_combined_exact(states, args.output_dir, emitter)
 
-    name = product_name(args)
     web_products = rebuild_web_products(states, args.output_dir, name, emitter)
     manifest = write_manifest(states, args.output_dir, name, config, combined, web_products)
     write_json(args.output_dir / "failures.json", failures)
@@ -2296,9 +2323,9 @@ def main() -> int:
 
     publish_failed = False
 
-    if args.publish_site_data and (failures or not web_products):
+    if args.publish_site_data and (failures or not web_products or web_products.get("status") != "complete"):
         publish_failed = True
-        emitter.log("publishing skipped: the run must finish with web coverage and no failures")
+        emitter.log("publishing skipped: the run must finish with web coverage, MBTiles, and no failures")
     elif args.publish_site_data:
         try:
             publish(manifest, name, args, emitter)

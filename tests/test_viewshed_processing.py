@@ -534,6 +534,44 @@ class PublishTests(unittest.TestCase):
             finally:
                 viewsheds.SITE_DATA_BUILDER = original
 
+    def test_output_folder_of_another_provider_is_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory)
+            viewsheds.check_output_provider(output, "pano-camera-viewsheds")
+            self.write_manifest(output)
+            viewsheds.check_output_provider(output, "pano-camera-viewsheds")
+
+            with self.assertRaisesRegex(RuntimeError, "pano-viewshed-manifest.json"):
+                viewsheds.check_output_provider(output, "alertwest-camera-viewsheds")
+
+    def test_publishing_metrics_refreshes_the_map_divisions_last(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            names = ("SITE_DATA_BUILDER", "METRICS_BUILDER", "MAP_DIVISIONS_BUILDER")
+            originals = {name: getattr(viewsheds, name) for name in (*names, "DATA_DIR")}
+
+            for name in names:
+                script = directory / f"{name.lower()}.py"
+                script.write_text(f"print('{name}')\n")
+                setattr(viewsheds, name, script)
+
+            viewsheds.DATA_DIR = directory / "data"
+            viewsheds.DATA_DIR.mkdir()
+            manifest = self.write_manifest(directory / "output", "pano-a")
+            emitter = viewsheds.ProgressEmitter(False, [])
+            lines = []
+            emitter.log = lines.append
+
+            try:
+                args = viewsheds.parse_args(["--publish-site-data", "--publish-metrics"])
+                viewsheds.publish(manifest, "pano-camera-viewsheds", args, emitter)
+            finally:
+                for name, value in originals.items():
+                    setattr(viewsheds, name, value)
+
+        steps = [line.split(": ", 1)[1] for line in lines if line.endswith(names)]
+        self.assertEqual(steps, list(names))
+
     def test_metrics_need_published_site_data(self):
         with self.assertRaises(SystemExit):
             viewsheds.parse_args(["--publish-metrics"])
