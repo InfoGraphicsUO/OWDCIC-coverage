@@ -9,12 +9,8 @@ const DEFAULT_SETTINGS = Object.freeze({
 });
 
 // each row is one boolean preference shown in the settings popup
+// viewshed colors are switched from the layers menu instead
 const SETTING_FIELDS = Object.freeze([
-  Object.freeze({
-    key: 'separateViewshedColors',
-    label: 'Color viewsheds by camera provider',
-    description: 'Each provider\'s viewsheds use their own color instead of sharing one.',
-  }),
   Object.freeze({
     key: 'showZoomLevel',
     label: 'Show zoom level',
@@ -54,7 +50,7 @@ export function bindSettingsButton(button) {
   });
 }
 
-function setSetting(key, value) {
+export function setSetting(key, value) {
   if (settings[key] === value) return;
 
   settings[key] = value;

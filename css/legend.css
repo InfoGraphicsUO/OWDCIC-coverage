@@ -227,6 +227,57 @@
     border-radius: var(--ui-radius-sm);
 }
 
+/* small on/off control beside a row's label for a display option of its layers */
+.legend-switch {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    padding: 2px 0;
+    color: inherit;
+    background: none;
+    border: 0;
+    font: 500 11px/1.2 "Clarity City", "Segoe UI", sans-serif;
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+.legend-switch:hover,
+.legend-switch:focus-visible {
+    opacity: 1;
+}
+
+.legend-switch__track {
+    position: relative;
+    width: 24px;
+    height: 14px;
+    background: rgba(128, 128, 128, 0.45);
+    border-radius: 7px;
+    transition: background-color 160ms ease;
+}
+
+.legend-switch__track::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+    transition: transform 160ms ease;
+}
+
+.legend-switch[aria-checked="true"] .legend-switch__track {
+    background: var(--ohaz-yellow);
+}
+
+.legend-switch[aria-checked="true"] .legend-switch__track::after {
+    transform: translateX(10px);
+}
+
 @keyframes legend-loading-spin {
     to {
         transform: rotate(360deg);
@@ -299,5 +350,10 @@
 @media (prefers-reduced-motion: reduce) {
     .legend-loader {
         animation: none;
+    }
+
+    .legend-switch__track,
+    .legend-switch__track::after {
+        transition: none;
     }
 }
