@@ -1,7 +1,9 @@
 from contextlib import closing
 import importlib.util
 import json
+import os
 from pathlib import Path
+import shutil
 import sqlite3
 import sys
 import tempfile
@@ -68,6 +70,16 @@ class ConfigurationTests(unittest.TestCase):
 
         self.assertNotEqual(first["analysis_hash"], second["analysis_hash"])
         self.assertNotEqual(first["web_hash"], second["web_hash"])
+
+    def test_copied_dem_keeps_the_analysis_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            args, dems = make_args(Path(directory))
+            first = viewsheds.config_document(args, dems)
+            # a copy or a fresh download of the same tile only changes its timestamp
+            os.utime(dems[0], ns=(1, 1))
+            second = viewsheds.config_document(args, dems)
+
+        self.assertEqual(first["analysis_hash"], second["analysis_hash"])
 
     def test_boundary_change_invalidates_only_web_configuration(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -304,7 +316,7 @@ class DatasetMergeTests(unittest.TestCase):
             args, dems = make_args(root)
             config = viewsheds.config_document(args, dems)
             legacy_analysis = viewsheds.payload_hash(
-                {"sites_sha256": "old-sites", **viewsheds.analysis_config_payload(args, dems)}
+                {"sites_sha256": "old-sites", **viewsheds.analysis_config_payload(args, dems, with_mtime=True)}
             )
             legacy_web = viewsheds.payload_hash(
                 {"analysis_hash": legacy_analysis, **viewsheds.web_config_payload(args)}
@@ -321,6 +333,52 @@ class DatasetMergeTests(unittest.TestCase):
             )
             self.assertEqual(json.loads(other.read_text(encoding="utf-8"))["analysis_hash"], "other-settings")
             self.assertEqual(viewsheds.reusable_stages(state, state["analysis_hash"], state["web_hash"], True), (True, True, True))
+
+    def test_states_saved_with_dem_timestamps_are_kept(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args, dems = make_args(root)
+            config = viewsheds.config_document(args, dems)
+            old = viewsheds.payload_hash(viewsheds.analysis_config_payload(args, dems, with_mtime=True))
+            old_web = viewsheds.payload_hash({"analysis_hash": old, **viewsheds.web_config_payload(args)})
+            path = self.save_state(root, self.SITE, *viewsheds.site_hashes(old, old_web, self.SITE))
+            other = self.save_state(root, {**self.SITE, "viewshed_id": "other"}, "other-settings", "web")
+
+            self.assertEqual(viewsheds.upgrade_mtime_states(root, args, dems, config), 1)
+            state = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                (state["analysis_hash"], state["web_hash"]),
+                viewsheds.site_hashes(config["analysis_hash"], config["web_hash"], self.SITE),
+            )
+            self.assertEqual(json.loads(other.read_text(encoding="utf-8"))["analysis_hash"], "other-settings")
+
+    def test_copied_output_folder_keeps_its_cameras(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            args, dems = make_args(root)
+            config = viewsheds.config_document(args, dems)
+            original = root / "machine-a/gdal_viewsheds_pano"
+            outputs = {}
+
+            for key, folder, suffix in (("raster", "rasters_10m", "tif"), ("exact", "polygons_exact", "gpkg"), ("web", "web", "geojson")):
+                path = original / folder / f"old-camera.{suffix}"
+                path.parent.mkdir(parents=True)
+                path.touch()
+                outputs[key] = str(path)
+
+            analysis_hash, web_hash = viewsheds.site_hashes(config["analysis_hash"], config["web_hash"], self.SITE)
+            viewsheds.write_json(original / "state/old-camera.json", {
+                "status": "complete", "analysis_hash": analysis_hash, "web_hash": web_hash,
+                "site": self.SITE, "outputs": outputs,
+            })
+            copy = root / "machine-b/gdal_viewsheds_pano"
+            shutil.copytree(original, copy)
+            shutil.rmtree(original)
+
+            states, stale = viewsheds.current_states(copy, config)
+
+        self.assertEqual(stale, [])
+        self.assertEqual(states[0]["outputs"]["web"], str(copy / "web/old-camera.geojson"))
 
     def test_dataset_holds_every_current_camera_in_site_order(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -436,6 +494,22 @@ class ManifestTests(unittest.TestCase):
             manifest["web_processing"]["clip"]["boundary_sha256"],
             "boundary",
         )
+
+
+class DemIndexTests(unittest.TestCase):
+    def test_index_sources_are_read_as_paths(self):
+        with tempfile.TemporaryDirectory() as directory:
+            vrt = Path(directory) / "source_dems.vrt"
+            vrt.write_text(
+                '<VRTDataset><VRTRasterBand>'
+                '<SimpleSource><SourceFilename relativeToVRT="0">/old/data/dems/a.tif</SourceFilename></SimpleSource>'
+                '<SimpleSource><SourceFilename relativeToVRT="1">dems/b.tif</SourceFilename></SimpleSource>'
+                '</VRTRasterBand></VRTDataset>',
+                encoding="utf-8",
+            )
+
+            # a moved DEM folder no longer matches, so the index is rebuilt
+            self.assertEqual(viewsheds.vrt_sources(vrt), {"/old/data/dems/a.tif", str(Path(directory) / "dems/b.tif")})
 
 
 class CombinedCoverageTests(unittest.TestCase):

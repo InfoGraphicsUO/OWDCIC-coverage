@@ -20,6 +20,7 @@ import os
 from pathlib import Path
 import queue as queue_module
 import random
+import re
 import shutil
 import signal
 import sqlite3
@@ -470,11 +471,22 @@ def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def analysis_config_payload(args: argparse.Namespace, dem_files: list[Path]) -> dict[str, Any]:
-    """inputs shared by every camera that change the 10 m viewshed rasters"""
+def analysis_config_payload(
+    args: argparse.Namespace, dem_files: list[Path], with_mtime: bool = False
+) -> dict[str, Any]:
+    """inputs shared by every camera that change the 10 m viewshed rasters
+
+    USGS names each tile release by date, so a tile's name and size identify it;
+    leaving out its modification time lets copied or re-downloaded tiles reuse the
+    saved viewsheds. with_mtime gives the payload states were saved under before.
+    """
     return {
         "dem_inventory": [
-            {"name": path.name, "size": path.stat().st_size, "mtime_ns": path.stat().st_mtime_ns}
+            {
+                "name": path.name,
+                "size": path.stat().st_size,
+                **({"mtime_ns": path.stat().st_mtime_ns} if with_mtime else {}),
+            }
             for path in dem_files
         ],
         "radius_m": args.radius_miles * 1609.344,
@@ -551,7 +563,7 @@ def upgrade_legacy_states(
     to be recomputed. States made with the current settings keep their outputs.
     """
     legacy_analysis = payload_hash(
-        {"sites_sha256": sites_sha256, **analysis_config_payload(args, dem_files)}
+        {"sites_sha256": sites_sha256, **analysis_config_payload(args, dem_files, with_mtime=True)}
     )
     legacy_web = payload_hash({"analysis_hash": legacy_analysis, **web_config_payload(args)})
     upgraded = 0
@@ -573,6 +585,65 @@ def upgrade_legacy_states(
     return upgraded
 
 
+def upgrade_mtime_states(
+    output_dir: Path,
+    args: argparse.Namespace,
+    dem_files: list[Path],
+    config: dict[str, Any],
+) -> int:
+    """re-keys states saved when the analysis hash included each DEM's modification time
+
+    Only states made from these exact files match, so their outputs are kept.
+    """
+    old_analysis = payload_hash(analysis_config_payload(args, dem_files, with_mtime=True))
+    old_web = payload_hash({"analysis_hash": old_analysis, **web_config_payload(args)})
+    upgraded = 0
+
+    for path in sorted((output_dir / "state").glob("*.json")):
+        state = read_json(path)
+        if not state or "site" not in state:
+            continue
+
+        old_site_analysis, old_site_web = site_hashes(old_analysis, old_web, state["site"])
+        if state.get("analysis_hash") != old_site_analysis:
+            continue
+
+        state["analysis_hash"], web_hash = site_hashes(config["analysis_hash"], config["web_hash"], state["site"])
+
+        if state.get("web_hash") == old_site_web:
+            state["web_hash"] = web_hash
+
+        write_json(path, state)
+        upgraded += 1
+
+    return upgraded
+
+
+def read_state(path: Path) -> dict[str, Any] | None:
+    """reads a camera's saved state, finding its outputs in the folder that holds it
+
+    States record absolute paths, so an output folder copied from another
+    machine or moved elsewhere would otherwise look stale and rebuild.
+    """
+    state = read_json(path)
+    if not state:
+        return state
+
+    output_dir = path.parent.parent
+    outputs = state.get("outputs") or {}
+
+    for key, value in outputs.items():
+        if not value or Path(value).is_file():
+            continue
+
+        # every output sits in a subfolder of the output folder, such as web/<id>.geojson
+        folder, name = re.split(r"[\\/]", value)[-2:]
+        if (output_dir / folder / name).is_file():
+            outputs[key] = str(output_dir / folder / name)
+
+    return state
+
+
 def current_states(output_dir: Path, config: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
     """returns every saved camera state matching the current settings, plus stale camera names
 
@@ -583,7 +654,7 @@ def current_states(output_dir: Path, config: dict[str, Any]) -> tuple[list[dict[
     stale: list[str] = []
 
     for path in sorted((output_dir / "state").glob("*.json")):
-        state = read_json(path)
+        state = read_state(path)
         if not state or "site" not in state:
             continue
 
@@ -1143,9 +1214,18 @@ class ViewshedRaster:
     summary: dict[str, Any]
 
 
+def vrt_sources(vrt: Path) -> set[str]:
+    text = vrt.read_text(encoding="utf-8", errors="replace")
+    return {
+        str((vrt.parent / name) if relative == "1" else Path(name))
+        for relative, name in re.findall(r'<SourceFilename relativeToVRT="(\d)"[^>]*>([^<]+)</SourceFilename>', text)
+    }
+
+
 def build_vrt(output_dir: Path, dem_files: list[Path], emitter: ProgressEmitter, overwrite: bool) -> Path:
     vrt = output_dir / "source_dems.vrt"
-    if vrt.exists() and not overwrite:
+    # the index holds absolute paths, so a moved DEM folder or a copied output folder needs a new one
+    if vrt.exists() and not overwrite and vrt_sources(vrt) == {str(path) for path in dem_files}:
         emitter.log(f"reusing DEM index: {vrt}")
         return vrt
 
@@ -1309,7 +1389,7 @@ def build_shapefile(site: Site, config: RunConfig, reporter: SiteReporter) -> di
         return {"site": asdict(site), "status": "skipped_missing_height", "outputs": {"shapefile": None}}
 
     analysis_reusable, exact_reusable, _ = reusable_stages(
-        read_json(paths["state"]),
+        read_state(paths["state"]),
         *site_hashes(config.analysis_hash, config.web_hash, asdict(site)),
         True,
     )
@@ -1530,7 +1610,7 @@ def process_site(site: Site, config: RunConfig, reporter: SiteReporter) -> dict[
 
         return document
 
-    previous_state = read_json(paths["state"])
+    previous_state = read_state(paths["state"])
     analysis_reusable, exact_reusable, web_reusable = reusable_stages(
         previous_state, analysis_hash, web_hash, config.exact_polygons
     )
@@ -2216,6 +2296,10 @@ def main() -> int:
 
         if upgraded:
             emitter.log(f"kept {upgraded} viewsheds saved by an earlier version of this script")
+
+    upgraded = upgrade_mtime_states(args.output_dir, args, dem_files, config)
+    if upgraded:
+        emitter.log(f"kept {upgraded} viewsheds saved before DEM timestamps left the analysis hash")
 
     saved_states, _ = current_states(args.output_dir, config)
     source_vrt = build_vrt(args.output_dir, dem_files, emitter, args.overwrite or analysis_changed)

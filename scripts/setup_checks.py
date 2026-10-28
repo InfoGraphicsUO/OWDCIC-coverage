@@ -108,14 +108,11 @@ def dem_check(dem_dir: Path, rows: list[dict]) -> Check:
     detail = f'{len(missing)} of {len(rows)} tiles missing from {dem_dir} ({size_gb:.0f} GB)'
 
     if dem_dir.resolve() == DEFAULT_DEMS.resolve() and LEGACY_DEMS.is_dir() and any(LEGACY_DEMS.glob('*.tif')):
-        # downloaded tiles get new timestamps, which makes every saved viewshed rebuild
         return Check('Terrain (DEMs)', 'problem', detail,
-                     f'Move the tiles in {LEGACY_DEMS} to {DEFAULT_DEMS} rather than downloading them again; '
-                     'new copies would make every saved viewshed rebuild.')
+                     f'Move the tiles in {LEGACY_DEMS} to {DEFAULT_DEMS} instead of downloading them again.')
 
     return Check('Terrain (DEMs)', 'problem', detail,
-                 'Use Download missing DEMs below, or copy the tiles from the previous maintainer to keep '
-                 'their saved viewsheds; newly downloaded tiles make every saved viewshed rebuild.')
+                 'Use Download missing DEMs below, or copy the tiles from another machine.')
 
 
 def dem_coverage_check(rows: list[dict], radius_miles: float) -> Check:
