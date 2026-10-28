@@ -62,7 +62,7 @@ import {
 } from './states-highlight.js';
 import { addHoverLayer, pointerCanHover } from './hover-info.js';
 import { showFeaturePopup } from './popups.js';
-import { getSetting, onSettingChange } from './settings.js';
+import { getSetting, onSettingChange, setSetting } from './settings.js';
 import { initAbout } from './about.js';
 
 const LABEL_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
@@ -2657,6 +2657,12 @@ function legendItems() {
       swatchBorder: false,
       // the group row shows only its checkbox and label; the export still reads this swatch
       swatchClass: 'legend-swatch--hidden',
+      switch: {
+        label: 'Symbology',
+        description: 'Color viewsheds by camera provider',
+        checked: Boolean(getSetting(SEPARATE_VIEWSHED_COLORS_SETTING)),
+        onChange: (checked) => setSetting(SEPARATE_VIEWSHED_COLORS_SETTING, checked),
+      },
       layerIds: CAMERA_PROVIDERS.flatMap(viewshedLayerIds),
       children: CAMERA_PROVIDERS.map((provider) => ({
         label: provider.viewshedLabel,

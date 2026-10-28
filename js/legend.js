@@ -330,8 +330,37 @@ function createLegendRow(item, getMap, onToggle, notifyChange) {
   }
 
   row.append(labelText);
+  if (item.switch) row.append(createLegendSwitch(item.switch));
   if (infoButton) row.append(infoButton);
   return { checkbox, infoButton, item, row, setChecked, swatch, visual };
+}
+
+// a display option for the row's layers, separate from its visibility checkbox
+function createLegendSwitch({ label, description, checked, onChange }) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'legend-switch';
+  button.setAttribute('role', 'switch');
+  button.setAttribute('aria-checked', String(checked));
+  button.title = description;
+
+  const text = document.createElement('span');
+  text.textContent = label;
+
+  const track = document.createElement('span');
+  track.className = 'legend-switch__track';
+  track.setAttribute('aria-hidden', 'true');
+
+  button.append(text, track);
+  button.addEventListener('click', (event) => {
+    // like the info button, keep the click to this control and off the row
+    event.stopPropagation();
+    const next = button.getAttribute('aria-checked') !== 'true';
+    button.setAttribute('aria-checked', String(next));
+    onChange(next);
+  });
+
+  return button;
 }
 
 function createCameraLegendIcon(item) {

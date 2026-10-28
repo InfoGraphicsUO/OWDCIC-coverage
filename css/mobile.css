@@ -374,6 +374,12 @@
         font-size: 16px;
     }
 
+    /* the symbology switch also gets a taller tap area without growing its row */
+    .control-menu .legend-switch {
+        padding: 10px 0;
+        margin: -10px 0 -10px auto;
+    }
+
     /* basemaps: three previews across, the way phones pick a map style */
     .basemap-picker {
         flex-direction: row;
