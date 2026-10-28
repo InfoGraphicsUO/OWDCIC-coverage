@@ -77,7 +77,7 @@ class DemTileTests(unittest.TestCase):
                 self.assertEqual(fetch_dems.main(['--dem-dir', str(dems), '--tiles', str(tiles)]), 0)
 
             self.assertEqual((dems / 'USGS_13_n42w118.tif').read_bytes(), b'defg')
-            # a re-downloaded tile would change the analysis hash and rebuild every viewshed
+            # a finished tile is left alone
             self.assertEqual(kept.stat().st_mtime_ns, before)
             self.assertEqual(list(dems.glob('*.part')), [])
 
