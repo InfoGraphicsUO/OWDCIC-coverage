@@ -46,12 +46,18 @@ class SelectionMetricsTests(unittest.TestCase):
 
         # 40% each is seen by one provider alone; the 20% overlap belongs to neither
         self.assertEqual([row['exclusiveCoveragePct'] for row in got], [40, 40, 0])
-        # the region-wide dissolve gives the same figures as clipping per selection
-        self.assertEqual(self.module.selection_coverage(
-            selected, coverages, self.module.dissolve_coverages(coverages)), (total, got))
         self.assertNotIn('landAreaSqKm', got[0])
         self.assertEqual(self.module.provider_key(
             Path('outputs/gdal_viewsheds_envirovision/mapbox/camera_viewsheds_web_epsg5070.gpkg')), 'envirovision')
+
+    def test_overlap_areas_match_unions_when_all_providers_overlap(self):
+        clipped = {'alertwest': box(0, 0, 600, 600), 'pano': box(300, 0, 900, 600),
+                   'envirovision': box(200, 300, 700, 1000), 'empty': box(0, 0, 0, 0)}
+        covered, exclusive = self.module.overlap_areas(clipped)
+        self.assertAlmostEqual(covered, union_all(list(clipped.values())).area)
+        for provider, own in clipped.items():
+            others = union_all([geometry for key, geometry in clipped.items() if key != provider])
+            self.assertAlmostEqual(exclusive[provider], own.difference(others).area)
 
     def test_only_divisions_near_changed_viewsheds_are_recomputed(self):
         m = self.module
