@@ -28,14 +28,12 @@ from shapely.geometry import shape, mapping
 from shapely.ops import transform
 from shapely.validation import explain_validity
 
+from camera_providers import PROVIDERS, output_dir
+
 ROOT = Path(__file__).resolve().parents[1]
 DIVISIONS = ROOT / 'data/source/divisions'
 # every official provider's web viewsheds; area coverage counts all of them together
-VIEWSHEDS = (
-    ROOT / 'outputs/gdal_viewsheds_alertwest/mapbox/camera_viewsheds_web_epsg5070.gpkg',
-    ROOT / 'outputs/gdal_viewsheds_pano/mapbox/camera_viewsheds_web_epsg5070.gpkg',
-    ROOT / 'outputs/gdal_viewsheds_envirovision/mapbox/camera_viewsheds_web_epsg5070.gpkg',
-)
+VIEWSHEDS = tuple(output_dir(provider) / 'mapbox/camera_viewsheds_web_epsg5070.gpkg' for provider in PROVIDERS)
 # report and CSV split coverage by provider, keyed by the web package's output folder
 PROVIDER_FOLDER_PREFIX = 'gdal_viewsheds_'
 # published manifests name every viewshed the map shows; metrics must cover the same set

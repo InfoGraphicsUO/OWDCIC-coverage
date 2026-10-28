@@ -101,5 +101,38 @@ class CameraSiteDataTests(unittest.TestCase):
         self.assertEqual({e['status'] for e in read('live/envirovision-viewshed-manifest.json')['viewsheds']}, {'complete'})
 
 
+class CameraProviderRegistryTests(unittest.TestCase):
+    def test_every_pano_site_carries_its_owners_viewer(self):
+        from camera_providers import PANO_OWNERS
+
+        for feature in read('live/pano-sites.geojson')['features']:
+            properties = feature['properties']
+            owner = PANO_OWNERS[properties['owner']]
+            self.assertEqual((properties['viewerUrl'], properties['viewerName']), (owner['viewerUrl'], owner['viewerName']))
+
+    def test_sheet_table_for_an_unlisted_owner_stops_the_build(self):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location('csv_to_geojson', ROOT / 'scripts/csv-to-geojson.py')
+        converter = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(converter)
+        sheet = '\n'.join([
+            'Site Name,Latitude,Longitude,Elevation,Camera Height (ft)',
+            'Example Butte,45.0,-121.0,,50',
+            '',
+            'Example Electric pano.ai sites,,,,',
+            'Example Peak,45.5,-121.5,,60',
+        ])
+
+        with self.assertRaisesRegex(ValueError, 'Example Electric pano.ai sites.*camera-providers.json'):
+            converter.sites_csv_to_geojson(sheet)
+
+    def test_every_provider_has_a_published_manifest(self):
+        from camera_providers import PROVIDERS
+
+        for provider in PROVIDERS:
+            self.assertTrue((ROOT / f'data/live/{provider}-viewshed-manifest.json').is_file(), provider)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -83,6 +83,9 @@ const linked = panoCameras.filter(f => f.properties.feed);
 assert.equal(linked.length, 104);
 assert.ok(linked.every(f => f.properties.feed.startsWith(
   `https://${viewerHosts[f.properties.owner]}.wildfirewatch.com/station/`)));
+// and carries that viewer for the camera panel
+assert.ok(panoCameras.every(f => f.properties.viewerName
+  && f.properties.viewerUrl === `https://${viewerHosts[f.properties.owner]}.wildfirewatch.com/`));
 
 // EnviroVision sites flag a shared ALERTWest tower themselves instead of borrowing its point
 const enviroVisionSites = JSON.parse(readFileSync(new URL('../data/live/envirovision-sites.geojson', import.meta.url), 'utf8'));

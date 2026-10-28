@@ -66,11 +66,8 @@ VERTEX_TOLERANCE_M = 2.0
 # winding order, which such a ring lacks, so it reads back as a nested shell
 SLIVER_AREA_M2 = 1.0
 
-PROVIDER_LABELS = {
-    "alertwest": "ALERTWest",
-    "pano": "Pano AI",
-    "envirovision": "EnviroVision",
-}
+from camera_providers import PROVIDER_LABELS  # noqa: E402
+
 # (asset suffix, label, state code or None for every camera)
 BUNDLES = (
     ("oregon", "Oregon", "OR"),
@@ -103,7 +100,7 @@ CAMERA_FIELDS = {
 COVERAGE_FIELDS = {"coverage": "string", "area_sqkm": "real"}
 
 FIELD_NOTES = {
-    "provider": "camera network (alertwest | pano | envirovision)",
+    "provider": f"camera network ({' | '.join(PROVIDER_LABELS)})",
     "view_id": "viewshed id; unique across providers; joins camera_locations to *_viewsheds",
     "site_name": "camera site name",
     "state": "state of the camera location (OR | WA | blank if neither)",

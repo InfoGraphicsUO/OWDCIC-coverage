@@ -18,6 +18,8 @@ import math
 import re
 from pathlib import Path
 
+from camera_providers import PANO_OWNERS, PROVIDERS, pano_owner, sites_path, viewshed_prefix
+
 HERE = Path(__file__).resolve().parent
 LIVE = HERE.parent / "data" / "live"
 SOURCE = HERE.parent / "data" / "source"
@@ -34,24 +36,17 @@ NAME_ALIASES = ["site name", "name", "site", "title"]
 HEIGHT_ALIASES = ["camera height (ft)", "camera height (feet)", "camera height", "height", "elevation"]
 
 ALERTWEST = "alertwest"
-# a title row containing the marker starts that provider's table; a blank row ends it
-SECTION_PROVIDERS = {"PANO.AI": "pano"}
-# the same title row names who owns that table's cameras
-SECTION_OWNERS = {
-    "PORTLAND GENERAL ELECTRIC": "Portland General Electric",
-    "PACIFIC POWER": "Pacific Power",
-    "WASHINGTON DEPT OF NATURAL RESOURCES": "Washington DNR",
-    "PUGET SOUND ENERGY": "Puget Sound Energy",
-    "AVISTA UTILITIES": "Avista Utilities",
+# a title row containing the marker starts that provider's table and names its owner;
+# a blank row ends it
+SECTION_PROVIDERS = {
+    record["sheetSection"]: provider for provider, record in PROVIDERS.items() if "sheetSection" in record
 }
 ESTIMATED_HEIGHT = re.compile(r"estimated", re.I)
-PROVIDER_OUTPUTS = {"pano": LIVE / "pano-sites.geojson"}
-# prefixed so viewshed ids stay unique across provider tilesets
-PROVIDER_VIEWSHED_PREFIXES = {"pano": "pano-"}
 # digitized operators that count as the same camera for each provider
 DIGITIZED_OPERATORS = {
-    ALERTWEST: {"ALERTWest", "Joint Site"},
-    "pano": {"Pano AI", "Joint Site"},
+    provider: set(record["digitizedOperators"])
+    for provider, record in PROVIDERS.items()
+    if "digitizedOperators" in record
 }
 # provider coordinates can be rounded to 0.01 degrees, roughly 1 km
 DIGITIZED_MATCH_RADIUS_M = 2000.0
@@ -79,10 +74,11 @@ def main(argv: list[str] | None = None) -> None:
             from camera_site_supplements import supplement_sites
             supplement_sites(by_provider, text, sys.modules[__name__])
 
+        add_owner_viewers(by_provider)
         geojson = by_provider.pop(ALERTWEST)
 
         for provider, provider_geojson in by_provider.items():
-            provider_output = PROVIDER_OUTPUTS.get(provider) or output_path.with_name(f"{provider}-sites.geojson")
+            provider_output = sites_path(provider) if provider in PROVIDERS else output_path.with_name(f"{provider}-sites.geojson")
             write_geojson(provider_output, provider_geojson)
     else:
         geojson = csv_to_geojson(
@@ -93,6 +89,22 @@ def main(argv: list[str] | None = None) -> None:
         )
 
     write_geojson(output_path, geojson)
+
+
+def add_owner_viewers(by_provider: dict[str, dict]) -> None:
+    """gives each owned site its owner's public viewer, so the map needs no list of owners"""
+    for collection in by_provider.values():
+        for feature in collection["features"]:
+            owner = feature["properties"].get("owner")
+
+            if owner is None:
+                continue
+
+            if owner not in PANO_OWNERS:
+                raise ValueError(f"{feature['properties']['name']} has an owner missing from camera-providers.json: {owner}")
+
+            feature["properties"]["viewerUrl"] = PANO_OWNERS[owner]["viewerUrl"]
+            feature["properties"]["viewerName"] = PANO_OWNERS[owner]["viewerName"]
 
 
 def default_output(input_path: Path) -> Path:
@@ -290,7 +302,8 @@ def sites_csv_to_geojson(
             started = section_provider(name)
             if started:
                 provider = started
-                owner = section_owner(name)
+                # an owner missing from the registry would show its cameras as another owner's
+                owner = pano_owner(name) if started == "pano" else None
             continue
 
         extra = (row[col["height"]] or "").strip()
@@ -342,11 +355,6 @@ def section_provider(title: str) -> str | None:
     return next((provider for marker, provider in SECTION_PROVIDERS.items() if marker in upper), None)
 
 
-def section_owner(title: str) -> str | None:
-    upper = title.upper()
-    return next((owner for marker, owner in SECTION_OWNERS.items() if marker in upper), None)
-
-
 def site_feature(
     site: dict,
     provider: str,
@@ -367,7 +375,7 @@ def site_feature(
     if provider == ALERTWEST:
         properties["alertWestLive"] = site["alertWestLive"]
     else:
-        properties["viewshedId"] = PROVIDER_VIEWSHED_PREFIXES.get(provider, f"{provider}-") + slugify(site["name"])
+        properties["viewshedId"] = viewshed_prefix(provider) + slugify(site["name"])
 
     properties["provider"] = provider
 
