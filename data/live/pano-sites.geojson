@@ -25,7 +25,9 @@
         ],
         "county": "Multnomah",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/00651c8a6b704ac786b8ec87ed8fcf00"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/00651c8a6b704ac786b8ec87ed8fcf00",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -52,7 +54,9 @@
         ],
         "county": "Multnomah",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/e73cc3d72d744f34967fe0064d8a8733"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/e73cc3d72d744f34967fe0064d8a8733",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -79,7 +83,9 @@
         ],
         "county": "Yamhill",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/4ce4830a4ac941b1a9de6ba008755d33"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/4ce4830a4ac941b1a9de6ba008755d33",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -106,7 +112,9 @@
         ],
         "county": "Polk",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/4e4b73f3d797488db0de5e07d74b0b19"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/4e4b73f3d797488db0de5e07d74b0b19",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -133,7 +141,9 @@
         ],
         "county": "Yamhill",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/0374ee5fdac04966928277620f8d662e"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/0374ee5fdac04966928277620f8d662e",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -160,7 +170,9 @@
         ],
         "county": "Washington",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/e9b7b3f187004a0e84db667237b03ea0"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/e9b7b3f187004a0e84db667237b03ea0",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -187,7 +199,9 @@
         ],
         "county": "Washington",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/ad7674bc8ac14aa9bb83af15bf60681b"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/ad7674bc8ac14aa9bb83af15bf60681b",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -214,7 +228,9 @@
         ],
         "county": "Washington",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/4a06eb684876408d9d2f770d535bf199"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/4a06eb684876408d9d2f770d535bf199",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -241,7 +257,9 @@
         ],
         "county": "Polk",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/755b0cbb152f4b89b6ef739841b2170a"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/755b0cbb152f4b89b6ef739841b2170a",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -268,7 +286,9 @@
         ],
         "county": "Yamhill",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/c9539fd93bf447ed9a7e5e8a2e090b35"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/c9539fd93bf447ed9a7e5e8a2e090b35",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -295,7 +315,9 @@
         ],
         "county": "Clackamas",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/a5eccdf116e2472ba2082804285f40e0"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/a5eccdf116e2472ba2082804285f40e0",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -322,7 +344,9 @@
         ],
         "county": "Clackamas",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/f3409aeb2eb24f4983abfcaf3a187b1a"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/f3409aeb2eb24f4983abfcaf3a187b1a",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -348,7 +372,9 @@
         ],
         "county": "Clackamas",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/30607e20c25743cf89fdf09375fec0b7"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/30607e20c25743cf89fdf09375fec0b7",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -375,7 +401,9 @@
         ],
         "county": "Polk",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/c05f6f1aa55a47858d4b75c5a47e3f9d"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/c05f6f1aa55a47858d4b75c5a47e3f9d",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -402,7 +430,9 @@
         ],
         "county": "Marion",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/4227e4ae9413494d940c08a5f76d6b01"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/4227e4ae9413494d940c08a5f76d6b01",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -429,7 +459,9 @@
         ],
         "county": "Clackamas",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/45abc840ecf24873b82dba413c9120ba"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/45abc840ecf24873b82dba413c9120ba",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -455,7 +487,9 @@
         ],
         "county": "Clackamas",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/093aef9801a84ed6b35f9a4f0d37da36"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/093aef9801a84ed6b35f9a4f0d37da36",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -482,7 +516,9 @@
         ],
         "county": "Clackamas",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/2a6eb4e7f2ef4bc89a83724956a1a773"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/2a6eb4e7f2ef4bc89a83724956a1a773",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -509,7 +545,9 @@
         ],
         "county": "Clackamas",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/6ee6efcd60ee4609b11d1b9166ed5b66"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/6ee6efcd60ee4609b11d1b9166ed5b66",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -536,7 +574,9 @@
         ],
         "county": "Washington",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/e3ef66a7354644d7a2c9d7d200c41e44"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/e3ef66a7354644d7a2c9d7d200c41e44",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -563,7 +603,9 @@
         ],
         "county": "Clackamas",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/2f4ff3fa03bf4dfebf4f0a2d52a835df"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/2f4ff3fa03bf4dfebf4f0a2d52a835df",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -590,7 +632,9 @@
         ],
         "county": "Clackamas",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/5613f809e4094dc5986a0ff6105b1215"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/5613f809e4094dc5986a0ff6105b1215",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -617,7 +661,9 @@
         ],
         "county": "Columbia",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/4de0850839c44b44bf6c9d386a8b2e13"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/4de0850839c44b44bf6c9d386a8b2e13",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -644,7 +690,9 @@
         ],
         "county": "Washington",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/2d46464a598f45e4848d99f846a229b6"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/2d46464a598f45e4848d99f846a229b6",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -672,7 +720,9 @@
         "county": "Lake",
         "state": "OR",
         "source": "data/live/digitized-camera-sources.geojson",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/50ef1efb2c6b431cbd221db96e82fcc9"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/50ef1efb2c6b431cbd221db96e82fcc9",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -700,7 +750,9 @@
         "county": "Lake",
         "state": "OR",
         "source": "data/live/digitized-camera-sources.geojson",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/8abcd4dbf1894e5689d81e87af47ae01"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/8abcd4dbf1894e5689d81e87af47ae01",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -733,7 +785,9 @@
         "candidateTowerHeightFt": 100,
         "heightNote": "PGE-towers_reduced1.csv tower height, not verified camera observer height.",
         "source": "data/live/digitized-camera-sources.geojson",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/ce74c5ae32f7499d81f15cc7d61632a6"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/ce74c5ae32f7499d81f15cc7d61632a6",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -761,7 +815,9 @@
         "county": "Sherman",
         "state": "OR",
         "source": "data/live/digitized-camera-sources.geojson",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/cb02b887bfbe440f9317aab6e21c117c"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/cb02b887bfbe440f9317aab6e21c117c",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -789,7 +845,9 @@
         "county": "Wasco",
         "state": "OR",
         "source": "data/live/digitized-camera-sources.geojson",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/3c0efd2b0a5747cb83d4fcdfb69714ff"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/3c0efd2b0a5747cb83d4fcdfb69714ff",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -817,7 +875,9 @@
         "county": "Marion",
         "state": "OR",
         "source": "data/live/digitized-camera-sources.geojson",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/348d2b4c36fe4b1fb5c0fdb98f3e47f8"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/348d2b4c36fe4b1fb5c0fdb98f3e47f8",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -844,7 +904,9 @@
         ],
         "locationSource": "pge-camera-source",
         "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/544bbf98c749433a8ce3257eced9c13f"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/544bbf98c749433a8ce3257eced9c13f",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -870,7 +932,9 @@
         ],
         "county": "Clackamas",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/f4e58e76bed2405caa2f89e0c147a894"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/f4e58e76bed2405caa2f89e0c147a894",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -891,7 +955,9 @@
         "owner": "Portland General Electric",
         "county": "Clark",
         "state": "WA",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/93a71b6e4eac4dd2af324ee0074eb4cc"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/93a71b6e4eac4dd2af324ee0074eb4cc",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -920,7 +986,9 @@
         "state": "OR",
         "locationNote": "PGE and digitized sources identify Round Butte and Warm Springs as separate locations; preserve both.",
         "source": "data/live/digitized-camera-sources.geojson",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/6ed6dab8a5b345caa4d09ca724133670"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/6ed6dab8a5b345caa4d09ca724133670",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -947,7 +1015,9 @@
         ],
         "county": "Yamhill",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/8fc4d2cb178f4e75a784bc82f3e6be07"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/8fc4d2cb178f4e75a784bc82f3e6be07",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -974,7 +1044,9 @@
         ],
         "county": "Clackamas",
         "state": "OR",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/a21212b565084c08ad201187d0d1dc5a"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/a21212b565084c08ad201187d0d1dc5a",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -1005,7 +1077,9 @@
         "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp",
         "candidateTowerHeightFt": 173.9,
         "heightNote": "PGE-towers_reduced1.csv tower height, not verified camera observer height.",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/f7ad210691834208907aeee935bc1dc8"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/f7ad210691834208907aeee935bc1dc8",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -1034,7 +1108,9 @@
         ],
         "locationSource": "pge-camera-source",
         "source": "Data/utilities_data_leland/PortlandGeneralElectric/PGE-pano_Cameras/Shapefiles/PGE_WF_Cameras.shp",
-        "feed": "https://portlandgeneral.wildfirewatch.com/station/da33ca161dea4d1e8029fdd32cdc0fe0"
+        "feed": "https://portlandgeneral.wildfirewatch.com/station/da33ca161dea4d1e8029fdd32cdc0fe0",
+        "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+        "viewerName": "PGE Wildfire Watch"
       }
     },
     {
@@ -1061,7 +1137,9 @@
         ],
         "county": "Josephine",
         "state": "OR",
-        "feed": "https://pacificpower.wildfirewatch.com/station/fc34703b6b514cbd8bb1acd493f33dcb"
+        "feed": "https://pacificpower.wildfirewatch.com/station/fc34703b6b514cbd8bb1acd493f33dcb",
+        "viewerUrl": "https://pacificpower.wildfirewatch.com/",
+        "viewerName": "Pacific Power Wildfire Watch"
       }
     },
     {
@@ -1082,7 +1160,9 @@
         "owner": "Pacific Power",
         "county": "Jackson",
         "state": "OR",
-        "feed": "https://pacificpower.wildfirewatch.com/station/316b7e58f1ce41b6bede05772c8a8ae9"
+        "feed": "https://pacificpower.wildfirewatch.com/station/316b7e58f1ce41b6bede05772c8a8ae9",
+        "viewerUrl": "https://pacificpower.wildfirewatch.com/",
+        "viewerName": "Pacific Power Wildfire Watch"
       }
     },
     {
@@ -1103,7 +1183,9 @@
         "owner": "Pacific Power",
         "county": "Josephine",
         "state": "OR",
-        "feed": "https://pacificpower.wildfirewatch.com/station/4597aa6e8126429189765a17666821f6"
+        "feed": "https://pacificpower.wildfirewatch.com/station/4597aa6e8126429189765a17666821f6",
+        "viewerUrl": "https://pacificpower.wildfirewatch.com/",
+        "viewerName": "Pacific Power Wildfire Watch"
       }
     },
     {
@@ -1124,7 +1206,9 @@
         "owner": "Pacific Power",
         "county": "Josephine",
         "state": "OR",
-        "feed": "https://pacificpower.wildfirewatch.com/station/d5560976c9b84fe79637c60a6aa12876"
+        "feed": "https://pacificpower.wildfirewatch.com/station/d5560976c9b84fe79637c60a6aa12876",
+        "viewerUrl": "https://pacificpower.wildfirewatch.com/",
+        "viewerName": "Pacific Power Wildfire Watch"
       }
     },
     {
@@ -1145,7 +1229,9 @@
         "owner": "Pacific Power",
         "county": "Josephine",
         "state": "OR",
-        "feed": "https://pacificpower.wildfirewatch.com/station/0600984faa8e464496ee945509cfd5ad"
+        "feed": "https://pacificpower.wildfirewatch.com/station/0600984faa8e464496ee945509cfd5ad",
+        "viewerUrl": "https://pacificpower.wildfirewatch.com/",
+        "viewerName": "Pacific Power Wildfire Watch"
       }
     },
     {
@@ -1166,7 +1252,9 @@
         "owner": "Washington DNR",
         "county": "Spokane",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/0c2ec2cc7e074062962e013060f0662b"
+        "feed": "https://wadnr.wildfirewatch.com/station/0c2ec2cc7e074062962e013060f0662b",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1187,7 +1275,9 @@
         "owner": "Washington DNR",
         "county": "Stevens",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/8984f9f9661241cd9e287dac8c824b90"
+        "feed": "https://wadnr.wildfirewatch.com/station/8984f9f9661241cd9e287dac8c824b90",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1208,7 +1298,9 @@
         "owner": "Washington DNR",
         "county": "Clark",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/fdb6a4f54548466c94610d10d49b755a"
+        "feed": "https://wadnr.wildfirewatch.com/station/fdb6a4f54548466c94610d10d49b755a",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1229,7 +1321,9 @@
         "owner": "Washington DNR",
         "county": "Okanogan",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/b6cd4381759d49abb54f09ad3a622748"
+        "feed": "https://wadnr.wildfirewatch.com/station/b6cd4381759d49abb54f09ad3a622748",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1250,7 +1344,9 @@
         "owner": "Washington DNR",
         "county": "Asotin",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/fd5c61b6e3db441d97978b8fa37a4b2e"
+        "feed": "https://wadnr.wildfirewatch.com/station/fd5c61b6e3db441d97978b8fa37a4b2e",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1271,7 +1367,9 @@
         "owner": "Washington DNR",
         "county": "Stevens",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/72ff9ca36b7845a2b6221c0d7e1e8361"
+        "feed": "https://wadnr.wildfirewatch.com/station/72ff9ca36b7845a2b6221c0d7e1e8361",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1292,7 +1390,9 @@
         "owner": "Washington DNR",
         "county": "Cowlitz",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/15ca826857e44e1cbc9ac464edb0cc2d"
+        "feed": "https://wadnr.wildfirewatch.com/station/15ca826857e44e1cbc9ac464edb0cc2d",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1313,7 +1413,9 @@
         "owner": "Washington DNR",
         "county": "Skagit",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/5270fe45b5474432b7ba0e255fd0d0a8"
+        "feed": "https://wadnr.wildfirewatch.com/station/5270fe45b5474432b7ba0e255fd0d0a8",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1334,7 +1436,9 @@
         "owner": "Washington DNR",
         "county": "Skagit",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/d02208fe160c4cfbbe70c90776f21613"
+        "feed": "https://wadnr.wildfirewatch.com/station/d02208fe160c4cfbbe70c90776f21613",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1355,7 +1459,9 @@
         "owner": "Washington DNR",
         "county": "Lewis",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/68299e5b2b78459c855448808bad7ec1"
+        "feed": "https://wadnr.wildfirewatch.com/station/68299e5b2b78459c855448808bad7ec1",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1376,7 +1482,9 @@
         "owner": "Washington DNR",
         "county": "Yakima",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/5230bc4ff1394d4eadcb2fa7cdafbf96"
+        "feed": "https://wadnr.wildfirewatch.com/station/5230bc4ff1394d4eadcb2fa7cdafbf96",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1397,7 +1505,9 @@
         "owner": "Washington DNR",
         "county": "Chelan",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/57b922a5a322467fb15f7c193f3d007a"
+        "feed": "https://wadnr.wildfirewatch.com/station/57b922a5a322467fb15f7c193f3d007a",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1418,7 +1528,9 @@
         "owner": "Washington DNR",
         "county": "Pierce",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/60f8348b613e40689ec3c07ed5169055"
+        "feed": "https://wadnr.wildfirewatch.com/station/60f8348b613e40689ec3c07ed5169055",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1439,7 +1551,9 @@
         "owner": "Washington DNR",
         "county": "Cowlitz",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/95a252fbec234348b8367c7051d9c6d6"
+        "feed": "https://wadnr.wildfirewatch.com/station/95a252fbec234348b8367c7051d9c6d6",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1460,7 +1574,9 @@
         "owner": "Washington DNR",
         "county": "Okanogan",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/08aadc487864413998fad4e8e918311e"
+        "feed": "https://wadnr.wildfirewatch.com/station/08aadc487864413998fad4e8e918311e",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1481,7 +1597,9 @@
         "owner": "Washington DNR",
         "county": "Chelan",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/3290b7ab65ec4cc28b5d81308c04bc82"
+        "feed": "https://wadnr.wildfirewatch.com/station/3290b7ab65ec4cc28b5d81308c04bc82",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1502,7 +1620,9 @@
         "owner": "Washington DNR",
         "county": "Kittitas",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/872d649e374345e98e423838bea9478f"
+        "feed": "https://wadnr.wildfirewatch.com/station/872d649e374345e98e423838bea9478f",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1523,7 +1643,9 @@
         "owner": "Washington DNR",
         "county": "Thurston",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/581c90c4afff4ba1b9c51441cf0b6646"
+        "feed": "https://wadnr.wildfirewatch.com/station/581c90c4afff4ba1b9c51441cf0b6646",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1544,7 +1666,9 @@
         "owner": "Washington DNR",
         "county": "Klickitat",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/3a84fabf080143ae9501ea7d5ab7f313"
+        "feed": "https://wadnr.wildfirewatch.com/station/3a84fabf080143ae9501ea7d5ab7f313",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1565,7 +1689,9 @@
         "owner": "Washington DNR",
         "county": "King",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/e6b3b412a38e4a2289425e521fda947f"
+        "feed": "https://wadnr.wildfirewatch.com/station/e6b3b412a38e4a2289425e521fda947f",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1586,7 +1712,9 @@
         "owner": "Washington DNR",
         "county": "Mason",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/333a1030927941519c65ff291d02f3ff"
+        "feed": "https://wadnr.wildfirewatch.com/station/333a1030927941519c65ff291d02f3ff",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1607,7 +1735,9 @@
         "owner": "Washington DNR",
         "county": "San Juan",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/e0515d8714094f3fb476fb277ed8b74c"
+        "feed": "https://wadnr.wildfirewatch.com/station/e0515d8714094f3fb476fb277ed8b74c",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1628,7 +1758,9 @@
         "owner": "Washington DNR",
         "county": "Lewis",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/1a8272e81ae04580b0704e6e66a26bd9"
+        "feed": "https://wadnr.wildfirewatch.com/station/1a8272e81ae04580b0704e6e66a26bd9",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1649,7 +1781,9 @@
         "owner": "Washington DNR",
         "county": "Thurston",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/7e508d6fe3744bebbcc38c692af988fb"
+        "feed": "https://wadnr.wildfirewatch.com/station/7e508d6fe3744bebbcc38c692af988fb",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1670,7 +1804,9 @@
         "owner": "Washington DNR",
         "county": "Stevens",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/5b7c9bada68f4843805b69ada5bafbc0"
+        "feed": "https://wadnr.wildfirewatch.com/station/5b7c9bada68f4843805b69ada5bafbc0",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1691,7 +1827,9 @@
         "owner": "Washington DNR",
         "county": "Grays Harbor",
         "state": "WA",
-        "feed": "https://wadnr.wildfirewatch.com/station/c5160588d3424bd29d55e54c19e881e7"
+        "feed": "https://wadnr.wildfirewatch.com/station/c5160588d3424bd29d55e54c19e881e7",
+        "viewerUrl": "https://wadnr.wildfirewatch.com/",
+        "viewerName": "WA DNR Wildfire Watch"
       }
     },
     {
@@ -1712,7 +1850,9 @@
         "owner": "Puget Sound Energy",
         "county": "King",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/6f214284a836462997e6981c2f73f396"
+        "feed": "https://pse.wildfirewatch.com/station/6f214284a836462997e6981c2f73f396",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1733,7 +1873,9 @@
         "owner": "Puget Sound Energy",
         "county": "King",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/d35d8ce8e0614fee9f9a78263cebab91"
+        "feed": "https://pse.wildfirewatch.com/station/d35d8ce8e0614fee9f9a78263cebab91",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1754,7 +1896,9 @@
         "owner": "Puget Sound Energy",
         "county": "King",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/65abeabafd364d85821351a720071f53"
+        "feed": "https://pse.wildfirewatch.com/station/65abeabafd364d85821351a720071f53",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1775,7 +1919,9 @@
         "owner": "Puget Sound Energy",
         "county": "Pierce",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/2b433e8390c640a4ab7baaace5d083ba"
+        "feed": "https://pse.wildfirewatch.com/station/2b433e8390c640a4ab7baaace5d083ba",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1796,7 +1942,9 @@
         "owner": "Puget Sound Energy",
         "county": "Pierce",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/b01b6145f3d046d28436bb67e3ecba4d"
+        "feed": "https://pse.wildfirewatch.com/station/b01b6145f3d046d28436bb67e3ecba4d",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1817,7 +1965,9 @@
         "owner": "Puget Sound Energy",
         "county": "Kittitas",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/eb5fcaa6bd8b44779bce0520240c85f7"
+        "feed": "https://pse.wildfirewatch.com/station/eb5fcaa6bd8b44779bce0520240c85f7",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1838,7 +1988,9 @@
         "owner": "Puget Sound Energy",
         "county": "King",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/244ba11a8cb74a3886286a799eea062d"
+        "feed": "https://pse.wildfirewatch.com/station/244ba11a8cb74a3886286a799eea062d",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1859,7 +2011,9 @@
         "owner": "Puget Sound Energy",
         "county": "King",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/0cfcc0d462e74b0bbc34d4cb14048379"
+        "feed": "https://pse.wildfirewatch.com/station/0cfcc0d462e74b0bbc34d4cb14048379",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1880,7 +2034,9 @@
         "owner": "Puget Sound Energy",
         "county": "King",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/7f83693f10554fab926d0daf04f49f14"
+        "feed": "https://pse.wildfirewatch.com/station/7f83693f10554fab926d0daf04f49f14",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1901,7 +2057,9 @@
         "owner": "Puget Sound Energy",
         "county": "Kittitas",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/6018c8fe9c274370b34ff0297d4274cb"
+        "feed": "https://pse.wildfirewatch.com/station/6018c8fe9c274370b34ff0297d4274cb",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1922,7 +2080,9 @@
         "owner": "Puget Sound Energy",
         "county": "Kittitas",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/36dbd3aa2f984526b661e749e1f65d09"
+        "feed": "https://pse.wildfirewatch.com/station/36dbd3aa2f984526b661e749e1f65d09",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1943,7 +2103,9 @@
         "owner": "Puget Sound Energy",
         "county": "Kittitas",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/4acb40d38f3745c3b32311c2e30af7cd"
+        "feed": "https://pse.wildfirewatch.com/station/4acb40d38f3745c3b32311c2e30af7cd",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1964,7 +2126,9 @@
         "owner": "Puget Sound Energy",
         "county": "Kittitas",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/e35c46162fed454abe4f2f507dbac766"
+        "feed": "https://pse.wildfirewatch.com/station/e35c46162fed454abe4f2f507dbac766",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -1985,7 +2149,9 @@
         "owner": "Puget Sound Energy",
         "county": "Kittitas",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/07a8d21e13f34515b2a0ef34a9f8b78b"
+        "feed": "https://pse.wildfirewatch.com/station/07a8d21e13f34515b2a0ef34a9f8b78b",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -2006,7 +2172,9 @@
         "owner": "Puget Sound Energy",
         "county": "Kittitas",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/f060fbddff7d4fc592d80335c91fa3bc"
+        "feed": "https://pse.wildfirewatch.com/station/f060fbddff7d4fc592d80335c91fa3bc",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -2027,7 +2195,9 @@
         "owner": "Puget Sound Energy",
         "county": "Skagit",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/7d049ebcb2f247f6abf83e3e48d194e4"
+        "feed": "https://pse.wildfirewatch.com/station/7d049ebcb2f247f6abf83e3e48d194e4",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -2048,7 +2218,9 @@
         "owner": "Puget Sound Energy",
         "county": "Chelan",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/71e733f86704406c9422b29ba7becc44"
+        "feed": "https://pse.wildfirewatch.com/station/71e733f86704406c9422b29ba7becc44",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -2069,7 +2241,9 @@
         "owner": "Puget Sound Energy",
         "county": "King",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/d1e8ff07824543c2a0ef3a24faea8e22"
+        "feed": "https://pse.wildfirewatch.com/station/d1e8ff07824543c2a0ef3a24faea8e22",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -2090,7 +2264,9 @@
         "owner": "Puget Sound Energy",
         "county": "Skagit",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/87d10215e38b410fb478bb4c64d56b5a"
+        "feed": "https://pse.wildfirewatch.com/station/87d10215e38b410fb478bb4c64d56b5a",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -2111,7 +2287,9 @@
         "owner": "Puget Sound Energy",
         "county": "King",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/2b0ca5df175e427cbf9925027abc2b78"
+        "feed": "https://pse.wildfirewatch.com/station/2b0ca5df175e427cbf9925027abc2b78",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -2132,7 +2310,9 @@
         "owner": "Puget Sound Energy",
         "county": "Kittitas",
         "state": "WA",
-        "feed": "https://pse.wildfirewatch.com/station/803d0d43f02c477cb3e9d063c8903de7"
+        "feed": "https://pse.wildfirewatch.com/station/803d0d43f02c477cb3e9d063c8903de7",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -2152,7 +2332,9 @@
         "provider": "pano",
         "owner": "Puget Sound Energy",
         "county": "Whatcom",
-        "state": "WA"
+        "state": "WA",
+        "viewerUrl": "https://pse.wildfirewatch.com/",
+        "viewerName": "PSE Wildfire Watch"
       }
     },
     {
@@ -2173,7 +2355,9 @@
         "owner": "Avista Utilities",
         "county": "Lincoln",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/bff0e60618674504bf1356b9cc27ab1c"
+        "feed": "https://avista.wildfirewatch.com/station/bff0e60618674504bf1356b9cc27ab1c",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2194,7 +2378,9 @@
         "owner": "Avista Utilities",
         "county": "Lincoln",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/3f75e3dbd3224fc0b6acecb5fbe7f34b"
+        "feed": "https://avista.wildfirewatch.com/station/3f75e3dbd3224fc0b6acecb5fbe7f34b",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2215,7 +2401,9 @@
         "owner": "Avista Utilities",
         "county": "Spokane",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/6152cf70ea59406092c72af86920cea7"
+        "feed": "https://avista.wildfirewatch.com/station/6152cf70ea59406092c72af86920cea7",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2236,7 +2424,9 @@
         "owner": "Avista Utilities",
         "county": "Stevens",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/748448f29faa48c7a3d9ff3a0a7d6200"
+        "feed": "https://avista.wildfirewatch.com/station/748448f29faa48c7a3d9ff3a0a7d6200",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2257,7 +2447,9 @@
         "owner": "Avista Utilities",
         "county": "Spokane",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/b9f572e57f3945bc87dbe7c2bf1befc7"
+        "feed": "https://avista.wildfirewatch.com/station/b9f572e57f3945bc87dbe7c2bf1befc7",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2278,7 +2470,9 @@
         "owner": "Avista Utilities",
         "county": "Stevens",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/d9057f5d752b4ae6a518f6bdf38f0daf"
+        "feed": "https://avista.wildfirewatch.com/station/d9057f5d752b4ae6a518f6bdf38f0daf",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2299,7 +2493,9 @@
         "owner": "Avista Utilities",
         "county": "Bonner",
         "state": "ID",
-        "feed": "https://avista.wildfirewatch.com/station/8923711853cc4598ae76cc8ccae1393c"
+        "feed": "https://avista.wildfirewatch.com/station/8923711853cc4598ae76cc8ccae1393c",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2320,7 +2516,9 @@
         "owner": "Avista Utilities",
         "county": "Stevens",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/93f44c953bad4b3a98f48cf3cb20698e"
+        "feed": "https://avista.wildfirewatch.com/station/93f44c953bad4b3a98f48cf3cb20698e",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2341,7 +2539,9 @@
         "owner": "Avista Utilities",
         "county": "Adams",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/189ef98c128d48f7a400fce23389d387"
+        "feed": "https://avista.wildfirewatch.com/station/189ef98c128d48f7a400fce23389d387",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2362,7 +2562,9 @@
         "owner": "Avista Utilities",
         "county": "Lincoln",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/65eb75b4b88a40d286d4bd6bba1df8b5"
+        "feed": "https://avista.wildfirewatch.com/station/65eb75b4b88a40d286d4bd6bba1df8b5",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2383,7 +2585,9 @@
         "owner": "Avista Utilities",
         "county": "Grant",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/280f3762b88240409933f3d2d8d66b4d"
+        "feed": "https://avista.wildfirewatch.com/station/280f3762b88240409933f3d2d8d66b4d",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2404,7 +2608,9 @@
         "owner": "Avista Utilities",
         "county": "Whitman",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/e2a9f886a1fb431a8136964dbc2ba983"
+        "feed": "https://avista.wildfirewatch.com/station/e2a9f886a1fb431a8136964dbc2ba983",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2425,7 +2631,9 @@
         "owner": "Avista Utilities",
         "county": "Spokane",
         "state": "WA",
-        "feed": "https://avista.wildfirewatch.com/station/3fd7745d505c47728f50580560765ee3"
+        "feed": "https://avista.wildfirewatch.com/station/3fd7745d505c47728f50580560765ee3",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2446,7 +2654,9 @@
         "owner": "Avista Utilities",
         "county": "Kootenai",
         "state": "ID",
-        "feed": "https://avista.wildfirewatch.com/station/6e35fedea98640ea9790af4c67554974"
+        "feed": "https://avista.wildfirewatch.com/station/6e35fedea98640ea9790af4c67554974",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     },
     {
@@ -2466,7 +2676,9 @@
         "provider": "pano",
         "owner": "Avista Utilities",
         "county": "Asotin",
-        "state": "WA"
+        "state": "WA",
+        "viewerUrl": "https://avista.wildfirewatch.com/",
+        "viewerName": "Avista Wildfire Watch"
       }
     }
   ]

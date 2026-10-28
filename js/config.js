@@ -1,13 +1,7 @@
 // live AlertWest camera metadata and image URLs
 export const CAMERA_API = 'https://api.cdn.prod.alertwest.com/api/firecams/v0/cameras';
-// each Pano AI owner's public viewer; a site with no owner is a PGE site
-export const PANO_VIEWERS = Object.freeze({
-  'Portland General Electric': { url: 'https://portlandgeneral.wildfirewatch.com/', name: 'PGE Wildfire Watch' },
-  'Pacific Power': { url: 'https://pacificpower.wildfirewatch.com/', name: 'Pacific Power Wildfire Watch' },
-  'Washington DNR': { url: 'https://wadnr.wildfirewatch.com/', name: 'WA DNR Wildfire Watch' },
-  'Puget Sound Energy': { url: 'https://pse.wildfirewatch.com/', name: 'PSE Wildfire Watch' },
-  'Avista Utilities': { url: 'https://avista.wildfirewatch.com/', name: 'Avista Wildfire Watch' },
-});
+// Pano AI sites carry their owner's public viewer; a digitized Pano AI camera has no owner and is a PGE camera
+export const PANO_DEFAULT_VIEWER = Object.freeze({ url: 'https://portlandgeneral.wildfirewatch.com/', name: 'PGE Wildfire Watch' });
 
 // hosted tilesets and provider endpoints used by the map layers
 export const DATA_URLS = Object.freeze({

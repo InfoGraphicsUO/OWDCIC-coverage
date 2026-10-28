@@ -41,20 +41,17 @@ else:
     # trusted generated viewsheds can exceed GDAL 3.12's single-object limit
     gdal.SetConfigOption("OGR_GEOJSON_MAX_OBJ_SIZE", "0")
 
+from camera_providers import PROVIDERS, output_dir, sites_path
 from qgis_runtime import default_qgis_root, find_tippecanoe, qgis_runtime
 
 # paths to default files and directories
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_QGIS_ROOT = default_qgis_root()
-DEFAULT_SITES = PROJECT_ROOT / "data/live/alertwest-sites.geojson"
+DEFAULT_SITES = sites_path("alertwest")
 DEFAULT_DEMS = PROJECT_ROOT / "data/source/dems"
-DEFAULT_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_alertwest"
+DEFAULT_OUTPUT = output_dir("alertwest")
 # every provider's output folder, for the combined coverage tileset
-PROVIDER_OUTPUTS = {
-    "alertwest": DEFAULT_OUTPUT,
-    "pano": PROJECT_ROOT / "outputs/gdal_viewsheds_pano",
-    "envirovision": PROJECT_ROOT / "outputs/gdal_viewsheds_envirovision",
-}
+PROVIDER_OUTPUTS = {provider: output_dir(provider) for provider in PROVIDERS}
 WEB_PACKAGE = "mapbox/camera_viewsheds_web_epsg5070.gpkg"
 DEFAULT_COMBINED_OUTPUT = PROJECT_ROOT / "outputs/gdal_viewsheds_combined/mapbox"
 COMBINED_PRODUCT_NAME = "combined-camera-viewshed-coverage"

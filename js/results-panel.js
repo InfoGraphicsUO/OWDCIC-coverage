@@ -1,5 +1,5 @@
 import { openModal } from './modal.js';
-import { CAMERA_PROVIDER_COLORS, LEGEND_LAYERS, MARKER_ICON_URLS, PANO_VIEWERS } from './config.js';
+import { CAMERA_PROVIDER_COLORS, LEGEND_LAYERS, MARKER_ICON_URLS, PANO_DEFAULT_VIEWER } from './config.js';
 import { attachInfoTooltip } from './info-tooltip.js';
 import { getSetting } from './settings.js';
 
@@ -666,9 +666,10 @@ function renderCamera(properties, metrics) {
   wrapper.className = 'results-panel__body results-panel__camera';
 
   // each owner's public viewer only carries that owner's own Pano AI cameras
-  const viewer = properties.operator === 'Pano AI' || properties.provider === 'pano'
-    ? PANO_VIEWERS[properties.owner || 'Portland General Electric']
-    : null;
+  const pano = properties.operator === 'Pano AI' || properties.provider === 'pano';
+  const viewer = !pano ? null
+    : properties.viewerUrl ? { url: properties.viewerUrl, name: properties.viewerName }
+      : PANO_DEFAULT_VIEWER;
   const isPano = Boolean(viewer);
   const imageUrl = safeHttpsUrl(properties.image);
   const preview = document.createElement('div');

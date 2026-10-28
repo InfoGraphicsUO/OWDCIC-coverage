@@ -1,0 +1,45 @@
+{
+  "about": "The one list of camera providers and Pano AI owners the scripts read. Add a Pano AI owner here before its table appears in the site installation sheet: sheetTitle is the part of the table's title row that names the owner, and the viewer is its public Wildfire Watch site. A new provider also needs its own map layer in js/map-layers.js.",
+  "providers": {
+    "alertwest": {
+      "label": "ALERTWest",
+      "digitizedOperators": ["ALERTWest", "Joint Site"]
+    },
+    "pano": {
+      "label": "Pano AI",
+      "sheetSection": "PANO.AI",
+      "digitizedOperators": ["Pano AI", "Joint Site"]
+    },
+    "envirovision": {
+      "label": "EnviroVision",
+      "builtBy": "scripts/data-builders/build-envirovision-sites.py"
+    }
+  },
+  "panoOwners": {
+    "Portland General Electric": {
+      "sheetTitle": "PORTLAND GENERAL ELECTRIC",
+      "viewerUrl": "https://portlandgeneral.wildfirewatch.com/",
+      "viewerName": "PGE Wildfire Watch"
+    },
+    "Pacific Power": {
+      "sheetTitle": "PACIFIC POWER",
+      "viewerUrl": "https://pacificpower.wildfirewatch.com/",
+      "viewerName": "Pacific Power Wildfire Watch"
+    },
+    "Washington DNR": {
+      "sheetTitle": "WASHINGTON DEPT OF NATURAL RESOURCES",
+      "viewerUrl": "https://wadnr.wildfirewatch.com/",
+      "viewerName": "WA DNR Wildfire Watch"
+    },
+    "Puget Sound Energy": {
+      "sheetTitle": "PUGET SOUND ENERGY",
+      "viewerUrl": "https://pse.wildfirewatch.com/",
+      "viewerName": "PSE Wildfire Watch"
+    },
+    "Avista Utilities": {
+      "sheetTitle": "AVISTA UTILITIES",
+      "viewerUrl": "https://avista.wildfirewatch.com/",
+      "viewerName": "Avista Wildfire Watch"
+    }
+  }
+}

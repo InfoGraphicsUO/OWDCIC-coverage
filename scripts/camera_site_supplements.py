@@ -10,18 +10,11 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from camera_providers import PANO_OWNERS, PROVIDER_LABELS, PROVIDERS, viewshed_prefix
 
-# built by scripts/data-builders/build-envirovision-sites.py from ODF's geodatabase
-EXTERNAL_PROVIDERS = ('envirovision',)
-# each Pano owner's public viewer; its station pages live under /station/<id>
-PANO_VIEWERS = {
-    'Portland General Electric': 'https://portlandgeneral.wildfirewatch.com/',
-    'Pacific Power': 'https://pacificpower.wildfirewatch.com/',
-    'Washington DNR': 'https://wadnr.wildfirewatch.com/',
-    'Puget Sound Energy': 'https://pse.wildfirewatch.com/',
-    'Avista Utilities': 'https://avista.wildfirewatch.com/',
-}
-PROVIDER_LABELS = {'alertwest': 'ALERTWest', 'pano': 'Pano AI', 'envirovision': 'EnviroVision'}
+
+# providers built outside the sheet, such as EnviroVision from ODF's geodatabase
+EXTERNAL_PROVIDERS = tuple(provider for provider, record in PROVIDERS.items() if 'builtBy' in record)
 # counts in this doc sit between <!-- name --> and <!-- /name --> and are rewritten on every build
 STATUS_DOC = Path(__file__).resolve().parent.parent / 'cameras-without-viewsheds.md'
 
@@ -61,7 +54,7 @@ def supplement_sites(by_provider, text, converter):
         height = converter.to_height_ft(row[4]) if row else None
         props = {k: v for k, v in record.items() if k not in ('coordinates', 'sheetName', 'digitizedId')}
         props['cameraHeightFt'] = height
-        props['viewshedId'] = ('' if provider == 'alertwest' else 'pano-') + converter.slugify(record['name'])
+        props['viewshedId'] = viewshed_prefix(provider) + converter.slugify(record['name'])
 
         if 'digitizedId' in record:
             feature = digitized[record['digitizedId']]
@@ -134,7 +127,8 @@ def supplement_sites(by_provider, text, converter):
             if name not in pano:
                 raise ValueError(f"Unknown Pano site in {links_path.name}: {name}")
 
-            station_url = PANO_VIEWERS[pano[name]['owner']] + 'station/'
+            # each owner's station pages live under /station/<id> on its public viewer
+            station_url = PANO_OWNERS[pano[name]['owner']]['viewerUrl'] + 'station/'
             if not link.startswith(station_url):
                 raise ValueError(f"Expected a {station_url} link for {name}: {link}")
 

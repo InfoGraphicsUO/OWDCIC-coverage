@@ -62,6 +62,9 @@ export function providerSitesToCameras(sites, operator) {
         operator,
         // utility or agency that runs the camera on the provider's network
         owner: properties.owner ?? null,
+        // that owner's public viewer, written into the site file from data/source/camera-providers.json
+        viewerUrl: properties.viewerUrl ?? null,
+        viewerName: properties.viewerName ?? null,
         county: properties.county ?? null,
         state: properties.state ?? null,
         // the site's own page on its owner's public viewer, when one is known

@@ -66,7 +66,9 @@ def parse_args() -> argparse.Namespace:
 
 def load_converter():
     """csv-to-geojson.py holds the shared county, slug, and distance helpers"""
-    spec = importlib.util.spec_from_file_location("csv_to_geojson", SITE_DATA_BUILDER)
+    # it reads the provider registry beside it
+    sys.path.insert(0, str(SITE_DATA_BUILDER.parent))
+    spec =importlib.util.spec_from_file_location("csv_to_geojson", SITE_DATA_BUILDER)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
 

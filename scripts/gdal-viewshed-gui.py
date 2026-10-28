@@ -62,6 +62,7 @@ except ImportError:
         QWidget,
     )
 
+from camera_providers import PROVIDER_LABELS, output_dir, sites_path
 from qgis_runtime import default_qgis_root, find_tippecanoe, qgis_runtime
 
 
@@ -85,21 +86,16 @@ RELEASE_OUTPUT = PROJECT_ROOT / "outputs/data_release"
 READY_TEXT = "Ready to start; choose inputs & check settings before starting a run!"
 RELEASE_READY_TEXT = "Ready to build the release from the published viewsheds"
 RELEASES_URL = "https://github.com/InfoGraphicsUO/OWDCIC-coverage/releases"
-# each provider has its own sites file, output folder, and published manifest
-PROVIDER_LABELS = {"alertwest": "ALERTWest", "pano": "Pano AI", "envirovision": "EnviroVision"}
 DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 PROGRESS_PREFIX = "@@PROGRESS@@"
 
 
-def provider_sites(provider: str) -> Path:
-    return PROJECT_ROOT / f"data/live/{provider}-sites.geojson"
-
-
 def provider_output(provider: str, test: bool) -> Path:
     """the output folder is the dataset, so each provider, and its test runs, get their own"""
-    return PROJECT_ROOT / f"outputs/gdal_viewsheds_{provider}{'_test' if test else ''}"
+    folder = output_dir(provider)
+    return folder.with_name(f"{folder.name}_test") if test else folder
 
 
 PROVIDER_OUTPUTS = {
@@ -615,7 +611,7 @@ class ViewshedWindow(QMainWindow):
         for provider, label in PROVIDER_LABELS.items():
             self.provider.addItem(label, provider)
 
-        self.sites = PathRow(provider_sites("alertwest"), False)
+        self.sites = PathRow(sites_path("alertwest"), False)
         self.dems = PathRow(PROJECT_ROOT / "data/source/dems", True)
         # the window opens on the test run preset
         self.output = PathRow(provider_output("alertwest", True), True)
@@ -639,7 +635,7 @@ class ViewshedWindow(QMainWindow):
 
     def choose_provider(self) -> None:
         provider = self.provider.currentData()
-        self.sites.edit.setText(str(provider_sites(provider)))
+        self.sites.edit.setText(str(sites_path(provider)))
         # keep a test run in a test folder
         test = PROVIDER_OUTPUTS.get(self.output.path(), self.preset.currentData() == "test")
         self.output.edit.setText(str(provider_output(provider, test)))
