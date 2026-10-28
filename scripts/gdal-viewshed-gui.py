@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import html
 import json
 import os
 from pathlib import Path
@@ -64,6 +65,7 @@ except ImportError:
 
 from camera_providers import PROVIDER_LABELS, output_dir, sites_path
 from qgis_runtime import default_qgis_root, find_tippecanoe, qgis_runtime
+import setup_checks
 
 
 def qt_enum(owner, scope: str, member: str):
@@ -82,6 +84,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUNNER = PROJECT_ROOT / "scripts/gdal-camera-viewsheds.py"
 QGIS_PROJECT_BUILDER = PROJECT_ROOT / "scripts/build-qgis-viewshed-project.py"
 RELEASE_BUILDER = PROJECT_ROOT / "scripts/build-data-release.py"
+DEM_FETCHER = PROJECT_ROOT / "scripts/fetch-dems.py"
 RELEASE_OUTPUT = PROJECT_ROOT / "outputs/data_release"
 READY_TEXT = "Ready to start; choose inputs & check settings before starting a run!"
 RELEASE_READY_TEXT = "Ready to build the release from the published viewsheds"
@@ -413,6 +416,7 @@ class ViewshedWindow(QMainWindow):
         options_layout.addStretch(1)
 
         for label, page in (
+            ("Setup", self.build_setup()),
             ("Inputs and outputs", setup),
             ("Run settings", options),
             ("Advanced options", self.advanced),
@@ -442,7 +446,65 @@ class ViewshedWindow(QMainWindow):
         self.output.edit.textChanged.connect(lambda: self.set_idle(self.process.state() == PROCESS_NOT_RUNNING))
         self.sync_finishing_options()
         self.track_preset_controls()
+        self.task = "run"
         self.set_idle(True)
+        self.refresh_setup(open_on_problems=True)
+
+    def build_setup(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        group = QGroupBox("Setup checks")
+        group_layout = QVBoxLayout(group)
+        self.setup_rows = QFormLayout()
+        self.setup_rows.setSpacing(10)
+        self.setup_rows.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
+        group_layout.addLayout(self.setup_rows)
+        buttons = QHBoxLayout()
+        self.check_again_button = QPushButton("Check again")
+        self.check_again_button.clicked.connect(lambda: self.refresh_setup())
+        self.dem_button = QPushButton("Download missing DEMs")
+        self.dem_button.setToolTip(
+            "Downloads the USGS terrain tiles missing from the DEM folder, about 380 MB each. "
+            "Finished tiles are kept if you cancel."
+        )
+        self.dem_button.clicked.connect(self.start_dem_download)
+        buttons.addWidget(self.check_again_button)
+        buttons.addWidget(self.dem_button)
+        buttons.addStretch(1)
+        group_layout.addLayout(buttons)
+        layout.addWidget(group)
+        layout.addStretch(1)
+
+        return page
+
+    def refresh_setup(self, open_on_problems: bool = False) -> None:
+        """lists what this machine is missing, so a run does not fail partway through"""
+        while self.setup_rows.rowCount():
+            self.setup_rows.removeRow(0)
+
+        checks = setup_checks.run_checks(self.qgis_runtime.root, self.dems.path(), self.radius.value())
+        marks = {"ok": "✓", "warning": "!", "problem": "✕"}
+
+        for check in checks:
+            text = f"{marks[check.status]}  {html.escape(check.detail)}"
+
+            if check.fix:
+                text += f"<br><span style='color:#abb5be'>{html.escape(check.fix)}</span>"
+
+            value = QLabel(f"<qt>{text}</qt>")
+            value.setWordWrap(True)
+            value.setTextInteractionFlags(qt_enum(Qt, "TextInteractionFlag", "TextSelectableByMouse"))
+            self.setup_rows.addRow(QLabel(check.name), value)
+
+        problems = sum(check.status == "problem" for check in checks)
+        warnings = sum(check.status == "warning" for check in checks)
+        counts = [f"{count} {word}{'' if count == 1 else 's'}"
+                  for count, word in ((problems, "problem"), (warnings, "warning")) if count]
+        self.settings.setTabText(0, f"Setup ({', '.join(counts)})" if counts else "Setup")
+        self.dem_button.setVisible(bool(setup_checks.missing_tiles(self.dems.path(), setup_checks.read_tiles())))
+        # a ready machine opens on its inputs instead
+        if open_on_problems:
+            self.settings.setCurrentIndex(0 if problems else 1)
 
     def build_presets(self) -> QGroupBox:
         group = QGroupBox("Preset")
@@ -940,16 +1002,28 @@ class ViewshedWindow(QMainWindow):
         elif not self.validate_paths():
             return
 
+        if self.release_mode:
+            self.launch("release", self.release_arguments(), "Starting the data release…")
+        else:
+            self.launch("run", self.runner_arguments(), "Starting GDAL runner…")
+
+    def start_dem_download(self) -> None:
+        if self.process.state() != PROCESS_NOT_RUNNING:
+            return
+
+        arguments = [str(DEM_FETCHER), "--dem-dir", str(self.dems.path()), "--json-progress"]
+        self.launch("dems", arguments, "Starting the DEM download…")
+
+    def launch(self, task: str, arguments: list[str], starting: str) -> None:
+        self.task = task
         self.log.clear()
         self.output_buffer = ""
         self.started = time.monotonic()
         self.overall.setValue(0)
-        self.status.setText("Starting the data release…" if self.release_mode else "Starting GDAL runner…")
+        self.status.setText(starting)
         self.set_idle(False)
         self.elapsed_timer.start(1000)
-        self.process.start(
-            sys.executable, self.release_arguments() if self.release_mode else self.runner_arguments()
-        )
+        self.process.start(sys.executable, arguments)
 
         if not self.process.waitForStarted(5000):
             self.log.appendPlainText(self.process.errorString())
@@ -1004,14 +1078,27 @@ class ViewshedWindow(QMainWindow):
 
         self.elapsed_timer.stop()
 
-        if self.release_mode and exit_code == 0:
+        if self.task == "dems":
+            if exit_code == 0:
+                self.overall.setValue(1000)
+
+            self.status.setText(
+                "DEMs downloaded" if exit_code == 0
+                else "Download cancelled — finished tiles are kept" if exit_code == 130
+                else f"Download stopped with exit code {exit_code}; review the log"
+            )
+            self.set_idle(True)
+            self.refresh_setup()
+            return
+
+        if self.task == "release" and exit_code == 0:
             self.overall.setValue(1000)
             self.status.setText(
                 "Release uploaded — the README's download links now serve it"
                 if self.release_upload.isChecked()
                 else "Release built — the zips are in the output folder"
             )
-        elif self.release_mode:
+        elif self.task == "release":
             self.status.setText(
                 "Release cancelled"
                 if exit_code == 130
