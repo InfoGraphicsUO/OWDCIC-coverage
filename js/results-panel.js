@@ -933,8 +933,8 @@ const EXPORT_LOGOS = Object.freeze([
   'img/logos/IGL_MIDDLE_BLACK_150.png',
   'img/logos/ohaz-full-color.png',
 ]);
-const EXPORT_LOGO_HEIGHT = 32;
-const EXPORT_LOGO_GAP = 16;
+const EXPORT_LOGO_HEIGHT = 24;
+const EXPORT_LOGO_GAP = 10;
 
 // canvas text falls back silently if a web font has not finished loading, and the heading
 // font only loads on its own once something on the page uses it
@@ -1991,6 +1991,8 @@ function drawExportLogos(ctx, width, height, logos) {
 
   // a soft glow keeps black marks legible over dark satellite imagery
   ctx.save();
+  // large source files shrink with jagged edges at the default quality
+  ctx.imageSmoothingQuality = 'high';
   ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
   ctx.shadowBlur = 4;
   for (const logo of [...logos].reverse()) {
