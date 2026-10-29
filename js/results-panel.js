@@ -32,10 +32,10 @@ const BOUNDARY_QUALIFIERS = Object.freeze({
   'odf-protection-district': 'ODF protection district boundary',
 });
 
-const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | UO InfoGraphics Lab | OHAZ';
+const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors';
 
 // Mapbox satellite imagery carries its own provider credit
-const SATELLITE_MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | Maxar | UO InfoGraphics Lab | OHAZ';
+const SATELLITE_MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | Maxar';
 
 // only these polygon selections include mapped land shares
 const POLYGON_DONUT_TYPES = new Set([
@@ -929,6 +929,16 @@ const EXPORT_VIEWSHED_OUTLINES = Object.freeze({
   satellite: '#F4F1EA',
 });
 
+// partner logos sit left to right in the bottom-right corner, under the results card
+const EXPORT_LOGOS = Object.freeze([
+  'img/logos/IGL_MIDDLE_BLACK_150.png',
+  'img/logos/ohaz-full-color.png',
+]);
+const EXPORT_LOGO_HEIGHT = 26;
+const EXPORT_LOGO_GAP = 10;
+// logos center on the attribution text, whose middle sits about this far above its baseline
+const EXPORT_LOGO_TEXT_OFFSET = 4;
+
 // canvas text falls back silently if a web font has not finished loading, and the heading
 // font only loads on its own once something on the page uses it
 async function loadExportFonts() {
@@ -945,6 +955,8 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   }
 
   await loadExportFonts();
+  // a logo that fails to load is left out rather than failing the whole export
+  const logos = (await Promise.all(EXPORT_LOGOS.map((src) => loadImage(src).catch(() => null)))).filter(Boolean);
   const mapImage = await loadImage(mapCanvas.toDataURL('image/png'));
   let chartImage = null;
   if (chart && typeof window.Plotly?.toImage === 'function') {
@@ -999,15 +1011,16 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   });
 
   const legendLayout = layoutLegendPanel({ ctx, width: EXPORT_LEGEND_WIDTH, rows: legendRows });
-  const attributionHeight = 18;
+  // logos are centered on the attribution line, so they reach higher than its text
+  const footerHeight = Math.max(18, EXPORT_LOGO_TEXT_OFFSET + EXPORT_LOGO_HEIGHT / 2);
   const stackGap = 12;
 
   // the cards draw in their own smaller frame; margins and attribution keep the full scale
   const cardFrameWidth = frameWidth / EXPORT_CARD_SCALE;
   const cardMargin = EXPORT_MARGIN / EXPORT_CARD_SCALE;
-  const maxPanelBottom = (frameHeight - EXPORT_MARGIN - attributionHeight - stackGap) / EXPORT_CARD_SCALE;
+  const maxPanelBottom = (frameHeight - EXPORT_MARGIN - footerHeight - stackGap) / EXPORT_CARD_SCALE;
 
-  // align both cards to the same bottom edge while keeping each above attribution
+  // align both cards to the same bottom edge while keeping each above attribution and the logos
   const statsX = cardFrameWidth - cardMargin - EXPORT_STATS_WIDTH;
   const statsY = Math.max(cardMargin, maxPanelBottom - statsLayout.height);
   const legendX = cardMargin;
@@ -1019,6 +1032,7 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   drawStatsOverlay(ctx, statsX, statsY, statsLayout, chartImage);
   ctx.restore();
   drawExportAttribution(ctx, frameWidth, frameHeight, basemap);
+  drawExportLogos(ctx, frameWidth, frameHeight, logos);
   ctx.restore();
   return canvas.toDataURL('image/png');
 }
@@ -1972,6 +1986,37 @@ function drawExportAttribution(ctx, width, height, basemap) {
   ctx.lineJoin = 'round';
   ctx.strokeText(attribution, EXPORT_MARGIN, height - EXPORT_MARGIN);
   ctx.fillText(attribution, EXPORT_MARGIN, height - EXPORT_MARGIN);
+}
+
+// placed from the right edge inward, each at a shared height with its own aspect ratio
+function drawExportLogos(ctx, width, height, logos) {
+  const y = height - EXPORT_MARGIN - EXPORT_LOGO_TEXT_OFFSET - EXPORT_LOGO_HEIGHT / 2;
+  let x = width - EXPORT_MARGIN;
+  if (!logos.length) return;
+
+  const groupWidth = logos.reduce((sum, logo) => sum + EXPORT_LOGO_HEIGHT * logo.width / logo.height, 0)
+    + EXPORT_LOGO_GAP * (logos.length - 1);
+  const pad = 16;
+
+  ctx.save();
+  // a faint white pad behind the logo group keeps dark marks legible over satellite imagery
+  ctx.save();
+  ctx.filter = 'blur(10px)';
+  fillRoundedRect(ctx, x - groupWidth - pad, y - pad / 2, groupWidth + pad * 2, EXPORT_LOGO_HEIGHT + pad,
+    (EXPORT_LOGO_HEIGHT + pad) / 2, 'rgba(255, 255, 255, 0.38)');
+  ctx.restore();
+
+  // large source files shrink with jagged edges at the default quality
+  ctx.imageSmoothingQuality = 'high';
+  // a light glow on each mark's edges separates it from busy terrain
+  ctx.filter = 'drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.45))';
+  for (const logo of [...logos].reverse()) {
+    const logoWidth = EXPORT_LOGO_HEIGHT * logo.width / logo.height;
+    x -= logoWidth;
+    ctx.drawImage(logo, x, y, logoWidth, EXPORT_LOGO_HEIGHT);
+    x -= EXPORT_LOGO_GAP;
+  }
+  ctx.restore();
 }
 
 function drawFloatingPanel(ctx, x, y, width, height, { fill, border, radius, shadow }) {
