@@ -453,6 +453,8 @@ const INTERACTIVE_LAYER_IDS = Object.freeze([...MARKER_LAYER_IDS, LAYER_IDS.tran
 // marker sizes use CSS pixels
 const CAMERA_MARKER_SIZE = 20;
 const PRESCRIBED_MARKER_SIZE = 18;
+const MARKER_FOG_PITCH = 65;
+const MARKER_DRAW_DISTANCE = 1;
 
 // each [minimum zoom, size] pair selects a prerendered official camera marker
 // steps sit on whole zooms because Mapbox lays out symbols at tile zoom
@@ -2002,6 +2004,7 @@ async function addCameraLayers(map) {
       id: cameraLayerId,
       type: 'symbol',
       source: cameraLayerId,
+      filter: nearMarkerFilter(),
       layout: {
         // zoomed out, cameras shrink so dense areas stay readable
         ...markerLayout(cameraZoomStep((size) =>
@@ -2063,7 +2066,7 @@ async function addDigitizedCameraLayers(map) {
       id: operator.layerId,
       type: 'symbol',
       source: LAYER_IDS.digitizedCamerasSource,
-      filter: ['==', ['get', 'operator'], operator.operator],
+      filter: nearMarkerFilter(['==', ['get', 'operator'], operator.operator]),
       layout: {
         ...markerLayout([
           'match',
@@ -2286,6 +2289,7 @@ async function addFireLayer(map) {
     id: LAYER_IDS.fires,
     type: 'symbol',
     source: LAYER_IDS.fires,
+    filter: nearMarkerFilter(),
     layout: markerLayout(fireIconExpression()),
   });
 
@@ -2529,6 +2533,7 @@ async function addPrescribedLayer(map) {
     id: LAYER_IDS.prescribed,
     type: 'symbol',
     source: LAYER_IDS.prescribedSource,
+    filter: nearMarkerFilter(),
     layout: markerLayout(PRESCRIBED_ICON_ID),
   });
 
@@ -2554,6 +2559,13 @@ function addLookoutLayer(map) {
   });
 
   bindLayerInteractions(map, LAYER_IDS.lookouts, featureInfo('lookout', LAYER_SYMBOLS.lookouts));
+}
+
+// markers skip collision placement, so fog never culls them; steep views drop the ones out in the fog
+// distance-from-center is in map heights, and gentler pitches keep every marker readable
+function nearMarkerFilter(filter) {
+  const near = ['any', ['<', ['pitch'], MARKER_FOG_PITCH], ['<', ['distance-from-center'], MARKER_DRAW_DISTANCE]];
+  return filter ? ['all', filter, near] : near;
 }
 
 function markerLayout(iconImage) {
