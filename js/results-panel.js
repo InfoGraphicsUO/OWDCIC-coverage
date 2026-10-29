@@ -928,6 +928,14 @@ const EXPORT_VIEWSHED_OUTLINES = Object.freeze({
   satellite: '#F4F1EA',
 });
 
+// black partner logos sit left to right in the bottom-right corner, under the results card
+const EXPORT_LOGOS = Object.freeze([
+  'img/logos/IGL_MIDDLE_BLACK_150.png',
+  'img/logos/ohaz-black.png',
+]);
+const EXPORT_LOGO_HEIGHT = 32;
+const EXPORT_LOGO_GAP = 16;
+
 // canvas text falls back silently if a web font has not finished loading, and the heading
 // font only loads on its own once something on the page uses it
 async function loadExportFonts() {
@@ -944,6 +952,7 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   }
 
   await loadExportFonts();
+  const logos = await Promise.all(EXPORT_LOGOS.map(loadImage));
   const mapImage = await loadImage(mapCanvas.toDataURL('image/png'));
   let chartImage = null;
   if (chart && typeof window.Plotly?.toImage === 'function') {
@@ -1005,10 +1014,11 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   const cardFrameWidth = frameWidth / EXPORT_CARD_SCALE;
   const cardMargin = EXPORT_MARGIN / EXPORT_CARD_SCALE;
   const maxPanelBottom = (frameHeight - EXPORT_MARGIN - attributionHeight - stackGap) / EXPORT_CARD_SCALE;
+  const maxStatsBottom = (frameHeight - EXPORT_MARGIN - EXPORT_LOGO_HEIGHT - stackGap) / EXPORT_CARD_SCALE;
 
-  // align both cards to the same bottom edge while keeping each above attribution
+  // the legend sits above attribution and the results card above the logos
   const statsX = cardFrameWidth - cardMargin - EXPORT_STATS_WIDTH;
-  const statsY = Math.max(cardMargin, maxPanelBottom - statsLayout.height);
+  const statsY = Math.max(cardMargin, maxStatsBottom - statsLayout.height);
   const legendX = cardMargin;
   const legendY = Math.max(cardMargin, maxPanelBottom - legendLayout.height);
 
@@ -1018,6 +1028,7 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   drawStatsOverlay(ctx, statsX, statsY, statsLayout, chartImage);
   ctx.restore();
   drawExportAttribution(ctx, frameWidth, frameHeight, basemap);
+  drawExportLogos(ctx, frameWidth, frameHeight, logos);
   ctx.restore();
   return canvas.toDataURL('image/png');
 }
@@ -1971,6 +1982,24 @@ function drawExportAttribution(ctx, width, height, basemap) {
   ctx.lineJoin = 'round';
   ctx.strokeText(attribution, EXPORT_MARGIN, height - EXPORT_MARGIN);
   ctx.fillText(attribution, EXPORT_MARGIN, height - EXPORT_MARGIN);
+}
+
+// placed from the right edge inward, each at a shared height with its own aspect ratio
+function drawExportLogos(ctx, width, height, logos) {
+  const y = height - EXPORT_MARGIN - EXPORT_LOGO_HEIGHT;
+  let x = width - EXPORT_MARGIN;
+
+  // a soft glow keeps black marks legible over dark satellite imagery
+  ctx.save();
+  ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+  ctx.shadowBlur = 4;
+  for (const logo of [...logos].reverse()) {
+    const logoWidth = EXPORT_LOGO_HEIGHT * logo.width / logo.height;
+    x -= logoWidth;
+    ctx.drawImage(logo, x, y, logoWidth, EXPORT_LOGO_HEIGHT);
+    x -= EXPORT_LOGO_GAP;
+  }
+  ctx.restore();
 }
 
 function drawFloatingPanel(ctx, x, y, width, height, { fill, border, radius, shadow }) {
