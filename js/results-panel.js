@@ -1993,8 +1993,7 @@ function drawExportLogos(ctx, width, height, logos) {
   ctx.save();
   // large source files shrink with jagged edges at the default quality
   ctx.imageSmoothingQuality = 'high';
-  ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-  ctx.shadowBlur = 4;
+  ctx.filter = 'drop-shadow(0px 0px 5px #ffffffaa)';
   for (const logo of [...logos].reverse()) {
     const logoWidth = EXPORT_LOGO_HEIGHT * logo.width / logo.height;
     x -= logoWidth;
