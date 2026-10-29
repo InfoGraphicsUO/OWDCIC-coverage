@@ -954,7 +954,8 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   }
 
   await loadExportFonts();
-  const logos = await Promise.all(EXPORT_LOGOS.map(loadImage));
+  // a logo that fails to load is left out rather than failing the whole export
+  const logos = (await Promise.all(EXPORT_LOGOS.map((src) => loadImage(src).catch(() => null)))).filter(Boolean);
   const mapImage = await loadImage(mapCanvas.toDataURL('image/png'));
   let chartImage = null;
   if (chart && typeof window.Plotly?.toImage === 'function') {
@@ -1990,6 +1991,7 @@ function drawExportAttribution(ctx, width, height, basemap) {
 function drawExportLogos(ctx, width, height, logos) {
   const y = height - EXPORT_MARGIN - EXPORT_LOGO_TEXT_OFFSET - EXPORT_LOGO_HEIGHT / 2;
   let x = width - EXPORT_MARGIN;
+  if (!logos.length) return;
 
   const groupWidth = logos.reduce((sum, logo) => sum + EXPORT_LOGO_HEIGHT * logo.width / logo.height, 0)
     + EXPORT_LOGO_GAP * (logos.length - 1);
