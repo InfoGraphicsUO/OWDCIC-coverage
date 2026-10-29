@@ -928,10 +928,10 @@ const EXPORT_VIEWSHED_OUTLINES = Object.freeze({
   satellite: '#F4F1EA',
 });
 
-// black partner logos sit left to right in the bottom-right corner, under the results card
+// partner logos sit left to right in the bottom-right corner, under the results card
 const EXPORT_LOGOS = Object.freeze([
   'img/logos/IGL_MIDDLE_BLACK_150.png',
-  'img/logos/ohaz-black.png',
+  'img/logos/ohaz-full-color.png',
 ]);
 const EXPORT_LOGO_HEIGHT = 32;
 const EXPORT_LOGO_GAP = 16;
