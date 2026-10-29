@@ -933,7 +933,7 @@ const EXPORT_LOGOS = Object.freeze([
   'img/logos/IGL_MIDDLE_BLACK_150.png',
   'img/logos/ohaz-full-color.png',
 ]);
-const EXPORT_LOGO_HEIGHT = 24;
+const EXPORT_LOGO_HEIGHT = 26;
 const EXPORT_LOGO_GAP = 10;
 
 // canvas text falls back silently if a web font has not finished loading, and the heading
@@ -1014,11 +1014,10 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   const cardFrameWidth = frameWidth / EXPORT_CARD_SCALE;
   const cardMargin = EXPORT_MARGIN / EXPORT_CARD_SCALE;
   const maxPanelBottom = (frameHeight - EXPORT_MARGIN - attributionHeight - stackGap) / EXPORT_CARD_SCALE;
-  const maxStatsBottom = (frameHeight - EXPORT_MARGIN - EXPORT_LOGO_HEIGHT - stackGap) / EXPORT_CARD_SCALE;
 
-  // the legend sits above attribution and the results card above the logos
+  // align both cards to the same bottom edge while keeping each above attribution and the logos
   const statsX = cardFrameWidth - cardMargin - EXPORT_STATS_WIDTH;
-  const statsY = Math.max(cardMargin, maxStatsBottom - statsLayout.height);
+  const statsY = Math.max(cardMargin, maxPanelBottom - statsLayout.height);
   const legendX = cardMargin;
   const legendY = Math.max(cardMargin, maxPanelBottom - legendLayout.height);
 
@@ -1986,7 +1985,8 @@ function drawExportAttribution(ctx, width, height, basemap) {
 
 // placed from the right edge inward, each at a shared height with its own aspect ratio
 function drawExportLogos(ctx, width, height, logos) {
-  const y = height - EXPORT_MARGIN - EXPORT_LOGO_HEIGHT;
+  // centered on the attribution text, whose middle sits about 4px above its baseline
+  const y = height - EXPORT_MARGIN - 4 - EXPORT_LOGO_HEIGHT / 2;
   let x = width - EXPORT_MARGIN;
 
   // a soft glow keeps black marks legible over dark satellite imagery
