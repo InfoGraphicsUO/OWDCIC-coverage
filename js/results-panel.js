@@ -1989,11 +1989,22 @@ function drawExportLogos(ctx, width, height, logos) {
   const y = height - EXPORT_MARGIN - 4 - EXPORT_LOGO_HEIGHT / 2;
   let x = width - EXPORT_MARGIN;
 
-  // a soft glow keeps black marks legible over dark satellite imagery
+  const groupWidth = logos.reduce((sum, logo) => sum + EXPORT_LOGO_HEIGHT * logo.width / logo.height, 0)
+    + EXPORT_LOGO_GAP * (logos.length - 1);
+  const pad = 16;
+
   ctx.save();
+  // a faint white pad behind the logo group keeps dark marks legible over satellite imagery
+  ctx.save();
+  ctx.filter = 'blur(10px)';
+  fillRoundedRect(ctx, x - groupWidth - pad, y - pad / 2, groupWidth + pad * 2, EXPORT_LOGO_HEIGHT + pad,
+    (EXPORT_LOGO_HEIGHT + pad) / 2, 'rgba(255, 255, 255, 0.38)');
+  ctx.restore();
+
   // large source files shrink with jagged edges at the default quality
   ctx.imageSmoothingQuality = 'high';
-  ctx.filter = 'drop-shadow(0px 0px 5px #ffffffaa)';
+  // a light glow on each mark's edges separates it from busy terrain
+  ctx.filter = 'drop-shadow(0px 0px 4px rgba(255, 255, 255, 0.45))';
   for (const logo of [...logos].reverse()) {
     const logoWidth = EXPORT_LOGO_HEIGHT * logo.width / logo.height;
     x -= logoWidth;
