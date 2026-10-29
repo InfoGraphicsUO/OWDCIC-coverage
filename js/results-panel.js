@@ -935,6 +935,8 @@ const EXPORT_LOGOS = Object.freeze([
 ]);
 const EXPORT_LOGO_HEIGHT = 26;
 const EXPORT_LOGO_GAP = 10;
+// logos center on the attribution text, whose middle sits about this far above its baseline
+const EXPORT_LOGO_TEXT_OFFSET = 4;
 
 // canvas text falls back silently if a web font has not finished loading, and the heading
 // font only loads on its own once something on the page uses it
@@ -1007,13 +1009,14 @@ async function composeExport({ mapCanvas, map, basemap, legendItems, title, curr
   });
 
   const legendLayout = layoutLegendPanel({ ctx, width: EXPORT_LEGEND_WIDTH, rows: legendRows });
-  const attributionHeight = 18;
+  // logos are centered on the attribution line, so they reach higher than its text
+  const footerHeight = Math.max(18, EXPORT_LOGO_TEXT_OFFSET + EXPORT_LOGO_HEIGHT / 2);
   const stackGap = 12;
 
   // the cards draw in their own smaller frame; margins and attribution keep the full scale
   const cardFrameWidth = frameWidth / EXPORT_CARD_SCALE;
   const cardMargin = EXPORT_MARGIN / EXPORT_CARD_SCALE;
-  const maxPanelBottom = (frameHeight - EXPORT_MARGIN - attributionHeight - stackGap) / EXPORT_CARD_SCALE;
+  const maxPanelBottom = (frameHeight - EXPORT_MARGIN - footerHeight - stackGap) / EXPORT_CARD_SCALE;
 
   // align both cards to the same bottom edge while keeping each above attribution and the logos
   const statsX = cardFrameWidth - cardMargin - EXPORT_STATS_WIDTH;
@@ -1985,8 +1988,7 @@ function drawExportAttribution(ctx, width, height, basemap) {
 
 // placed from the right edge inward, each at a shared height with its own aspect ratio
 function drawExportLogos(ctx, width, height, logos) {
-  // centered on the attribution text, whose middle sits about 4px above its baseline
-  const y = height - EXPORT_MARGIN - 4 - EXPORT_LOGO_HEIGHT / 2;
+  const y = height - EXPORT_MARGIN - EXPORT_LOGO_TEXT_OFFSET - EXPORT_LOGO_HEIGHT / 2;
   let x = width - EXPORT_MARGIN;
 
   const groupWidth = logos.reduce((sum, logo) => sum + EXPORT_LOGO_HEIGHT * logo.width / logo.height, 0)
