@@ -32,10 +32,10 @@ const BOUNDARY_QUALIFIERS = Object.freeze({
   'odf-protection-district': 'ODF protection district boundary',
 });
 
-const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | UO InfoGraphics Lab | OHAZ';
+const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors';
 
 // Mapbox satellite imagery carries its own provider credit
-const SATELLITE_MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | Maxar | UO InfoGraphics Lab | OHAZ';
+const SATELLITE_MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors | Maxar';
 
 // only these polygon selections include mapped land shares
 const POLYGON_DONUT_TYPES = new Set([
