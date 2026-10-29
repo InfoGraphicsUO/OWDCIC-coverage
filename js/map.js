@@ -219,8 +219,10 @@ async function initializeMap() {
         ]
     });
 
+    // tiles and labels past full fog are skipped, so a near fog cuts steep-pitch tile loads
     map.setFog({
-      range: [1, 5], // first value starts opacity, second reaches full opacity
+      range: [0, 1.5], // first value starts opacity, second reaches full opacity
+      'horizon-blend': 0.1,
     })
   });
 
