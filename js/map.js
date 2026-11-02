@@ -37,6 +37,15 @@ const HIGHWAY_SHIELD_TYPES = Object.freeze([
   'us-state-oregon',
   'us-state-washington',
 ]);
+// street names return with Standard's road labels turned off for the shields
+const STREET_LABEL_ID = 'street-labels';
+// zoom, then streets v8 road classes that start getting names there and stay named above it
+// paths and tracks keep path-track-labels
+const STREET_LABEL_CLASSES_BY_ZOOM = Object.freeze([
+  [12, ['motorway', 'trunk', 'primary', 'secondary']],
+  [13, ['tertiary']],
+  [14, ['street', 'street_limited']],
+]);
 const DEFAULT_BASEMAP = 'outdoors';
 const BASEMAP_IDS = Object.freeze(['outdoors', 'satellite', 'simple']);
 const BASEMAP_STYLE_IDS = Object.freeze({
@@ -651,18 +660,56 @@ function prepareBasemapStyle(style) {
   // the app keeps the same projection when the selected style changes
   style.projection = { name: 'mercator' };
   addSatelliteBasemap(style);
-  replaceHighwayShields(style);
+  replaceRoadLabels(style);
+  hide3dObjects(style);
   return style;
 }
 
-// styles with Standard road labels off, like the simple basemap, stay without shields
-function replaceHighwayShields(style) {
+// Standard's 3D buildings, trees, and landmarks cover houses from zoom 15
+function hide3dObjects(style) {
+  const basemap = style.imports?.find(({ id }) => id === 'basemap');
+  if (!basemap) return;
+  basemap.config = { ...basemap.config, show3dObjects: false };
+}
+
+// styles with Standard road labels off, like the simple basemap, stay without them
+function replaceRoadLabels(style) {
   const basemap = style.imports?.find(({ id }) => id === 'basemap');
   if (!basemap || basemap.config?.showRoadLabels === false) return;
   if (style.sources?.composite?.url !== 'mapbox://mapbox.mapbox-streets-v8') return;
 
-  // Standard ties shields to road labels, so street names hide with them
+  // Standard ties shields to street names, so both are redrawn here
   basemap.config = { ...basemap.config, showRoadLabels: false };
+
+  // each zoom step names its own classes plus every class from the steps below
+  const streetClasses = ['step', ['zoom'], false];
+  let namedClasses = [];
+  for (const [zoom, classes] of STREET_LABEL_CLASSES_BY_ZOOM) {
+    namedClasses = [...namedClasses, ...classes];
+    streetClasses.push(zoom, ['match', ['get', 'class'], namedClasses, true, false]);
+  }
+
+  style.layers.push({
+    id: STREET_LABEL_ID,
+    type: 'symbol',
+    source: 'composite',
+    'source-layer': 'road',
+    slot: 'top',
+    minzoom: STREET_LABEL_CLASSES_BY_ZOOM[0][0],
+    filter: ['all', ['has', 'name'], streetClasses],
+    layout: {
+      'symbol-placement': 'line',
+      'text-field': ['coalesce', ['get', 'name_en'], ['get', 'name']],
+      'text-font': ['Roboto Medium', 'Arial Unicode MS Regular'],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 18, 14],
+      'text-max-angle': 30,
+    },
+    paint: {
+      'text-color': 'hsl(0, 0%, 25%)',
+      'text-halo-color': 'hsl(0, 0%, 100%)',
+      'text-halo-width': 1,
+    },
+  });
 
   const reflen = ['to-string', ['get', 'reflen']];
   style.layers.push({
