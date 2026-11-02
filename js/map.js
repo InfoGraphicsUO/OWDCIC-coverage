@@ -18,6 +18,25 @@ const DEFAULT_VIEW = Object.freeze({
 });
 
 const SATELLITE_ID = 'mapbox-satellite-basemap';
+
+// highway shields replace Mapbox Standard's, which cannot be thinned
+const HIGHWAY_SHIELD_ID = 'highway-shields';
+const HIGHWAY_SHIELD_MIN_ZOOM = 8;
+// below this zoom streets v8 puts route numbers on shield points instead of road lines
+const HIGHWAY_SHIELD_LINE_ZOOM = 11;
+// zoom, then pixels between repeated shields along one road, from the line zoom up
+const HIGHWAY_SHIELD_SPACING = Object.freeze([11, 700, 15, 1200]);
+// extra pixels around each shield that nearby shields cannot overlap
+const HIGHWAY_SHIELD_PADDING = 8;
+// streets v8 shield types to draw, listed in collision priority order
+const HIGHWAY_SHIELD_TYPES = Object.freeze([
+  'us-interstate',
+  'us-interstate-duplex',
+  'us-highway',
+  'us-highway-duplex',
+  'us-state-oregon',
+  'us-state-washington',
+]);
 const DEFAULT_BASEMAP = 'outdoors';
 const BASEMAP_IDS = Object.freeze(['outdoors', 'satellite', 'simple']);
 const BASEMAP_STYLE_IDS = Object.freeze({
@@ -632,7 +651,55 @@ function prepareBasemapStyle(style) {
   // the app keeps the same projection when the selected style changes
   style.projection = { name: 'mercator' };
   addSatelliteBasemap(style);
+  replaceHighwayShields(style);
   return style;
+}
+
+// styles with Standard road labels off, like the simple basemap, stay without shields
+function replaceHighwayShields(style) {
+  const basemap = style.imports?.find(({ id }) => id === 'basemap');
+  if (!basemap || basemap.config?.showRoadLabels === false) return;
+  if (style.sources?.composite?.url !== 'mapbox://mapbox.mapbox-streets-v8') return;
+
+  // Standard ties shields to road labels, so street names hide with them
+  basemap.config = { ...basemap.config, showRoadLabels: false };
+
+  const reflen = ['to-string', ['get', 'reflen']];
+  style.layers.push({
+    id: HIGHWAY_SHIELD_ID,
+    type: 'symbol',
+    source: 'composite',
+    'source-layer': 'road',
+    slot: 'top',
+    minzoom: HIGHWAY_SHIELD_MIN_ZOOM,
+    filter: [
+      'all',
+      ['has', 'ref'],
+      ['<=', ['get', 'reflen'], 6],
+      ['match', ['get', 'shield'], HIGHWAY_SHIELD_TYPES, true, false],
+      ['step', ['zoom'], ['==', ['geometry-type'], 'Point'], HIGHWAY_SHIELD_LINE_ZOOM, true],
+    ],
+    layout: {
+      'symbol-placement': ['step', ['zoom'], 'point', HIGHWAY_SHIELD_LINE_ZOOM, 'line'],
+      'symbol-spacing': ['interpolate', ['linear'], ['zoom'], ...HIGHWAY_SHIELD_SPACING],
+      'symbol-sort-key': ['index-of', ['get', 'shield'], ['literal', HIGHWAY_SHIELD_TYPES]],
+      // the style sprite names shields by type and ref length, e.g. us-interstate-2
+      'icon-image': [
+        'coalesce',
+        ['image', ['concat', ['get', 'shield'], '-', reflen]],
+        ['image', ['concat', 'default-', reflen]],
+      ],
+      'icon-rotation-alignment': 'viewport',
+      'icon-padding': HIGHWAY_SHIELD_PADDING,
+      'text-field': ['get', 'ref'],
+      'text-font': ['Roboto Bold', 'Arial Unicode MS Regular'],
+      'text-size': 9,
+      'text-rotation-alignment': 'viewport',
+    },
+    paint: {
+      'text-color': ['match', ['get', 'shield_text_color'], 'white', '#ffffff', '#000000'],
+    },
+  });
 }
 
 function recordBaseStyle(style) {
