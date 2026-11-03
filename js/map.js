@@ -29,18 +29,18 @@ const HIGHWAY_SHIELD_SPACING = Object.freeze([11, 700, 15, 1200]);
 const HIGHWAY_SHIELD_PADDING = 20;
 // streets v8 shield types to draw, listed in collision priority order
 const HIGHWAY_SHIELD_TYPES = Object.freeze([
-  'us-state-oregon',
-  'us-state-washington',
+  'us-interstate',
+  'us-interstate-duplex',
+  'us-interstate-business',
+  'us-interstate-truck',
   'us-highway',
   'us-highway-duplex',
   'us-highway-alternate',
   'us-highway-business',
   'us-highway-bypass',
   'us-highway-truck',
-  'us-interstate',
-  'us-interstate-duplex',
-  'us-interstate-business',
-  'us-interstate-truck',
+  'us-state-oregon',
+  'us-state-washington',
   // generic shields for forest, county, and other numbered service roads
   'default',
   'rectangle-white',
@@ -791,7 +791,14 @@ function replaceRoadLabels(style) {
       'text-rotation-alignment': 'viewport',
     },
     paint: {
-      'text-color': ['match', ['get', 'shield_text_color'], 'white', '#ffffff', '#000000'],
+      // shield_beta designs carry their own text color
+      'text-color': [
+        'match',
+        ['coalesce', ['get', 'shield_text_color_beta'], ['get', 'shield_text_color']],
+        'white',
+        '#ffffff',
+        '#000000',
+      ],
     },
   });
 }
