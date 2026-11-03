@@ -27,15 +27,15 @@ const HIGHWAY_SHIELD_LINE_ZOOM = 11;
 // zoom, then pixels between repeated shields along one road, from the line zoom up
 const HIGHWAY_SHIELD_SPACING = Object.freeze([11, 700, 15, 1200]);
 // extra pixels around each shield that nearby shields cannot overlap
-const HIGHWAY_SHIELD_PADDING = 8;
+const HIGHWAY_SHIELD_PADDING = 20;
 // streets v8 shield types to draw, listed in collision priority order
 const HIGHWAY_SHIELD_TYPES = Object.freeze([
-  'us-interstate',
-  'us-interstate-duplex',
-  'us-highway',
-  'us-highway-duplex',
   'us-state-oregon',
   'us-state-washington',
+  'us-highway',
+  'us-highway-duplex',
+  'us-interstate',
+  'us-interstate-duplex',
 ]);
 // street names return with Standard's road labels turned off for the shields
 const STREET_LABEL_ID = 'street-labels';
