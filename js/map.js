@@ -10,6 +10,7 @@ mapboxgl.accessToken =
 // style id stays separate from the tokenized request URL
 const MAPBOX_STYLE = 'infographics/cmspb7yx9000s01px89hr8i1a';
 const SIMPLE_MAPBOX_STYLE = 'infographics/cmud7fy6n000a01rghxd37aiz';
+const SATELLITE_ID = 'mapbox-satellite-basemap';
 
 // center arrays use longitude first, then latitude
 const DEFAULT_VIEW = Object.freeze({
@@ -17,7 +18,48 @@ const DEFAULT_VIEW = Object.freeze({
   zoom: 5.4,
 });
 
-const SATELLITE_ID = 'mapbox-satellite-basemap';
+// highway shields replace Mapbox Standard's, which cannot be thinned
+const HIGHWAY_SHIELD_ID = 'highway-shields';
+const HIGHWAY_SHIELD_MIN_ZOOM = 7;
+// below this zoom streets v8 puts route numbers on shield points instead of road lines
+const HIGHWAY_SHIELD_LINE_ZOOM = 11;
+// zoom, then pixels between repeated shields along one road, from the line zoom up
+const HIGHWAY_SHIELD_SPACING = Object.freeze([11, 700, 15, 1200]);
+// extra pixels around each shield that nearby shields cannot overlap
+const HIGHWAY_SHIELD_PADDING = 20;
+// streets v8 shield types to draw, listed in collision priority order
+const HIGHWAY_SHIELD_TYPES = Object.freeze([
+  'us-interstate',
+  'us-interstate-duplex',
+  'us-interstate-business',
+  'us-interstate-truck',
+  'us-highway',
+  'us-highway-duplex',
+  'us-highway-alternate',
+  'us-highway-business',
+  'us-highway-bypass',
+  'us-highway-truck',
+  'us-state-oregon',
+  'us-state-washington',
+  // generic shields for forest, county, and other numbered service roads
+  'default',
+  'rectangle-white',
+  'rectangle-yellow',
+  'rectangle-green',
+  'rectangle-blue',
+  'rectangle-red',
+  'circle-white',
+  'us-bia',
+]);
+// street names return with Standard's road labels turned off for the shields
+const STREET_LABEL_ID = 'street-labels';
+// zoom, then streets v8 road classes that start getting names there and stay named above it
+// paths and tracks keep path-track-labels
+const STREET_LABEL_CLASSES_BY_ZOOM = Object.freeze([
+  [12, ['motorway', 'trunk', 'primary', 'secondary']],
+  [13, ['tertiary']],
+  [14, ['street', 'street_limited']],
+]);
 const DEFAULT_BASEMAP = 'outdoors';
 const BASEMAP_IDS = Object.freeze(['outdoors', 'satellite', 'simple']);
 const BASEMAP_STYLE_IDS = Object.freeze({
@@ -632,7 +674,108 @@ function prepareBasemapStyle(style) {
   // the app keeps the same projection when the selected style changes
   style.projection = { name: 'mercator' };
   addSatelliteBasemap(style);
+  replaceRoadLabels(style);
+  hide3dObjects(style);
   return style;
+}
+
+// the imported Mapbox Standard style whose config toggles its built-in layers
+function basemapImport(style) {
+  return style.imports?.find(({ id }) => id === 'basemap');
+}
+
+// Standard's 3D buildings, trees, and landmarks cover houses from zoom 15
+function hide3dObjects(style) {
+  const basemap = basemapImport(style);
+  if (!basemap) return;
+  basemap.config = { ...basemap.config, show3dObjects: false };
+}
+
+// styles with Standard road labels off, like the simple basemap, stay without them
+function replaceRoadLabels(style) {
+  const basemap = basemapImport(style);
+  if (!basemap || basemap.config?.showRoadLabels === false) return;
+  if (style.sources?.composite?.url !== 'mapbox://mapbox.mapbox-streets-v8') return;
+
+  // Standard ties shields to street names, so both are redrawn here
+  basemap.config = { ...basemap.config, showRoadLabels: false };
+
+  // each zoom step names its own classes plus every class from the steps below
+  const streetClasses = ['step', ['zoom'], false];
+  let namedClasses = [];
+  for (const [zoom, classes] of STREET_LABEL_CLASSES_BY_ZOOM) {
+    namedClasses = [...namedClasses, ...classes];
+    streetClasses.push(zoom, ['match', ['get', 'class'], namedClasses, true, false]);
+  }
+
+  style.layers.push({
+    id: STREET_LABEL_ID,
+    type: 'symbol',
+    source: 'composite',
+    'source-layer': 'road',
+    slot: 'top',
+    minzoom: STREET_LABEL_CLASSES_BY_ZOOM[0][0],
+    filter: ['all', ['has', 'name'], streetClasses],
+    layout: {
+      'symbol-placement': 'line',
+      'text-field': ['coalesce', ['get', 'name_en'], ['get', 'name']],
+      'text-font': ['Roboto Medium', 'Arial Unicode MS Regular'],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 12, 10, 18, 14],
+      'text-max-angle': 30,
+    },
+    paint: {
+      'text-color': 'hsl(0, 0%, 25%)',
+      'text-halo-color': 'hsl(0, 0%, 100%)',
+      'text-halo-width': 1,
+    },
+  });
+
+  const reflen = ['to-string', ['get', 'reflen']];
+  // like Standard, prefer the detailed shield_beta design over the generic shield
+  const shield = ['coalesce', ['get', 'shield_beta'], ['get', 'shield']];
+  style.layers.push({
+    id: HIGHWAY_SHIELD_ID,
+    type: 'symbol',
+    source: 'composite',
+    'source-layer': 'road',
+    slot: 'top',
+    minzoom: HIGHWAY_SHIELD_MIN_ZOOM,
+    filter: [
+      'all',
+      ['has', 'ref'],
+      ['<=', ['get', 'reflen'], 6],
+      ['match', shield, HIGHWAY_SHIELD_TYPES, true, false],
+      ['step', ['zoom'], ['==', ['geometry-type'], 'Point'], HIGHWAY_SHIELD_LINE_ZOOM, true],
+    ],
+    layout: {
+      'symbol-placement': ['step', ['zoom'], 'point', HIGHWAY_SHIELD_LINE_ZOOM, 'line'],
+      'symbol-spacing': ['interpolate', ['linear'], ['zoom'], ...HIGHWAY_SHIELD_SPACING],
+      'symbol-sort-key': ['index-of', shield, ['literal', HIGHWAY_SHIELD_TYPES]],
+      // the style sprite names shields by type and ref length, e.g. us-interstate-2
+      'icon-image': [
+        'coalesce',
+        ['image', ['concat', shield, '-', reflen]],
+        ['image', ['concat', ['get', 'shield'], '-', reflen]],
+        ['image', ['concat', 'default-', reflen]],
+      ],
+      'icon-rotation-alignment': 'viewport',
+      'icon-padding': HIGHWAY_SHIELD_PADDING,
+      'text-field': ['get', 'ref'],
+      'text-font': ['Roboto Bold', 'Arial Unicode MS Regular'],
+      'text-size': 9,
+      'text-rotation-alignment': 'viewport',
+    },
+    paint: {
+      // shield_beta designs carry their own text color
+      'text-color': [
+        'match',
+        ['coalesce', ['get', 'shield_text_color_beta'], ['get', 'shield_text_color']],
+        'white',
+        '#ffffff',
+        '#000000',
+      ],
+    },
+  });
 }
 
 function recordBaseStyle(style) {
