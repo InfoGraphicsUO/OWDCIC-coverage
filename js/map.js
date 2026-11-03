@@ -10,14 +10,13 @@ mapboxgl.accessToken =
 // style id stays separate from the tokenized request URL
 const MAPBOX_STYLE = 'infographics/cmspb7yx9000s01px89hr8i1a';
 const SIMPLE_MAPBOX_STYLE = 'infographics/cmud7fy6n000a01rghxd37aiz';
+const SATELLITE_ID = 'mapbox-satellite-basemap';
 
 // center arrays use longitude first, then latitude
 const DEFAULT_VIEW = Object.freeze({
   center: Object.freeze([-120.55, 45.5]),
   zoom: 5.4,
 });
-
-const SATELLITE_ID = 'mapbox-satellite-basemap';
 
 // highway shields replace Mapbox Standard's, which cannot be thinned
 const HIGHWAY_SHIELD_ID = 'highway-shields';
@@ -686,6 +685,36 @@ function replaceRoadLabels(style) {
   const basemap = style.imports?.find(({ id }) => id === 'basemap');
   if (!basemap || basemap.config?.showRoadLabels === false) return;
   if (style.sources?.composite?.url !== 'mapbox://mapbox.mapbox-streets-v8') return;
+
+
+//   const shieldLayer = style.layers.find(l => 
+//   l.source === 'composite' && 
+//   l.type === 'symbol' &&
+//   l.id.includes('shield')  // or 'road' — inspect the log to find the right ID
+// );
+// console.log(shieldLayer?.id, shieldLayer?.layout);
+
+  // ATTEMPT not finging highway layers
+
+  // // Find the index of the layer you want to modify
+  // const layerIndex = style.layers.findIndex(l => l.id === 'path-track-labels');
+
+  // if (layerIndex !== -1) {
+  //   const existingLayer = style.layers[layerIndex];
+
+  //   // Replace the layer in-place with the updated layout properties
+  //   style.layers[layerIndex] = {
+  //     ...existingLayer,
+  //     layout: {
+  //       ...existingLayer.layout,
+  //       'symbol-placement': ['step', ['zoom'], 'point', HIGHWAY_SHIELD_LINE_ZOOM, 'line'],
+  //       'symbol-spacing': ['interpolate', ['linear'], ['zoom'], ...HIGHWAY_SHIELD_SPACING],
+  //       'symbol-sort-key': ['index-of', shield, ['literal', HIGHWAY_SHIELD_TYPES]],
+  //     },
+  //   };
+  // }
+
+// BELOW WORKS
 
   // Standard ties shields to street names, so both are redrawn here
   basemap.config = { ...basemap.config, showRoadLabels: false };
