@@ -36,6 +36,15 @@ const HIGHWAY_SHIELD_TYPES = Object.freeze([
   'us-highway-duplex',
   'us-interstate',
   'us-interstate-duplex',
+  // generic shields for forest, county, and other numbered service roads
+  'default',
+  'rectangle-white',
+  'rectangle-yellow',
+  'rectangle-green',
+  'rectangle-blue',
+  'rectangle-red',
+  'circle-white',
+  'us-bia',
 ]);
 // street names return with Standard's road labels turned off for the shields
 const STREET_LABEL_ID = 'street-labels';
@@ -712,6 +721,8 @@ function replaceRoadLabels(style) {
   });
 
   const reflen = ['to-string', ['get', 'reflen']];
+  // like Standard, prefer the detailed shield_beta design over the generic shield
+  const shield = ['coalesce', ['get', 'shield_beta'], ['get', 'shield']];
   style.layers.push({
     id: HIGHWAY_SHIELD_ID,
     type: 'symbol',
@@ -723,16 +734,17 @@ function replaceRoadLabels(style) {
       'all',
       ['has', 'ref'],
       ['<=', ['get', 'reflen'], 6],
-      ['match', ['get', 'shield'], HIGHWAY_SHIELD_TYPES, true, false],
+      ['match', shield, HIGHWAY_SHIELD_TYPES, true, false],
       ['step', ['zoom'], ['==', ['geometry-type'], 'Point'], HIGHWAY_SHIELD_LINE_ZOOM, true],
     ],
     layout: {
       'symbol-placement': ['step', ['zoom'], 'point', HIGHWAY_SHIELD_LINE_ZOOM, 'line'],
       'symbol-spacing': ['interpolate', ['linear'], ['zoom'], ...HIGHWAY_SHIELD_SPACING],
-      'symbol-sort-key': ['index-of', ['get', 'shield'], ['literal', HIGHWAY_SHIELD_TYPES]],
+      'symbol-sort-key': ['index-of', shield, ['literal', HIGHWAY_SHIELD_TYPES]],
       // the style sprite names shields by type and ref length, e.g. us-interstate-2
       'icon-image': [
         'coalesce',
+        ['image', ['concat', shield, '-', reflen]],
         ['image', ['concat', ['get', 'shield'], '-', reflen]],
         ['image', ['concat', 'default-', reflen]],
       ],
