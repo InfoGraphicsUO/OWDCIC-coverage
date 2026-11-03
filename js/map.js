@@ -20,7 +20,7 @@ const DEFAULT_VIEW = Object.freeze({
 
 // highway shields replace Mapbox Standard's, which cannot be thinned
 const HIGHWAY_SHIELD_ID = 'highway-shields';
-const HIGHWAY_SHIELD_MIN_ZOOM = 8;
+const HIGHWAY_SHIELD_MIN_ZOOM = 7;
 // below this zoom streets v8 puts route numbers on shield points instead of road lines
 const HIGHWAY_SHIELD_LINE_ZOOM = 11;
 // zoom, then pixels between repeated shields along one road, from the line zoom up
