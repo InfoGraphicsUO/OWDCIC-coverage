@@ -679,48 +679,23 @@ function prepareBasemapStyle(style) {
   return style;
 }
 
+// the imported Mapbox Standard style whose config toggles its built-in layers
+function basemapImport(style) {
+  return style.imports?.find(({ id }) => id === 'basemap');
+}
+
 // Standard's 3D buildings, trees, and landmarks cover houses from zoom 15
 function hide3dObjects(style) {
-  const basemap = style.imports?.find(({ id }) => id === 'basemap');
+  const basemap = basemapImport(style);
   if (!basemap) return;
   basemap.config = { ...basemap.config, show3dObjects: false };
 }
 
 // styles with Standard road labels off, like the simple basemap, stay without them
 function replaceRoadLabels(style) {
-  const basemap = style.imports?.find(({ id }) => id === 'basemap');
+  const basemap = basemapImport(style);
   if (!basemap || basemap.config?.showRoadLabels === false) return;
   if (style.sources?.composite?.url !== 'mapbox://mapbox.mapbox-streets-v8') return;
-
-
-//   const shieldLayer = style.layers.find(l => 
-//   l.source === 'composite' && 
-//   l.type === 'symbol' &&
-//   l.id.includes('shield')  // or 'road' — inspect the log to find the right ID
-// );
-// console.log(shieldLayer?.id, shieldLayer?.layout);
-
-  // ATTEMPT not finging highway layers
-
-  // // Find the index of the layer you want to modify
-  // const layerIndex = style.layers.findIndex(l => l.id === 'path-track-labels');
-
-  // if (layerIndex !== -1) {
-  //   const existingLayer = style.layers[layerIndex];
-
-  //   // Replace the layer in-place with the updated layout properties
-  //   style.layers[layerIndex] = {
-  //     ...existingLayer,
-  //     layout: {
-  //       ...existingLayer.layout,
-  //       'symbol-placement': ['step', ['zoom'], 'point', HIGHWAY_SHIELD_LINE_ZOOM, 'line'],
-  //       'symbol-spacing': ['interpolate', ['linear'], ['zoom'], ...HIGHWAY_SHIELD_SPACING],
-  //       'symbol-sort-key': ['index-of', shield, ['literal', HIGHWAY_SHIELD_TYPES]],
-  //     },
-  //   };
-  // }
-
-// BELOW WORKS
 
   // Standard ties shields to street names, so both are redrawn here
   basemap.config = { ...basemap.config, showRoadLabels: false };
