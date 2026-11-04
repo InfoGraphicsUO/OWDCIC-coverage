@@ -666,8 +666,8 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
 }
 
 /* the see-through toggle no longer covers the clear button while collapsed */
-.location-search:not(.is-expanded) [class*="--ClearBtn"] {
-    visibility: hidden;
+.location-search [class*="--ClearBtn"] {
+    display: none !important;
 }
 
 .mapboxgl-ctrl-bottom-left {
