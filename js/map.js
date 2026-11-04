@@ -25,8 +25,8 @@ const HIGHWAY_SHIELD_MIN_ZOOM = 7;
 const HIGHWAY_SHIELD_LINE_ZOOM = 11;
 // zoom, then pixels between repeated shields along one road, from the line zoom up
 const HIGHWAY_SHIELD_SPACING = Object.freeze([11, 700, 15, 1200]);
-// extra pixels around each shield that nearby shields cannot overlap
-const HIGHWAY_SHIELD_PADDING = 20;
+// zoom, then extra pixels around each shield that nearby shields cannot overlap
+const HIGHWAY_SHIELD_PADDING = Object.freeze([7, 10, 9, 45, 12, 60]);
 // streets v8 shield types to draw, listed in collision priority order
 const HIGHWAY_SHIELD_TYPES = Object.freeze([
   'us-interstate',
@@ -738,6 +738,7 @@ function replaceRoadLabels(style) {
     type: 'symbol',
     source: 'composite',
     'source-layer': 'road',
+    // the top slot keeps Standard's city names above shields, so names win where they collide
     slot: 'top',
     minzoom: HIGHWAY_SHIELD_MIN_ZOOM,
     filter: [
@@ -759,7 +760,7 @@ function replaceRoadLabels(style) {
         ['image', ['concat', 'default-', reflen]],
       ],
       'icon-rotation-alignment': 'viewport',
-      'icon-padding': HIGHWAY_SHIELD_PADDING,
+      'icon-padding': ['interpolate', ['linear'], ['zoom'], ...HIGHWAY_SHIELD_PADDING],
       'text-field': ['get', 'ref'],
       'text-font': ['Roboto Bold', 'Arial Unicode MS Regular'],
       'text-size': 9,
