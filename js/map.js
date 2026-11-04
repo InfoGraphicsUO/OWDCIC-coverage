@@ -24,9 +24,17 @@ const HIGHWAY_SHIELD_MIN_ZOOM = 7;
 // below this zoom streets v8 puts route numbers on shield points instead of road lines
 const HIGHWAY_SHIELD_LINE_ZOOM = 11;
 // zoom, then pixels between repeated shields along one road, from the line zoom up
-const HIGHWAY_SHIELD_SPACING = Object.freeze([11, 700, 15, 1200]);
+const HIGHWAY_SHIELD_SPACING = Object.freeze([11, 1000, 15, 1800]);
 // zoom, then extra pixels around each shield that nearby shields cannot overlap
-const HIGHWAY_SHIELD_PADDING = Object.freeze([7, 10, 9, 45, 12, 60]);
+const HIGHWAY_SHIELD_PADDING = Object.freeze([
+  7, 10,
+  8, 25,
+  9, 40,
+  10, 55,
+  11, 75,
+  12, 100,
+  15, 125,
+]);
 // streets v8 shield types to draw, listed in collision priority order
 const HIGHWAY_SHIELD_TYPES = Object.freeze([
   'us-interstate',
