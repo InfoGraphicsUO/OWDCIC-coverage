@@ -2683,7 +2683,7 @@ function legendItems() {
       // the group row shows only its checkbox and label; the export still reads this swatch
       swatchClass: 'legend-swatch--hidden',
       switch: {
-        label: 'Symbology',
+        label: 'Color-code',
         description: 'Color viewsheds by camera provider',
         checked: Boolean(getSetting(SEPARATE_VIEWSHED_COLORS_SETTING)),
         onChange: (checked) => setSetting(SEPARATE_VIEWSHED_COLORS_SETTING, checked),
