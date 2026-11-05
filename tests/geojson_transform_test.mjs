@@ -1,7 +1,7 @@
 // camera to viewshed join must key on id or location, not only display names
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
-import { attachViewshedIds, countPointsInGeometry, outsideApiSitesToCameras, providerSitesToCameras } from '../js/geojson-transform.js';
+import { attachViewshedIds, camerasToGeoJSON, countPointsInGeometry, outsideApiSitesToCameras, providerSitesToCameras } from '../js/geojson-transform.js';
 
 const manifest = JSON.parse(readFileSync(new URL('../data/live/alertwest-viewshed-manifest.json', import.meta.url), 'utf8'));
 const entry = (id) => manifest.viewsheds.find((item) => item.viewshed_id === id);
@@ -122,3 +122,15 @@ assert.deepEqual(outsideApi.map(f => [f.properties.county, f.properties.state]),
   assert.deepEqual(countPointsInGeometry(cameras, geometry, (f) => f.properties.operator), [['B', 2], ['A', 1]]);
   assert.deepEqual(countPointsInGeometry(cameras, null, (f) => f.properties.operator), []);
 }
+
+// live camera names come from the API's source field, with underscores as spaces and no brand prefix
+const apiCamera = (name, source) => ({ name, source, site: { id: '1', state: 'or', latitude: '44', longitude: '-122' } });
+assert.deepEqual(
+  camerasToGeoJSON([
+    apiCamera('Axis-PortlandWestHills1', 'Portland_West_Hills_1'),
+    apiCamera('Axis-Wagontire', 'Wagontire'),
+    apiCamera('Axis-NatapocRidge', null),
+    apiCamera(null, null),
+  ]).features.map((f) => f.properties.name),
+  ['Portland West Hills 1', 'Wagontire', 'NatapocRidge', 'Camera'],
+);

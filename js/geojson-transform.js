@@ -30,7 +30,7 @@ export function camerasToGeoJSON(cameras) {
       },
       properties: {
         id: camera.site?.id ?? null,
-        name: camera.name || camera.source || 'Camera',
+        name: cameraName(camera),
         pan: camera.position?.pan ?? null,
         image: camera.image?.url ?? null,
         state: camera.site?.state ?? null,
@@ -40,6 +40,12 @@ export function camerasToGeoJSON(cameras) {
   }
 
   return { type: 'FeatureCollection', features };
+}
+
+// source carries the plain site name ("Natapoc_Ridge"); name prefixes the camera brand ("Axis-NatapocRidge")
+function cameraName(camera) {
+  const source = stringValue(camera.source).replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+  return source || stringValue(camera.name).replace(/^axis[-_\s]*/i, '') || 'Camera';
 }
 
 // converts a provider sites file into camera points already linked to their viewsheds
