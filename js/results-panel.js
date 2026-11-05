@@ -1,6 +1,7 @@
 import { openModal } from './modal.js';
 import { CAMERA_PROVIDER_COLORS, LEGEND_LAYERS, MARKER_ICON_URLS, PANO_DEFAULT_VIEWER } from './config.js';
 import { attachInfoTooltip } from './info-tooltip.js';
+import { shareUrl } from './anchor-links.js';
 import { getSetting } from './settings.js';
 
 // only the land status donut uses Plotly, so it loads the first time a donut shows
@@ -366,7 +367,8 @@ export function initResultsPanel({
     const selection = current;
 
     // the map keeps the URL query string on the current selection, so the address is the link
-    const url = window.location.href;
+    // inside an embedding page the link points at that page instead
+    const url = shareUrl();
     if (useShareSheet) {
       try {
         await navigator.share({ title: title.textContent, url });

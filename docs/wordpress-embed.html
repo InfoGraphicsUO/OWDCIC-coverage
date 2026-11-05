@@ -1,0 +1,33 @@
+<!--
+  Custom HTML block for https://infographics.uoregon.edu/fire-camera-coverage-orwa/
+  - passes the page's ?coverage=…&selection=… down to the map, so shared links open the same view
+  - keeps the page's address in step with the filter picked in the map
+  - allow="clipboard-write" lets the map's Share link button copy inside the iframe
+  The page URL must also be listed in EMBED_PAGES in js/config.js.
+-->
+<iframe id="coverage-map" src="https://infographicsuo.github.io/OWDCIC-coverage/" allow="clipboard-write; web-share" style="width:100%; height:100vh; border:none; margin:0; padding:0; overflow:hidden;"></iframe>
+<script>
+(function () {
+  var MAP_ORIGIN = 'https://infographicsuo.github.io';
+  var LINK_PARAMS = ['coverage', 'selection', 'filter'];
+  var frame = document.getElementById('coverage-map');
+
+  // only the link parameters go to the map
+  var incoming = new URLSearchParams(location.search);
+  var forMap = new URLSearchParams();
+  LINK_PARAMS.forEach(function (name) {
+    if (incoming.has(name)) forMap.set(name, incoming.get(name));
+  });
+  if (forMap.toString()) frame.src = frame.src.split('?')[0] + '?' + forMap.toString();
+
+  // the map posts its filter link whenever it changes; other page parameters are kept
+  window.addEventListener('message', function (event) {
+    if (event.origin !== MAP_ORIGIN || !event.data || event.data.type !== 'coverage-anchor') return;
+    var params = new URLSearchParams(location.search);
+    LINK_PARAMS.forEach(function (name) { params.delete(name); });
+    new URLSearchParams(event.data.search).forEach(function (value, name) { params.set(name, value); });
+    var query = params.toString();
+    history.replaceState(history.state, '', location.pathname + (query ? '?' + query : '') + location.hash);
+  });
+})();
+</script>

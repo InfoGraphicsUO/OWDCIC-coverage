@@ -4,6 +4,8 @@
 // both values are slugs of the labels shown in the filter panel, so new filters need no setup here
 // option slugs are shortened where the label allows, e.g. deschutes for Deschutes National Forest
 
+import { EMBED_PAGES } from './config.js';
+
 const TYPE_PARAM = 'coverage';
 // links shared before the rename used ?filter= and still open the same view
 const LEGACY_TYPE_PARAM = 'filter';
@@ -42,6 +44,39 @@ export function parseAnchor(search) {
   const type = anchorSlug(params.get(TYPE_PARAM) ?? params.get(LEGACY_TYPE_PARAM));
   if (!type) return null;
   return { type, option: anchorSlug(params.get(OPTION_PARAM)) || null };
+}
+
+// origin of the page this map is framed in, or null when it is not framed
+function parentOrigin() {
+  if (window.self === window.top) return null;
+  // ancestorOrigins is missing in Firefox, where the referrer still names the framing page
+  const origin = window.location.ancestorOrigins?.[0];
+  if (origin) return origin;
+  try {
+    return new URL(document.referrer).origin;
+  } catch {
+    return null;
+  }
+}
+
+// the page this map is embedded in, when it is one listed in EMBED_PAGES
+export function embedPage() {
+  const origin = parentOrigin();
+  return EMBED_PAGES.find((page) => new URL(page).origin === origin) ?? null;
+}
+
+// the link to share for the current view: the embedding page when framed, otherwise this page
+export function shareUrl() {
+  const page = embedPage();
+  if (!page) return window.location.href;
+  const anchor = parseAnchor(window.location.search);
+  return `${page}${formatAnchor(anchor?.type, anchor?.option)}`;
+}
+
+// tell the embedding page the filter changed, so its own address can follow along
+export function announceAnchor(search) {
+  const page = embedPage();
+  if (page) window.parent.postMessage({ type: 'coverage-anchor', search }, new URL(page).origin);
 }
 
 // filter type for a type slug; the type id is accepted too so hand-written links work

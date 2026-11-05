@@ -3,6 +3,12 @@ export const CAMERA_API = 'https://api.cdn.prod.alertwest.com/api/firecams/v0/ca
 // Pano AI sites carry their owner's public viewer; a digitized Pano AI camera has no owner and is a PGE camera
 export const PANO_DEFAULT_VIEWER = Object.freeze({ url: 'https://portlandgeneral.wildfirewatch.com/', name: 'PGE Wildfire Watch' });
 
+// pages that show the map in an iframe; inside one, share links point at that page instead of this site
+// the page passes its query string down to the iframe, see docs/wordpress-embed.html
+export const EMBED_PAGES = Object.freeze([
+  'https://infographics.uoregon.edu/fire-camera-coverage-orwa/',
+]);
+
 // hosted tilesets and provider endpoints used by the map layers
 export const DATA_URLS = Object.freeze({
   cameraViewsheds: 'mapbox://infographics.qn8uiv', // latest ALERTWest camera viewshed tileset https://console.mapbox.com/studio/tilesets/infographics.qn8uiv/

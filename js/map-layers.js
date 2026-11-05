@@ -26,6 +26,7 @@ import {
   anchorType,
   formatAnchor,
   parseAnchor,
+  announceAnchor,
 } from './anchor-links.js';
 import {
   addNumericProperty,
@@ -1083,6 +1084,7 @@ function setAnchor(typeSlug, optionSlug) {
   const next = formatAnchor(typeSlug, optionSlug, search);
   if (search === next) return;
   window.history.replaceState(null, '', `${pathname}${next}${hash}`);
+  announceAnchor(formatAnchor(typeSlug, optionSlug));
 }
 
 async function loadDivisionOptions(map, typeValue) {
