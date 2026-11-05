@@ -7,7 +7,7 @@ import { getSetting } from './settings.js';
 const PLOTLY_URL = 'https://cdn.plot.ly/plotly-2.35.2.min.js';
 let plotlyLoad;
 
-const LAND_MIX_TITLE = 'Mapped land status';
+const LAND_MIX_TITLE = 'Mapped land breakdown';
 const LAND_MIX_INFO = 'Tribal areas follow reservation and trust boundaries. Other named types use mapped ownership parcels. Unclassified includes unmapped private land.';
 
 // square-kilometer to square-mile conversion for displayed area values
@@ -562,7 +562,7 @@ function createExportChooserModal({ group, title, onReport, onCsv, onMap, onClos
       key: 'csv',
       icon: 'fa-file-csv',
       label: 'Summary data (CSV)',
-      detail: `Coverage, coverage by camera provider, area, and mapped land status for every ${group.unit}`,
+      detail: `Coverage, coverage by camera provider, area, and mapped land breakdown for every ${group.unit}`,
       run: () => {
         onCsv();
         status.textContent = 'CSV downloaded.';
@@ -655,7 +655,7 @@ function renderPolygon(type, properties, cameraCounts) {
   }
 
   if (polygonShowsDonut(type, properties)) {
-    wrapper.append(landMixSection(properties.landMix, 'Mapped land status breakdown'));
+    wrapper.append(landMixSection(properties.landMix, 'Mapped land breakdown'));
   }
 
   return wrapper;
@@ -743,7 +743,7 @@ function renderCamera(properties, metrics) {
   }
 
   if (Array.isArray(metrics.landMix) && metrics.landMix.length > 0) {
-    wrapper.append(landMixSection(metrics.landMix, 'Viewshed mapped land status breakdown'));
+    wrapper.append(landMixSection(metrics.landMix, 'Viewshed mapped land breakdown'));
   }
 
   return wrapper;
@@ -824,7 +824,7 @@ async function renderDonut(host, landMix) {
   // the text breakdown survives both missing data and a missing Plotly bundle
   const rows = usableLandMix(landMix);
   if (!rows.length) {
-    host.textContent = 'Mapped land status data unavailable.';
+    host.textContent = 'Mapped land breakdown data unavailable.';
     return host;
   }
 
