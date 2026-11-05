@@ -1031,6 +1031,11 @@ async function loadFilterOptions(typeValue) {
 // open the filter named by the URL query string; unknown names leave the page as it is
 async function applyAnchor() {
   const request = ++anchorRequest;
+  // a refresh starts over from the default view; settings are kept separately
+  if (isPageReload()) {
+    setAnchor('');
+    return;
+  }
   const anchor = parseAnchor(window.location.search);
   if (!anchor) return;
 
@@ -1076,6 +1081,12 @@ async function writeAnchor(type, id) {
   const linkable = id == null || optionSlug || activeFilterType === type;
   if (linkable) setAnchor(typeSlug, optionSlug);
   else setAnchor('');
+}
+
+// true when the viewer refreshed the page rather than opening a link
+function isPageReload() {
+  const [navigation] = performance.getEntriesByType?.('navigation') ?? [];
+  return navigation?.type === 'reload';
 }
 
 function setAnchor(typeSlug, optionSlug) {
