@@ -11,8 +11,9 @@ mapboxgl.accessToken =
 const MAPBOX_STYLE = 'infographics/cmspb7yx9000s01px89hr8i1a';
 const SIMPLE_MAPBOX_STYLE = 'infographics/cmud7fy6n000a01rghxd37aiz';
 const SATELLITE_ID = 'mapbox-satellite-basemap';
-// on satellite, small towns redraw in the medium weight Standard gives larger cities
-const SATELLITE_TOWN_LABEL_ID = 'satellite-town-labels';
+// on satellite, city, town, and state names redraw in the medium weight Standard gives larger cities
+const SATELLITE_PLACE_LABEL_ID = 'satellite-place-labels';
+const SATELLITE_STATE_LABEL_ID = 'satellite-state-labels';
 
 // center arrays use longitude first, then latitude
 const DEFAULT_VIEW = Object.freeze({
@@ -637,9 +638,8 @@ async function changeBasemap(map, picker, basemap) {
 
 function setSatelliteVisibility(map, basemap) {
   const visibility = basemap === 'satellite' ? 'visible' : 'none';
-  map.setLayoutProperty(SATELLITE_ID, 'visibility', visibility);
-  if (map.getLayer(SATELLITE_TOWN_LABEL_ID)) {
-    map.setLayoutProperty(SATELLITE_TOWN_LABEL_ID, 'visibility', visibility);
+  for (const layerId of [SATELLITE_ID, SATELLITE_PLACE_LABEL_ID, SATELLITE_STATE_LABEL_ID]) {
+    if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', visibility);
   }
 }
 
@@ -684,43 +684,42 @@ function prepareBasemapStyle(style) {
   // the app keeps the same projection when the selected style changes
   style.projection = { name: 'mercator' };
   addSatelliteBasemap(style);
-  addSatelliteTownLabels(style);
+  addSatellitePlaceLabels(style);
   replaceRoadLabels(style);
   hide3dObjects(style);
   return style;
 }
 
 // Standard draws small towns in a thin regular weight that gets lost on satellite imagery
-// this copy in Portland's medium weight sits above Standard's and wins the label collision
-function addSatelliteTownLabels(style) {
+// this copy of all its city and town labels uses Portland's medium weight throughout
+// it sits above Standard's labels and wins the collision, which hides them
+// covering cities too lets symbolrank keep big cities ahead of nearby towns
+function addSatellitePlaceLabels(style) {
   if (style.sources?.composite?.url !== 'mapbox://mapbox.mapbox-streets-v8') return;
 
   const rank = ['get', 'symbolrank'];
-  style.layers.push({
-    id: SATELLITE_TOWN_LABEL_ID,
+  const places = {
+    id: SATELLITE_PLACE_LABEL_ID,
     type: 'symbol',
     source: 'composite',
     'source-layer': 'place_label',
+    // from zoom 13 Standard shows only neighborhoods, already in the medium weight
     maxzoom: 13,
-    // Standard's settlement-minor-label filter, so the same towns show at the same zooms
-    filter: ['all',
-      ['==', ['get', 'class'], 'settlement'],
-      ['<=', ['get', 'filterrank'], 3],
-      ['step', ['zoom'], ['>=', rank, 7], 6, ['>=', rank, 8], 7, ['>=', rank, 10],
-        10, ['>=', rank, 11], 11, ['>=', rank, 13], 12, ['>=', rank, 15]],
-    ],
+    // Standard's city and town filters combined
+    filter: ['all', ['==', ['get', 'class'], 'settlement'], ['<=', ['get', 'filterrank'], 3]],
     layout: {
       visibility: 'none',
       'text-field': ['coalesce', ['get', 'name_en'], ['get', 'name']],
       'text-font': ['Roboto Medium', 'Arial Unicode MS Bold'],
+      // Standard's city sizes for low ranks and town sizes for the rest
       'text-size': ['interpolate', ['cubic-bezier', 0.2, 0, 0.9, 1], ['zoom'],
-        3, ['step', rank, 11, 9, 10],
-        6, ['step', rank, 14, 9, 12, 12, 10],
-        8, ['step', rank, 16, 9, 14, 12, 12, 15, 10],
+        3, ['step', rank, 13, 6, 11, 9, 10],
+        6, ['step', rank, 18, 6, 16, 7, 14, 9, 12, 12, 10],
+        8, ['step', rank, 20, 9, 16, 10, 14, 12, 12, 15, 10],
         13, ['step', rank, 22, 9, 20, 12, 16, 15, 14]],
       'text-max-width': 7,
       'symbol-sort-key': rank,
-      // below zoom 8 labels sit beside a town dot, then center on the town
+      // below zoom 8 labels sit beside a place dot, then center on the place
       'icon-image': ['step', ['zoom'], 'dot-10', 8, ''],
       'text-anchor': ['step', ['zoom'], ['get', 'text_anchor'], 8, 'center'],
       'text-radial-offset': ['step', ['zoom'], 0.55, 8, 0],
@@ -733,6 +732,24 @@ function addSatelliteTownLabels(style) {
       // like Standard's labels, ignore the map lighting
       'text-emissive-strength': 1,
       'icon-emissive-strength': 1,
+    },
+  };
+
+  // state names reuse the same look in place of Standard's faded bold
+  // added last so they stay above city names, as in Standard
+  const { visibility, 'text-field': name, 'text-font': font } = places.layout;
+  style.layers.push(places, {
+    ...places,
+    id: SATELLITE_STATE_LABEL_ID,
+    maxzoom: 9,
+    filter: ['==', ['get', 'class'], 'state'],
+    layout: {
+      visibility,
+      'text-field': name,
+      'text-font': font,
+      'text-transform': 'uppercase',
+      'text-letter-spacing': 0.15,
+      'text-size': ['interpolate', ['linear'], ['zoom'], 4, 9, 9, 21],
     },
   });
 }
