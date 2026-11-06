@@ -648,6 +648,8 @@ function setSatelliteVisibility(map, basemap) {
   if (activeBaseStyle === DEFAULT_BASEMAP && poiLabelColor) {
     map.setConfigProperty('basemap', 'colorPointOfInterestLabels',
       basemap === 'satellite' ? '#000000' : poiLabelColor);
+    // Standard's own place labels would show in the old style wherever a copy is crowded out
+    map.setConfigProperty('basemap', 'showPlaceLabels', basemap !== 'satellite');
   }
 }
 
@@ -701,7 +703,7 @@ function prepareBasemapStyle(style) {
 
 // Standard draws small towns in a thin regular weight that gets lost on satellite imagery
 // this copy of all its city and town labels uses Portland's medium weight throughout
-// it sits above Standard's labels and wins the collision, which hides them
+// Standard's own place labels are switched off on satellite, so these are the only ones
 // covering cities too lets symbolrank keep big cities ahead of nearby towns
 function addSatellitePlaceLabels(style) {
   if (style.sources?.composite?.url !== 'mapbox://mapbox.mapbox-streets-v8') return;
@@ -712,10 +714,13 @@ function addSatellitePlaceLabels(style) {
     type: 'symbol',
     source: 'composite',
     'source-layer': 'place_label',
-    // from zoom 13 Standard shows only neighborhoods, already in the medium weight
-    maxzoom: 13,
-    // Standard's city and town filters combined
-    filter: ['all', ['==', ['get', 'class'], 'settlement'], ['<=', ['get', 'filterrank'], 3]],
+    maxzoom: 15,
+    // Standard's city and town filters combined, which zoomed in keep only small places
+    filter: ['all',
+      ['==', ['get', 'class'], 'settlement'],
+      ['<=', ['get', 'filterrank'], 3],
+      ['step', ['zoom'], true, 13, ['>=', rank, 11], 14, ['>=', rank, 15]],
+    ],
     layout: {
       visibility: 'none',
       'text-field': ['coalesce', ['get', 'name_en'], ['get', 'name']],
@@ -725,7 +730,8 @@ function addSatellitePlaceLabels(style) {
         3, ['step', rank, 13, 6, 11, 9, 10],
         6, ['step', rank, 18, 6, 16, 7, 14, 9, 12, 12, 10],
         8, ['step', rank, 20, 9, 16, 10, 14, 12, 12, 15, 10],
-        13, ['step', rank, 22, 9, 20, 12, 16, 15, 14]],
+        13, ['step', rank, 22, 9, 20, 12, 16, 15, 14],
+        15, ['step', rank, 24, 9, 20, 12, 16, 15, 14]],
       'text-max-width': 7,
       'symbol-sort-key': rank,
       // below zoom 8 labels sit beside a place dot, then center on the place
