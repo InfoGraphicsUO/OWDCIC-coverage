@@ -11,6 +11,8 @@ mapboxgl.accessToken =
 const MAPBOX_STYLE = 'infographics/cmspb7yx9000s01px89hr8i1a';
 const SIMPLE_MAPBOX_STYLE = 'infographics/cmud7fy6n000a01rghxd37aiz';
 const SATELLITE_ID = 'mapbox-satellite-basemap';
+// on satellite, small towns redraw in the medium weight Standard gives larger cities
+const SATELLITE_TOWN_LABEL_ID = 'satellite-town-labels';
 
 // center arrays use longitude first, then latitude
 const DEFAULT_VIEW = Object.freeze({
@@ -634,11 +636,11 @@ async function changeBasemap(map, picker, basemap) {
 }
 
 function setSatelliteVisibility(map, basemap) {
-  map.setLayoutProperty(
-    SATELLITE_ID,
-    'visibility',
-    basemap === 'satellite' ? 'visible' : 'none'
-  );
+  const visibility = basemap === 'satellite' ? 'visible' : 'none';
+  map.setLayoutProperty(SATELLITE_ID, 'visibility', visibility);
+  if (map.getLayer(SATELLITE_TOWN_LABEL_ID)) {
+    map.setLayoutProperty(SATELLITE_TOWN_LABEL_ID, 'visibility', visibility);
+  }
 }
 
 function notifyBasemapChange(basemap) {
@@ -682,9 +684,57 @@ function prepareBasemapStyle(style) {
   // the app keeps the same projection when the selected style changes
   style.projection = { name: 'mercator' };
   addSatelliteBasemap(style);
+  addSatelliteTownLabels(style);
   replaceRoadLabels(style);
   hide3dObjects(style);
   return style;
+}
+
+// Standard draws small towns in a thin regular weight that gets lost on satellite imagery
+// this copy in Portland's medium weight sits above Standard's and wins the label collision
+function addSatelliteTownLabels(style) {
+  if (style.sources?.composite?.url !== 'mapbox://mapbox.mapbox-streets-v8') return;
+
+  const rank = ['get', 'symbolrank'];
+  style.layers.push({
+    id: SATELLITE_TOWN_LABEL_ID,
+    type: 'symbol',
+    source: 'composite',
+    'source-layer': 'place_label',
+    maxzoom: 13,
+    // Standard's settlement-minor-label filter, so the same towns show at the same zooms
+    filter: ['all',
+      ['==', ['get', 'class'], 'settlement'],
+      ['<=', ['get', 'filterrank'], 3],
+      ['step', ['zoom'], ['>=', rank, 7], 6, ['>=', rank, 8], 7, ['>=', rank, 10],
+        10, ['>=', rank, 11], 11, ['>=', rank, 13], 12, ['>=', rank, 15]],
+    ],
+    layout: {
+      visibility: 'none',
+      'text-field': ['coalesce', ['get', 'name_en'], ['get', 'name']],
+      'text-font': ['Roboto Medium', 'Arial Unicode MS Bold'],
+      'text-size': ['interpolate', ['cubic-bezier', 0.2, 0, 0.9, 1], ['zoom'],
+        3, ['step', rank, 11, 9, 10],
+        6, ['step', rank, 14, 9, 12, 12, 10],
+        8, ['step', rank, 16, 9, 14, 12, 12, 15, 10],
+        13, ['step', rank, 22, 9, 20, 12, 16, 15, 14]],
+      'text-max-width': 7,
+      'symbol-sort-key': rank,
+      // below zoom 8 labels sit beside a town dot, then center on the town
+      'icon-image': ['step', ['zoom'], 'dot-10', 8, ''],
+      'text-anchor': ['step', ['zoom'], ['get', 'text_anchor'], 8, 'center'],
+      'text-radial-offset': ['step', ['zoom'], 0.55, 8, 0],
+    },
+    paint: {
+      'text-color': '#000000',
+      'text-halo-color': '#ffffff',
+      'text-halo-width': 1,
+      'text-halo-blur': 1,
+      // like Standard's labels, ignore the map lighting
+      'text-emissive-strength': 1,
+      'icon-emissive-strength': 1,
+    },
+  });
 }
 
 // the imported Mapbox Standard style whose config toggles its built-in layers
