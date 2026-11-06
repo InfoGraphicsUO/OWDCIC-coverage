@@ -14,6 +14,8 @@ const SATELLITE_ID = 'mapbox-satellite-basemap';
 // on satellite, city, town, and state names redraw in the medium weight Standard gives larger cities
 const SATELLITE_PLACE_LABEL_ID = 'satellite-place-labels';
 const SATELLITE_STATE_LABEL_ID = 'satellite-state-labels';
+// the outdoors style's point of interest label color, read at startup and restored after satellite
+let poiLabelColor;
 
 // center arrays use longitude first, then latitude
 const DEFAULT_VIEW = Object.freeze({
@@ -641,6 +643,12 @@ function setSatelliteVisibility(map, basemap) {
   for (const layerId of [SATELLITE_ID, SATELLITE_PLACE_LABEL_ID, SATELLITE_STATE_LABEL_ID]) {
     if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', visibility);
   }
+  // forest, park, and other point of interest labels darken on satellite, then restore
+  // satellite draws on the outdoors style, so the simple basemap is never recolored
+  if (activeBaseStyle === DEFAULT_BASEMAP && poiLabelColor) {
+    map.setConfigProperty('basemap', 'colorPointOfInterestLabels',
+      basemap === 'satellite' ? '#000000' : poiLabelColor);
+  }
 }
 
 function notifyBasemapChange(basemap) {
@@ -683,6 +691,7 @@ function prepareBasemapStyle(style) {
   enableContourLineMetrics(style);
   // the app keeps the same projection when the selected style changes
   style.projection = { name: 'mercator' };
+  poiLabelColor ??= basemapImport(style)?.config?.colorPointOfInterestLabels;
   addSatelliteBasemap(style);
   addSatellitePlaceLabels(style);
   replaceRoadLabels(style);
