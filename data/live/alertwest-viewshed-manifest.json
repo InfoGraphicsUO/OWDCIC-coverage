@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "generated_utc": "2026-10-22T19:00:30+00:00",
-  "config_hash": "1fc319aaf4acf161f84b3f6c5c31c3614d1ef1b830b541849cb2953bc3242bc6",
+  "generated_utc": "2026-11-09T23:08:29+00:00",
+  "config_hash": "3ee3ebfe8a75bf512e999c099f8aeeecb5de618f429facdd9308d2d2d0773c3c",
   "web_processing": {
     "resolution_m": 50.0,
     "simplify_tolerance_m": 25.0,
@@ -1024,6 +1024,30 @@
     },
     {
       "source_id": 79,
+      "viewshed_id": "table-mountain-jackson",
+      "site_name": "Table Mountain (Jackson)",
+      "aliases": [],
+      "longitude": -122.492866,
+      "latitude": 42.197755,
+      "height_ft": 118.0,
+      "status": "complete",
+      "web_geojson": "web/table-mountain-jackson.geojson",
+      "exact_polygon": "polygons_exact/table_mountain_jackson.gpkg"
+    },
+    {
+      "source_id": 80,
+      "viewshed_id": "stukel-mountain",
+      "site_name": "Stukel Mountain",
+      "aliases": [],
+      "longitude": -121.634263,
+      "latitude": 42.098206,
+      "height_ft": 85.0,
+      "status": "complete",
+      "web_geojson": "web/stukel-mountain.geojson",
+      "exact_polygon": "polygons_exact/stukel_mountain.gpkg"
+    },
+    {
+      "source_id": 81,
       "viewshed_id": "mt-defiance",
       "site_name": "Mt Defiance",
       "aliases": [
@@ -1038,7 +1062,7 @@
       "exact_polygon": "polygons_exact/mt_defiance.gpkg"
     },
     {
-      "source_id": 80,
+      "source_id": 82,
       "viewshed_id": "halfway",
       "site_name": "Halfway",
       "aliases": [
@@ -1053,7 +1077,7 @@
       "exact_polygon": "polygons_exact/halfway.gpkg"
     },
     {
-      "source_id": 81,
+      "source_id": 83,
       "viewshed_id": "jim-creek-butte",
       "site_name": "Jim Creek Butte",
       "aliases": [
@@ -1067,7 +1091,7 @@
       "exact_polygon": "polygons_exact/jim_creek_butte.gpkg"
     },
     {
-      "source_id": 82,
+      "source_id": 84,
       "viewshed_id": "satus",
       "site_name": "Satus",
       "aliases": [
@@ -1081,7 +1105,7 @@
       "exact_polygon": "polygons_exact/satus.gpkg"
     },
     {
-      "source_id": 83,
+      "source_id": 85,
       "viewshed_id": "elephant",
       "site_name": "Elephant",
       "aliases": [
@@ -1095,7 +1119,7 @@
       "exact_polygon": "polygons_exact/elephant.gpkg"
     },
     {
-      "source_id": 84,
+      "source_id": 86,
       "viewshed_id": "two-rivers",
       "site_name": "Two Rivers",
       "aliases": [
@@ -1109,7 +1133,7 @@
       "exact_polygon": "polygons_exact/two_rivers.gpkg"
     },
     {
-      "source_id": 85,
+      "source_id": 87,
       "viewshed_id": "round-mountain-chelan",
       "site_name": "Round Mountain Chelan",
       "aliases": [
@@ -1123,7 +1147,7 @@
       "exact_polygon": "polygons_exact/round_mountain_chelan.gpkg"
     },
     {
-      "source_id": 86,
+      "source_id": 88,
       "viewshed_id": "natapoc-ridge-north",
       "site_name": "Natapoc Ridge North",
       "aliases": [
@@ -1137,7 +1161,7 @@
       "exact_polygon": "polygons_exact/natapoc_ridge_north.gpkg"
     },
     {
-      "source_id": 87,
+      "source_id": 89,
       "viewshed_id": "natapoc-ridge",
       "site_name": "Natapoc Ridge",
       "aliases": [
@@ -1151,7 +1175,7 @@
       "exact_polygon": "polygons_exact/natapoc_ridge.gpkg"
     },
     {
-      "source_id": 88,
+      "source_id": 90,
       "viewshed_id": "anderson",
       "site_name": "Anderson",
       "aliases": [

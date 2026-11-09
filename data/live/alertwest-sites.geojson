@@ -1425,8 +1425,24 @@
         "viewshedId": "table-mountain-jackson",
         "locationSource": "digitized",
         "digitizedId": "digitized-camera-10",
-        "source": "data/live/digitized-camera-sources.geojson",
-        "viewshedStatus": "pending"
+        "source": "data/live/digitized-camera-sources.geojson"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.634263,
+          42.098206
+        ]
+      },
+      "properties": {
+        "name": "Stukel Mountain",
+        "aliases": [],
+        "cameraHeightFt": 85.0,
+        "alertWestLive": false,
+        "provider": "alertwest"
       }
     },
     {
