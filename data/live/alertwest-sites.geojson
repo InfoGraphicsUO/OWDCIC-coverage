@@ -1407,6 +1407,24 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
+          -122.4936,
+          42.1983
+        ]
+      },
+      "properties": {
+        "name": "Table Mountain (Jackson)",
+        "aliases": [],
+        "cameraHeightFt": 118.0,
+        "alertWestLive": false,
+        "provider": "alertwest",
+        "viewshedStatus": "pending"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
           -121.722655,
           45.648648
         ]
