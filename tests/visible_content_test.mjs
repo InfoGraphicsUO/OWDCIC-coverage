@@ -30,6 +30,7 @@ assert.deepEqual(shippedPaths, [
   'Other > State',
   'Other > County',
   'National Forest',
+  'US Wildland Fire Service',
 ]);
 
 // National Forest opens from the Federal land option rather than listing on its own
@@ -37,6 +38,9 @@ assert.deepEqual(nestedFilterParent('national-forest', shipped),
   { type: 'federal-land', option: 'federal-land:USFS' });
 assert.equal(nestedFilterParent('national-forest', shipped.filter(({ value }) => value !== 'federal-land')), null);
 assert.equal(nestedFilterParent('federal-land', shipped), null);
+// USWFS units open from the Federal land option the same way
+assert.deepEqual(nestedFilterParent('wildland-fire-unit', shipped),
+  { type: 'federal-land', option: 'federal-land:DOI' });
 
 const legendLabels = new Set(Object.values(LEGEND_LAYERS));
 for (const label of VISIBLE_LAYERS) {
@@ -104,9 +108,9 @@ assert.ok(filterOptionIsVisible(federal, { label: 'U.S. Forest Service' }));
 assert.ok(!filterOptionIsVisible(federal, { label: 'National Park Service' }));
 
 // listed groups keep list order, 'all' groups have none, unlisted options sort last
-const [shippedFederal] = visibleFilterTypes({ 'Federal land': ['National Forest', 'Dept of Interior (BLM, USFWS, NPS)'] });
+const [shippedFederal] = visibleFilterTypes({ 'Federal land': ['National Forest', 'US Wildland Fire Service'] });
 assert.equal(filterOptionRank(shippedFederal, { label: 'National Forest' }), 0);
-assert.equal(filterOptionRank(shippedFederal, { label: 'Dept of Interior (BLM, USFWS, NPS)' }), 1);
+assert.equal(filterOptionRank(shippedFederal, { label: 'US Wildland Fire Service' }), 1);
 assert.equal(filterOptionRank(shippedFederal, { label: 'Other' }), 2);
 assert.equal(filterOptionRank(state, { label: 'Oregon' }), 0);
 

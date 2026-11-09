@@ -40,10 +40,11 @@ FEDERAL_MANAGERS = {
     "USBR": "U.S. Bureau of Reclamation",
     "USFS": "National Forest",
 }
-# one combined option for the interior bureaus; the per-agency features stay
-# in the file because the land mix chart still splits them
+# one combined option for the interior bureaus, whose land the US Wildland Fire
+# Service manages for fire; build-wildland-fire-units.py splits it by unit.
+# the per-agency features stay in the file because the land mix chart still splits them
 INTERIOR_MANAGERS = ("BLM", "FWS", "NPS")
-INTERIOR_NAME = "Dept of Interior (BLM, USFWS, NPS)"
+INTERIOR_NAME = "US Wildland Fire Service"
 
 
 def fetch(url: str, where: str, fields: str) -> tuple[list[dict], str]:
@@ -155,7 +156,7 @@ def build_federal_land() -> None:
         "source": FEDERAL_QUERY,
         "vintage": "PAD-US authoritative",
         "sourceSha256": digest,
-        "aggregation": "Union by PAD-US Mang_Name; excluded TRIB; DOI is the union of BLM, FWS, NPS",
+        "aggregation": "Union by PAD-US Mang_Name; excluded TRIB; DOI (US Wildland Fire Service) is the union of BLM, FWS, NPS",
     })
 
 

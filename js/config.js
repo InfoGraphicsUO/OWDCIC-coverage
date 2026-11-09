@@ -175,6 +175,7 @@ export const FILTER_TYPES = Object.freeze([
   ['federal-land', 'Federal land'],
   ['tribal-land', 'Tribal land'],
   ['odf-protection-district', 'ODF protection district'],
+  ['wildland-fire-unit', 'US Wildland Fire Service'],
   ['camera', 'Camera'],
 ]);
 
@@ -186,13 +187,16 @@ export const FILTER_LAYER_PRESETS = Object.freeze({
   utility: Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.transmissionLines]) }),
   'national-forest': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.nationalForests]) }),
   'federal-land': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.blmLands]) }),
+  'wildland-fire-unit': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.blmLands]) }),
 });
 
 // filter type -> the option of another group that opens it, so it lists as a step inside that group
 // e.g. Federal land > National Forest > [All National Forests, Mt. Hood National Forest, ...]
+// and Federal land > US Wildland Fire Service > [All USWFS units, Blitzen River Unit, ...]
 // it only nests when the other group is shown too; otherwise it stays a group of its own
 export const NESTED_FILTER_TYPES = Object.freeze({
   'national-forest': Object.freeze({ type: 'federal-land', option: 'federal-land:USFS' }),
+  'wildland-fire-unit': Object.freeze({ type: 'federal-land', option: 'federal-land:DOI' }),
 });
 
 // returns where a visible filter type nests, or null when it lists on its own

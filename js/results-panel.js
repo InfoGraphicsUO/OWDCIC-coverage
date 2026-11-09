@@ -31,6 +31,7 @@ const BOUNDARY_QUALIFIERS = Object.freeze({
   'federal-land': 'Federal land boundary',
   'tribal-land': 'Tribal land boundary',
   'odf-protection-district': 'ODF protection district boundary',
+  'wildland-fire-unit': 'BLM, USFWS, and NPS land within the US Wildland Fire Service unit boundary',
 });
 
 const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors';
@@ -65,6 +66,7 @@ const LAND_MIX_FALLBACK_COLORS = ['#3b7d4f', '#f6d94a', '#3c6b03', '#8154BD', '#
 const SUMMARY_REPORT_GROUPS = Object.freeze({
   'odf-protection-district': { unit: 'district', units: 'districts' },
   'national-forest': { unit: 'national forest', units: 'national forests' },
+  'wildland-fire-unit': { unit: 'unit', units: 'units' },
 });
 
 // providers split out in the report and CSV, keyed like each area's providerCoverage and colored like their map symbols

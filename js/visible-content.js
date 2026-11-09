@@ -101,17 +101,35 @@
 //     // or pick from:
 //     // [
 //     //   'Bureau of Land Management',
-//     //   'Dept of Interior (BLM, USFWS, NPS)',
 //     //   'National Forest',
 //     //   'National Park Service',
 //     //   'Other federal fee manager',
 //     //   'U.S. Bureau of Reclamation',
 //     //   'U.S. Department of Defense',
 //     //   'U.S. Fish and Wildlife Service',
+//     //   'US Wildland Fire Service',
 //     // ],
-//     // 'Dept of Interior (BLM, USFWS, NPS)' is the union of the BLM, USFWS, and NPS options
 //     // 'National Forest' opens the 'National Forest' group when it is shown, otherwise it is
-//     // the Forest Service land; the panel lists options in the order given here
+//     // the Forest Service land; 'US Wildland Fire Service' likewise opens its group of units,
+//     // otherwise it is the union of the BLM, USFWS, and NPS options;
+//     // the panel lists options in the order given here
+//
+//   'US Wildland Fire Service': 'all',
+//     // opens from the 'US Wildland Fire Service' option of 'Federal land' when both are shown,
+//     // otherwise it is a group of its own; each unit is the BLM, USFWS, and NPS land inside
+//     // its boundary, and 'All USWFS units' is every unit together
+//     // or pick from:
+//     // [
+//     //   'All USWFS units',
+//     //   'Blitzen River Unit',
+//     //   'Cascade Rivers Unit',
+//     //   'Cascadia Unit',
+//     //   'Coastal Cascades Unit',
+//     //   "Nch'i-Wana Unit",
+//     //   'Oregon High Desert Unit',
+//     //   'South Central Oregon Unit',
+//     //   'Upper Columbia Unit',
+//     // ],
 //
 //   'Tribal land': 'all',
 //     // 66 options, see data/source/divisions/tribal-land.geojson
@@ -158,7 +176,7 @@
 // ---------------------------------------------------------------------------
 
 export const VISIBLE_FILTERS = {
-  'Federal land': ['National Forest', 'Dept of Interior (BLM, USFWS, NPS)'],
+  'Federal land': ['National Forest', 'US Wildland Fire Service'],
   'Utility provider': ['Pacific Power (PacifiCorp)', 'Portland General Electric (PGE)'],
   'ODF protection district': 'all',
   'Camera': 'all',
@@ -172,8 +190,9 @@ export const VISIBLE_FILTERS = {
     'State': 'all',
     'County': 'all',
   },
-  // opens from 'National Forest' under 'Federal land'
+  // these two open from their options under 'Federal land'
   'National Forest': 'all',
+  'US Wildland Fire Service': 'all',
   'National Park': 'none',
 };
 

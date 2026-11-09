@@ -49,11 +49,12 @@ HYDRO_URL = 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Hydro
 ENVELOPE = '-124.8,41.8,-116.3,49.1'
 TYPES = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
          'national-forest', 'national-park', 'federal-land', 'tribal-land',
-         'odf-protection-district')
+         'odf-protection-district', 'wildland-fire-unit')
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
     'utility': 3, 'national-forest': 26, 'national-park': 14,
     'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
+    'wildland-fire-unit': 9,
 }
 # names shown in the viewshed runner while each metric builds
 LABELS = {
@@ -62,6 +63,7 @@ LABELS = {
     'utility': 'utilities', 'national-forest': 'national forests',
     'national-park': 'national parks', 'federal-land': 'federal land',
     'tribal-land': 'tribal land', 'odf-protection-district': 'ODF protection districts',
+    'wildland-fire-unit': 'US Wildland Fire Service units',
 }
 CAMERA_LABEL = 'camera viewsheds'
 PROGRESS_PREFIX = '@@METRICS@@'
@@ -761,7 +763,8 @@ def run(args):
                 area = selected.area
 
             if not math.isfinite(area) or area <= 0:
-                if kind in ('national-forest', 'national-park', 'federal-land', 'tribal-land'):
+                if kind in ('national-forest', 'national-park', 'federal-land', 'tribal-land',
+                            'wildland-fire-unit'):
                     record = {
                         'id': feature['id'],
                         'name': feature.get('properties', {}).get('name'),
