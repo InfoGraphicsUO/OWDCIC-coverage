@@ -208,7 +208,10 @@ const CAMERA_PROVIDERS = Object.freeze([
       outdoors: CAMERA_PROVIDER_COLORS.pano,
       satellite: '#a9d4fb',
     }),
-    viewshedLegendImage: 'img/blue_portland_tower_viewshed.png',
+    viewshedLegendImage: Object.freeze({
+      outdoors: 'img/blue_portland_tower_viewshed.png',
+      satellite: 'img/light_blue_portland_tower_viewshed.png',
+    }),
     sharedSiteIconOffset: Object.freeze([14, 0]),
   }),
   Object.freeze({
@@ -227,7 +230,10 @@ const CAMERA_PROVIDERS = Object.freeze([
       outdoors: CAMERA_PROVIDER_COLORS.enviroVision,
       satellite: '#b5e3a8',
     }),
-    viewshedLegendImage: 'img/green_portland_tower_viewshed.png',
+    viewshedLegendImage: Object.freeze({
+      outdoors: 'img/green_portland_tower_viewshed.png',
+      satellite: 'img/light_green_portland_tower_viewshed.png',
+    }),
     sharedSiteIconOffset: Object.freeze([-14, 0]),
   }),
 ]);
@@ -2228,7 +2234,7 @@ function viewshedSymbol(provider, basemap) {
     // providers in their own color show a sample viewshed in that color
     swatchImage: colors === VIEWSHED_FILL_COLOR
       ? basemapColor(VIEWSHED_LEGEND_IMAGES, basemap)
-      : provider.viewshedLegendImage,
+      : basemapColor(provider.viewshedLegendImage, basemap),
   };
 }
 
