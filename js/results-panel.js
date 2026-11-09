@@ -922,8 +922,14 @@ const EXPORT_VIEWSHED_ICONS = Object.freeze({
 });
 // rows in a provider's own color get a sample viewshed in that color
 const EXPORT_PROVIDER_VIEWSHED_ICONS = Object.freeze({
-  [EXPORT_PROVIDER_VIEWSHED_LABELS[LEGEND_LAYERS.panoViewsheds]]: 'img/blue_portland_tower_viewshed.png',
-  [EXPORT_PROVIDER_VIEWSHED_LABELS[LEGEND_LAYERS.enviroVisionViewsheds]]: 'img/green_portland_tower_viewshed.png',
+  [EXPORT_PROVIDER_VIEWSHED_LABELS[LEGEND_LAYERS.panoViewsheds]]: Object.freeze({
+    outdoors: 'img/blue_portland_tower_viewshed.png',
+    satellite: 'img/light_blue_portland_tower_viewshed.png',
+  }),
+  [EXPORT_PROVIDER_VIEWSHED_LABELS[LEGEND_LAYERS.enviroVisionViewsheds]]: Object.freeze({
+    outdoors: 'img/green_portland_tower_viewshed.png',
+    satellite: 'img/light_green_portland_tower_viewshed.png',
+  }),
 });
 // rings match the shared viewshed fill on each basemap
 const EXPORT_VIEWSHED_OUTLINES = Object.freeze({
@@ -2262,7 +2268,8 @@ async function resolveLegendRowsForExport(getLegendItems, basemap) {
       return { ...row, visual: { type: 'icon', src: viewshedIcon, outline: viewshedOutline, size: 22 } };
     }
     // the ring keeps the provider fill the layer list shows for this basemap
-    const providerIcon = EXPORT_PROVIDER_VIEWSHED_ICONS[row.label];
+    const providerIcons = EXPORT_PROVIDER_VIEWSHED_ICONS[row.label];
+    const providerIcon = providerIcons && (providerIcons[basemap] ?? providerIcons.outdoors);
     return providerIcon
       ? { ...row, visual: { type: 'icon', src: providerIcon, outline: row.visual?.color, size: 22 } }
       : row;
