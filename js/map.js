@@ -278,7 +278,7 @@ async function initializeMap() {
   resetBasemapPicker();
 
   // edit the style JSON before Mapbox installs its sources and layers
-  const style = prepareBasemapStyle(await loadMapStyle(DEFAULT_BASEMAP));
+  const style = prepareBasemapStyle(await loadMapStyle(DEFAULT_BASEMAP), DEFAULT_BASEMAP);
   recordBaseStyle(style);
 
   const map = new mapboxgl.Map({
@@ -646,7 +646,7 @@ async function changeBasemap(map, picker, basemap) {
   }
 
   try {
-    const style = prepareBasemapStyle(await loadMapStyle(styleName));
+    const style = prepareBasemapStyle(await loadMapStyle(styleName), styleName);
     if (request !== basemapRequest) return;
 
     const nextBaseLayerIds = new Set(
@@ -762,13 +762,16 @@ function addSatelliteBasemap(style) {
   });
 }
 
-function prepareBasemapStyle(style) {
+function prepareBasemapStyle(style, styleName) {
   removeDuplicateTerrainDem(style);
   enableContourLineMetrics(style);
   // the app keeps the same projection when the selected style changes
   style.projection = { name: 'mercator' };
-  addSatelliteBasemap(style);
-  addSatellitePlaceLabels(style);
+  // satellite only ever draws on the outdoors style
+  if (styleName === DEFAULT_BASEMAP) {
+    addSatelliteBasemap(style);
+    addSatellitePlaceLabels(style);
+  }
   replaceRoadLabels(style);
   hide3dObjects(style);
   return style;
