@@ -14,7 +14,7 @@ const SATELLITE_ID = 'mapbox-satellite-basemap';
 // on satellite, city, town, and state names redraw in the medium weight Standard gives larger cities
 const SATELLITE_PLACE_LABEL_ID = 'satellite-place-labels';
 const SATELLITE_STATE_LABEL_ID = 'satellite-state-labels';
-// forests, parks, and other points of interest redraw in the same look
+// forest and park names redraw in the same look
 const SATELLITE_POI_LABEL_ID = 'satellite-poi-labels';
 // mountain peaks redraw from the outdoors style's own peak layer
 const OUTDOORS_PEAK_LABEL_ID = 'natural-label-peak';
@@ -828,8 +828,8 @@ function addSatellitePlaceLabels(style) {
 
   const { visibility, 'text-field': name, 'text-font': font } = places.layout;
 
-  // forests, parks, and other points of interest also use the same look
-  // Standard can only switch all of these off together, so every class is copied
+  // forests and parks also use the same look
+  // Standard switches every point of interest off together, so only park-like places return
   const sizerank = ['get', 'sizerank'];
   // big places like national forests get no icon, as in Standard
   const hasTree = ['all', ['>=', sizerank, 5], ['==', ['get', 'maki'], 'park']];
@@ -840,12 +840,12 @@ function addSatellitePlaceLabels(style) {
     // Standard's zoom range, replacing the town labels' maxzoom from the spread
     minzoom: 6,
     maxzoom: 24,
-    // Standard's point of interest filter with the outdoors style's label density of 2
-    filter: ['<=', ['get', 'filterrank'], ['+',
-      ['step', ['zoom'], -2, 16, -1, 18, 0],
-      ['match', ['get', 'class'], 'park_like', 4, 'visitor_amenities', 2, 'store_like', 3, 'lodging', 1, 2],
-      2,
-    ]],
+    // Standard's park filter with the outdoors style's label density of 2
+    // shops, food, lodging, and other places would add bare names with no icon to tell them apart
+    filter: ['all',
+      ['==', ['get', 'class'], 'park_like'],
+      ['<=', ['get', 'filterrank'], ['+', ['step', ['zoom'], -2, 16, -1, 18, 0], 4, 2]],
+    ],
     layout: {
       visibility,
       'text-field': name,
