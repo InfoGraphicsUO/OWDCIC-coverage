@@ -301,6 +301,13 @@ async function initializeMap() {
     compact: isPhoneLayout() || undefined,
     customAttribution: '<a href="https://infographics.uoregon.edu/" target="_blank" rel="noopener noreferrer">UO InfoGraphics Lab</a> | <a href="https://ohaz.uoregon.edu/" target="_blank" rel="noopener noreferrer">OHAZ</a>'
   }));
+  // the InfoGraphics Lab wordmark sits beside the Mapbox logo; its tagline blurs at this size, so it's cropped off
+  const iglLogo = Object.assign(document.createElement('img'), {
+    className: 'mapboxgl-ctrl igl-logo',
+    src: 'img/logos/IGL_white_wordmark.png',
+    alt: 'UO InfoGraphics Lab',
+  });
+  map.addControl({ onAdd: () => iglLogo, onRemove: () => iglLogo.remove() }, 'bottom-left');
   initZoomViewer(map);
 
   map.once('load', () => {

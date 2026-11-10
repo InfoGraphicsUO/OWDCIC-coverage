@@ -460,6 +460,9 @@
     .mapboxgl-ctrl-bottom-left .mapboxgl-ctrl,
     .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl { margin: 0; }
 
+    /* no room beside the logo here: the credits sit just right of it */
+    .mapboxgl-ctrl-bottom-left .igl-logo { display: none; }
+
     /* the fire history slider rides above the tab bar, and gives way to the sheet */
     .fire-timeline {
         bottom: calc(var(--tabbar-height) + var(--panel-gap));

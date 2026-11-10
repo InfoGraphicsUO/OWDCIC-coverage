@@ -679,6 +679,20 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     margin-left: 0;
 }
 
+/* Mapbox stacks bottom controls and inserts new ones first, so a row puts the IGL mark after its logo */
+.mapboxgl-ctrl-bottom-left {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+}
+
+/* about the height of the Mapbox lettering, which is shorter than its 23px box */
+.mapboxgl-ctrl-bottom-left .igl-logo {
+    order: 1;
+    height: 16px;
+    margin-bottom: 9px;
+}
+
 .mapboxgl-ctrl-bottom-right {
     right: 0 !important;
     bottom: 0 !important;
