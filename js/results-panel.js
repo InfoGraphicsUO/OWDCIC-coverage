@@ -18,6 +18,12 @@ const UTILITY_QUALIFIER = 'Approximate service area boundary';
 // the utility filter switches this layer on, so its panel keys the line color too
 const TRANSMISSION_LINES_QUALIFIER = 'Transmission lines';
 
+// names the light yellow fill a selection draws over the part of its area that is measured,
+// for the types whose outline is the whole area (DIVISION_OUTLINE_URLS in js/config.js)
+const MEASURED_AREA_QUALIFIERS = Object.freeze({
+  'wildland-fire-unit': 'BLM, USFWS, and NPS federal land within the unit; coverage is measured on this land only',
+});
+
 // names what the yellow selection outline traces for each filter group
 const BOUNDARY_QUALIFIERS = Object.freeze({
   state: 'State boundary',
@@ -31,7 +37,7 @@ const BOUNDARY_QUALIFIERS = Object.freeze({
   'federal-land': 'Federal land boundary',
   'tribal-land': 'Tribal land boundary',
   'odf-protection-district': 'ODF protection district boundary',
-  'wildland-fire-unit': 'US Wildland Fire Service unit boundary; coverage counts only the shaded BLM, USFWS, and NPS land inside it',
+  'wildland-fire-unit': 'US Wildland Fire Service unit boundary',
 });
 
 const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors';
@@ -651,6 +657,12 @@ function renderPolygon(type, properties, cameraCounts) {
     ? 'This source boundary may include planning areas without federal fee ownership.'
     : BOUNDARY_QUALIFIERS[type];
   if (qualifier) wrapper.append(selfLine(qualifier, 'results-panel__qualifier'));
+  if (MEASURED_AREA_QUALIFIERS[type]) {
+    wrapper.append(selfLine(
+      MEASURED_AREA_QUALIFIERS[type],
+      'results-panel__qualifier results-panel__qualifier--measured-area',
+    ));
+  }
   if (type === 'utility') {
     wrapper.append(selfLine(
       TRANSMISSION_LINES_QUALIFIER,
