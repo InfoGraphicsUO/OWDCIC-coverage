@@ -84,4 +84,28 @@ assert.equal(legend.children.length, 4, 'repeat reveal must not duplicate the gr
 control.setHidden('Digitized Camera Sources', true);
 assert.equal(legend.children.some((child) => child.className === 'legend-group'), false);
 
+// sections: the first starts open, the rest closed
+const sectioned = initLegend([
+  { label: 'Cameras', section: 'Camera data', layerIds: [] },
+  { label: 'National forests', section: 'Land management', visible: false, layerIds: [] },
+  { label: 'BLM lands', section: 'Land management', visible: false, layerIds: [] },
+]);
+const [, cameraSection, landSection] = legend.children;
+const sectionItems = (section) => section.children[1];
+assert.equal(sectionItems(cameraSection).hidden, false, 'first section starts open');
+assert.equal(sectionItems(landSection).hidden, true, 'later sections start closed');
+
+// a layer switched on by code opens its section
+sectioned.setVisible('National forests', true);
+sectioned.setVisible('BLM lands', true);
+assert.equal(sectionItems(landSection).hidden, false);
+
+// switching one off keeps the section open while another layer in it is on
+sectioned.setVisible('National forests', false);
+assert.equal(sectionItems(landSection).hidden, false);
+
+// switching the last one off closes it again
+sectioned.setVisible('BLM lands', false);
+assert.equal(sectionItems(landSection).hidden, true);
+
 console.log('legend hidden group DOM contract passed');

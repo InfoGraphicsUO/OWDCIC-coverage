@@ -35,21 +35,24 @@ export function initLegend(items) {
   legend.append(title);
 
   const groupBindings = [];
-  let section;
+  let sectionName;
+  let section = null;
   let container = legend;
   let openedSection = false;
   for (const item of items) {
     // each new section opens a collapsible block; rows without one go straight in the legend
-    if (item.section !== section) {
-      section = item.section;
+    if (item.section !== sectionName) {
+      sectionName = item.section;
       // only the first section, the camera data, starts open
-      container = section ? createLegendSection(legend, section, !openedSection) : legend;
+      section = sectionName ? createLegendSection(legend, sectionName, !openedSection) : null;
+      container = section?.items ?? legend;
       if (section) openedSection = true;
     }
 
     if (Array.isArray(item.children) && item.children.length > 0) {
       // groups contribute their parent and each child to the same update lookup
       const group = createLegendGroup(item, () => activeMap, notifyChange);
+      for (const binding of [group.parent, ...group.children]) binding.section = section;
       bindings.push(group.parent, ...group.children);
       groupBindings.push(group);
       group.element.hidden = item.hidden === true;
@@ -61,6 +64,7 @@ export function initLegend(items) {
     }
 
     const binding = createLegendRow(item, () => activeMap, undefined, notifyChange);
+    binding.section = section;
     bindings.push(binding);
     binding.row.hidden = item.hidden === true;
     topLevelBindings.push({ item, element: binding.row, container });
@@ -101,6 +105,16 @@ export function initLegend(items) {
       const binding = findBinding(label);
       if (!binding) return false;
       binding.setChecked(visible);
+
+      // a layer switched on by code, like a filter preset, shows its section open in Layers
+      // switching it off closes the section again once nothing in it is on
+      const { section } = binding;
+      if (visible) {
+        section?.setOpen(true);
+      } else if (section && !bindings.some((other) =>
+        other.section === section && other.checkbox.checked)) {
+        section.setOpen(false);
+      }
       return true;
     },
 
@@ -217,15 +231,15 @@ function createLegendSection(legend, name, open) {
   items.hidden = !open;
   toggle.setAttribute('aria-controls', items.id);
 
-  toggle.addEventListener('click', () => {
-    const next = toggle.getAttribute('aria-expanded') !== 'true';
+  const setOpen = (next) => {
     toggle.setAttribute('aria-expanded', `${next}`);
     items.hidden = !next;
-  });
+  };
+  toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
 
   section.append(toggle, items);
   legend.append(section);
-  return items;
+  return { items, setOpen };
 }
 
 function createLegendGroup(item, getMap, notifyChange) {
