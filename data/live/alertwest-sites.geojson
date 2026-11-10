@@ -1407,6 +1407,49 @@
       "geometry": {
         "type": "Point",
         "coordinates": [
+          -122.492866,
+          42.197755
+        ]
+      },
+      "properties": {
+        "name": "Table Mountain (Jackson)",
+        "aliases": [],
+        "cameraHeightFt": 118.0,
+        "alertWestLive": false,
+        "provider": "alertwest",
+        "reportedCoordinates": [
+          -122.4936,
+          42.1983
+        ],
+        "locationNote": "Digitized lookout preferred by user; sheet point is about 85 m away.",
+        "viewshedId": "table-mountain-jackson",
+        "locationSource": "digitized",
+        "digitizedId": "digitized-camera-10",
+        "source": "data/live/digitized-camera-sources.geojson"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -121.634263,
+          42.098206
+        ]
+      },
+      "properties": {
+        "name": "Stukel Mountain",
+        "aliases": [],
+        "cameraHeightFt": 85.0,
+        "alertWestLive": false,
+        "provider": "alertwest"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
           -121.722655,
           45.648648
         ]

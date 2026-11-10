@@ -113,6 +113,14 @@
       ]
     },
     {
+      "sheetName": "Table Mountain (Jackson)",
+      "name": "Table Mountain (Jackson)",
+      "provider": "alertwest",
+      "aliases": [],
+      "digitizedId": "digitized-camera-10",
+      "locationNote": "Digitized lookout preferred by user; sheet point is about 85 m away."
+    },
+    {
       "sheetName": "Jim Creek Butte",
       "name": "Jim Creek Butte",
       "provider": "alertwest",
