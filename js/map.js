@@ -634,11 +634,13 @@ async function changeBasemap(map, picker, basemap) {
 }
 
 function setSatelliteVisibility(map, basemap) {
-  map.setLayoutProperty(
-    SATELLITE_ID,
-    'visibility',
-    basemap === 'satellite' ? 'visible' : 'none'
-  );
+  const satellite = basemap === 'satellite';
+  map.setLayoutProperty(SATELLITE_ID, 'visibility', satellite ? 'visible' : 'none');
+  // shields belong to the outdoors basemap that satellite imagery covers;
+  // the simple basemap never adds the layer
+  if (map.getLayer(HIGHWAY_SHIELD_ID)) {
+    map.setLayoutProperty(HIGHWAY_SHIELD_ID, 'visibility', satellite ? 'none' : 'visible');
+  }
 }
 
 function notifyBasemapChange(basemap) {
