@@ -16,9 +16,13 @@ const SATELLITE_PLACE_LABEL_ID = 'satellite-place-labels';
 const SATELLITE_STATE_LABEL_ID = 'satellite-state-labels';
 // forests, parks, and other points of interest redraw in the same look
 const SATELLITE_POI_LABEL_ID = 'satellite-poi-labels';
+// mountain peaks redraw from the outdoors style's own peak layer
+const OUTDOORS_PEAK_LABEL_ID = 'natural-label-peak';
+const SATELLITE_PEAK_LABEL_ID = 'satellite-peak-labels';
 // the satellite imagery and every label layer drawn only on it
 const SATELLITE_LAYER_IDS = Object.freeze([
   SATELLITE_ID,
+  SATELLITE_PEAK_LABEL_ID,
   SATELLITE_POI_LABEL_ID,
   SATELLITE_PLACE_LABEL_ID,
   SATELLITE_STATE_LABEL_ID,
@@ -814,6 +818,31 @@ function addSatellitePlaceLabels(style) {
       'text-letter-spacing': 0.15,
       'text-size': ['interpolate', ['linear'], ['zoom'], 4, 9, 9, 21],
     },
+  });
+  addSatellitePeakLabels(style, places.paint);
+}
+
+// the outdoors style's own peak names and mountain icons sit under the imagery in its top slot
+// this copy keeps their filter, font, and elevations, recolored to match the other labels
+function addSatellitePeakLabels(style, labelPaint) {
+  const peaks = style.layers.find(({ id }) => id === OUTDOORS_PEAK_LABEL_ID);
+  if (!peaks) return;
+
+  // without the slot the copy draws above the imagery
+  const { slot, ...unslotted } = peaks;
+  const pointsOfInterestIndex = style.layers.findIndex(({ id }) => id === SATELLITE_POI_LABEL_ID);
+  // placed under the point of interest copy, as Standard stacks natural features below them
+  style.layers.splice(pointsOfInterestIndex, 0, {
+    ...unslotted,
+    id: SATELLITE_PEAK_LABEL_ID,
+    layout: {
+      ...peaks.layout,
+      visibility: 'none',
+      // the style's mountain icon takes a fill and an outline color, here matching the park tree
+      'icon-image': ['image', 'mountain', { params: { 'color-1': '#000000', 'color-2': '#ffffff' } }],
+    },
+    // keeps the peaks' own text and icon opacity by zoom
+    paint: { ...peaks.paint, ...labelPaint },
   });
 }
 
