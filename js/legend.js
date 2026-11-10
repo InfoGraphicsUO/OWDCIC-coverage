@@ -114,11 +114,8 @@ export function initLegend(items) {
       // a layer switched on by code, like a filter preset, shows its section open in Layers
       // switching it off closes the section again once nothing in it is on
       const { section } = binding;
-      if (visible) {
-        section?.setOpen(true);
-      } else if (section && !sectionHasLayerOn(section)) {
-        section.setOpen(false);
-      }
+      if (visible) section?.openFromCode();
+      else if (section && !sectionHasLayerOn(section)) section.closeFromCode();
       return true;
     },
 
@@ -235,15 +232,29 @@ function createLegendSection(legend, name, open = false) {
   items.hidden = !open;
   toggle.setAttribute('aria-controls', items.id);
 
+  // code only closes a section it opened itself, so one the user opened stays open
+  let openedByCode = false;
   const setOpen = (next) => {
     toggle.setAttribute('aria-expanded', `${next}`);
     items.hidden = !next;
+    openedByCode = false;
   };
   toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
 
   section.append(toggle, items);
   legend.append(section);
-  return { items, setOpen };
+  return {
+    items,
+    setOpen,
+    openFromCode() {
+      if (!items.hidden) return;
+      setOpen(true);
+      openedByCode = true;
+    },
+    closeFromCode() {
+      if (openedByCode) setOpen(false);
+    },
+  };
 }
 
 function createLegendGroup(item, getMap, notifyChange) {

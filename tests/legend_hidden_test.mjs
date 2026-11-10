@@ -12,6 +12,8 @@ class Node {
     this.style = { setProperty() {} };
     this.classList = { add() {}, toggle() {} };
     this.textContent = '';
+    this.attributes = {};
+    this.listeners = {};
   }
 
   append(...children) {
@@ -40,8 +42,10 @@ class Node {
     this.parentElement = null;
   }
 
-  setAttribute() {}
-  addEventListener() {}
+  setAttribute(name, value) { this.attributes[name] = `${value}`; }
+  getAttribute(name) { return this.attributes[name] ?? null; }
+  addEventListener(type, listener) { this.listeners[type] = listener; }
+  click() { this.listeners.click?.(); }
 }
 
 const legend = new Node('aside');
@@ -107,5 +111,11 @@ assert.equal(sectionItems(landSection).hidden, false);
 // switching the last one off closes it again
 sectioned.setVisible('BLM lands', false);
 assert.equal(sectionItems(landSection).hidden, true);
+
+// a section the user opened stays open when code switches its layer back off
+landSection.children[0].click();
+sectioned.setVisible('National forests', true);
+sectioned.setVisible('National forests', false);
+assert.equal(sectionItems(landSection).hidden, false, 'a section the user opened stays open');
 
 console.log('legend hidden group DOM contract passed');
