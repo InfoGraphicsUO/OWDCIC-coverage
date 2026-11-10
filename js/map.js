@@ -696,6 +696,10 @@ function setSatelliteVisibility(map, basemap) {
       map.setPaintProperty(STREET_LABEL_ID, property, value);
     }
   }
+  // highway shields stay off satellite, where street names alone label the roads
+  if (map.getLayer(HIGHWAY_SHIELD_ID)) {
+    map.setLayoutProperty(HIGHWAY_SHIELD_ID, 'visibility', basemap === 'satellite' ? 'none' : 'visible');
+  }
   setSatelliteBasemapConfig(map, basemap === 'satellite');
 }
 
