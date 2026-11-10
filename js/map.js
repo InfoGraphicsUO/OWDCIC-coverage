@@ -14,13 +14,25 @@ const SATELLITE_ID = 'mapbox-satellite-basemap';
 // on satellite, city, town, and state names redraw in the medium weight Standard gives larger cities
 const SATELLITE_PLACE_LABEL_ID = 'satellite-place-labels';
 const SATELLITE_STATE_LABEL_ID = 'satellite-state-labels';
+// forests, parks, and other points of interest redraw in the same look
+const SATELLITE_POI_LABEL_ID = 'satellite-poi-labels';
+// the satellite imagery and every label layer drawn only on it
+const SATELLITE_LAYER_IDS = Object.freeze([
+  SATELLITE_ID,
+  SATELLITE_POI_LABEL_ID,
+  SATELLITE_PLACE_LABEL_ID,
+  SATELLITE_STATE_LABEL_ID,
+]);
+// the outdoors style's park icon with its gray bubble cut away, saved at 2x pixel density
+const SATELLITE_PARK_ICON_ID = 'satellite-park-icon';
+const SATELLITE_PARK_ICON_URL = 'img/satellite-park.png';
+// the park icon download, shared by every style that needs the image added
+let satelliteParkIconLoad;
 // a white dot with a black ring, matching the white names with a black halo
 const SATELLITE_PLACE_DOT_ID = 'satellite-place-dot';
-// css pixels, the size of the style's own dot-10
+// css pixels
 const SATELLITE_PLACE_DOT_SIZE = 7;
 const SATELLITE_PLACE_DOT_RING = 1.5;
-// the outdoors style's point of interest label color, read at startup and restored after satellite
-let poiLabelColor;
 
 // center arrays use longitude first, then latitude
 const DEFAULT_VIEW = Object.freeze({
@@ -292,6 +304,7 @@ async function initializeMap() {
   map.on('style.load', () => {
     registerOutsideHatch(map);
     registerSatellitePlaceDot(map);
+    registerSatelliteParkIcon(map);
     restoreMarkerIcons(map).catch((error) => {
       console.error('Failed to restore map marker icons:', error);
     });
@@ -646,16 +659,14 @@ async function changeBasemap(map, picker, basemap) {
 
 function setSatelliteVisibility(map, basemap) {
   const visibility = basemap === 'satellite' ? 'visible' : 'none';
-  for (const layerId of [SATELLITE_ID, SATELLITE_PLACE_LABEL_ID, SATELLITE_STATE_LABEL_ID]) {
+  for (const layerId of SATELLITE_LAYER_IDS) {
     if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', visibility);
   }
-  // forest, park, and other point of interest labels darken on satellite, then restore
-  // satellite draws on the outdoors style, so the simple basemap is never recolored
-  if (activeBaseStyle === DEFAULT_BASEMAP && poiLabelColor) {
-    map.setConfigProperty('basemap', 'colorPointOfInterestLabels',
-      basemap === 'satellite' ? '#000000' : poiLabelColor);
-    // Standard's own place labels would show in the old style wherever a copy is crowded out
+  // Standard's own labels would show in the old style wherever a copy is crowded out
+  // satellite draws on the outdoors style, so the simple basemap is never changed
+  if (activeBaseStyle === DEFAULT_BASEMAP) {
     map.setConfigProperty('basemap', 'showPlaceLabels', basemap !== 'satellite');
+    map.setConfigProperty('basemap', 'showPointOfInterestLabels', basemap !== 'satellite');
   }
 }
 
@@ -699,7 +710,6 @@ function prepareBasemapStyle(style) {
   enableContourLineMetrics(style);
   // the app keeps the same projection when the selected style changes
   style.projection = { name: 'mercator' };
-  poiLabelColor ??= basemapImport(style)?.config?.colorPointOfInterestLabels;
   addSatelliteBasemap(style);
   addSatellitePlaceLabels(style);
   replaceRoadLabels(style);
@@ -756,10 +766,42 @@ function addSatellitePlaceLabels(style) {
     },
   };
 
-  // state names reuse the same look in place of Standard's faded bold
-  // added last so they stay above city names, as in Standard
   const { visibility, 'text-field': name, 'text-font': font } = places.layout;
-  style.layers.push(places, {
+
+  // forests, parks, and other points of interest also use the same look
+  // Standard can only switch all of these off together, so every class is copied
+  const sizerank = ['get', 'sizerank'];
+  // big places like national forests get no icon, as in Standard
+  const hasTree = ['all', ['>=', sizerank, 5], ['==', ['get', 'maki'], 'park']];
+  const pois = {
+    ...places,
+    id: SATELLITE_POI_LABEL_ID,
+    'source-layer': 'poi_label',
+    // Standard's zoom range, replacing the town labels' maxzoom from the spread
+    minzoom: 6,
+    maxzoom: 24,
+    // Standard's point of interest filter with the outdoors style's label density of 2
+    filter: ['<=', ['get', 'filterrank'], ['+',
+      ['step', ['zoom'], -2, 16, -1, 18, 0],
+      ['match', ['get', 'class'], 'park_like', 4, 'visitor_amenities', 2, 'store_like', 3, 'lodging', 1, 2],
+      2,
+    ]],
+    layout: {
+      visibility,
+      'text-field': name,
+      'text-font': font,
+      // big places like national forests get a larger name, as in Standard
+      'text-size': ['step', sizerank, 18, 5, 13],
+      // parks keep their tree, minus the style's gray bubble; other icons are left off
+      'icon-image': ['case', hasTree, SATELLITE_PARK_ICON_ID, ''],
+      'text-anchor': ['case', hasTree, 'top', 'center'],
+      'text-offset': ['case', hasTree, ['literal', [0, 0.8]], ['literal', [0, 0]]],
+    },
+  };
+
+  // state names reuse the same look in place of Standard's faded bold
+  // points of interest go first and state names last, so the stacking matches Standard
+  style.layers.push(pois, places, {
     ...places,
     id: SATELLITE_STATE_LABEL_ID,
     maxzoom: 9,
@@ -773,6 +815,21 @@ function addSatellitePlaceLabels(style) {
       'text-size': ['interpolate', ['linear'], ['zoom'], 4, 9, 9, 21],
     },
   });
+}
+
+// loads the bubble-free park tree once, then adds it to each new style
+function registerSatelliteParkIcon(map) {
+  satelliteParkIconLoad ??= new Promise((resolve, reject) => {
+    map.loadImage(SATELLITE_PARK_ICON_URL, (error, image) => (error ? reject(error) : resolve(image)));
+  });
+  satelliteParkIconLoad
+    .then((image) => {
+      // a basemap switch may have already added it to the newer style
+      if (!map.hasImage(SATELLITE_PARK_ICON_ID)) {
+        map.addImage(SATELLITE_PARK_ICON_ID, image, { pixelRatio: 2 });
+      }
+    })
+    .catch((error) => console.error('Failed to load satellite park icon:', error));
 }
 
 // draws the satellite place dot, which each new style needs added again
