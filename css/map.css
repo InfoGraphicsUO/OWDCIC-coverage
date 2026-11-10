@@ -497,17 +497,7 @@
     display: none;
 }
 
-/* rows sit indented under their heading, divided from each other but not from the heading's border */
-.control-menu .legend-section__items > .legend-row,
-.control-menu .legend-section__items > .legend-group > .legend-group__parent {
-    padding-left: 28px;
-}
-
-/* the indent moves the parent checkbox, so the group guide moves with it */
-.control-menu .legend-section__items .legend-group__children {
-    margin-left: 36px;
-}
-
+/* the last row leaves the dividing line to the section's own border */
 .control-menu .legend-section__items > :last-child {
     border-bottom: 0;
 }
