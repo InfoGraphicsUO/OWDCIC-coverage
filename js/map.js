@@ -740,8 +740,8 @@ function addSatellitePlaceLabels(style) {
       'text-radial-offset': ['step', ['zoom'], 0.55, 8, 0],
     },
     paint: {
-      'text-color': '#000000',
-      'text-halo-color': '#ffffff',
+      'text-color': '#ffffff',
+      'text-halo-color': '#000000',
       'text-halo-width': 1,
       'text-halo-blur': 1,
       // like Standard's labels, ignore the map lighting
