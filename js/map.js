@@ -14,6 +14,11 @@ const SATELLITE_ID = 'mapbox-satellite-basemap';
 // on satellite, city, town, and state names redraw in the medium weight Standard gives larger cities
 const SATELLITE_PLACE_LABEL_ID = 'satellite-place-labels';
 const SATELLITE_STATE_LABEL_ID = 'satellite-state-labels';
+// a white dot with a black ring, matching the white names with a black halo
+const SATELLITE_PLACE_DOT_ID = 'satellite-place-dot';
+// css pixels, the size of the style's own dot-10
+const SATELLITE_PLACE_DOT_SIZE = 7;
+const SATELLITE_PLACE_DOT_RING = 1.5;
 // the outdoors style's point of interest label color, read at startup and restored after satellite
 let poiLabelColor;
 
@@ -286,6 +291,7 @@ async function initializeMap() {
   map.on('error', handleMapError);
   map.on('style.load', () => {
     registerOutsideHatch(map);
+    registerSatellitePlaceDot(map);
     restoreMarkerIcons(map).catch((error) => {
       console.error('Failed to restore map marker icons:', error);
     });
@@ -735,7 +741,7 @@ function addSatellitePlaceLabels(style) {
       'text-max-width': 7,
       'symbol-sort-key': rank,
       // below zoom 8 labels sit beside a place dot, then center on the place
-      'icon-image': ['step', ['zoom'], 'dot-10', 8, ''],
+      'icon-image': ['step', ['zoom'], SATELLITE_PLACE_DOT_ID, 8, ''],
       'text-anchor': ['step', ['zoom'], ['get', 'text_anchor'], 8, 'center'],
       'text-radial-offset': ['step', ['zoom'], 0.55, 8, 0],
     },
@@ -767,6 +773,30 @@ function addSatellitePlaceLabels(style) {
       'text-size': ['interpolate', ['linear'], ['zoom'], 4, 9, 9, 21],
     },
   });
+}
+
+// draws the satellite place dot, which each new style needs added again
+function registerSatellitePlaceDot(map) {
+  if (map.hasImage(SATELLITE_PLACE_DOT_ID)) return;
+
+  // drawn at double size so the dot stays sharp on high-density screens
+  const pixelRatio = 2;
+  const size = SATELLITE_PLACE_DOT_SIZE * pixelRatio;
+  const ring = SATELLITE_PLACE_DOT_RING * pixelRatio;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  context.beginPath();
+  // the ring is centered on the circle's edge, so the radius leaves half of it inside the image
+  context.arc(size / 2, size / 2, (size - ring) / 2, 0, Math.PI * 2);
+  context.fillStyle = '#ffffff';
+  context.fill();
+  context.lineWidth = ring;
+  context.strokeStyle = '#000000';
+  context.stroke();
+
+  map.addImage(SATELLITE_PLACE_DOT_ID, context.getImageData(0, 0, size, size), { pixelRatio });
 }
 
 // the imported Mapbox Standard style whose config toggles its built-in layers
