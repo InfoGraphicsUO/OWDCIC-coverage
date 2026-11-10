@@ -891,10 +891,16 @@ function basemapImport(style) {
 }
 
 // Standard's 3D buildings, trees, and landmarks cover houses from zoom 15
+// with them off Standard draws flat building footprints instead, which also cover satellite imagery
+// those footprints and their outlines take their opacity from the building color, so it is transparent
 function hide3dObjects(style) {
   const basemap = basemapImport(style);
   if (!basemap) return;
-  basemap.config = { ...basemap.config, show3dObjects: false };
+  basemap.config = {
+    ...basemap.config,
+    show3dObjects: false,
+    colorBuildings: 'hsla(0, 0%, 0%, 0)',
+  };
 }
 
 // styles with Standard road labels off, like the simple basemap, stay without them
