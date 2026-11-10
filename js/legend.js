@@ -1,3 +1,4 @@
+import { createDisclosure, idFromLabel } from './disclosure.js';
 import { attachInfoTooltip } from './info-tooltip.js';
 
 /**
@@ -35,31 +36,51 @@ export function initLegend(items) {
   legend.append(title);
 
   const groupBindings = [];
+  const sections = [];
+  let sectionName;
+  let section = null;
+  let container = legend;
   for (const item of items) {
+    // each new section opens a collapsible block; rows without one go straight in the legend
+    if (item.section !== sectionName) {
+      sectionName = item.section;
+      section = sectionName ? createLegendSection(legend, sectionName) : null;
+      if (section) sections.push(section);
+      container = section?.items ?? legend;
+    }
+
     if (Array.isArray(item.children) && item.children.length > 0) {
       // groups contribute their parent and each child to the same update lookup
       const group = createLegendGroup(item, () => activeMap, notifyChange);
+      for (const binding of [group.parent, ...group.children]) binding.section = section;
       bindings.push(group.parent, ...group.children);
       groupBindings.push(group);
       group.element.hidden = item.hidden === true;
-      topLevelBindings.push({ item, element: group.element });
+      topLevelBindings.push({ item, element: group.element, container });
 
       // omitted rows can be inserted later at their original position
-      if (!group.element.hidden) legend.append(group.element);
+      if (!group.element.hidden) container.append(group.element);
       continue;
     }
 
     const binding = createLegendRow(item, () => activeMap, undefined, notifyChange);
+    binding.section = section;
     bindings.push(binding);
     binding.row.hidden = item.hidden === true;
-    topLevelBindings.push({ item, element: binding.row });
+    topLevelBindings.push({ item, element: binding.row, container });
 
     // keep initially hidden controls out of layout and accessibility navigation
-    if (!binding.row.hidden) legend.append(binding.row);
+    if (!binding.row.hidden) container.append(binding.row);
   }
 
   const findBinding = (label) =>
     bindings.find(({ item }) => item.label === label);
+
+  const sectionHasLayerOn = (section) =>
+    bindings.some((binding) => binding.section === section && binding.checkbox.checked);
+
+  // a section starts open when a layer in it starts on, so the list order doesn't matter
+  for (const section of sections) section.setOpen(sectionHasLayerOn(section));
 
   return {
     connect(map) {
@@ -90,6 +111,12 @@ export function initLegend(items) {
       const binding = findBinding(label);
       if (!binding) return false;
       binding.setChecked(visible);
+
+      // a layer switched on by code, like a filter preset, shows its section open in Layers
+      // switching it off closes the section again once nothing in it is on
+      const { section } = binding;
+      if (visible) section?.openFromCode();
+      else if (section && !sectionHasLayerOn(section)) section.closeFromCode();
       return true;
     },
 
@@ -106,13 +133,14 @@ export function initLegend(items) {
         return;
       }
 
-      if (binding.element.parentElement === legend) return;
+      const { container } = binding;
+      if (binding.element.parentElement === container) return;
 
       // reinsert before the next visible sibling to preserve the configured layer order
       const next = topLevelBindings
         .slice(topLevelBindings.indexOf(binding) + 1)
-        .find(({ element }) => element.parentElement === legend)?.element;
-      legend.insertBefore(binding.element, next ?? null);
+        .find(({ element }) => element.parentElement === container)?.element;
+      container.insertBefore(binding.element, next ?? null);
     },
 
     // the PNG export reads this in place of the visible label, for state the label can't show
@@ -184,6 +212,33 @@ export function initLegend(items) {
       visual.removeAttribute('aria-label');
       visual.removeAttribute('role');
       visual.removeAttribute('tabindex');
+    },
+  };
+}
+
+// a section heading that collapses its rows; collapsing hides the controls, not the map layers
+function createLegendSection(legend, name) {
+  // code only closes a section it opened itself, so one the user opened stays open
+  let openedByCode = false;
+  const section = createDisclosure(name, {
+    id: `legend-section-${idFromLabel(name)}`,
+    className: 'legend-section',
+    onToggle: () => { openedByCode = false; },
+  });
+  legend.append(section.element);
+
+  return {
+    items: section.items,
+    setOpen: section.setOpen,
+    openFromCode() {
+      if (!section.items.hidden) return;
+      section.setOpen(true);
+      openedByCode = true;
+    },
+    closeFromCode() {
+      if (!openedByCode) return;
+      section.setOpen(false);
+      openedByCode = false;
     },
   };
 }

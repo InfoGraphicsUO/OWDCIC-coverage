@@ -39,7 +39,7 @@ assert.equal(nestedFilterParent('national-forest', shipped.filter(({ value }) =>
 assert.equal(nestedFilterParent('federal-land', shipped), null);
 
 const legendLabels = new Set(Object.values(LEGEND_LAYERS));
-for (const label of VISIBLE_LAYERS) {
+for (const label of Object.values(VISIBLE_LAYERS).flat()) {
   assert.ok(legendLabels.has(label), `${label} must be a LEGEND_LAYERS value`);
 }
 
@@ -131,8 +131,13 @@ const items = [
 ];
 
 const layerWarnings = [];
-const rows = visibleLegendItems(items, ['c', 'A', 'Secret', 'Missing'], (text) => layerWarnings.push(text));
+const rows = visibleLegendItems(
+  items,
+  { First: ['c'], Second: ['A', 'Secret', 'Missing'] },
+  (text) => layerWarnings.push(text)
+);
 assert.deepEqual(rows.visible.map(({ label }) => label), ['C', 'A', 'Secret']);
+assert.deepEqual(rows.visible.map(({ section }) => section), ['First', 'Second', undefined]);
 assert.deepEqual(rows.removed.map(({ label }) => label), ['B']);
 assert.equal(layerWarnings.length, 2);
 

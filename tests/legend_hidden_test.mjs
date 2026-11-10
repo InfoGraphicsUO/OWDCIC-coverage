@@ -12,6 +12,8 @@ class Node {
     this.style = { setProperty() {} };
     this.classList = { add() {}, toggle() {} };
     this.textContent = '';
+    this.attributes = {};
+    this.listeners = {};
   }
 
   append(...children) {
@@ -40,8 +42,10 @@ class Node {
     this.parentElement = null;
   }
 
-  setAttribute() {}
-  addEventListener() {}
+  setAttribute(name, value) { this.attributes[name] = `${value}`; }
+  getAttribute(name) { return this.attributes[name] ?? null; }
+  addEventListener(type, listener) { this.listeners[type] = listener; }
+  click() { this.listeners.click?.(); }
 }
 
 const legend = new Node('aside');
@@ -83,5 +87,58 @@ assert.equal(legend.children.length, 4, 'repeat reveal must not duplicate the gr
 // hiding removes the whole group from the visible legend tree
 control.setHidden('Digitized Camera Sources', true);
 assert.equal(legend.children.some((child) => child.className === 'legend-group'), false);
+
+// sections: one with a layer on starts open, whatever its place in the list
+const sectioned = initLegend([
+  { label: 'National forests', section: 'Land management', visible: false, layerIds: [] },
+  { label: 'BLM lands', section: 'Land management', visible: false, layerIds: [] },
+  { label: 'Cameras', section: 'Camera data', layerIds: [] },
+]);
+const [, landSection, cameraSection] = legend.children;
+const sectionItems = (section) => section.children[1];
+assert.equal(sectionItems(cameraSection).hidden, false, 'a section with a layer on starts open');
+assert.equal(sectionItems(landSection).hidden, true, 'a section with every layer off starts closed');
+
+// a layer switched on by code opens its section
+sectioned.setVisible('National forests', true);
+sectioned.setVisible('BLM lands', true);
+assert.equal(sectionItems(landSection).hidden, false);
+
+// switching one off keeps the section open while another layer in it is on
+sectioned.setVisible('National forests', false);
+assert.equal(sectionItems(landSection).hidden, false);
+
+// switching the last one off closes it again
+sectioned.setVisible('BLM lands', false);
+assert.equal(sectionItems(landSection).hidden, true);
+
+// a section the user opened stays open when code switches its layer back off
+landSection.children[0].click();
+sectioned.setVisible('National forests', true);
+sectioned.setVisible('National forests', false);
+assert.equal(sectionItems(landSection).hidden, false, 'a section the user opened stays open');
+
+// a hidden row comes back inside its own section, between the rows around it there
+const withHiddenRow = initLegend([
+  { label: 'Cameras', section: 'Camera data', layerIds: [] },
+  { label: 'Hidden cameras', section: 'Camera data', hidden: true, layerIds: [] },
+  { label: 'Camera viewsheds', section: 'Camera data', layerIds: [] },
+  { label: 'Fire history', section: 'Fire data', visible: false, layerIds: [] },
+]);
+const cameraRows = sectionItems(legend.children[1]).children;
+const [firstRow, lastRow] = cameraRows;
+assert.equal(cameraRows.length, 2, 'a hidden row stays out of its section');
+
+withHiddenRow.setHidden('Hidden cameras', false);
+assert.equal(legend.children.length, 3, 'a revealed row must not land outside its section');
+assert.equal(cameraRows.length, 3);
+assert.equal(cameraRows[0], firstRow);
+assert.equal(cameraRows[2], lastRow);
+
+withHiddenRow.setHidden('Hidden cameras', false);
+assert.equal(cameraRows.length, 3, 'repeat reveal must not duplicate the row');
+
+withHiddenRow.setHidden('Hidden cameras', true);
+assert.deepEqual(cameraRows, [firstRow, lastRow]);
 
 console.log('legend hidden group DOM contract passed');

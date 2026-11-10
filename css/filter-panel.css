@@ -92,7 +92,6 @@
 
 .filter-panel__search input:focus-visible,
 .filter-panel__item:focus-visible,
-.filter-panel__group-toggle:focus-visible,
 .filter-panel__back:focus-visible {
     outline: 2px solid var(--ohaz-yellow);
     outline-offset: 2px;
@@ -156,71 +155,25 @@
     min-width: 0;
 }
 
-.filter-panel__group {
-    border-bottom: 1px solid var(--control-chrome-border, rgba(255, 255, 255, .18));
-}
-
-.filter-panel__group-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    width: 100%;
-    padding: var(--sidebar-row-padding);
-    color: inherit;
-    background: transparent;
-    border: 0;
-    cursor: pointer;
-    text-align: left;
-    font: var(--sidebar-row-font);
-}
-
-/* same hover as the plain rows; only keyboard focus gets the outline */
-.filter-panel__group-toggle:hover,
-.filter-panel__group-toggle:focus-visible {
-    background: rgba(255, 255, 255, .08);
-}
-
-.filter-panel__group-toggle:focus-visible {
-    outline-offset: -2px;
-}
-
-.filter-panel__group-toggle::after {
-    content: "›";
-    color: var(--control-chrome-muted, rgba(255, 255, 255, .72));
-    font-size: 18px;
-    font-weight: 400;
-    transform: rotate(0deg);
-    transition: transform 150ms ease-in-out;
-}
-
-.filter-panel__group-toggle[aria-expanded="true"]::after {
-    transform: rotate(90deg);
-}
-
-.filter-panel__group-items .filter-panel__item {
+/* the group toggles themselves are styled in css/disclosure.css */
+.filter-panel__group .filter-panel__item {
     padding-left: 28px;
     font-weight: 500;
 }
 
-.filter-panel__group-items .filter-panel__group-toggle {
+.filter-panel__group .filter-panel__group > .disclosure__toggle {
     padding-left: 28px;
     font-size: 15px;
     font-weight: 500;
 }
 
-.filter-panel__group-items .filter-panel__group-items .filter-panel__item {
+.filter-panel__group .filter-panel__group .filter-panel__item {
     padding-left: 40px;
-}
-
-.filter-panel__group-items[hidden] {
-    display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
     .filter-panel__view.is-entering,
-    .filter-panel__view.is-leaving,
-    .filter-panel__group-toggle::after {
+    .filter-panel__view.is-leaving {
         animation: none;
         transition: none;
     }
