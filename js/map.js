@@ -87,6 +87,19 @@ const HIGHWAY_SHIELD_TYPES = Object.freeze([
 ]);
 // street names return with Standard's road labels turned off for the shields
 const STREET_LABEL_ID = 'street-labels';
+// dark names on map basemaps, and on satellite white names with a black halo like the other labels
+const STREET_LABEL_PAINT = Object.freeze({
+  map: Object.freeze({
+    'text-color': 'hsl(0, 0%, 25%)',
+    'text-halo-color': 'hsl(0, 0%, 100%)',
+    'text-halo-blur': 0,
+  }),
+  satellite: Object.freeze({
+    'text-color': '#ffffff',
+    'text-halo-color': '#000000',
+    'text-halo-blur': 1,
+  }),
+});
 // zoom, then streets v8 road classes that start getting names there and stay named above it
 // paths and tracks keep path-track-labels
 const STREET_LABEL_CLASSES_BY_ZOOM = Object.freeze([
@@ -666,6 +679,13 @@ function setSatelliteVisibility(map, basemap) {
   for (const layerId of SATELLITE_LAYER_IDS) {
     if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', visibility);
   }
+  // street names stay on every basemap and only change color
+  if (map.getLayer(STREET_LABEL_ID)) {
+    const paint = STREET_LABEL_PAINT[basemap === 'satellite' ? 'satellite' : 'map'];
+    for (const [property, value] of Object.entries(paint)) {
+      map.setPaintProperty(STREET_LABEL_ID, property, value);
+    }
+  }
   // Standard's own labels would show in the old style wherever a copy is crowded out
   // satellite draws on the outdoors style, so the simple basemap is never changed
   if (activeBaseStyle === DEFAULT_BASEMAP) {
@@ -936,8 +956,7 @@ function replaceRoadLabels(style) {
       'text-max-angle': 30,
     },
     paint: {
-      'text-color': 'hsl(0, 0%, 25%)',
-      'text-halo-color': 'hsl(0, 0%, 100%)',
+      ...STREET_LABEL_PAINT.map,
       'text-halo-width': 1,
     },
   });
