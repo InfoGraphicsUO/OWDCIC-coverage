@@ -109,6 +109,10 @@ const SEPARATE_VIEWSHED_COLORS_SETTING = 'separateViewshedColors';
 const VIEWSHED_HIGHLIGHT_COLOR = '#ffee00';
 const VIEWSHED_FILL_OPACITY = 0.5;
 const VIEWSHED_HIGHLIGHT_OPACITY = 0.55;
+// Mapbox Standard draws place labels above its middle slot, so viewsheds tint under city names
+// camera markers have no slot and stay above the labels
+// background overlays join this slot too, see underLabelLayerIds
+const VIEWSHED_SLOT = 'middle';
 
 const LOOKOUT_COLOR = '#8154BD';
 const NATIONAL_FOREST_COLOR = '#3b7d4f';
@@ -2135,6 +2139,7 @@ function addViewshedLayers(map) {
       type: 'fill',
       source: LAYER_IDS.combinedViewshedsSource,
       'source-layer': DATA_URLS.cameraViewshedsCoverageSourceLayer,
+      slot: VIEWSHED_SLOT,
       // syncViewshedFills decides when this replaces the provider fills
       layout: { visibility: 'none' },
       paint: {
@@ -2158,6 +2163,7 @@ function addViewshedLayers(map) {
       type: 'fill',
       source: provider.viewshedSourceId,
       'source-layer': DATA_URLS.cameraViewshedsCoverageSourceLayer,
+      slot: VIEWSHED_SLOT,
       paint: {
         // the basemap and settings hooks below set the real color
         'fill-color': VIEWSHED_FILL_COLOR.outdoors,
@@ -2173,6 +2179,7 @@ function addViewshedLayers(map) {
       type: 'fill',
       source: provider.viewshedSourceId,
       'source-layer': DATA_URLS.cameraViewshedsSourceLayer,
+      slot: VIEWSHED_SLOT,
       filter: viewshedFilter(NO_VIEWSHED_SELECTED),
       paint: {
         'fill-color': VIEWSHED_HIGHLIGHT_COLOR,
@@ -2187,6 +2194,7 @@ function addViewshedLayers(map) {
   onBasemapChange((selected) => {
     basemap = selected;
     applyViewshedSymbology(map, basemap);
+    setViewshedSlot(map, basemap);
   });
   onSettingChange(SEPARATE_VIEWSHED_COLORS_SETTING, () => {
     applyViewshedSymbology(map, basemap);
@@ -2223,6 +2231,32 @@ function applyViewshedSymbology(map, basemap) {
       map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', swatchColor);
     }
     legendControl.updateSwatchColor(provider.viewshedLabel, swatchColor, { image: swatchImage });
+  }
+}
+
+// background overlays share the viewshed slot and were added first, so they stay under the viewsheds
+// fire layers, boundary outlines, and the outside-region hatch keep no slot and stay above
+function underLabelLayerIds() {
+  return [
+    LAYER_IDS.burnProbability,
+    LAYER_IDS.blmLands,
+    LAYER_IDS.nationalForestsFill,
+    LAYER_IDS.nationalForestsLine,
+    LAYER_IDS.transmissionLines,
+    LAYER_IDS.transmissionLinesHit,
+    ...DIVISION_TYPES.map(({ fillLayerId }) => fillLayerId),
+    LAYER_IDS.combinedViewshedsFill,
+    ...CAMERA_PROVIDERS.flatMap(({ viewshedFillLayerId, viewshedHighlightLayerId }) =>
+      [viewshedFillLayerId, viewshedHighlightLayerId]),
+  ];
+}
+
+// the satellite raster covers every slotted layer, so these leave the slot on satellite
+// moving them together keeps the overlays under the viewsheds on every basemap
+function setViewshedSlot(map, basemap) {
+  const slot = basemap === 'satellite' ? undefined : VIEWSHED_SLOT;
+  for (const layerId of underLabelLayerIds()) {
+    if (map.getLayer(layerId)) map.setSlot(layerId, slot);
   }
 }
 

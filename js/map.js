@@ -11,6 +11,42 @@ mapboxgl.accessToken =
 const MAPBOX_STYLE = 'infographics/cmspb7yx9000s01px89hr8i1a';
 const SIMPLE_MAPBOX_STYLE = 'infographics/cmud7fy6n000a01rghxd37aiz';
 const SATELLITE_ID = 'mapbox-satellite-basemap';
+// on satellite, city, town, and state names redraw in the medium weight Standard gives larger cities
+const SATELLITE_PLACE_LABEL_ID = 'satellite-place-labels';
+const SATELLITE_STATE_LABEL_ID = 'satellite-state-labels';
+// forest and park names redraw in the same look
+const SATELLITE_POI_LABEL_ID = 'satellite-poi-labels';
+// mountain peaks redraw from the outdoors style's own peak layer
+const OUTDOORS_PEAK_LABEL_ID = 'natural-label-peak';
+const SATELLITE_PEAK_LABEL_ID = 'satellite-peak-labels';
+// Standard config that satellite overrides on the outdoors style
+const SATELLITE_BASEMAP_CONFIG = Object.freeze({
+  // the label copies above replace these
+  showPlaceLabels: false,
+  showPointOfInterestLabels: false,
+  // flat building footprints and their outlines take their opacity from this color
+  colorBuildings: 'hsla(0, 0%, 0%, 0)',
+});
+// the outdoors style's own values for those keys while satellite overrides them
+let savedBasemapConfig = null;
+// the satellite imagery and every label layer drawn only on it
+const SATELLITE_LAYER_IDS = Object.freeze([
+  SATELLITE_ID,
+  SATELLITE_PEAK_LABEL_ID,
+  SATELLITE_POI_LABEL_ID,
+  SATELLITE_PLACE_LABEL_ID,
+  SATELLITE_STATE_LABEL_ID,
+]);
+// the outdoors style's park icon with its gray bubble cut away, saved at 2x pixel density
+const SATELLITE_PARK_ICON_ID = 'satellite-park-icon';
+const SATELLITE_PARK_ICON_URL = 'img/satellite-park.png';
+// the park icon download, shared by every style that needs the image added
+let satelliteParkIconLoad;
+// a white dot with a black ring, matching the white names with a black halo
+const SATELLITE_PLACE_DOT_ID = 'satellite-place-dot';
+// css pixels
+const SATELLITE_PLACE_DOT_SIZE = 7;
+const SATELLITE_PLACE_DOT_RING = 1.5;
 
 // center arrays use longitude first, then latitude
 const DEFAULT_VIEW = Object.freeze({
@@ -59,8 +95,23 @@ const HIGHWAY_SHIELD_TYPES = Object.freeze([
   'circle-white',
   'us-bia',
 ]);
+// white names with a soft black halo, shared by every label drawn on satellite
+const SATELLITE_LABEL_PAINT = Object.freeze({
+  'text-color': '#ffffff',
+  'text-halo-color': '#000000',
+  'text-halo-blur': 1,
+});
 // street names return with Standard's road labels turned off for the shields
 const STREET_LABEL_ID = 'street-labels';
+// dark names on map basemaps, and the shared satellite look on satellite
+const STREET_LABEL_PAINT = Object.freeze({
+  map: Object.freeze({
+    'text-color': 'hsl(0, 0%, 25%)',
+    'text-halo-color': 'hsl(0, 0%, 100%)',
+    'text-halo-blur': 0,
+  }),
+  satellite: SATELLITE_LABEL_PAINT,
+});
 // zoom, then streets v8 road classes that start getting names there and stay named above it
 // paths and tracks keep path-track-labels
 const STREET_LABEL_CLASSES_BY_ZOOM = Object.freeze([
@@ -229,7 +280,7 @@ async function initializeMap() {
   resetBasemapPicker();
 
   // edit the style JSON before Mapbox installs its sources and layers
-  const style = prepareBasemapStyle(await loadMapStyle(DEFAULT_BASEMAP));
+  const style = prepareBasemapStyle(await loadMapStyle(DEFAULT_BASEMAP), DEFAULT_BASEMAP);
   recordBaseStyle(style);
 
   const map = new mapboxgl.Map({
@@ -281,6 +332,8 @@ async function initializeMap() {
   map.on('error', handleMapError);
   map.on('style.load', () => {
     registerOutsideHatch(map);
+    registerSatellitePlaceDot(map);
+    registerSatelliteParkIcon(map);
     restoreMarkerIcons(map).catch((error) => {
       console.error('Failed to restore map marker icons:', error);
     });
@@ -595,7 +648,7 @@ async function changeBasemap(map, picker, basemap) {
   }
 
   try {
-    const style = prepareBasemapStyle(await loadMapStyle(styleName));
+    const style = prepareBasemapStyle(await loadMapStyle(styleName), styleName);
     if (request !== basemapRequest) return;
 
     const nextBaseLayerIds = new Set(
@@ -634,12 +687,45 @@ async function changeBasemap(map, picker, basemap) {
 }
 
 function setSatelliteVisibility(map, basemap) {
-  const satellite = basemap === 'satellite';
-  map.setLayoutProperty(SATELLITE_ID, 'visibility', satellite ? 'visible' : 'none');
-  // shields belong to the outdoors basemap that satellite imagery covers;
-  // the simple basemap never adds the layer
+  const visibility = basemap === 'satellite' ? 'visible' : 'none';
+  for (const layerId of SATELLITE_LAYER_IDS) {
+    if (map.getLayer(layerId)) map.setLayoutProperty(layerId, 'visibility', visibility);
+  }
+  // street names stay on every basemap and only change color
+  if (map.getLayer(STREET_LABEL_ID)) {
+    const paint = STREET_LABEL_PAINT[basemap === 'satellite' ? 'satellite' : 'map'];
+    for (const [property, value] of Object.entries(paint)) {
+      map.setPaintProperty(STREET_LABEL_ID, property, value);
+    }
+  }
+  // highway shields stay off satellite, where street names alone label the roads
   if (map.getLayer(HIGHWAY_SHIELD_ID)) {
-    map.setLayoutProperty(HIGHWAY_SHIELD_ID, 'visibility', satellite ? 'none' : 'visible');
+    map.setLayoutProperty(HIGHWAY_SHIELD_ID, 'visibility', basemap === 'satellite' ? 'none' : 'visible');
+  }
+  setSatelliteBasemapConfig(map, basemap === 'satellite');
+}
+
+// Standard's own labels would show in the old style wherever a copy is crowded out
+// leaving satellite restores the style's own values rather than assuming them
+function setSatelliteBasemapConfig(map, satellite) {
+  // satellite draws on the outdoors style, so the simple basemap is never changed
+  // a newly loaded style starts from its own values
+  if (activeBaseStyle !== DEFAULT_BASEMAP) {
+    savedBasemapConfig = null;
+    return;
+  }
+
+  if (satellite && !savedBasemapConfig) {
+    savedBasemapConfig = {};
+    for (const [key, value] of Object.entries(SATELLITE_BASEMAP_CONFIG)) {
+      savedBasemapConfig[key] = map.getConfigProperty('basemap', key);
+      map.setConfigProperty('basemap', key, value);
+    }
+  } else if (!satellite && savedBasemapConfig) {
+    for (const [key, value] of Object.entries(savedBasemapConfig)) {
+      map.setConfigProperty('basemap', key, value);
+    }
+    savedBasemapConfig = null;
   }
 }
 
@@ -678,15 +764,182 @@ function addSatelliteBasemap(style) {
   });
 }
 
-function prepareBasemapStyle(style) {
+function prepareBasemapStyle(style, styleName) {
   removeDuplicateTerrainDem(style);
   enableContourLineMetrics(style);
   // the app keeps the same projection when the selected style changes
   style.projection = { name: 'mercator' };
-  addSatelliteBasemap(style);
+  // satellite only ever draws on the outdoors style
+  if (styleName === DEFAULT_BASEMAP) {
+    addSatelliteBasemap(style);
+    addSatellitePlaceLabels(style);
+  }
   replaceRoadLabels(style);
   hide3dObjects(style);
   return style;
+}
+
+// Standard draws small towns in a thin regular weight that gets lost on satellite imagery
+// this copy of all its city and town labels uses Portland's medium weight throughout
+// Standard's own place labels are switched off on satellite, so these are the only ones
+// covering cities too lets symbolrank keep big cities ahead of nearby towns
+function addSatellitePlaceLabels(style) {
+  if (style.sources?.composite?.url !== 'mapbox://mapbox.mapbox-streets-v8') return;
+
+  const rank = ['get', 'symbolrank'];
+  const places = {
+    id: SATELLITE_PLACE_LABEL_ID,
+    type: 'symbol',
+    source: 'composite',
+    'source-layer': 'place_label',
+    maxzoom: 15,
+    // Standard's city and town filters combined, which zoomed in keep only small places
+    filter: ['all',
+      ['==', ['get', 'class'], 'settlement'],
+      ['<=', ['get', 'filterrank'], 3],
+      ['step', ['zoom'], true, 13, ['>=', rank, 11], 14, ['>=', rank, 15]],
+    ],
+    layout: {
+      visibility: 'none',
+      'text-field': ['coalesce', ['get', 'name_en'], ['get', 'name']],
+      'text-font': ['Roboto Medium', 'Arial Unicode MS Bold'],
+      // Standard's city sizes for low ranks and town sizes for the rest
+      'text-size': ['interpolate', ['cubic-bezier', 0.2, 0, 0.9, 1], ['zoom'],
+        3, ['step', rank, 13, 6, 11, 9, 10],
+        6, ['step', rank, 18, 6, 16, 7, 14, 9, 12, 12, 10],
+        8, ['step', rank, 20, 9, 16, 10, 14, 12, 12, 15, 10],
+        13, ['step', rank, 22, 9, 20, 12, 16, 15, 14],
+        15, ['step', rank, 24, 9, 20, 12, 16, 15, 14]],
+      'text-max-width': 7,
+      'symbol-sort-key': rank,
+      // below zoom 8 labels sit beside a place dot, then center on the place
+      'icon-image': ['step', ['zoom'], SATELLITE_PLACE_DOT_ID, 8, ''],
+      'text-anchor': ['step', ['zoom'], ['get', 'text_anchor'], 8, 'center'],
+      'text-radial-offset': ['step', ['zoom'], 0.55, 8, 0],
+    },
+    paint: {
+      ...SATELLITE_LABEL_PAINT,
+      'text-halo-width': 1,
+      // like Standard's labels, ignore the map lighting
+      'text-emissive-strength': 1,
+      'icon-emissive-strength': 1,
+    },
+  };
+
+  const { visibility, 'text-field': name, 'text-font': font } = places.layout;
+
+  // forests and parks also use the same look
+  // Standard switches every point of interest off together, so only park-like places return
+  const sizerank = ['get', 'sizerank'];
+  // big places like national forests get no icon, as in Standard
+  const hasTree = ['all', ['>=', sizerank, 5], ['==', ['get', 'maki'], 'park']];
+  const pois = {
+    ...places,
+    id: SATELLITE_POI_LABEL_ID,
+    'source-layer': 'poi_label',
+    // Standard's zoom range, replacing the town labels' maxzoom from the spread
+    minzoom: 6,
+    maxzoom: 24,
+    // Standard's park filter with the outdoors style's label density of 2
+    // shops, food, lodging, and other places would add bare names with no icon to tell them apart
+    filter: ['all',
+      ['==', ['get', 'class'], 'park_like'],
+      ['<=', ['get', 'filterrank'], ['+', ['step', ['zoom'], -2, 16, -1, 18, 0], 4, 2]],
+    ],
+    layout: {
+      visibility,
+      'text-field': name,
+      'text-font': font,
+      // big places like national forests get a larger name, as in Standard
+      'text-size': ['step', sizerank, 18, 5, 13],
+      // parks keep their tree, minus the style's gray bubble; other icons are left off
+      'icon-image': ['case', hasTree, SATELLITE_PARK_ICON_ID, ''],
+      'text-anchor': ['case', hasTree, 'top', 'center'],
+      'text-offset': ['case', hasTree, ['literal', [0, 0.8]], ['literal', [0, 0]]],
+    },
+  };
+
+  // state names reuse the same look in place of Standard's faded bold
+  // points of interest go first and state names last, so the stacking matches Standard
+  style.layers.push(pois, places, {
+    ...places,
+    id: SATELLITE_STATE_LABEL_ID,
+    maxzoom: 9,
+    filter: ['==', ['get', 'class'], 'state'],
+    layout: {
+      visibility,
+      'text-field': name,
+      'text-font': font,
+      'text-transform': 'uppercase',
+      'text-letter-spacing': 0.15,
+      'text-size': ['interpolate', ['linear'], ['zoom'], 4, 9, 9, 21],
+    },
+  });
+  addSatellitePeakLabels(style, places.paint);
+}
+
+// the outdoors style's own peak names and mountain icons are dark, for a light map
+// this copy keeps their filter, font, and elevations, recolored to match the other labels
+function addSatellitePeakLabels(style, labelPaint) {
+  const peaks = style.layers.find(({ id }) => id === OUTDOORS_PEAK_LABEL_ID);
+  if (!peaks) return;
+
+  // without the slot the copy sits above the original in the top slot, so it wins where they collide
+  // and the dark originals stay hidden on satellite
+  const { slot, ...unslotted } = peaks;
+  const pointsOfInterestIndex = style.layers.findIndex(({ id }) => id === SATELLITE_POI_LABEL_ID);
+  // placed under the point of interest copy, as Standard stacks natural features below them
+  style.layers.splice(pointsOfInterestIndex, 0, {
+    ...unslotted,
+    id: SATELLITE_PEAK_LABEL_ID,
+    layout: {
+      ...peaks.layout,
+      visibility: 'none',
+      // the style's mountain icon takes a fill and an outline color, here matching the park tree
+      'icon-image': ['image', 'mountain', { params: { 'color-1': '#000000', 'color-2': '#ffffff' } }],
+    },
+    // keeps the peaks' own text and icon opacity by zoom
+    paint: { ...peaks.paint, ...labelPaint },
+  });
+}
+
+// loads the bubble-free park tree once, then adds it to each new style
+function registerSatelliteParkIcon(map) {
+  satelliteParkIconLoad ??= new Promise((resolve, reject) => {
+    map.loadImage(SATELLITE_PARK_ICON_URL, (error, image) => (error ? reject(error) : resolve(image)));
+  });
+  satelliteParkIconLoad
+    .then((image) => {
+      // a basemap switch may have already added it to the newer style
+      if (!map.hasImage(SATELLITE_PARK_ICON_ID)) {
+        map.addImage(SATELLITE_PARK_ICON_ID, image, { pixelRatio: 2 });
+      }
+    })
+    .catch((error) => console.error('Failed to load satellite park icon:', error));
+}
+
+// draws the satellite place dot, which each new style needs added again
+function registerSatellitePlaceDot(map) {
+  if (map.hasImage(SATELLITE_PLACE_DOT_ID)) return;
+
+  // drawn at double size so the dot stays sharp on high-density screens
+  const pixelRatio = 2;
+  const size = SATELLITE_PLACE_DOT_SIZE * pixelRatio;
+  const ring = SATELLITE_PLACE_DOT_RING * pixelRatio;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const context = canvas.getContext('2d');
+  context.beginPath();
+  // the ring is centered on the circle's edge, so the radius leaves half of it inside the image
+  context.arc(size / 2, size / 2, (size - ring) / 2, 0, Math.PI * 2);
+  context.fillStyle = '#ffffff';
+  context.fill();
+  context.lineWidth = ring;
+  context.strokeStyle = '#000000';
+  context.stroke();
+
+  map.addImage(SATELLITE_PLACE_DOT_ID, context.getImageData(0, 0, size, size), { pixelRatio });
 }
 
 // the imported Mapbox Standard style whose config toggles its built-in layers
@@ -695,6 +948,7 @@ function basemapImport(style) {
 }
 
 // Standard's 3D buildings, trees, and landmarks cover houses from zoom 15
+// with them off Standard draws flat building footprints instead, which satellite hides
 function hide3dObjects(style) {
   const basemap = basemapImport(style);
   if (!basemap) return;
@@ -734,8 +988,7 @@ function replaceRoadLabels(style) {
       'text-max-angle': 30,
     },
     paint: {
-      'text-color': 'hsl(0, 0%, 25%)',
-      'text-halo-color': 'hsl(0, 0%, 100%)',
+      ...STREET_LABEL_PAINT.map,
       'text-halo-width': 1,
     },
   });
