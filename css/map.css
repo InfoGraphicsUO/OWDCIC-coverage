@@ -493,10 +493,6 @@
     transform: rotate(90deg);
 }
 
-.control-menu .legend-section__items[hidden] {
-    display: none;
-}
-
 /* the last row leaves the dividing line to the section's own border */
 .control-menu .legend-section__items > :last-child {
     border-bottom: 0;
@@ -537,8 +533,6 @@
     /* a tighter gap leaves the longest provider label room on one line */
     gap: 8px;
     border-bottom: 0;
-    font-size: 15px;
-    font-weight: 500;
 }
 
 .control-menu .legend-group__key {
