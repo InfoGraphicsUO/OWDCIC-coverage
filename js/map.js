@@ -878,13 +878,14 @@ function addSatellitePlaceLabels(style) {
   addSatellitePeakLabels(style, places.paint);
 }
 
-// the outdoors style's own peak names and mountain icons sit under the imagery in its top slot
+// the outdoors style's own peak names and mountain icons are dark, for a light map
 // this copy keeps their filter, font, and elevations, recolored to match the other labels
 function addSatellitePeakLabels(style, labelPaint) {
   const peaks = style.layers.find(({ id }) => id === OUTDOORS_PEAK_LABEL_ID);
   if (!peaks) return;
 
-  // without the slot the copy draws above the imagery
+  // without the slot the copy sits above the original in the top slot, so it wins where they collide
+  // and the dark originals stay hidden on satellite
   const { slot, ...unslotted } = peaks;
   const pointsOfInterestIndex = style.layers.findIndex(({ id }) => id === SATELLITE_POI_LABEL_ID);
   // placed under the point of interest copy, as Standard stacks natural features below them
