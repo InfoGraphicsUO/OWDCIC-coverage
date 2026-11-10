@@ -450,58 +450,10 @@
     cursor: pointer;
 }
 
-/* section headings collapse like the filter panel's groups, at the same size as the rows */
-.control-menu .legend-section {
-    border-bottom: 1px solid var(--control-chrome-border);
-}
-
-.control-menu .legend-section__toggle {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    width: 100%;
-    box-sizing: border-box;
-    padding: var(--sidebar-row-padding);
-    color: var(--control-chrome-text);
-    background: transparent;
-    border: 0;
-    cursor: pointer;
-    text-align: left;
-    font: var(--sidebar-row-font);
-}
-
-.control-menu .legend-section__toggle:hover,
-.control-menu .legend-section__toggle:focus-visible {
-    background: rgba(255, 255, 255, .08);
-}
-
-.control-menu .legend-section__toggle:focus-visible {
-    outline: 2px solid var(--ohaz-yellow);
-    outline-offset: -2px;
-}
-
-.control-menu .legend-section__toggle::after {
-    content: "›";
-    color: var(--control-chrome-muted);
-    font-size: 18px;
-    font-weight: 400;
-    transition: transform 150ms ease-in-out;
-}
-
-.control-menu .legend-section__toggle[aria-expanded="true"]::after {
-    transform: rotate(90deg);
-}
-
+/* section headings are styled in css/disclosure.css, shared with the filter panel's groups */
 /* the last row leaves the dividing line to the section's own border */
-.control-menu .legend-section__items > :last-child {
+.control-menu .legend-section .disclosure__items > :last-child {
     border-bottom: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .control-menu .legend-section__toggle::after {
-        transition: none;
-    }
 }
 
 .control-menu .legend-row input[type="checkbox"],

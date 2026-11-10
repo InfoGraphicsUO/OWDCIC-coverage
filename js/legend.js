@@ -1,3 +1,4 @@
+import { createDisclosure, idFromLabel } from './disclosure.js';
 import { attachInfoTooltip } from './info-tooltip.js';
 
 /**
@@ -216,43 +217,28 @@ export function initLegend(items) {
 }
 
 // a section heading that collapses its rows; collapsing hides the controls, not the map layers
-function createLegendSection(legend, name, open = false) {
-  const section = document.createElement('section');
-  section.className = 'legend-section';
-
-  const toggle = document.createElement('button');
-  toggle.type = 'button';
-  toggle.className = 'legend-section__toggle';
-  toggle.textContent = name;
-  toggle.setAttribute('aria-expanded', `${open}`);
-
-  const items = document.createElement('div');
-  items.id = `legend-section-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-  items.className = 'legend-section__items';
-  items.hidden = !open;
-  toggle.setAttribute('aria-controls', items.id);
-
+function createLegendSection(legend, name) {
   // code only closes a section it opened itself, so one the user opened stays open
   let openedByCode = false;
-  const setOpen = (next) => {
-    toggle.setAttribute('aria-expanded', `${next}`);
-    items.hidden = !next;
-    openedByCode = false;
-  };
-  toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+  const section = createDisclosure(name, {
+    id: `legend-section-${idFromLabel(name)}`,
+    className: 'legend-section',
+    onToggle: () => { openedByCode = false; },
+  });
+  legend.append(section.element);
 
-  section.append(toggle, items);
-  legend.append(section);
   return {
-    items,
-    setOpen,
+    items: section.items,
+    setOpen: section.setOpen,
     openFromCode() {
-      if (!items.hidden) return;
-      setOpen(true);
+      if (!section.items.hidden) return;
+      section.setOpen(true);
       openedByCode = true;
     },
     closeFromCode() {
-      if (openedByCode) setOpen(false);
+      if (!openedByCode) return;
+      section.setOpen(false);
+      openedByCode = false;
     },
   };
 }

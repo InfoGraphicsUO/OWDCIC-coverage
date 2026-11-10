@@ -12,6 +12,7 @@
  * instead of listing on its own, and its back button returns to the parent
  */
 import { bindBottomSheet, isPhoneLayout } from './bottom-sheet.js';
+import { createDisclosure, idFromLabel } from './disclosure.js';
 export function initFilterPanel({
   types = [],
   loadOptions,
@@ -746,30 +747,15 @@ function renderTypeTree(list, types, selectedValue, openFolders, onChoose) {
       }
 
       const key = folderKey(entry.path);
-      const expanded = openFolders.has(key);
-      const group = document.createElement('div');
-      group.className = 'filter-panel__group';
-      const toggle = document.createElement('button');
-      toggle.type = 'button';
-      toggle.className = 'filter-panel__group-toggle';
-      toggle.textContent = entry.name;
-      toggle.setAttribute('aria-expanded', `${expanded}`);
-      toggle.setAttribute('aria-controls', `${list.id}-folder-${list.querySelectorAll('.filter-panel__group').length + 1}`);
-      const itemsContainer = document.createElement('div');
-      itemsContainer.id = toggle.getAttribute('aria-controls');
-      itemsContainer.className = 'filter-panel__group-items';
-      itemsContainer.hidden = !expanded;
-      toggle.addEventListener('click', () => {
-        const next = toggle.getAttribute('aria-expanded') !== 'true';
-        toggle.setAttribute('aria-expanded', `${next}`);
-        itemsContainer.hidden = !next;
-        if (next) openFolders.add(key);
-        else openFolders.delete(key);
+      const group = createDisclosure(entry.name, {
+        id: `${list.id}-folder-${list.querySelectorAll('.filter-panel__group').length + 1}`,
+        open: openFolders.has(key),
+        className: 'filter-panel__group',
+        onToggle: (open) => (open ? openFolders.add(key) : openFolders.delete(key)),
       });
 
-      group.append(toggle, itemsContainer);
-      container.append(group);
-      build(entry, itemsContainer);
+      container.append(group.element);
+      build(entry, group.items);
     }
   };
 
@@ -805,39 +791,18 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
   for (const [stateName, groupItems] of groups) {
     if (!groupItems.length) continue;
 
-    const group = document.createElement('div');
-    group.className = 'filter-panel__group';
-
     // a search opens each populated bucket so matches arent hidden behind a collapsed group
     // a selection made from the map also opens its bucket so the picked row is visible
     const holdsSelection = groupItems.some((item) => `${item.value}` === `${selectedValue}`);
     const expanded = Boolean(query) || holdsSelection || groupExpandedState.get(stateName) === true;
     if (query) groupExpandedState.set(stateName, true);
 
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'filter-panel__group-toggle';
-    toggle.textContent = stateName;
-    toggle.setAttribute('aria-expanded', `${expanded}`);
-
-    // connect the disclosure control to the region it expands or collapses
-    // group names like Pano AI contain spaces, which an id reference cannot
-    toggle.setAttribute(
-      'aria-controls',
-      `${list.id}-${stateName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-items`
-    );
-
-    toggle.addEventListener('click', () => {
-      const next = toggle.getAttribute('aria-expanded') !== 'true';
-      toggle.setAttribute('aria-expanded', `${next}`);
-      itemsContainer.hidden = !next;
-      groupExpandedState.set(stateName, next);
+    const group = createDisclosure(stateName, {
+      id: `${list.id}-${idFromLabel(stateName)}-items`,
+      open: expanded,
+      className: 'filter-panel__group',
+      onToggle: (open) => groupExpandedState.set(stateName, open),
     });
-
-    const itemsContainer = document.createElement('div');
-    itemsContainer.id = toggle.getAttribute('aria-controls');
-    itemsContainer.className = 'filter-panel__group-items';
-    itemsContainer.hidden = !expanded;
 
     for (const item of groupItems) {
       const selected = `${item.value}` === `${selectedValue}`;
@@ -857,11 +822,10 @@ function renderGroupedItems(list, items, selectedValue, onChoose, { query = '' }
       if (focusable && !firstFocusable) firstFocusable = button;
       button.textContent = item.displayLabel;
       button.addEventListener('click', () => onChoose(item));
-      itemsContainer.append(button);
+      group.items.append(button);
     }
 
-    group.append(toggle, itemsContainer);
-    list.append(group);
+    list.append(group.element);
   }
 
   for (const item of ungrouped) {
@@ -946,7 +910,7 @@ function optionMatchesQuery(option, query) {
 
 function moveListFocus(list, event) {
   // rows inside a collapsed group cannot take focus, so skip them
-  const items = [...list.querySelectorAll('.filter-panel__item, .filter-panel__group-toggle')]
+  const items = [...list.querySelectorAll('.filter-panel__item, .disclosure__toggle')]
     .filter((item) => !item.closest('[hidden]'));
   if (!items.length) return;
 

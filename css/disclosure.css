@@ -1,0 +1,53 @@
+/* collapsible groups shared by the filter panel and the Layers tab, built by js/disclosure.js */
+.disclosure {
+    border-bottom: 1px solid var(--control-chrome-border, rgba(255, 255, 255, .18));
+}
+
+.disclosure__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--sidebar-row-padding);
+    color: inherit;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    text-align: left;
+    font: var(--sidebar-row-font);
+}
+
+/* same hover as the plain rows; only keyboard focus gets the outline */
+.disclosure__toggle:hover,
+.disclosure__toggle:focus-visible {
+    background: rgba(255, 255, 255, .08);
+}
+
+.disclosure__toggle:focus-visible {
+    outline: 2px solid var(--ohaz-yellow);
+    outline-offset: -2px;
+}
+
+.disclosure__toggle::after {
+    content: "›";
+    color: var(--control-chrome-muted, rgba(255, 255, 255, .72));
+    font-size: 18px;
+    font-weight: 400;
+    transition: transform 150ms ease-in-out;
+}
+
+.disclosure__toggle[aria-expanded="true"]::after {
+    transform: rotate(90deg);
+}
+
+.disclosure__items[hidden] {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .disclosure__toggle::after {
+        transition: none;
+    }
+}
