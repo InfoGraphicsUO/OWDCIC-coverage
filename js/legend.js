@@ -35,18 +35,17 @@ export function initLegend(items) {
   legend.append(title);
 
   const groupBindings = [];
+  const sections = [];
   let sectionName;
   let section = null;
   let container = legend;
-  let openedSection = false;
   for (const item of items) {
     // each new section opens a collapsible block; rows without one go straight in the legend
     if (item.section !== sectionName) {
       sectionName = item.section;
-      // only the first section, the camera data, starts open
-      section = sectionName ? createLegendSection(legend, sectionName, !openedSection) : null;
+      section = sectionName ? createLegendSection(legend, sectionName) : null;
+      if (section) sections.push(section);
       container = section?.items ?? legend;
-      if (section) openedSection = true;
     }
 
     if (Array.isArray(item.children) && item.children.length > 0) {
@@ -75,6 +74,12 @@ export function initLegend(items) {
 
   const findBinding = (label) =>
     bindings.find(({ item }) => item.label === label);
+
+  const sectionHasLayerOn = (section) =>
+    bindings.some((binding) => binding.section === section && binding.checkbox.checked);
+
+  // a section starts open when a layer in it starts on, so the list order doesn't matter
+  for (const section of sections) section.setOpen(sectionHasLayerOn(section));
 
   return {
     connect(map) {
@@ -111,8 +116,7 @@ export function initLegend(items) {
       const { section } = binding;
       if (visible) {
         section?.setOpen(true);
-      } else if (section && !bindings.some((other) =>
-        other.section === section && other.checkbox.checked)) {
+      } else if (section && !sectionHasLayerOn(section)) {
         section.setOpen(false);
       }
       return true;
@@ -215,7 +219,7 @@ export function initLegend(items) {
 }
 
 // a section heading that collapses its rows; collapsing hides the controls, not the map layers
-function createLegendSection(legend, name, open) {
+function createLegendSection(legend, name, open = false) {
   const section = document.createElement('section');
   section.className = 'legend-section';
 

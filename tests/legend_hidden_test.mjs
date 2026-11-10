@@ -84,16 +84,16 @@ assert.equal(legend.children.length, 4, 'repeat reveal must not duplicate the gr
 control.setHidden('Digitized Camera Sources', true);
 assert.equal(legend.children.some((child) => child.className === 'legend-group'), false);
 
-// sections: the first starts open, the rest closed
+// sections: one with a layer on starts open, whatever its place in the list
 const sectioned = initLegend([
-  { label: 'Cameras', section: 'Camera data', layerIds: [] },
   { label: 'National forests', section: 'Land management', visible: false, layerIds: [] },
   { label: 'BLM lands', section: 'Land management', visible: false, layerIds: [] },
+  { label: 'Cameras', section: 'Camera data', layerIds: [] },
 ]);
-const [, cameraSection, landSection] = legend.children;
+const [, landSection, cameraSection] = legend.children;
 const sectionItems = (section) => section.children[1];
-assert.equal(sectionItems(cameraSection).hidden, false, 'first section starts open');
-assert.equal(sectionItems(landSection).hidden, true, 'later sections start closed');
+assert.equal(sectionItems(cameraSection).hidden, false, 'a section with a layer on starts open');
+assert.equal(sectionItems(landSection).hidden, true, 'a section with every layer off starts closed');
 
 // a layer switched on by code opens its section
 sectioned.setVisible('National forests', true);
