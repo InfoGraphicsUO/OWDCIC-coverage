@@ -118,4 +118,27 @@ sectioned.setVisible('National forests', true);
 sectioned.setVisible('National forests', false);
 assert.equal(sectionItems(landSection).hidden, false, 'a section the user opened stays open');
 
+// a hidden row comes back inside its own section, between the rows around it there
+const withHiddenRow = initLegend([
+  { label: 'Cameras', section: 'Camera data', layerIds: [] },
+  { label: 'Hidden cameras', section: 'Camera data', hidden: true, layerIds: [] },
+  { label: 'Camera viewsheds', section: 'Camera data', layerIds: [] },
+  { label: 'Fire history', section: 'Fire data', visible: false, layerIds: [] },
+]);
+const cameraRows = sectionItems(legend.children[1]).children;
+const [firstRow, lastRow] = cameraRows;
+assert.equal(cameraRows.length, 2, 'a hidden row stays out of its section');
+
+withHiddenRow.setHidden('Hidden cameras', false);
+assert.equal(legend.children.length, 3, 'a revealed row must not land outside its section');
+assert.equal(cameraRows.length, 3);
+assert.equal(cameraRows[0], firstRow);
+assert.equal(cameraRows[2], lastRow);
+
+withHiddenRow.setHidden('Hidden cameras', false);
+assert.equal(cameraRows.length, 3, 'repeat reveal must not duplicate the row');
+
+withHiddenRow.setHidden('Hidden cameras', true);
+assert.deepEqual(cameraRows, [firstRow, lastRow]);
+
 console.log('legend hidden group DOM contract passed');
