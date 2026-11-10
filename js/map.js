@@ -19,6 +19,16 @@ const SATELLITE_POI_LABEL_ID = 'satellite-poi-labels';
 // mountain peaks redraw from the outdoors style's own peak layer
 const OUTDOORS_PEAK_LABEL_ID = 'natural-label-peak';
 const SATELLITE_PEAK_LABEL_ID = 'satellite-peak-labels';
+// Standard config that satellite overrides on the outdoors style
+const SATELLITE_BASEMAP_CONFIG = Object.freeze({
+  // the label copies above replace these
+  showPlaceLabels: false,
+  showPointOfInterestLabels: false,
+  // flat building footprints and their outlines take their opacity from this color
+  colorBuildings: 'hsla(0, 0%, 0%, 0)',
+});
+// the outdoors style's own values for those keys while satellite overrides them
+let savedBasemapConfig = null;
 // the satellite imagery and every label layer drawn only on it
 const SATELLITE_LAYER_IDS = Object.freeze([
   SATELLITE_ID,
@@ -686,11 +696,30 @@ function setSatelliteVisibility(map, basemap) {
       map.setPaintProperty(STREET_LABEL_ID, property, value);
     }
   }
-  // Standard's own labels would show in the old style wherever a copy is crowded out
+  setSatelliteBasemapConfig(map, basemap === 'satellite');
+}
+
+// Standard's own labels would show in the old style wherever a copy is crowded out
+// leaving satellite restores the style's own values rather than assuming them
+function setSatelliteBasemapConfig(map, satellite) {
   // satellite draws on the outdoors style, so the simple basemap is never changed
-  if (activeBaseStyle === DEFAULT_BASEMAP) {
-    map.setConfigProperty('basemap', 'showPlaceLabels', basemap !== 'satellite');
-    map.setConfigProperty('basemap', 'showPointOfInterestLabels', basemap !== 'satellite');
+  // a newly loaded style starts from its own values
+  if (activeBaseStyle !== DEFAULT_BASEMAP) {
+    savedBasemapConfig = null;
+    return;
+  }
+
+  if (satellite && !savedBasemapConfig) {
+    savedBasemapConfig = {};
+    for (const [key, value] of Object.entries(SATELLITE_BASEMAP_CONFIG)) {
+      savedBasemapConfig[key] = map.getConfigProperty('basemap', key);
+      map.setConfigProperty('basemap', key, value);
+    }
+  } else if (!satellite && savedBasemapConfig) {
+    for (const [key, value] of Object.entries(savedBasemapConfig)) {
+      map.setConfigProperty('basemap', key, value);
+    }
+    savedBasemapConfig = null;
   }
 }
 
@@ -911,16 +940,11 @@ function basemapImport(style) {
 }
 
 // Standard's 3D buildings, trees, and landmarks cover houses from zoom 15
-// with them off Standard draws flat building footprints instead, which also cover satellite imagery
-// those footprints and their outlines take their opacity from the building color, so it is transparent
+// with them off Standard draws flat building footprints instead, which satellite hides
 function hide3dObjects(style) {
   const basemap = basemapImport(style);
   if (!basemap) return;
-  basemap.config = {
-    ...basemap.config,
-    show3dObjects: false,
-    colorBuildings: 'hsla(0, 0%, 0%, 0)',
-  };
+  basemap.config = { ...basemap.config, show3dObjects: false };
 }
 
 // styles with Standard road labels off, like the simple basemap, stay without them
