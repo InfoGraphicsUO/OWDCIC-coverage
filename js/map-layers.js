@@ -5,6 +5,7 @@ import {
   CAMERA_PROVIDER_COLORS,
   DATA_URLS,
   DIGITIZED_CAMERA_ICON_URLS,
+  DIVISION_OUTLINE_URLS,
   LAYER_IDS,
   LEGEND_LAYERS,
   MARKER_ICON_URLS,
@@ -88,6 +89,14 @@ const BOUNDARY_FILL_COLOR = '#929292';
 const WHOLE_AREA_FILTER = ['!', ['has', 'partOfDivisionId']];
 
 const SELECTED_BOUNDARY_COLOR = '#f8e109';
+// fills the measured part of a selection whose outline is the whole area
+const SELECTED_MEASURED_FILL_OPACITY = 0.3;
+// the same fill over white, for the export legend swatch
+const SELECTED_MEASURED_FILL_SWATCH = 'rgba(248, 225, 9, 0.3)';
+// export legend names for that measured part
+const MEASURED_AREA_LABELS = Object.freeze({
+  'wildland-fire-unit': 'BLM, USFWS, and NPS land',
+});
 
 const PANO_OPERATOR = 'Pano AI';
 const ENVIROVISION_OPERATOR = 'EnviroVision';
@@ -277,6 +286,7 @@ const DIVISION_TYPES = Object.freeze(FILTER_TYPES
   .filter(({ value }) => value !== 'camera')
   .map(({ value, label, options }) => {
     const prefix = `filter-${value}`;
+    const outlineUrl = DIVISION_OUTLINE_URLS[value];
     return Object.freeze({
       value,
       label,
@@ -289,6 +299,12 @@ const DIVISION_TYPES = Object.freeze(FILTER_TYPES
       labelLayerId: `${prefix}-labels`,
       selectedLayerId: `${prefix}-selected`,
       dataUrl: `data/live/map-divisions/${value}.geojson`,
+      // only types with whole-area outlines get these; see DIVISION_OUTLINE_URLS
+      ...(outlineUrl && {
+        outlineUrl,
+        outlineSourceId: `${prefix}-outline-source`,
+        selectedFillLayerId: `${prefix}-selected-fill`,
+      }),
     });
   }));
 
@@ -905,11 +921,20 @@ function addBoundaryLayers(map) {
       type: 'geojson',
       data: emptyFeatureCollection(),
     });
+    // whole areas draw the base fill, outlines, and selection border, and take the clicks,
+    // while hover and the selection fill stay on the measured part
+    const outlineSource = division.outlineSourceId ?? division.sourceId;
+    if (division.outlineSourceId) {
+      map.addSource(division.outlineSourceId, {
+        type: 'geojson',
+        data: emptyFeatureCollection(),
+      });
+    }
 
     map.addLayer({
       id: division.fillLayerId,
       type: 'fill',
-      source: division.sourceId,
+      source: outlineSource,
       filter: WHOLE_AREA_FILTER,
       layout: { visibility: 'none' },
       paint: {
@@ -935,7 +960,7 @@ function addBoundaryLayers(map) {
     map.addLayer({
       id: division.layerId,
       type: 'line',
-      source: division.sourceId,
+      source: outlineSource,
       filter: WHOLE_AREA_FILTER,
       layout: { visibility: 'none' },
       paint: {
@@ -982,11 +1007,25 @@ function addBoundaryLayers(map) {
       },
     });
 
+    if (division.selectedFillLayerId) {
+      map.addLayer({
+        id: division.selectedFillLayerId,
+        type: 'fill',
+        source: division.sourceId,
+        filter: divisionFilterExpression(NO_DIVISION_SELECTED),
+        layout: { visibility: 'none' },
+        paint: {
+          'fill-color': SELECTED_BOUNDARY_COLOR,
+          'fill-opacity': SELECTED_MEASURED_FILL_OPACITY,
+        },
+      });
+    }
+
     // selected outline uses its own filter so hover can remain transient
     map.addLayer({
       id: division.selectedLayerId,
       type: 'line',
-      source: division.sourceId,
+      source: outlineSource,
       filter: divisionFilterExpression(NO_DIVISION_SELECTED),
       layout: { visibility: 'none' },
       paint: {
@@ -1108,7 +1147,11 @@ async function loadDivisionOptions(map, typeValue) {
   const division = divisionType(typeValue);
   if (!division) throw new Error(`Unknown division type: ${typeValue}`);
 
-  const data = await loadDivisionData(division);
+  const [data, outlines] = await Promise.all([
+    loadDivisionData(division),
+    division.outlineUrl ? loadDivisionOutlines(division) : null,
+  ]);
+  if (outlines) setSourceData(map, division.outlineSourceId, outlines);
 
   // a combined option has no shape of its own on the map, so clicks and labels land on its members
   const drawn = data.features.filter((feature) => !isCombinedDivision(feature));
@@ -1433,6 +1476,22 @@ function loadDivisionData(division) {
   return divisionLoads.get(division.value);
 }
 
+// whole-area outlines for a type whose shapes are only the measured part; null when they fail,
+// which leaves the list and the measured fill working without the outline and map clicks
+const divisionOutlineLoads = new Map();
+
+function loadDivisionOutlines(division) {
+  if (!divisionOutlineLoads.has(division.value)) {
+    divisionOutlineLoads.set(division.value, fetchJson(division.outlineUrl, `${division.label} outlines`)
+      .catch((error) => {
+        divisionOutlineLoads.delete(division.value);
+        console.error(`Failed to load ${division.label} outlines:`, error);
+        return null;
+      }));
+  }
+  return divisionOutlineLoads.get(division.value);
+}
+
 function selectDivision(map, typeValue, divisionId) {
   const division = divisionType(typeValue);
   if (!division) return;
@@ -1508,8 +1567,10 @@ function setLayerVisible(map, layerId, visible) {
 }
 
 function setDivisionLayerFilter(map, division, divisionId) {
-  if (map.getLayer(division.selectedLayerId)) {
-    map.setFilter(division.selectedLayerId, divisionFilterExpression(divisionId));
+  for (const layerId of [division.selectedLayerId, division.selectedFillLayerId]) {
+    if (layerId && map.getLayer(layerId)) {
+      map.setFilter(layerId, divisionFilterExpression(divisionId));
+    }
   }
 }
 
@@ -1533,6 +1594,7 @@ function divisionLayerIds(division) {
     division.layerId,
     division.labelLayerId,
     division.selectedLayerId,
+    ...(division.selectedFillLayerId ? [division.selectedFillLayerId] : []),
   ];
 }
 
@@ -1584,9 +1646,11 @@ function orderDivisionLayers(map) {
     if (firstPointLayer) {
       for (const layerId of [
         division.hoverLayerId,
+        division.selectedFillLayerId,
         division.layerId,
         division.labelLayerId,
       ]) {
+        if (!layerId) continue;
         if (map.getLayer(layerId)) map.moveLayer(layerId, firstPointLayer);
       }
     }
@@ -2274,6 +2338,13 @@ function selectionLegendItems(selection) {
       label: selection.type === 'utility' ? `${name} approx. service boundary` : `${name} border`,
       visual: { type: 'swatch', style: 'border', color: SELECTED_BOUNDARY_COLOR },
     });
+    // the measured part of an outlined area gets its own row, e.g. the DOI land in a USWFS unit
+    if (divisionType(selection.type)?.selectedFillLayerId) {
+      items.push({
+        label: `${MEASURED_AREA_LABELS[selection.type] ?? 'Measured area'} in ${name}`,
+        visual: { type: 'swatch', style: 'fill', color: SELECTED_MEASURED_FILL_SWATCH },
+      });
+    }
   }
 
   if (highlightedCameraName && highlightedViewshedIsRendered(activeMap)) {

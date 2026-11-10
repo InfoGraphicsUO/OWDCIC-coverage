@@ -187,7 +187,14 @@ export const FILTER_LAYER_PRESETS = Object.freeze({
   utility: Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.transmissionLines]) }),
   'national-forest': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.nationalForests]) }),
   'federal-land': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.blmLands]) }),
-  'wildland-fire-unit': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.blmLands]) }),
+});
+
+// filter type -> whole-area outlines for a type whose shapes cover only part of each area
+// the selection traces the whole area, and a light fill shows the part that is measured,
+// e.g. a USWFS unit outlines the whole unit and fills the DOI land inside it
+// each outline feature carries the divisionId of the area it belongs to
+export const DIVISION_OUTLINE_URLS = Object.freeze({
+  'wildland-fire-unit': 'data/live/wildland-fire-unit-outlines.geojson',
 });
 
 // filter type -> the option of another group that opens it, so it lists as a step inside that group

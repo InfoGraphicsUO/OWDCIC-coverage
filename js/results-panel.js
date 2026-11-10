@@ -31,7 +31,7 @@ const BOUNDARY_QUALIFIERS = Object.freeze({
   'federal-land': 'Federal land boundary',
   'tribal-land': 'Tribal land boundary',
   'odf-protection-district': 'ODF protection district boundary',
-  'wildland-fire-unit': 'BLM, USFWS, and NPS land within the US Wildland Fire Service unit boundary',
+  'wildland-fire-unit': 'US Wildland Fire Service unit boundary; coverage counts only the shaded BLM, USFWS, and NPS land inside it',
 });
 
 const MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contributors';
