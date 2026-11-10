@@ -37,11 +37,14 @@ export function initLegend(items) {
   const groupBindings = [];
   let section;
   let container = legend;
+  let openedSection = false;
   for (const item of items) {
     // each new section opens a collapsible block; rows without one go straight in the legend
     if (item.section !== section) {
       section = item.section;
-      container = section ? createLegendSection(legend, section) : legend;
+      // only the first section, the camera data, starts open
+      container = section ? createLegendSection(legend, section, !openedSection) : legend;
+      if (section) openedSection = true;
     }
 
     if (Array.isArray(item.children) && item.children.length > 0) {
@@ -198,7 +201,7 @@ export function initLegend(items) {
 }
 
 // a section heading that collapses its rows; collapsing hides the controls, not the map layers
-function createLegendSection(legend, name) {
+function createLegendSection(legend, name, open) {
   const section = document.createElement('section');
   section.className = 'legend-section';
 
@@ -206,13 +209,12 @@ function createLegendSection(legend, name) {
   toggle.type = 'button';
   toggle.className = 'legend-section__toggle';
   toggle.textContent = name;
-  // sections start closed so the tab opens on just the four headings
-  toggle.setAttribute('aria-expanded', 'false');
+  toggle.setAttribute('aria-expanded', `${open}`);
 
   const items = document.createElement('div');
   items.id = `legend-section-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
   items.className = 'legend-section__items';
-  items.hidden = true;
+  items.hidden = !open;
   toggle.setAttribute('aria-controls', items.id);
 
   toggle.addEventListener('click', () => {
