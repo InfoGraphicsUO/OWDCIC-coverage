@@ -446,7 +446,76 @@
 .control-menu .legend-label {
     flex: 1;
     color: var(--control-chrome-text);
+    font-weight: 400;
     cursor: pointer;
+}
+
+/* section headings collapse like the filter panel's groups, at the same size as the rows */
+.control-menu .legend-section {
+    border-bottom: 1px solid var(--control-chrome-border);
+}
+
+.control-menu .legend-section__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--sidebar-row-padding);
+    color: var(--control-chrome-text);
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    text-align: left;
+    font: var(--sidebar-row-font);
+}
+
+.control-menu .legend-section__toggle:hover,
+.control-menu .legend-section__toggle:focus-visible {
+    background: rgba(255, 255, 255, .08);
+}
+
+.control-menu .legend-section__toggle:focus-visible {
+    outline: 2px solid var(--ohaz-yellow);
+    outline-offset: -2px;
+}
+
+.control-menu .legend-section__toggle::after {
+    content: "›";
+    color: var(--control-chrome-muted);
+    font-size: 18px;
+    font-weight: 400;
+    transition: transform 150ms ease-in-out;
+}
+
+.control-menu .legend-section__toggle[aria-expanded="true"]::after {
+    transform: rotate(90deg);
+}
+
+.control-menu .legend-section__items[hidden] {
+    display: none;
+}
+
+/* rows sit indented under their heading, divided from each other but not from the heading's border */
+.control-menu .legend-section__items > .legend-row,
+.control-menu .legend-section__items > .legend-group > .legend-group__parent {
+    padding-left: 28px;
+}
+
+/* the indent moves the parent checkbox, so the group guide moves with it */
+.control-menu .legend-section__items .legend-group__children {
+    margin-left: 36px;
+}
+
+.control-menu .legend-section__items > :last-child {
+    border-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .control-menu .legend-section__toggle::after {
+        transition: none;
+    }
 }
 
 .control-menu .legend-row input[type="checkbox"],
@@ -478,7 +547,7 @@
     /* a tighter gap leaves the longest provider label room on one line */
     gap: 8px;
     border-bottom: 0;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 500;
 }
 

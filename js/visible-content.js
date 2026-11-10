@@ -138,7 +138,7 @@
 //     // cameras come from the live provider feeds, so this group is 'all' or 'none'
 //
 // MAP LAYERS
-//   layers appear in the legend in the order they are listed
+//   each key is a subheading in the Layers tab; its layers appear under it in list order
 //   a layer left out has no legend row, is never drawn, and does not request its data
 //   (camera and viewshed data still load because the filters and results use them)
 //
@@ -177,15 +177,23 @@ export const VISIBLE_FILTERS = {
   'National Park': 'none',
 };
 
-export const VISIBLE_LAYERS = [
-  'Cameras',
-  'Camera viewsheds',
-  'Standing lookouts',
-  'National forests',
-  'BLM lands',
-  'OR Burn probability (QWRA)',
-  'Transmission lines',
-  'Current fires (NIFC)',
-  'Fire history',
-  'Prescribed fires (Watch Duty)',
-];
+export const VISIBLE_LAYERS = {
+  'Camera data': [
+    'Cameras',
+    'Camera viewsheds',
+  ],
+  'Land management': [
+    'National forests',
+    'BLM lands',
+  ],
+  'Infrastructure': [
+    'Transmission lines',
+    'Standing lookouts',
+  ],
+  'Fire data': [
+    'Current fires (NIFC)',
+    'Fire history',
+    'Prescribed fires (Watch Duty)',
+    'OR Burn probability (QWRA)',
+  ],
+};

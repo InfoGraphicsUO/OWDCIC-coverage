@@ -35,27 +35,35 @@ export function initLegend(items) {
   legend.append(title);
 
   const groupBindings = [];
+  let section;
+  let container = legend;
   for (const item of items) {
+    // each new section opens a collapsible block; rows without one go straight in the legend
+    if (item.section !== section) {
+      section = item.section;
+      container = section ? createLegendSection(legend, section) : legend;
+    }
+
     if (Array.isArray(item.children) && item.children.length > 0) {
       // groups contribute their parent and each child to the same update lookup
       const group = createLegendGroup(item, () => activeMap, notifyChange);
       bindings.push(group.parent, ...group.children);
       groupBindings.push(group);
       group.element.hidden = item.hidden === true;
-      topLevelBindings.push({ item, element: group.element });
+      topLevelBindings.push({ item, element: group.element, container });
 
       // omitted rows can be inserted later at their original position
-      if (!group.element.hidden) legend.append(group.element);
+      if (!group.element.hidden) container.append(group.element);
       continue;
     }
 
     const binding = createLegendRow(item, () => activeMap, undefined, notifyChange);
     bindings.push(binding);
     binding.row.hidden = item.hidden === true;
-    topLevelBindings.push({ item, element: binding.row });
+    topLevelBindings.push({ item, element: binding.row, container });
 
     // keep initially hidden controls out of layout and accessibility navigation
-    if (!binding.row.hidden) legend.append(binding.row);
+    if (!binding.row.hidden) container.append(binding.row);
   }
 
   const findBinding = (label) =>
@@ -106,13 +114,14 @@ export function initLegend(items) {
         return;
       }
 
-      if (binding.element.parentElement === legend) return;
+      const { container } = binding;
+      if (binding.element.parentElement === container) return;
 
       // reinsert before the next visible sibling to preserve the configured layer order
       const next = topLevelBindings
         .slice(topLevelBindings.indexOf(binding) + 1)
-        .find(({ element }) => element.parentElement === legend)?.element;
-      legend.insertBefore(binding.element, next ?? null);
+        .find(({ element }) => element.parentElement === container)?.element;
+      container.insertBefore(binding.element, next ?? null);
     },
 
     // the PNG export reads this in place of the visible label, for state the label can't show
@@ -186,6 +195,35 @@ export function initLegend(items) {
       visual.removeAttribute('tabindex');
     },
   };
+}
+
+// a section heading that collapses its rows; collapsing hides the controls, not the map layers
+function createLegendSection(legend, name) {
+  const section = document.createElement('section');
+  section.className = 'legend-section';
+
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'legend-section__toggle';
+  toggle.textContent = name;
+  // sections start closed so the tab opens on just the four headings
+  toggle.setAttribute('aria-expanded', 'false');
+
+  const items = document.createElement('div');
+  items.id = `legend-section-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+  items.className = 'legend-section__items';
+  items.hidden = true;
+  toggle.setAttribute('aria-controls', items.id);
+
+  toggle.addEventListener('click', () => {
+    const next = toggle.getAttribute('aria-expanded') !== 'true';
+    toggle.setAttribute('aria-expanded', `${next}`);
+    items.hidden = !next;
+  });
+
+  section.append(toggle, items);
+  legend.append(section);
+  return items;
 }
 
 function createLegendGroup(item, getMap, notifyChange) {
