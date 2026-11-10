@@ -95,20 +95,22 @@ const HIGHWAY_SHIELD_TYPES = Object.freeze([
   'circle-white',
   'us-bia',
 ]);
+// white names with a soft black halo, shared by every label drawn on satellite
+const SATELLITE_LABEL_PAINT = Object.freeze({
+  'text-color': '#ffffff',
+  'text-halo-color': '#000000',
+  'text-halo-blur': 1,
+});
 // street names return with Standard's road labels turned off for the shields
 const STREET_LABEL_ID = 'street-labels';
-// dark names on map basemaps, and on satellite white names with a black halo like the other labels
+// dark names on map basemaps, and the shared satellite look on satellite
 const STREET_LABEL_PAINT = Object.freeze({
   map: Object.freeze({
     'text-color': 'hsl(0, 0%, 25%)',
     'text-halo-color': 'hsl(0, 0%, 100%)',
     'text-halo-blur': 0,
   }),
-  satellite: Object.freeze({
-    'text-color': '#ffffff',
-    'text-halo-color': '#000000',
-    'text-halo-blur': 1,
-  }),
+  satellite: SATELLITE_LABEL_PAINT,
 });
 // zoom, then streets v8 road classes that start getting names there and stay named above it
 // paths and tracks keep path-track-labels
@@ -816,10 +818,8 @@ function addSatellitePlaceLabels(style) {
       'text-radial-offset': ['step', ['zoom'], 0.55, 8, 0],
     },
     paint: {
-      'text-color': '#ffffff',
-      'text-halo-color': '#000000',
+      ...SATELLITE_LABEL_PAINT,
       'text-halo-width': 1,
-      'text-halo-blur': 1,
       // like Standard's labels, ignore the map lighting
       'text-emissive-strength': 1,
       'icon-emissive-strength': 1,
