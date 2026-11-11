@@ -175,6 +175,7 @@ export const FILTER_TYPES = Object.freeze([
   ['federal-land', 'Federal land'],
   ['tribal-land', 'Tribal land'],
   ['odf-protection-district', 'ODF protection district'],
+  ['wildland-fire-unit', 'US Wildland Fire Service'],
   ['camera', 'Camera'],
 ]);
 
@@ -188,11 +189,21 @@ export const FILTER_LAYER_PRESETS = Object.freeze({
   'federal-land': Object.freeze({ layersOn: Object.freeze([LEGEND_LAYERS.blmLands]) }),
 });
 
+// filter type -> whole-area outlines for a type whose shapes cover only part of each area
+// the selection traces the whole area, and a light fill shows the part that is measured,
+// e.g. a USWFS unit outlines the whole unit and fills the DOI land inside it
+// each outline feature carries the divisionId of the area it belongs to
+export const DIVISION_OUTLINE_URLS = Object.freeze({
+  'wildland-fire-unit': 'data/live/wildland-fire-unit-outlines.geojson',
+});
+
 // filter type -> the option of another group that opens it, so it lists as a step inside that group
 // e.g. Federal land > National Forest > [All National Forests, Mt. Hood National Forest, ...]
+// and Federal land > US Wildland Fire Service > [All USWFS units, Blitzen River Unit, ...]
 // it only nests when the other group is shown too; otherwise it stays a group of its own
 export const NESTED_FILTER_TYPES = Object.freeze({
   'national-forest': Object.freeze({ type: 'federal-land', option: 'federal-land:USFS' }),
+  'wildland-fire-unit': Object.freeze({ type: 'federal-land', option: 'federal-land:DOI' }),
 });
 
 // returns where a visible filter type nests, or null when it lists on its own

@@ -218,6 +218,15 @@
     border-top: 3px solid #c2188f;
 }
 
+/* light fill matches the map's measured-area fill and the export legend swatch:
+   SELECTED_MEASURED_FILL_OPACITY yellow over white, from js/map-layers.js */
+.results-panel__qualifier--measured-area::before {
+    border: 0;
+    background:
+        linear-gradient(rgba(248, 225, 9, 0.3), rgba(248, 225, 9, 0.3)),
+        #fff;
+}
+
 .results-panel__line {
     margin: 0 0 14px;
     font-size: 14px;

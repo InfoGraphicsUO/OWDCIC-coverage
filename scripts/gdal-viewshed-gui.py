@@ -88,6 +88,11 @@ DEM_FETCHER = PROJECT_ROOT / "scripts/fetch-dems.py"
 RELEASE_OUTPUT = PROJECT_ROOT / "outputs/data_release"
 READY_TEXT = "Ready to start; choose inputs & check settings before starting a run!"
 RELEASE_READY_TEXT = "Ready to build the release from the published viewsheds"
+METRICS_READY_TEXT = "Ready to rebuild the coverage metrics from the published viewsheds"
+METRICS_OUTPUTS = (
+    "data/source/divisions (metrics written into each division file)",
+    "data/live/map-divisions and data/live/camera-coverage.json",
+)
 RELEASES_URL = "https://github.com/InfoGraphicsUO/OWDCIC-coverage/releases"
 DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.geojson"
@@ -123,7 +128,13 @@ PRESETS = (
         "Nothing is published to the map.",
         {"mode": "production", "products": "exact", "combined": False,
          "publish_sites": False, "publish_metrics": False}),
-    # runs build-data-release.py instead of the viewshed runner, so it sets no run settings
+    # these two read only published data, so they set no run settings
+    ("metrics", "Coverage metrics",
+        "Builds no viewsheds and only reruns the coverage metrics on every provider's "
+        "published coverage, then the map's division copies. Use it after adding or changing "
+        "divisions or land data. A changed land layer recomputes every division, which can "
+        "take about an hour.",
+        None),
     ("release", "Data release",
         "Packages the viewsheds already published to the map into Oregon, Washington, and "
         "combined shapefile downloads, then uploads them as the latest GitHub release that the "
@@ -429,10 +440,13 @@ class ViewshedWindow(QMainWindow):
             self.settings.addTab(scroll, label)
 
         root.addWidget(self.settings, 3)
-        # the release reads only published data, so it shows what it will package instead
+        # the release and metrics read only published data, so they show what they use instead
         self.release_panel = self.build_release_panel()
         self.release_panel.hide()
         root.addWidget(self.release_panel, 3)
+        self.metrics_panel = self.build_metrics_panel()
+        self.metrics_panel.hide()
+        root.addWidget(self.metrics_panel, 3)
         root.addWidget(self.build_progress())
 
         root.addWidget(QLabel("Run log"))
@@ -534,7 +548,8 @@ class ViewshedWindow(QMainWindow):
             "only build the zips in outputs/data_release for a look first.")
         form.addRow(self.release_upload_row)
         self.release_upload_row.hide()
-        self.release_mode = False
+        # "release" or "metrics" while one of the runs without settings is chosen
+        self.standalone = None
 
         return group
 
@@ -585,7 +600,27 @@ class ViewshedWindow(QMainWindow):
 
         return group
 
-    def refresh_release_sources(self) -> None:
+    def build_metrics_panel(self) -> QGroupBox:
+        group = QGroupBox("Metrics inputs")
+        form = QFormLayout(group)
+        form.setSpacing(10)
+        self.metrics_sources = QLabel()
+        self.metrics_sources.setWordWrap(True)
+        destination = QLabel("\n".join(METRICS_OUTPUTS))
+        destination.setWordWrap(True)
+
+        for label in (self.metrics_sources, destination):
+            label.setTextInteractionFlags(qt_enum(Qt, "TextInteractionFlag", "TextSelectableByMouse"))
+
+        form.addRow(with_help("Published viewsheds", self.metrics_sources,
+            "The metrics measure each provider's saved coverage and stop if it does not match "
+            "the viewsheds in that provider's published manifest, so they always describe what "
+            "the map shows."), self.metrics_sources)
+        form.addRow(QLabel("Saved to"), destination)
+
+        return group
+
+    def refresh_published_sources(self) -> None:
         lines = []
 
         for provider, label in PROVIDER_LABELS.items():
@@ -601,30 +636,37 @@ class ViewshedWindow(QMainWindow):
             lines.append(f"{label}: {complete} viewsheds, published {manifest.get('generated_utc', '')[:10]}")
 
         self.release_sources.setText("\n".join(lines))
+        self.metrics_sources.setText("\n".join(lines))
 
-    def set_release_mode(self, enabled: bool) -> None:
-        """the release ignores every input and run setting, so their tabs give way to a summary"""
-        self.release_mode = enabled
+    def set_standalone(self, key: str | None) -> None:
+        """the release and metrics ignore every input and run setting, so their tabs give way
+        to a summary"""
+        self.standalone = key
 
-        if enabled:
-            self.refresh_release_sources()
+        if key:
+            self.refresh_published_sources()
 
         # swap the ready message only before a run, so a finished run's result stays up
-        if self.status.text() in (READY_TEXT, RELEASE_READY_TEXT):
-            self.status.setText(RELEASE_READY_TEXT if enabled else READY_TEXT)
+        ready = {"release": RELEASE_READY_TEXT, "metrics": METRICS_READY_TEXT}
+        if self.status.text() in (READY_TEXT, *ready.values()):
+            self.status.setText(ready.get(key, READY_TEXT))
 
-        self.settings.setVisible(not enabled)
-        self.release_panel.setVisible(enabled)
-        self.release_upload_row.setVisible(enabled)
-        self.start_button.setText("Build data release" if enabled else "Start run")
+        self.settings.setVisible(not key)
+        self.release_panel.setVisible(key == "release")
+        self.release_upload_row.setVisible(key == "release")
+        self.metrics_panel.setVisible(key == "metrics")
+        self.start_button.setText(
+            {"release": "Build data release", "metrics": "Rebuild metrics"}.get(key, "Start run")
+        )
         self.set_idle(self.process.state() == PROCESS_NOT_RUNNING)
 
     def apply_preset(self) -> None:
         key = self.preset.currentData()
         preset = next((preset for preset in PRESETS if preset[0] == key), None)
-        self.set_release_mode(key == "release")
+        standalone = preset is not None and preset[3] is None
+        self.set_standalone(key if standalone else None)
 
-        if key == "release":
+        if standalone:
             self.preset_description.setText(preset[2])
             return
 
@@ -648,7 +690,7 @@ class ViewshedWindow(QMainWindow):
     def sync_preset(self) -> None:
         """shows the preset the settings match, or Custom once any of them has changed"""
 
-        if self.applying_preset or self.release_mode:
+        if self.applying_preset or self.standalone:
             return
 
         current = {name: control_value(widget) for name, widget in self.preset_controls.items()}
@@ -991,19 +1033,24 @@ class ViewshedWindow(QMainWindow):
 
         return arguments
 
+    def metrics_arguments(self) -> list[str]:
+        return [str(RUNNER), "--qgis-app", str(self.qgis_runtime.root), "--metrics-only", "--json-progress"]
+
     def start_run(self) -> None:
         if self.process.state() != PROCESS_NOT_RUNNING:
             return
 
-        if self.release_mode:
+        if self.standalone:
             if not self.qgis_runtime.root.is_dir():
                 QMessageBox.critical(self, "Cannot start", f"QGIS not found: {self.qgis_runtime.root}")
                 return
         elif not self.validate_paths():
             return
 
-        if self.release_mode:
+        if self.standalone == "release":
             self.launch("release", self.release_arguments(), "Starting the data release…")
+        elif self.standalone == "metrics":
+            self.launch("metrics", self.metrics_arguments(), "Starting the coverage metrics…")
         else:
             self.launch("run", self.runner_arguments(), "Starting GDAL runner…")
 
@@ -1104,6 +1151,15 @@ class ViewshedWindow(QMainWindow):
                 if exit_code == 130
                 else f"Release stopped with exit code {exit_code}; review the log"
             )
+        elif self.task == "metrics" and exit_code == 0:
+            self.overall.setValue(1000)
+            self.status.setText("Metrics rebuilt — review and commit the changed data files")
+        elif self.task == "metrics":
+            self.status.setText(
+                "Metrics cancelled — finished division types are kept for the next run"
+                if exit_code == 130
+                else f"Metrics stopped with exit code {exit_code}; review the log"
+            )
         elif exit_code == 0:
             self.overall.setValue(1000)
 
@@ -1158,7 +1214,9 @@ class ViewshedWindow(QMainWindow):
         self.elapsed.setText(f"Elapsed: {text}")
 
     def output_folder(self) -> Path:
-        return RELEASE_OUTPUT if self.release_mode else self.output.path()
+        return {"release": RELEASE_OUTPUT, "metrics": PROJECT_ROOT / "data/live"}.get(
+            self.standalone, self.output.path()
+        )
 
     def set_idle(self, idle: bool) -> None:
         self.settings.setEnabled(idle)
@@ -1176,7 +1234,7 @@ class ViewshedWindow(QMainWindow):
         exact = self.output.path() / "camera_viewsheds_exact_epsg5070.gpkg"
         web = self.output.path() / "mapbox/camera_viewsheds_web_epsg5070.gpkg"
         self.open_qgis_button.setEnabled(
-            idle and not self.release_mode and (exact.exists() or web.exists())
+            idle and not self.standalone and (exact.exists() or web.exists())
         )
 
     def open_output(self) -> None:
