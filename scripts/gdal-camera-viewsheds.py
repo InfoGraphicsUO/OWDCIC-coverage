@@ -272,6 +272,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="after publishing site data, also rebuild the coverage metrics shown in the "
         "results panel and the map's division copies; needs --publish-site-data",
     )
+    parser.add_argument(
+        "--metrics-only",
+        action="store_true",
+        help="build no viewsheds and only rebuild the coverage metrics and the map's "
+        "division copies from every provider's published coverage",
+    )
     parser.add_argument("--keep-working-dems", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--fail-fast", action="store_true")
@@ -293,6 +299,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
     if args.publish_metrics and not args.publish_site_data:
         parser.error("--publish-metrics needs --publish-site-data")
+
+    if args.metrics_only and (args.shapefiles_only or args.combined_coverage or args.publish_site_data):
+        parser.error("--metrics-only builds no viewsheds, so it takes no other run steps")
 
     if args.simplify_tolerance < 0 or args.smooth_iterations < 0 or args.min_web_patch_cells < 0:
         parser.error("simplification, smoothing, and patch thresholds cannot be negative")
@@ -750,7 +759,8 @@ class ProgressEmitter:
         self.finishing = tuple(stages)
 
     def percent(self) -> float:
-        camera_share = 1.0 - FINISHING_SHARE if self.finishing else 1.0
+        # a run with no cameras is all finishing steps
+        camera_share = (1.0 - FINISHING_SHARE if self.total else 0.0) if self.finishing else 1.0
 
         if self.finishing_done is not None:
             weights = [FINISHING_STAGES[stage] for stage in self.finishing]
@@ -2216,12 +2226,35 @@ def publish(manifest: Path, name: str, args: argparse.Namespace, emitter: Progre
     run_script(SITE_DATA_BUILDER, [], emitter.log)
 
     if args.publish_metrics:
-        emitter.finishing_stage("coverage_metrics", "rebuilding coverage metrics")
-        providers = combined_providers(name, args.output_dir)
-        arguments = ["--viewsheds", *map(str, providers), "--json-progress"]
-        run_script(METRICS_BUILDER, arguments, emitter.log, lambda line: metrics_progress(line, emitter))
-        emitter.finishing_stage("map_divisions", "simplifying divisions for the map")
-        run_script(MAP_DIVISIONS_BUILDER, [], emitter.log)
+        rebuild_metrics(combined_providers(name, args.output_dir), emitter)
+
+
+def rebuild_metrics(providers: list[Path], emitter: ProgressEmitter) -> None:
+    """reruns the coverage metrics on these web packages, then the map's division copies"""
+    emitter.finishing_stage("coverage_metrics", "rebuilding coverage metrics")
+    arguments = ["--viewsheds", *map(str, providers), "--json-progress"]
+    run_script(METRICS_BUILDER, arguments, emitter.log, lambda line: metrics_progress(line, emitter))
+    emitter.finishing_stage("map_divisions", "simplifying divisions for the map")
+    run_script(MAP_DIVISIONS_BUILDER, [], emitter.log)
+
+
+def metrics_only(emitter: ProgressEmitter) -> int:
+    """rebuilds the metrics for new divisions or land data without touching any viewshed
+
+    Every provider's saved web package stands in, and the metrics builder checks
+    them against the published manifests, so this measures what the map shows.
+    """
+    providers = [folder / WEB_PACKAGE for folder in PROVIDER_OUTPUTS.values()]
+    missing = [str(path) for path in providers if not path.is_file()]
+
+    if missing:
+        raise FileNotFoundError(f"no published coverage to measure: {', '.join(missing)}")
+
+    emitter.plan_finishing(("coverage_metrics", "map_divisions"))
+    rebuild_metrics(providers, emitter)
+    emitter.progress(0, "complete", 1.0, "coverage metrics and map divisions rebuilt")
+
+    return 0
 
 
 def metrics_progress(line: str, emitter: ProgressEmitter) -> bool:
@@ -2252,6 +2285,11 @@ def main() -> int:
             signal.signal(getattr(signal, name), request_cancel)
 
     args = parse_args()
+
+    if args.metrics_only:
+        apply_qgis_environment(args.qgis_app)
+        return metrics_only(ProgressEmitter(args.json_progress, []))
+
     args.output_dir = args.output_dir.resolve()
     args.web_clip_boundary = args.web_clip_boundary.resolve()
 
