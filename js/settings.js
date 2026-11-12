@@ -23,6 +23,10 @@ const SETTING_FIELDS = Object.freeze([
   }),
 ]);
 
+// the popup only holds dev tools, so the public GitHub Pages site leaves it out
+// and keeps those settings at their defaults; any other host counts as dev
+export const SETTINGS_ENABLED = !window.location.hostname.endsWith('.github.io');
+
 const settings = { ...DEFAULT_SETTINGS, ...readStoredSettings() };
 const listeners = new Set();
 
@@ -105,10 +109,12 @@ function settingRow({ key, label, description }) {
 function readStoredSettings() {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
-    // ignore unknown or mistyped keys from older versions of the page
+    const hidden = SETTINGS_ENABLED ? new Set() : new Set(SETTING_FIELDS.map(({ key }) => key));
+    // ignore unknown or mistyped keys from older versions of the page,
+    // and popup settings saved on the public site before it was dev only
     return Object.fromEntries(
       Object.entries(stored).filter(([key, value]) =>
-        typeof DEFAULT_SETTINGS[key] === typeof value)
+        typeof DEFAULT_SETTINGS[key] === typeof value && !hidden.has(key))
     );
   } catch {
     // private browsing and corrupt values fall back to the defaults
