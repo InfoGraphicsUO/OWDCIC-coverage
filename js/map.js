@@ -1,7 +1,7 @@
 import { restoreMarkerIcons } from './marker-icons.js';
 import { registerOutsideHatch } from './states-highlight.js';
 import { REGION_DATA_BOUNDS } from './config.js';
-import { bindSettingsButton, onSettingChange } from './settings.js';
+import { bindSettingsButton, onSettingChange, SETTINGS_ENABLED } from './settings.js';
 import { SHEET_CHANGE_EVENT, bindResultsSheet, isPhoneLayout, sheetHeight } from './bottom-sheet.js';
 
 mapboxgl.accessToken =
@@ -347,7 +347,7 @@ async function initializeMap() {
   );
   map.addControl(new HomeControl(), 'top-left');
   initLocationSearch(map);
-  map.addControl(new SettingsControl(), 'top-left');
+  if (SETTINGS_ENABLED) map.addControl(new SettingsControl(), 'top-left');
 
   map.addControl(new mapboxgl.AttributionControl({
     // phones keep the credits behind the (i) so they fit beside the logo
@@ -481,7 +481,7 @@ class SettingsControl {
     const button = document.createElement('button');
     button.className = 'mapboxgl-ctrl-settings';
     button.type = 'button';
-    button.title = 'Map settings';
+    button.title = 'Developer settings';
     button.setAttribute('aria-label', button.title);
 
     const icon = document.createElement('i');
