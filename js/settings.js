@@ -65,8 +65,8 @@ export function setSetting(key, value) {
 function openSettingsModal(onClose) {
   const { dialog } = openModal({
     id: 'settings',
-    title: 'Map settings',
-    closeLabel: 'Close settings',
+    title: 'Developer settings',
+    closeLabel: 'Close developer settings',
     className: 'settings-modal',
     onClose,
   });

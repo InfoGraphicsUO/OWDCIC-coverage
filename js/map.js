@@ -481,7 +481,7 @@ class SettingsControl {
     const button = document.createElement('button');
     button.className = 'mapboxgl-ctrl-settings';
     button.type = 'button';
-    button.title = 'Map settings';
+    button.title = 'Developer settings';
     button.setAttribute('aria-label', button.title);
 
     const icon = document.createElement('i');
