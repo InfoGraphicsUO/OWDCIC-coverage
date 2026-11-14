@@ -43,7 +43,7 @@ else:
     gdal.SetConfigOption("OGR_GEOJSON_MAX_OBJ_SIZE", "0")
 
 from camera_providers import PROVIDERS, output_dir, sites_path
-from qgis_runtime import default_qgis_root, find_tippecanoe, qgis_runtime
+from qgis_runtime import default_jobs, default_qgis_root, find_tippecanoe, qgis_runtime
 
 # paths to default files and directories
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -65,7 +65,7 @@ METRICS_BUILDER = PROJECT_ROOT / "scripts/build-selection-metrics.py"
 # the map loads these lighter copies of the divisions the metrics write into
 MAP_DIVISIONS_BUILDER = PROJECT_ROOT / "scripts/data-builders/build-map-divisions.py"
 METRICS_PROGRESS_PREFIX = "@@METRICS@@"
-DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
+DEFAULT_JOBS = default_jobs()
 
 PILOT_NAMES = ("Portland Tower",)  # 'pilot' mode processes only one site
 VALIDATION_NAMES = ("Portland Tower", "Quail Prairie Mtn", "Beaty's Butte")

@@ -11,7 +11,7 @@ import sys
 import time
 
 try:
-    from qgis.PyQt.QtCore import QPoint, QProcess, QRectF, Qt, QTimer, QUrl
+    from qgis.PyQt.QtCore import QPoint, QProcess, QRectF, QSettings, Qt, QTimer, QUrl
     from qgis.PyQt.QtGui import QColor, QDesktopServices, QPainter, QPalette, QPen
     from qgis.PyQt.QtWidgets import (
         QApplication,
@@ -37,7 +37,7 @@ try:
         QWidget,
     )
 except ImportError:
-    from PyQt6.QtCore import QPoint, QProcess, QRectF, Qt, QTimer, QUrl
+    from PyQt6.QtCore import QPoint, QProcess, QRectF, QSettings, Qt, QTimer, QUrl
     from PyQt6.QtGui import QColor, QDesktopServices, QPainter, QPalette, QPen
     from PyQt6.QtWidgets import (
         QApplication,
@@ -64,7 +64,7 @@ except ImportError:
     )
 
 from camera_providers import PROVIDER_LABELS, output_dir, sites_path
-from qgis_runtime import default_qgis_root, find_tippecanoe, qgis_runtime
+from qgis_runtime import default_jobs, default_qgis_root, find_tippecanoe, physical_memory_bytes, qgis_runtime
 import setup_checks
 
 
@@ -96,8 +96,30 @@ METRICS_OUTPUTS = (
 RELEASES_URL = "https://github.com/InfoGraphicsUO/OWDCIC-coverage/releases"
 DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.geojson"
-DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
+DEFAULT_JOBS = default_jobs()
+DEFAULT_DEMS = PROJECT_ROOT / "data/source/dems"
 PROGRESS_PREFIX = "@@PROGRESS@@"
+
+
+def jobs_help() -> str:
+    """explains where the parallel cameras default comes from on this computer"""
+
+    memory = physical_memory_bytes()
+    computer = f"{round(memory / 2**30)} GB of memory and " if memory else ""
+    return (
+        "How many cameras to process at once. More can finish sooner, but each needs roughly "
+        f"1 GB of memory. The default of {DEFAULT_JOBS} is set from this computer's "
+        f"{computer}{os.cpu_count() or 1} processors."
+    )
+
+
+def saved_settings() -> QSettings:
+    """settings kept between sessions, in an ini file on every platform"""
+
+    return QSettings(
+        qt_enum(QSettings, "Format", "IniFormat"), qt_enum(QSettings, "Scope", "UserScope"),
+        "InfoGraphicsUO", "OWDCIC GDAL Viewsheds",
+    )
 
 
 def provider_output(provider: str, test: bool) -> Path:
@@ -460,6 +482,8 @@ class ViewshedWindow(QMainWindow):
         self.output.edit.textChanged.connect(lambda: self.set_idle(self.process.state() == PROCESS_NOT_RUNNING))
         self.sync_finishing_options()
         self.track_preset_controls()
+        # after the reset buttons capture the defaults, so reset still restores them
+        self.restore_inputs()
         self.task = "run"
         self.set_idle(True)
         self.refresh_setup(open_on_problems=True)
@@ -716,7 +740,7 @@ class ViewshedWindow(QMainWindow):
             self.provider.addItem(label, provider)
 
         self.sites = PathRow(sites_path("alertwest"), False)
-        self.dems = PathRow(PROJECT_ROOT / "data/source/dems", True)
+        self.dems = PathRow(DEFAULT_DEMS, True)
         # the window opens on the test run preset
         self.output = PathRow(provider_output("alertwest", True), True)
         self.provider.currentIndexChanged.connect(self.choose_provider)
@@ -736,6 +760,42 @@ class ViewshedWindow(QMainWindow):
         ]))
 
         return group
+
+    def restore_inputs(self) -> None:
+        """brings back the provider and any paths chosen by hand in an earlier session"""
+
+        saved = saved_settings()
+        index = self.provider.findData(saved.value("provider"))
+        if index >= 0:
+            self.provider.setCurrentIndex(index)
+
+        # a path that has since moved or been deleted keeps the default
+        for row, key, exists in (
+            (self.sites, "sites", Path.is_file),
+            (self.dems, "dems", Path.is_dir),
+            (self.output, "output", Path.is_dir),
+        ):
+            value = saved.value(key)
+            if value and exists(Path(value).expanduser()):
+                row.edit.setText(value)
+
+    def remember_inputs(self) -> None:
+        """saves the provider, and only the paths the provider and presets do not fill in"""
+
+        provider = self.provider.currentData()
+        chosen = {
+            "sites": self.sites.path() != sites_path(provider),
+            "dems": self.dems.path() != DEFAULT_DEMS,
+            "output": self.output.path() not in PROVIDER_OUTPUTS,
+        }
+        saved = saved_settings()
+        saved.setValue("provider", provider)
+
+        for key, row in (("sites", self.sites), ("dems", self.dems), ("output", self.output)):
+            if chosen[key]:
+                saved.setValue(key, row.edit.text())
+            else:
+                saved.remove(key)
 
     def choose_provider(self) -> None:
         provider = self.provider.currentData()
@@ -841,8 +901,7 @@ class ViewshedWindow(QMainWindow):
             "How far from each camera to check visibility. Larger distances cover more ground and take more time and memory."), self.radius)
         form.addRow(with_help("Analysis cell size", self.cell_size,
             "The size of each terrain square used in the calculation. Smaller squares keep more detail but use more time and memory; they cannot add detail missing from the elevation data."), self.cell_size)
-        form.addRow(with_help("Parallel cameras", self.jobs,
-            "How many cameras to process at once. More can finish sooner, but each needs roughly 1 GB of memory."), self.jobs)
+        form.addRow(with_help("Parallel cameras", self.jobs, jobs_help()), self.jobs)
 
         form.addRow(reset_button("Run settings", [
             self.mode, self.products, self.combined, self.publish_sites, self.publish_metrics,
@@ -1285,6 +1344,8 @@ class ViewshedWindow(QMainWindow):
         QProcess.startDetached(program, arguments)
 
     def closeEvent(self, event) -> None:  # noqa: N802
+        self.remember_inputs()
+
         if self.process.state() == PROCESS_NOT_RUNNING:
             event.accept()
             return
