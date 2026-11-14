@@ -7,11 +7,15 @@ import html
 import json
 import os
 from pathlib import Path
+import shlex
+import subprocess
 import sys
+import tempfile
+import threading
 import time
 
 try:
-    from qgis.PyQt.QtCore import QPoint, QProcess, QRectF, Qt, QTimer, QUrl
+    from qgis.PyQt.QtCore import QObject, QPoint, QProcess, QRectF, Qt, QTimer, QUrl, pyqtSignal
     from qgis.PyQt.QtGui import QColor, QDesktopServices, QPainter, QPalette, QPen
     from qgis.PyQt.QtWidgets import (
         QApplication,
@@ -37,7 +41,7 @@ try:
         QWidget,
     )
 except ImportError:
-    from PyQt6.QtCore import QPoint, QProcess, QRectF, Qt, QTimer, QUrl
+    from PyQt6.QtCore import QObject, QPoint, QProcess, QRectF, Qt, QTimer, QUrl, pyqtSignal
     from PyQt6.QtGui import QColor, QDesktopServices, QPainter, QPalette, QPen
     from PyQt6.QtWidgets import (
         QApplication,
@@ -78,6 +82,7 @@ def qt_enum(owner, scope: str, member: str):
 PROCESS_MERGED_CHANNELS = qt_enum(QProcess, "ProcessChannelMode", "MergedChannels")
 PROCESS_NOT_RUNNING = qt_enum(QProcess, "ProcessState", "NotRunning")
 MESSAGE_YES = qt_enum(QMessageBox, "StandardButton", "Yes")
+PROCESS_FAILED_TO_START = qt_enum(QProcess, "ProcessError", "FailedToStart")
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -120,7 +125,10 @@ PRESETS = (
     ("live", "Live site",
         "Builds every camera that is missing a viewshed, then rebuilds the provider's and the "
         "combined tilesets, publishes the site data, and reruns the coverage metrics so the "
-        "outputs are ready to upload.",
+        "outputs are ready to upload."
+        # tippecanoe builds the map tiles and has no Windows build
+        + (" Live site runs need a Mac, since the tool that builds the map tiles has no Windows version."
+           if sys.platform == "win32" else ""),
         {"mode": "production", "products": None, "combined": True,
          "publish_sites": True, "publish_metrics": True}),
     ("gis", "GIS analysis",
@@ -302,6 +310,58 @@ class Spinner(QWidget):
         painter.drawArc(QRectF(2, 2, 14, 14), self.angle * 16, 270 * 16)
 
 
+class SetupChecker(QObject):
+    """runs the setup checks on a background thread, since gh and git can take seconds to answer"""
+
+    checked = pyqtSignal(object)
+
+    def start(self, qgis_root: Path, dem_dir: Path, radius_miles: float) -> None:
+        # a daemon thread cannot hold the window open after it closes
+        threading.Thread(target=self.run, args=(qgis_root, dem_dir, radius_miles), daemon=True).start()
+
+    def run(self, qgis_root: Path, dem_dir: Path, radius_miles: float) -> None:
+        try:
+            checks = setup_checks.run_checks(qgis_root, dem_dir, radius_miles)
+        except Exception as error:  # noqa: BLE001 - an unreadable file should not leave the tab checking forever
+            checks = [setup_checks.Check("Setup checks", "warning", f"could not finish: {error}")]
+
+        # the signal is queued, so the rows are built on the UI thread
+        self.checked.emit(checks)
+
+
+def open_terminal(command: list[str]) -> bool:
+    """runs a command in a terminal window, so the user sees its prompts and progress"""
+
+    if sys.platform == "darwin":
+        script = Path(tempfile.mkdtemp()) / "owdcic-setup.command"
+        script.write_text(
+            f"#!/bin/sh\n{shlex.join(command)}\necho\n"
+            "echo 'Finished. Close this window and press Check again in the viewshed window.'\n",
+            encoding="utf-8",
+        )
+        script.chmod(0o755)
+        started = QProcess.startDetached("open", ["-a", "Terminal", str(script)])
+    elif sys.platform == "win32":
+        started = QProcess.startDetached("cmd", ["/c", "start", "cmd", "/k", subprocess.list2cmdline(command)])
+    else:
+        return False
+
+    # PyQt6 returns the process id alongside the result
+    return started[0] if isinstance(started, tuple) else started
+
+
+# fixes the Setup tab can run for a check, keyed by the check's action
+FIX_BUTTONS = {
+    "download_dems": ("Download missing DEMs",
+        "Downloads the USGS terrain tiles missing from the DEM folder, about 380 MB each. "
+        "Finished tiles are kept if you cancel."),
+    "gh_login": ("Sign in to GitHub",
+        "Opens a terminal window running gh auth login. Follow its steps, then press Check again."),
+    "install_tippecanoe": ("Install tippecanoe",
+        "Opens a Terminal window running brew install tippecanoe. When it finishes, press Check again."),
+}
+
+
 class HelpButton(QPushButton):
     """shows the same short explanation on hover, keyboard focus, or click"""
 
@@ -402,6 +462,13 @@ class ViewshedWindow(QMainWindow):
         self.process.finished.connect(self.run_finished)
         self.output_buffer = ""
         self.started = 0.0
+        self.qgis_builder = None
+        # the last setup checks, or None while they run
+        self.setup_results = None
+        self.setup_running = False
+        self.setup_rerun = False
+        self.setup_checker = SetupChecker(self)
+        self.setup_checker.checked.connect(self.show_setup)
 
         self.elapsed_timer = QTimer(self)
         self.elapsed_timer.timeout.connect(self.update_elapsed)
@@ -476,14 +543,7 @@ class ViewshedWindow(QMainWindow):
         buttons = QHBoxLayout()
         self.check_again_button = QPushButton("Check again")
         self.check_again_button.clicked.connect(lambda: self.refresh_setup())
-        self.dem_button = QPushButton("Download missing DEMs")
-        self.dem_button.setToolTip(
-            "Downloads the USGS terrain tiles missing from the DEM folder, about 380 MB each. "
-            "Finished tiles are kept if you cancel."
-        )
-        self.dem_button.clicked.connect(self.start_dem_download)
         buttons.addWidget(self.check_again_button)
-        buttons.addWidget(self.dem_button)
         buttons.addStretch(1)
         group_layout.addLayout(buttons)
         layout.addWidget(group)
@@ -493,10 +553,36 @@ class ViewshedWindow(QMainWindow):
 
     def refresh_setup(self, open_on_problems: bool = False) -> None:
         """lists what this machine is missing, so a run does not fail partway through"""
+        if self.setup_running:
+            # run them again once these finish, since a fix may have landed meanwhile
+            self.setup_rerun = True
+            return
+
+        self.setup_running = True
+        self.setup_results = None
+        self.open_on_problems = open_on_problems
+        self.clear_setup_rows()
+        checking = QWidget()
+        layout = QHBoxLayout(checking)
+        layout.setContentsMargins(0, 0, 0, 0)
+        spinner = Spinner()
+        spinner.start()
+        layout.addWidget(spinner)
+        layout.addWidget(QLabel("Checking this computer's tools and data…"), 1)
+        self.setup_rows.addRow(checking)
+        self.settings.setTabText(0, "Setup (checking…)")
+        self.check_again_button.setEnabled(False)
+        self.setup_checker.start(self.qgis_runtime.root, self.dems.path(), self.radius.value())
+
+    def clear_setup_rows(self) -> None:
         while self.setup_rows.rowCount():
             self.setup_rows.removeRow(0)
 
-        checks = setup_checks.run_checks(self.qgis_runtime.root, self.dems.path(), self.radius.value())
+    def show_setup(self, checks: list) -> None:
+        self.clear_setup_rows()
+        self.setup_running = False
+        self.setup_results = checks
+        self.check_again_button.setEnabled(True)
         marks = {"ok": "✓", "warning": "!", "problem": "✕"}
 
         for check in checks:
@@ -508,17 +594,96 @@ class ViewshedWindow(QMainWindow):
             value = QLabel(f"<qt>{text}</qt>")
             value.setWordWrap(True)
             value.setTextInteractionFlags(qt_enum(Qt, "TextInteractionFlag", "TextSelectableByMouse"))
-            self.setup_rows.addRow(QLabel(check.name), value)
+            self.setup_rows.addRow(QLabel(check.name), self.with_fix(value, check.action))
 
         problems = sum(check.status == "problem" for check in checks)
         warnings = sum(check.status == "warning" for check in checks)
         counts = [f"{count} {word}{'' if count == 1 else 's'}"
                   for count, word in ((problems, "problem"), (warnings, "warning")) if count]
         self.settings.setTabText(0, f"Setup ({', '.join(counts)})" if counts else "Setup")
-        self.dem_button.setVisible(bool(setup_checks.missing_tiles(self.dems.path(), setup_checks.read_tiles())))
-        # a ready machine opens on its inputs instead
-        if open_on_problems:
-            self.settings.setCurrentIndex(0 if problems else 1)
+        # a ready machine opens on its inputs instead, unless the user already moved on
+        if self.open_on_problems:
+            if problems:
+                self.settings.setCurrentIndex(0)
+            elif self.settings.currentIndex() == 0:
+                self.settings.setCurrentIndex(1)
+
+        if self.setup_rerun:
+            self.setup_rerun = False
+            self.refresh_setup()
+
+    def with_fix(self, value: QLabel, action: str) -> QWidget:
+        """puts the button for a fix the GUI can run under the check that needs it"""
+        if action not in FIX_BUTTONS:
+            return value
+
+        label, explanation = FIX_BUTTONS[action]
+        button = QPushButton(label)
+        button.setToolTip(explanation)
+        button.clicked.connect(lambda: self.run_fix(action))
+        row = QWidget()
+        layout = QVBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(value)
+        buttons = QHBoxLayout()
+        buttons.addWidget(button)
+        buttons.addStretch(1)
+        layout.addLayout(buttons)
+
+        return row
+
+    def run_fix(self, action: str) -> None:
+        if action == "download_dems":
+            self.start_dem_download()
+            return
+
+        command = {
+            "gh_login": lambda: [setup_checks.find_gh() or "gh", "auth", "login"],
+            "install_tippecanoe": lambda: [setup_checks.find_brew() or "brew", "install", "tippecanoe"],
+        }[action]()
+
+        if open_terminal(command):
+            self.status.setText("Finish the steps in the terminal window, then press Check again in the Setup tab.")
+        else:
+            QMessageBox.information(
+                self, "Open a terminal",
+                f"Run this in a terminal, then press Check again:\n\n{shlex.join(command)}",
+            )
+
+    def run_needs(self) -> set[str]:
+        """what the chosen run uses, in the terms of setup_checks.Check.blocks"""
+        if self.standalone == "release":
+            return {"release", "upload"} if self.release_upload.isChecked() else {"release"}
+
+        if self.standalone == "metrics":
+            return {"metrics"}
+
+        full_run = self.products.currentData() is None
+        packaging = full_run and (self.publish_sites.isChecked() or self.combined.isChecked())
+
+        return {"viewsheds", "tilesets"} if packaging else {"viewsheds"}
+
+    def setup_blocks_run(self) -> bool:
+        """points at the Setup tab instead of starting a run that would fail"""
+        blocking = setup_checks.blockers(self.setup_results or [], self.run_needs())
+
+        if not blocking:
+            return False
+
+        names = " and ".join(check.name for check in blocking)
+
+        if not self.standalone:
+            self.settings.setCurrentIndex(0)
+            self.status.setText(f"Fix {names} in the Setup tab before starting this run.")
+            return True
+
+        # the release and metrics hide the Setup tab, so say what to fix here
+        QMessageBox.warning(
+            self, "Cannot start",
+            "\n\n".join(f"{check.name}: {check.detail}. {check.fix}".rstrip() for check in blocking)
+            + "\n\nChoose the Test run type to see the Setup tab and its fix buttons.",
+        )
+        return True
 
     def build_presets(self) -> QGroupBox:
         group = QGroupBox("Preset")
@@ -1040,6 +1205,9 @@ class ViewshedWindow(QMainWindow):
         if self.process.state() != PROCESS_NOT_RUNNING:
             return
 
+        if self.setup_blocks_run():
+            return
+
         if self.standalone:
             if not self.qgis_runtime.root.is_dir():
                 QMessageBox.critical(self, "Cannot start", f"QGIS not found: {self.qgis_runtime.root}")
@@ -1233,8 +1401,9 @@ class ViewshedWindow(QMainWindow):
         self.open_output_button.setEnabled(idle and self.output_folder().exists())
         exact = self.output.path() / "camera_viewsheds_exact_epsg5070.gpkg"
         web = self.output.path() / "mapbox/camera_viewsheds_web_epsg5070.gpkg"
+        building = self.qgis_builder is not None and self.qgis_builder.state() != PROCESS_NOT_RUNNING
         self.open_qgis_button.setEnabled(
-            idle and not self.standalone and (exact.exists() or web.exists())
+            idle and not building and not self.standalone and (exact.exists() or web.exists())
         )
 
     def open_output(self) -> None:
@@ -1250,8 +1419,17 @@ class ViewshedWindow(QMainWindow):
             QMessageBox.information(self, "No polygons yet", "Run the viewshed workflow first.")
             return
 
+        # building the project takes a few seconds, so the window stays responsive meanwhile
         builder = QProcess(self)
         builder.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
+        builder.finished.connect(lambda exit_code, _status: self.qgis_project_built(exit_code == 0))
+        builder.errorOccurred.connect(
+            lambda error: self.qgis_project_built(False) if error == PROCESS_FAILED_TO_START else None
+        )
+        self.qgis_builder = builder
+        self.review_project = review_project
+        self.open_qgis_button.setText("Building review map…")
+        self.open_qgis_button.setEnabled(False)
         builder.start(
             sys.executable,
             [
@@ -1267,7 +1445,13 @@ class ViewshedWindow(QMainWindow):
             ],
         )
 
-        if not builder.waitForFinished(15000) or builder.exitCode() != 0:
+    def qgis_project_built(self, built: bool) -> None:
+        builder = self.qgis_builder
+        self.qgis_builder = None
+        self.open_qgis_button.setText("Open review map in QGIS")
+        self.set_idle(self.process.state() == PROCESS_NOT_RUNNING)
+
+        if not built:
             message = bytes(builder.readAllStandardOutput()).decode("utf-8", errors="replace")
             QMessageBox.critical(
                 self,
@@ -1277,7 +1461,7 @@ class ViewshedWindow(QMainWindow):
             return
 
         try:
-            program, arguments = self.qgis_runtime.qgis_launch(review_project)
+            program, arguments = self.qgis_runtime.qgis_launch(self.review_project)
         except RuntimeError as error:
             QMessageBox.critical(self, "Could not open QGIS", str(error))
             return

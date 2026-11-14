@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 SCRIPTS = Path(__file__).resolve().parents[1] / 'scripts'
 sys.path.insert(0, str(SCRIPTS))
@@ -80,6 +81,47 @@ class DemTileTests(unittest.TestCase):
             # a finished tile is left alone
             self.assertEqual(kept.stat().st_mtime_ns, before)
             self.assertEqual(list(dems.glob('*.part')), [])
+
+
+class FixAndBlockTests(unittest.TestCase):
+    def test_missing_tiles_offer_the_download(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            rows = setup_checks.read_tiles(write_tiles(directory, {'n42w117': b'abc'}))
+            check = setup_checks.dem_check(directory, rows)
+            self.assertEqual(check.action, 'download_dems')
+            self.assertEqual(check.blocks, ('viewsheds',))
+
+    def test_tippecanoe_install_is_offered_only_with_homebrew_on_a_mac(self):
+        with mock.patch.object(setup_checks, 'find_tippecanoe', return_value=None):
+            with mock.patch.object(setup_checks, 'find_brew', return_value='/opt/homebrew/bin/brew'):
+                self.assertEqual(setup_checks.tippecanoe_check('darwin').action, 'install_tippecanoe')
+                windows = setup_checks.tippecanoe_check('win32')
+
+            with mock.patch.object(setup_checks, 'find_brew', return_value=None):
+                self.assertEqual(setup_checks.tippecanoe_check('darwin').action, '')
+
+        self.assertEqual(windows.action, '')
+        self.assertIn('need a Mac', windows.detail)
+
+    def test_signed_out_gh_offers_sign_in(self):
+        signed_out = mock.Mock(returncode=1)
+        with mock.patch.object(setup_checks, 'find_gh', return_value='gh'), \
+                mock.patch.object(setup_checks.subprocess, 'run', return_value=signed_out):
+            check = setup_checks.gh_check()
+
+        self.assertEqual((check.status, check.action), ('warning', 'gh_login'))
+
+    def test_blockers_are_only_the_checks_the_run_needs(self):
+        checks = [
+            setup_checks.Check('tippecanoe', 'problem', '', blocks=('tilesets',)),
+            setup_checks.Check('GitHub CLI', 'warning', '', blocks=('upload',)),
+            setup_checks.Check('Saved viewsheds', 'warning', ''),
+            setup_checks.Check('QGIS', 'ok', '', blocks=('viewsheds',)),
+        ]
+        self.assertEqual(setup_checks.blockers(checks, {'viewsheds'}), [])
+        self.assertEqual([c.name for c in setup_checks.blockers(checks, {'viewsheds', 'tilesets'})], ['tippecanoe'])
+        self.assertEqual([c.name for c in setup_checks.blockers(checks, {'release', 'upload'})], ['GitHub CLI'])
 
 
 class QgisDiscoveryTests(unittest.TestCase):
