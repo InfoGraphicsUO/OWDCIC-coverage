@@ -98,6 +98,9 @@ DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 PROGRESS_PREFIX = "@@PROGRESS@@"
+# tasks shorter than this finish while the person is still watching, so they get no alert
+NOTIFY_AFTER_SECONDS = 60
+APP_TITLE = "Camera viewsheds"
 
 
 def provider_output(provider: str, test: bool) -> Path:
@@ -302,6 +305,56 @@ class Spinner(QWidget):
         painter.drawArc(QRectF(2, 2, 14, 14), self.angle * 16, 270 * 16)
 
 
+class KeepAwake:
+    """stops the computer from going to sleep while a task runs; the display may still sleep"""
+
+    def __init__(self, parent: QWidget) -> None:
+        self.parent = parent
+        self.caffeinate = None
+        self.windows_awake = False
+
+    @staticmethod
+    def supported() -> bool:
+        return sys.platform in ("darwin", "win32")
+
+    def start(self) -> None:
+        if sys.platform == "darwin" and self.caffeinate is None:
+            # -w ends caffeinate with this window, even if the GUI crashes
+            self.caffeinate = QProcess(self.parent)
+            self.caffeinate.start("caffeinate", ["-i", "-w", str(os.getpid())])
+        elif sys.platform == "win32" and not self.windows_awake:
+            import ctypes
+
+            # ES_CONTINUOUS | ES_SYSTEM_REQUIRED, held until cleared or the GUI exits
+            ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)
+            self.windows_awake = True
+
+    def stop(self) -> None:
+        if self.caffeinate is not None:
+            self.caffeinate.kill()
+            self.caffeinate.waitForFinished(1000)
+            self.caffeinate = None
+
+        if self.windows_awake:
+            import ctypes
+
+            ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
+            self.windows_awake = False
+
+
+def notify(window: QWidget, message: str) -> None:
+    """gets the person's attention when a long task ends while they are away"""
+
+    QApplication.alert(window)
+    QApplication.beep()
+
+    if sys.platform == "darwin":
+        quoted = message.replace("\\", "\\\\").replace('"', '\\"')
+        QProcess.startDetached(
+            "osascript", ["-e", f'display notification "{quoted}" with title "{APP_TITLE}"']
+        )
+
+
 class HelpButton(QPushButton):
     """shows the same short explanation on hover, keyboard focus, or click"""
 
@@ -402,6 +455,7 @@ class ViewshedWindow(QMainWindow):
         self.process.finished.connect(self.run_finished)
         self.output_buffer = ""
         self.started = 0.0
+        self.keep_awake = KeepAwake(self)
 
         self.elapsed_timer = QTimer(self)
         self.elapsed_timer.timeout.connect(self.update_elapsed)
@@ -906,6 +960,13 @@ class ViewshedWindow(QMainWindow):
         self.overall.setFormat("Overall: %p%")
         self.elapsed = QLabel("Elapsed: 0s")
         self.elapsed.setObjectName("elapsed")
+        self.awake_note = QLabel("The computer stays awake until this finishes.")
+        self.awake_note.setObjectName("elapsed")
+        self.awake_note.setToolTip(
+            "Sleep is held off while a task runs, so long runs are not paused overnight. "
+            "The screen can still turn off."
+        )
+        self.awake_note.hide()
         self.spinner = Spinner()
         self.spinner.hide()
         step = QHBoxLayout()
@@ -913,7 +974,11 @@ class ViewshedWindow(QMainWindow):
         step.addWidget(self.status, 1)
         layout.addLayout(step)
         layout.addWidget(self.overall)
-        layout.addWidget(self.elapsed)
+        timing = QHBoxLayout()
+        timing.addWidget(self.elapsed)
+        timing.addStretch(1)
+        timing.addWidget(self.awake_note)
+        layout.addLayout(timing)
 
         return group
 
@@ -1135,6 +1200,7 @@ class ViewshedWindow(QMainWindow):
                 else f"Download stopped with exit code {exit_code}; review the log"
             )
             self.set_idle(True)
+            self.notify_if_long()
             self.refresh_setup()
             return
 
@@ -1177,6 +1243,11 @@ class ViewshedWindow(QMainWindow):
             self.status.setText(f"Run stopped with exit code {exit_code}; review the log")
 
         self.set_idle(True)
+        self.notify_if_long()
+
+    def notify_if_long(self) -> None:
+        if time.monotonic() - self.started > NOTIFY_AFTER_SECONDS:
+            notify(self, self.status.text())
 
     def cancel_run(self) -> None:
         if self.process.state() == PROCESS_NOT_RUNNING:
@@ -1225,8 +1296,12 @@ class ViewshedWindow(QMainWindow):
 
         if idle:
             self.spinner.stop()
+            self.keep_awake.stop()
         else:
             self.spinner.start()
+            self.keep_awake.start()
+
+        self.awake_note.setVisible(not idle and KeepAwake.supported())
 
         self.start_button.setEnabled(idle)
         self.cancel_button.setEnabled(not idle)
@@ -1286,6 +1361,7 @@ class ViewshedWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:  # noqa: N802
         if self.process.state() == PROCESS_NOT_RUNNING:
+            self.keep_awake.stop()
             event.accept()
             return
 
@@ -1297,6 +1373,7 @@ class ViewshedWindow(QMainWindow):
 
         if answer == MESSAGE_YES:
             self.cancel_run()
+            self.keep_awake.stop()
             event.accept()
         else:
             event.ignore()
