@@ -755,5 +755,55 @@ class ProductNameTests(unittest.TestCase):
         self.assertEqual(viewsheds.product_name(args), "test-run")
 
 
+class PlanTests(unittest.TestCase):
+    def test_plan_counts_saved_cameras_without_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _, dems = make_args(root)
+            sites = root / "pano-sites.geojson"
+            features = [
+                {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-122.0 - index / 10, 45.0]},
+                 "properties": {"name": name, "viewshedId": f"pano-{name}", "cameraHeightFt": height}}
+                for index, (name, height) in enumerate((("saved", 30), ("new", 30), ("unmeasured", None)))
+            ]
+            sites.write_text(json.dumps({"type": "FeatureCollection", "features": features}), encoding="utf-8")
+            output = root / "output"
+            args = viewsheds.parse_args([
+                "--plan", "--sites", str(sites), "--dem-dir", str(root), "--output-dir", str(output),
+                "--web-clip-boundary", str(root / "boundary.geojson"), "--mode", "production",
+                "--publish-site-data", "--publish-metrics",
+            ])
+            saved = viewsheds.load_sites(sites)[0]
+            config = viewsheds.config_document(args, dems)
+            paths = viewsheds.output_paths(output, saved)
+            outputs = {}
+
+            for key in ("raster", "exact", "web"):
+                paths[key].parent.mkdir(parents=True)
+                paths[key].touch()
+                outputs[key] = str(paths[key])
+
+            analysis_hash, web_hash = viewsheds.site_hashes(
+                config["analysis_hash"], config["web_hash"], viewsheds.site_record(saved)
+            )
+            viewsheds.write_json(paths["state"], {
+                "status": "complete", "analysis_hash": analysis_hash, "web_hash": web_hash,
+                "site": viewsheds.site_record(saved), "outputs": outputs,
+            })
+            before = sorted(path.name for path in output.rglob("*"))
+
+            plan = viewsheds.plan_run(args)
+
+            self.assertEqual(sorted(path.name for path in output.rglob("*")), before)
+
+        self.assertEqual(
+            {key: plan[key] for key in ("selected", "build", "new", "reusable", "missing_height", "saved")},
+            {"selected": 3, "build": 1, "new": 1, "reusable": 1, "missing_height": 1, "saved": 1},
+        )
+        self.assertFalse(plan["random"])
+        self.assertEqual(plan["finishing"][-3:], ["site_data", "coverage_metrics", "map_divisions"])
+        self.assertNotIn("combined_coverage", plan["finishing"])
+
+
 if __name__ == "__main__":
     unittest.main()
