@@ -282,6 +282,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--fail-fast", action="store_true")
     parser.add_argument("--json-progress", action="store_true")
+    parser.add_argument(
+        "--plan",
+        action="store_true",
+        help="build nothing and print one JSON line counting the cameras this run would "
+        "build or reuse and the finishing steps it would run",
+    )
     args = parser.parse_args(argv)
 
     for name in ("radius_miles", "cell_size", "web_resolution", "jobs"):
@@ -565,6 +571,7 @@ def upgrade_legacy_states(
     args: argparse.Namespace,
     dem_files: list[Path],
     config: dict[str, Any],
+    saved: dict[Path, dict[str, Any]] | None = None,
 ) -> int:
     """re-keys states saved when one hash covered the whole sites file
 
@@ -577,8 +584,7 @@ def upgrade_legacy_states(
     legacy_web = payload_hash({"analysis_hash": legacy_analysis, **web_config_payload(args)})
     upgraded = 0
 
-    for path in sorted((output_dir / "state").glob("*.json")):
-        state = read_json(path)
+    for path, state in saved_states(output_dir, saved).items():
         if not state or "site" not in state or state.get("analysis_hash") != legacy_analysis:
             continue
 
@@ -588,7 +594,9 @@ def upgrade_legacy_states(
         if state.get("web_hash") == legacy_web:
             state["web_hash"] = web_hash
 
-        write_json(path, state)
+        if saved is None:
+            write_json(path, state)
+
         upgraded += 1
 
     return upgraded
@@ -599,6 +607,7 @@ def upgrade_mtime_states(
     args: argparse.Namespace,
     dem_files: list[Path],
     config: dict[str, Any],
+    saved: dict[Path, dict[str, Any]] | None = None,
 ) -> int:
     """re-keys states saved when the analysis hash included each DEM's modification time
 
@@ -608,8 +617,7 @@ def upgrade_mtime_states(
     old_web = payload_hash({"analysis_hash": old_analysis, **web_config_payload(args)})
     upgraded = 0
 
-    for path in sorted((output_dir / "state").glob("*.json")):
-        state = read_json(path)
+    for path, state in saved_states(output_dir, saved).items():
         if not state or "site" not in state:
             continue
 
@@ -622,7 +630,9 @@ def upgrade_mtime_states(
         if state.get("web_hash") == old_site_web:
             state["web_hash"] = web_hash
 
-        write_json(path, state)
+        if saved is None:
+            write_json(path, state)
+
         upgraded += 1
 
     return upgraded
@@ -653,7 +663,22 @@ def read_state(path: Path) -> dict[str, Any] | None:
     return state
 
 
-def current_states(output_dir: Path, config: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
+def saved_states(
+    output_dir: Path, saved: dict[Path, dict[str, Any]] | None = None
+) -> dict[Path, dict[str, Any] | None]:
+    """every camera state in the output folder by path, unless already read into saved
+
+    A plan re-keys the states it read in memory, so it never writes to the folder.
+    """
+    if saved is not None:
+        return saved
+
+    return {path: read_state(path) for path in sorted((output_dir / "state").glob("*.json"))}
+
+
+def current_states(
+    output_dir: Path, config: dict[str, Any], saved: dict[Path, dict[str, Any]] | None = None
+) -> tuple[list[dict[str, Any]], list[str]]:
     """returns every saved camera state matching the current settings, plus stale camera names
 
     The output folder is the dataset: a run over a few new cameras still builds
@@ -662,8 +687,7 @@ def current_states(output_dir: Path, config: dict[str, Any]) -> tuple[list[dict[
     states: list[dict[str, Any]] = []
     stale: list[str] = []
 
-    for path in sorted((output_dir / "state").glob("*.json")):
-        state = read_state(path)
+    for state in saved_states(output_dir, saved).values():
         if not state or "site" not in state:
             continue
 
@@ -2276,6 +2300,84 @@ def metrics_progress(line: str, emitter: ProgressEmitter) -> bool:
     return True
 
 
+def finishing_stages(args: argparse.Namespace) -> list[str]:
+    """the steps a run takes once every camera is done, in the order they run"""
+    if args.shapefiles_only:
+        return []
+
+    skipped = {
+        "combined_exact": args.skip_exact_polygons,
+        "mbtiles": not find_tippecanoe(),
+        "combined_coverage": not args.combined_coverage,
+        "site_data": not args.publish_site_data,
+        "coverage_metrics": not args.publish_metrics,
+        "map_divisions": not args.publish_metrics,
+    }
+
+    return [stage for stage in FINISHING_STAGES if not skipped.get(stage)]
+
+
+def plan_run(args: argparse.Namespace) -> dict[str, Any]:
+    """counts what a run would build from the saved states, without building or writing anything
+
+    Uses the same resume checks as process_site, so the GUI can say what a run will do
+    before it starts. Sites a publishing run adds from the sheet are not counted yet.
+    """
+    check_output_provider(args.output_dir, product_name(args))
+    selected = select_sites(load_sites(args.sites), args)
+    dem_files = sorted(args.dem_dir.glob("*.tif"))
+
+    if not dem_files:
+        raise RuntimeError(f"no GeoTIFF DEMs found in {args.dem_dir}")
+
+    config = config_document(args, dem_files)
+    # a run re-keys states saved by earlier versions first, so the plan does too, in memory
+    saved = saved_states(args.output_dir)
+    previous_config = read_json(args.output_dir / "analysis_config.json") or {}
+    legacy_sites_sha256 = previous_config.get("sites_sha256") or previous_config.get("legacy_sites_sha256")
+
+    if legacy_sites_sha256:
+        upgrade_legacy_states(args.output_dir, legacy_sites_sha256, args, dem_files, config, saved)
+
+    upgrade_mtime_states(args.output_dir, args, dem_files, config, saved)
+    counts = {"new": 0, "outdated": 0, "reusable": 0, "missing_height": 0}
+
+    for site in selected:
+        if site.height_m is None:
+            counts["missing_height"] += 1
+            continue
+
+        state = saved.get(output_paths(args.output_dir, site)["state"])
+        hashes = site_hashes(config["analysis_hash"], config["web_hash"], asdict(site))
+        raster, exact, web = reusable_stages(state, *hashes, not args.skip_exact_polygons)
+
+        # shapefiles need only the raster, plus the exact polygon for exact shapefiles
+        if args.shapefiles_only:
+            web = True
+            exact = exact or args.shapefiles_only == "web"
+
+        if raster and exact and web and not args.overwrite:
+            counts["reusable"] += 1
+        elif state and state.get("status") == "complete":
+            counts["outdated"] += 1
+        else:
+            counts["new"] += 1
+
+    current, left_out = current_states(args.output_dir, config, saved)
+
+    return {
+        "selected": len(selected),
+        # sample mode draws new cameras on the real run, so these counts are only an example
+        "random": args.mode == "sample" and not args.site_names,
+        "build": counts["new"] + counts["outdated"],
+        **counts,
+        "saved": len(current),
+        "left_out": len(left_out),
+        "refresh_site_data": args.publish_site_data,
+        "finishing": finishing_stages(args),
+    }
+
+
 # ---------------------------------------------------------------------------
 
 
@@ -2295,6 +2397,10 @@ def main() -> int:
 
     if args.web_clip and args.shapefiles_only != "exact" and not args.web_clip_boundary.is_file():
         raise FileNotFoundError(f"web clip boundary not found: {args.web_clip_boundary}")
+
+    if args.plan:
+        print(json.dumps(plan_run(args)), flush=True)
+        return 0
 
     name = product_name(args)
     check_output_provider(args.output_dir, name)
@@ -2370,15 +2476,7 @@ def main() -> int:
     )
 
     if not args.shapefiles_only:
-        skipped = {
-            "combined_exact": args.skip_exact_polygons,
-            "mbtiles": not find_tippecanoe(),
-            "combined_coverage": not args.combined_coverage,
-            "site_data": not args.publish_site_data,
-            "coverage_metrics": not args.publish_metrics,
-            "map_divisions": not args.publish_metrics,
-        }
-        emitter.plan_finishing(stage for stage in FINISHING_STAGES if not skipped.get(stage))
+        emitter.plan_finishing(finishing_stages(args))
 
     completed, failures = run_sites(selected, run_config, jobs, args.fail_fast, emitter)
     if CANCEL.requested() and not (args.fail_fast and failures):

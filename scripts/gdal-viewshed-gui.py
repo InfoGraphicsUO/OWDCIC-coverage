@@ -78,6 +78,8 @@ def qt_enum(owner, scope: str, member: str):
 PROCESS_MERGED_CHANNELS = qt_enum(QProcess, "ProcessChannelMode", "MergedChannels")
 PROCESS_NOT_RUNNING = qt_enum(QProcess, "ProcessState", "NotRunning")
 MESSAGE_YES = qt_enum(QMessageBox, "StandardButton", "Yes")
+MESSAGE_CANCEL = qt_enum(QMessageBox, "StandardButton", "Cancel")
+MESSAGE_ACCEPT_ROLE = qt_enum(QMessageBox, "ButtonRole", "AcceptRole")
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -98,6 +100,68 @@ DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 PROGRESS_PREFIX = "@@PROGRESS@@"
+# the runner's finishing steps in plain words; steps that share words are listed once,
+# and the combined exact file is left out as it only feeds the review map
+FINISHING_WORDS = {
+    "web_polygons": "update the {provider} map files",
+    "web_coverage": "update the {provider} map files",
+    "mbtiles": "update the {provider} map files",
+    "combined_coverage": "rebuild the combined coverage",
+    "site_data": "publish the site data",
+    "coverage_metrics": "rebuild the coverage metrics",
+    "map_divisions": "rebuild the coverage metrics",
+}
+
+
+def plural(count: int, word: str) -> str:
+    return f"{count} {word}{'' if count == 1 else 's'}"
+
+
+def word_list(items: list[str]) -> str:
+    return ", ".join(items[:-1]) + f" and {items[-1]}" if len(items) > 1 else "".join(items)
+
+
+def run_summary(plan: dict, provider: str, overwrite: bool, shapefiles: str | None) -> str:
+    """says in plain words what a viewshed run will build, from the runner's --plan counts"""
+
+    cameras = f"{provider} camera"
+
+    if plan["random"]:
+        built = f"build {plural(plan['selected'], 'random ' + cameras)}"
+    elif overwrite:
+        built = f"rebuild all {plural(plan['selected'], cameras)} from the start"
+    else:
+        parts = []
+
+        if plan["new"]:
+            parts.append(f"build {plural(plan['new'], 'new ' + cameras)}")
+
+        if plan["outdated"]:
+            parts.append(f"rebuild {plan['outdated']} made with other settings")
+
+        built = " and ".join(parts) or f"build no new {cameras}s"
+
+        if plan["reusable"]:
+            built += f" ({plan['reusable']} already done)"
+
+    if shapefiles:
+        kind = "exact" if shapefiles == "exact" else "smoothed"
+        built += f", then save {kind} shapefiles for {plural(plan['selected'], 'camera')}"
+
+    steps = list(dict.fromkeys(
+        FINISHING_WORDS[stage].format(provider=provider)
+        for stage in plan["finishing"] if stage in FINISHING_WORDS
+    ))
+    text = f"This run will {built}"
+    text += f", then {word_list(steps)}." if steps else "."
+
+    if plan["missing_height"]:
+        text += f" {plural(plan['missing_height'], 'camera')} without a height will be skipped."
+
+    if plan["refresh_site_data"]:
+        text += " Any sites newly added to the installation sheet are built too."
+
+    return text
 
 
 def provider_output(provider: str, test: bool) -> Path:
@@ -400,6 +464,11 @@ class ViewshedWindow(QMainWindow):
         self.process.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
         self.process.readyReadStandardOutput.connect(self.read_output)
         self.process.finished.connect(self.run_finished)
+        # a dry run of the runner counts the cameras for the summary shown before starting
+        self.planner = QProcess(self)
+        self.planner.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
+        self.planner.readyReadStandardOutput.connect(self.read_plan)
+        self.planner.finished.connect(self.plan_finished)
         self.output_buffer = ""
         self.started = 0.0
 
@@ -1037,7 +1106,7 @@ class ViewshedWindow(QMainWindow):
         return [str(RUNNER), "--qgis-app", str(self.qgis_runtime.root), "--metrics-only", "--json-progress"]
 
     def start_run(self) -> None:
-        if self.process.state() != PROCESS_NOT_RUNNING:
+        if self.process.state() != PROCESS_NOT_RUNNING or self.planner.state() != PROCESS_NOT_RUNNING:
             return
 
         if self.standalone:
@@ -1048,11 +1117,83 @@ class ViewshedWindow(QMainWindow):
             return
 
         if self.standalone == "release":
-            self.launch("release", self.release_arguments(), "Starting the data release…")
+            upload = (
+                "then upload them as the latest GitHub release" if self.release_upload.isChecked()
+                else "without uploading them"
+            )
+            summary = (
+                "This run will build no viewsheds. It packages the viewsheds already on the map "
+                f"into Oregon, Washington and combined shapefile downloads in {RELEASE_OUTPUT}, {upload}."
+            )
+
+            if self.confirm(summary):
+                self.launch("release", self.release_arguments(), "Starting the data release…")
         elif self.standalone == "metrics":
-            self.launch("metrics", self.metrics_arguments(), "Starting the coverage metrics…")
+            summary = (
+                "This run will build no viewsheds. It rebuilds the coverage metrics from every "
+                "provider's published coverage and saves them to the division files the map loads."
+            )
+
+            if self.confirm(summary):
+                self.launch("metrics", self.metrics_arguments(), "Starting the coverage metrics…")
         else:
+            self.plan_run()
+
+    def plan_run(self) -> None:
+        """asks the runner what it would build, without blocking the window, before confirming"""
+        self.status_before_plan = self.status.text()
+        self.status.setText("Checking what this run will do…")
+        self.plan_output = ""
+        self.planner.start(sys.executable, [*self.runner_arguments(), "--plan"])
+        self.set_idle(False)
+
+        if not self.planner.waitForStarted(5000):
+            self.plan_finished(1, None)
+
+    def read_plan(self) -> None:
+        self.plan_output += bytes(self.planner.readAllStandardOutput()).decode("utf-8", errors="replace")
+
+    def plan_finished(self, exit_code: int, _status: QProcess.ExitStatus) -> None:
+        self.read_plan()
+        self.set_idle(True)
+        self.status.setText(self.status_before_plan)
+
+        if self.planner.property("cancelled"):
+            self.planner.setProperty("cancelled", False)
+            return
+
+        lines = self.plan_output.strip().splitlines()
+
+        try:
+            plan = json.loads(lines[-1]) if exit_code == 0 and lines else None
+        except json.JSONDecodeError:
+            plan = None
+
+        if plan:
+            summary = run_summary(
+                plan, self.provider.currentText(), self.overwrite.isChecked(), self.products.currentData()
+            )
+        else:
+            # the run would likely stop on the same problem, so name it before starting
+            problem = next((line for line in reversed(lines) if line.startswith("ERROR:")), "")
+            summary = (
+                "Could not check which cameras this run will build"
+                + (f": {problem.removeprefix('ERROR:').strip()}" if problem else ".")
+            )
+
+        if self.confirm(summary):
             self.launch("run", self.runner_arguments(), "Starting GDAL runner…")
+
+    def confirm(self, summary: str) -> bool:
+        box = QMessageBox(self)
+        box.setWindowTitle("Start this run?")
+        box.setText(summary)
+        start = box.addButton("Start", MESSAGE_ACCEPT_ROLE)
+        box.addButton(MESSAGE_CANCEL)
+        box.setDefaultButton(start)
+        box.exec()
+
+        return box.clickedButton() is start
 
     def start_dem_download(self) -> None:
         if self.process.state() != PROCESS_NOT_RUNNING:
@@ -1179,6 +1320,11 @@ class ViewshedWindow(QMainWindow):
         self.set_idle(True)
 
     def cancel_run(self) -> None:
+        if self.planner.state() != PROCESS_NOT_RUNNING:
+            self.planner.setProperty("cancelled", True)
+            self.planner.kill()
+            return
+
         if self.process.state() == PROCESS_NOT_RUNNING:
             return
 
@@ -1285,6 +1431,10 @@ class ViewshedWindow(QMainWindow):
         QProcess.startDetached(program, arguments)
 
     def closeEvent(self, event) -> None:  # noqa: N802
+        if self.planner.state() != PROCESS_NOT_RUNNING:
+            self.cancel_run()
+            self.planner.waitForFinished(1000)
+
         if self.process.state() == PROCESS_NOT_RUNNING:
             event.accept()
             return
