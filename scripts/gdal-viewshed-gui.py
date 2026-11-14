@@ -65,6 +65,7 @@ except ImportError:
 
 from camera_providers import PROVIDER_LABELS, output_dir, sites_path
 from qgis_runtime import default_qgis_root, find_tippecanoe, qgis_runtime
+import run_errors
 import setup_checks
 
 
@@ -86,6 +87,8 @@ QGIS_PROJECT_BUILDER = PROJECT_ROOT / "scripts/build-qgis-viewshed-project.py"
 RELEASE_BUILDER = PROJECT_ROOT / "scripts/build-data-release.py"
 DEM_FETCHER = PROJECT_ROOT / "scripts/fetch-dems.py"
 RELEASE_OUTPUT = PROJECT_ROOT / "outputs/data_release"
+# every run's log is saved here, so a failed run can be sent to someone
+LOG_DIR = PROJECT_ROOT / "outputs/logs"
 READY_TEXT = "Ready to start; choose inputs & check settings before starting a run!"
 RELEASE_READY_TEXT = "Ready to build the release from the published viewsheds"
 METRICS_READY_TEXT = "Ready to rebuild the coverage metrics from the published viewsheds"
@@ -402,6 +405,8 @@ class ViewshedWindow(QMainWindow):
         self.process.finished.connect(self.run_finished)
         self.output_buffer = ""
         self.started = 0.0
+        self.log_file = None
+        self.log_path = None
 
         self.elapsed_timer = QTimer(self)
         self.elapsed_timer.timeout.connect(self.update_elapsed)
@@ -449,7 +454,23 @@ class ViewshedWindow(QMainWindow):
         root.addWidget(self.metrics_panel, 3)
         root.addWidget(self.build_progress())
 
-        root.addWidget(QLabel("Run log"))
+        log_header = QHBoxLayout()
+        log_header.addWidget(QLabel("Run log"))
+        log_header.addStretch(1)
+        self.copy_log_button = QPushButton("Copy log")
+        self.copy_log_button.setToolTip("Copies the whole run log, to paste into a message.")
+        self.copy_log_button.clicked.connect(lambda: QApplication.clipboard().setText(self.log.toPlainText()))
+        self.open_log_button = QPushButton("Open log file")
+        self.open_log_button.setToolTip(f"Every run's log is saved in {LOG_DIR}.")
+        self.open_log_button.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.log_path)))
+        )
+
+        for button in (self.copy_log_button, self.open_log_button):
+            button.setEnabled(False)
+            log_header.addWidget(button)
+
+        root.addLayout(log_header)
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
         self.log.setMinimumHeight(90)
@@ -900,6 +921,8 @@ class ViewshedWindow(QMainWindow):
         layout = QVBoxLayout(group)
         self.status = QLabel(READY_TEXT)
         self.status.setWordWrap(True)
+        # a failed run names its saved log here, ready to copy
+        self.status.setTextInteractionFlags(qt_enum(Qt, "TextInteractionFlag", "TextSelectableByMouse"))
         self.overall = QProgressBar()
         self.overall.setRange(0, 1000)
         self.overall.setValue(0)
@@ -1064,6 +1087,7 @@ class ViewshedWindow(QMainWindow):
     def launch(self, task: str, arguments: list[str], starting: str) -> None:
         self.task = task
         self.log.clear()
+        self.save_log(task, arguments)
         self.output_buffer = ""
         self.started = time.monotonic()
         self.overall.setValue(0)
@@ -1073,10 +1097,50 @@ class ViewshedWindow(QMainWindow):
         self.process.start(sys.executable, arguments)
 
         if not self.process.waitForStarted(5000):
-            self.log.appendPlainText(self.process.errorString())
+            self.add_log(self.process.errorString())
+            self.close_log()
             self.elapsed_timer.stop()
-            self.status.setText("Could not start the runner — review the log.")
+            self.status.setText(self.failure_text("Could not start the runner"))
             self.set_idle(True)
+
+    def save_log(self, task: str, arguments: list[str]) -> None:
+        """starts a log file for the run, named so the newest sorts last"""
+        self.close_log()
+
+        try:
+            LOG_DIR.mkdir(parents=True, exist_ok=True)
+            self.log_path = LOG_DIR / f"{time.strftime('%Y%m%d-%H%M%S')}-{task}.log"
+            self.log_file = self.log_path.open("w", encoding="utf-8")
+            self.log_file.write(" ".join([sys.executable, *arguments]) + "\n")
+        except OSError:
+            # a full or read-only disk should not stop the run itself
+            self.log_path = None
+
+        self.copy_log_button.setEnabled(True)
+        self.open_log_button.setEnabled(self.log_path is not None)
+
+    def add_log(self, line: str) -> None:
+        self.log.appendPlainText(line)
+
+        if self.log_file:
+            try:
+                self.log_file.write(line + "\n")
+                # flushed per line, so the file is complete even if the window is closed mid-run
+                self.log_file.flush()
+            except OSError:
+                pass
+
+    def close_log(self) -> None:
+        if self.log_file:
+            self.log_file.close()
+            self.log_file = None
+
+    def failure_text(self, stopped: str) -> str:
+        """explains a failed run in plain words and says where its log is saved"""
+        explanation = run_errors.explain(self.log.toPlainText())
+        saved = f" The full log is saved at {self.log_path}." if self.log_path else ""
+
+        return f"{explanation}{saved}" if explanation else f"{stopped}; review the log.{saved}"
 
     def read_output(self) -> None:
         chunk = bytes(self.process.readAllStandardOutput()).decode("utf-8", errors="replace")
@@ -1095,7 +1159,7 @@ class ViewshedWindow(QMainWindow):
             try:
                 payload = json.loads(line[len(PROGRESS_PREFIX) :])
             except json.JSONDecodeError:
-                self.log.appendPlainText(line)
+                self.add_log(line)
                 return
 
             self.overall.setValue(round(float(payload.get("percent", 0)) * 10))
@@ -1114,7 +1178,7 @@ class ViewshedWindow(QMainWindow):
 
             return
 
-        self.log.appendPlainText(line)
+        self.add_log(line)
         scrollbar = self.log.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
@@ -1123,6 +1187,7 @@ class ViewshedWindow(QMainWindow):
             self.handle_line(self.output_buffer)
             self.output_buffer = ""
 
+        self.close_log()
         self.elapsed_timer.stop()
 
         if self.task == "dems":
@@ -1132,7 +1197,7 @@ class ViewshedWindow(QMainWindow):
             self.status.setText(
                 "DEMs downloaded" if exit_code == 0
                 else "Download cancelled — finished tiles are kept" if exit_code == 130
-                else f"Download stopped with exit code {exit_code}; review the log"
+                else self.failure_text(f"Download stopped with exit code {exit_code}")
             )
             self.set_idle(True)
             self.refresh_setup()
@@ -1149,7 +1214,7 @@ class ViewshedWindow(QMainWindow):
             self.status.setText(
                 "Release cancelled"
                 if exit_code == 130
-                else f"Release stopped with exit code {exit_code}; review the log"
+                else self.failure_text(f"Release stopped with exit code {exit_code}")
             )
         elif self.task == "metrics" and exit_code == 0:
             self.overall.setValue(1000)
@@ -1158,7 +1223,7 @@ class ViewshedWindow(QMainWindow):
             self.status.setText(
                 "Metrics cancelled — finished division types are kept for the next run"
                 if exit_code == 130
-                else f"Metrics stopped with exit code {exit_code}; review the log"
+                else self.failure_text(f"Metrics stopped with exit code {exit_code}")
             )
         elif exit_code == 0:
             self.overall.setValue(1000)
@@ -1174,7 +1239,7 @@ class ViewshedWindow(QMainWindow):
         elif exit_code == 130:
             self.status.setText("Run cancelled — completed cameras remain resumable")
         else:
-            self.status.setText(f"Run stopped with exit code {exit_code}; review the log")
+            self.status.setText(self.failure_text(f"Run stopped with exit code {exit_code}"))
 
         self.set_idle(True)
 
