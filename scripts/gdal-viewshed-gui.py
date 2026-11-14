@@ -98,6 +98,8 @@ DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 PROGRESS_PREFIX = "@@PROGRESS@@"
+# OWDCIC_DEV=1 shows developer-only options: the fixed test cameras and the map shape tuning
+DEV = os.environ.get("OWDCIC_DEV") == "1"
 
 
 def provider_output(provider: str, test: bool) -> Path:
@@ -424,14 +426,14 @@ class ViewshedWindow(QMainWindow):
         options = QWidget()
         options_layout = QVBoxLayout(options)
         options_layout.addWidget(self.build_options())
+        options_layout.addWidget(self.files_group)
         options_layout.addStretch(1)
+        tabs = [("Setup", self.build_setup()), ("Inputs and outputs", setup), ("Run settings", options)]
 
-        for label, page in (
-            ("Setup", self.build_setup()),
-            ("Inputs and outputs", setup),
-            ("Run settings", options),
-            ("Advanced options", self.advanced),
-        ):
+        if DEV:
+            tabs.append(("Advanced options", self.advanced))
+
+        for label, page in tabs:
             page.setObjectName("settingsPage")
             scroll = QScrollArea()
             scroll.setWidgetResizable(True)
@@ -724,9 +726,9 @@ class ViewshedWindow(QMainWindow):
             "Whose cameras to process. Picks that provider's sites file and output folder, which "
             "holds every viewshed already made for it."), self.provider)
         form.addRow(with_help("Camera sites", self.sites,
-            "The GeoJSON file containing the camera locations to process."), self.sites)
-        form.addRow(with_help("DEM folder", self.dems,
-            "The folder containing terrain elevation files. These describe hills and valleys used to calculate visibility."), self.dems)
+            "The file listing the camera locations to process (a .geojson file)."), self.sites)
+        form.addRow(with_help("Terrain files folder", self.dems,
+            "The folder holding the terrain elevation files (DEMs). These describe the hills and valleys used to calculate what each camera can see."), self.dems)
         form.addRow(with_help("Output folder", self.output,
             "Where the viewsheds are saved. Each provider keeps its own folder, and a run "
             "stops if the folder holds another provider's viewsheds."), self.output)
@@ -750,23 +752,22 @@ class ViewshedWindow(QMainWindow):
         form.setSpacing(10)
         form.setFieldGrowthPolicy(qt_enum(QFormLayout, "FieldGrowthPolicy", "AllNonFixedFieldsGrow"))
         self.mode = QComboBox()
-        self.mode.addItem("1 camera (Portland)", "pilot")
-        self.mode.addItem("3 cameras", "validation")
+
+        if DEV:
+            self.mode.addItem("1 camera (Portland)", "pilot")
+            self.mode.addItem("3 cameras", "validation")
+
         self.mode.addItem("3 random cameras", "sample")
         self.mode.addItem("All cameras", "production")
         self.mode.setCurrentIndex(self.mode.findData("sample"))
 
         self.products = QComboBox()
-        self.products.addItem("Full run (polygons, Mapbox products, manifest)", None)
-        self.products.addItem("Shapefiles only: exact 10 m polygons", "exact")
-        self.products.addItem("Shapefiles only: smoothed web polygons", "web")
-        self.products.setToolTip(
-            "shapefiles-only runs write one EPSG:5070 shapefile per camera for ArcGIS "
-            "and skip the combined GeoPackage, Mapbox products, and manifest"
-        )
+        self.products.addItem("Map coverage", None)
+        self.products.addItem("Shapefiles for GIS, exact edges", "exact")
+        self.products.addItem("Shapefiles for GIS, smoothed edges", "web")
 
-        self.combined = QCheckBox("Also rebuild the combined coverage tileset")
-        self.publish_sites = QCheckBox("Publish the manifest and site data to the map")
+        self.combined = QCheckBox("Also rebuild the combined coverage of every provider")
+        self.publish_sites = QCheckBox("Publish the new viewsheds and camera sites to the map")
         # off by default: a test run does not need it
         self.publish_metrics = QCheckBox("Rebuild coverage metrics for the results panel")
         # shapefiles-only runs make no coverage to combine or publish
@@ -787,56 +788,45 @@ class ViewshedWindow(QMainWindow):
         self.web_resolution.setRange(10.0, 1000.0)
         self.web_resolution.setValue(50.0)
         self.web_resolution.setSuffix(" m")
-        self.web_resolution.setToolTip("coarser web grid smooths pixel-sized boundary detail")
 
         self.simplify = QDoubleSpinBox()
         self.simplify.setRange(0.0, 1000.0)
         self.simplify.setValue(25.0)
         self.simplify.setSuffix(" m")
-        self.simplify.setToolTip("topology-preserving simplification applied only to web polygons")
 
         self.smooth_iterations = QSpinBox()
         self.smooth_iterations.setRange(0, 3)
         self.smooth_iterations.setValue(3)
-        self.smooth_iterations.setToolTip(
-            "corner-cutting passes applied only to web polygons; 0 disables smoothing"
-        )
 
-        self.web_majority = QCheckBox("Smooth web mask with a 3×3 majority filter")
+        self.web_majority = QCheckBox("Remove specks and small holes from map shapes")
         self.web_majority.setChecked(True)
-        self.web_majority.setToolTip(
-            "a web cell is visible when at least 5 cells in its 3×3 neighborhood are visible"
-        )
 
-        self.web_clip = QCheckBox("Clip web polygons at Pacific Northwest coastlines")
+        self.web_clip = QCheckBox("Trim map shapes at the Pacific Northwest coastline")
         self.web_clip.setChecked(True)
-        self.web_clip.setToolTip(f"uses {DEFAULT_CLIP_BOUNDARY}")
 
         self.patch_cells = QSpinBox()
         self.patch_cells.setRange(0, 10000)
         self.patch_cells.setValue(0)
-        self.patch_cells.setToolTip("0 preserves all visible patches; higher values remove tiny web islands")
 
         self.jobs = QSpinBox()
         self.jobs.setRange(1, max(1, os.cpu_count() or 1))
         self.jobs.setValue(DEFAULT_JOBS)
-        self.jobs.setToolTip("cameras processed at the same time; each needs roughly 1 GB of memory")
 
-        self.exact = QCheckBox("Create exact 10 m EPSG:5070 polygons")
+        self.exact = QCheckBox("Also save exact 10 m shapes")
         self.exact.setChecked(True)
-        self.keep_dems = QCheckBox("Keep per-camera working DEMs")
+        self.keep_dems = QCheckBox("Keep each camera's temporary terrain files")
         self.overwrite = QCheckBox("Rebuild completed cameras instead of resuming")
 
         form.addRow(with_help("Camera set", self.mode,
             "Choose a small test run or process every camera in the selected sites file. Random cameras are picked from the selected sites file each run."), self.mode)
         form.addRow(with_help("Outputs", self.products,
-            "Full run creates combined coverage files and web map files. Shapefiles only creates a separate file for each camera; choose exact edges or smoother web edges."), self.products)
+            "Map coverage makes the coverage and map files the website shows. Shapefiles for GIS instead saves a separate file for each camera to open in ArcGIS or QGIS, with either the exact 10 m edges or the smoother edges the map shows."), self.products)
         form.addRow(with_help(self.combined, self.combined,
-            "When the run finishes, also dissolves this provider's new coverage with the other providers' saved coverage into the combined tileset. Adds a few minutes. Full runs only."))
+            "When the run finishes, also merges this provider's new coverage with the other providers' saved coverage into the map's combined coverage layer. Adds a few minutes. Map coverage runs only."))
         form.addRow(with_help(self.publish_sites, self.publish_sites,
-            "Before the run, regenerates the camera site files and viewshed queues from the installation sheet so newly added sites are included. When the run finishes without failures, replaces this provider's manifest in the data folder and regenerates the camera site files and viewshed queues, so the map treats the new cameras as having coverage. Skipped if the output folder is missing viewsheds that are already published. Full runs only."))
+            "Before the run, reloads the camera sites from the installation sheet so newly added sites are included. When the run finishes without failures, updates the map's list of this provider's viewsheds and its camera sites, so the map shows coverage for the new cameras. Skipped if the output folder is missing viewsheds the map already shows. Map coverage runs only."))
         form.addRow(with_help(self.publish_metrics, self.publish_metrics,
-            "After publishing, also recalculates land coverage for every division and camera and refreshes the division copies the map loads, so the results panel includes the new viewsheds. Divisions the new viewsheds do not reach keep their saved results, so this usually takes a few minutes; it takes about an hour when the land, water or ownership data has changed. Leave it off for test runs."))
+            "After publishing, also recalculates land coverage for every division and camera and refreshes the copies of the divisions the map loads, so the results panel includes the new viewsheds. Divisions the new viewsheds do not reach keep their saved results, so this usually takes a few minutes; it takes about an hour when the land, water or ownership data has changed. Leave it off for test runs."))
         form.addRow(with_help("Maximum distance", self.radius,
             "How far from each camera to check visibility. Larger distances cover more ground and take more time and memory."), self.radius)
         form.addRow(with_help("Analysis cell size", self.cell_size,
@@ -852,30 +842,33 @@ class ViewshedWindow(QMainWindow):
         # these are still the runner's defaults; the advanced tab just keeps setup compact
         self.advanced = QWidget()
         advanced_layout = QVBoxLayout(self.advanced)
-        web_group = QGroupBox("Web polygon detail")
+        web_group = QGroupBox("Map shape detail")
         web_form = QFormLayout(web_group)
         web_form.setSpacing(10)
         web_form.addRow(with_help("Grid resolution", self.web_resolution,
-            "The size of each square used for web coverage shapes. Larger values make simpler shapes but lose small details. Exact shapes are unchanged."), self.web_resolution)
+            "The size of each square used for the map's coverage shapes. Larger values make simpler shapes but lose small details. Exact shapes are unchanged."), self.web_resolution)
         web_form.addRow(with_help("Simplify tolerance", self.simplify,
-            "How much small edge detail to remove from web shapes, in meters. Higher values make simpler outlines; 0 skips this step."), self.simplify)
+            "How much small edge detail to remove from map shapes, in meters. Higher values make simpler outlines; 0 skips this step."), self.simplify)
         web_form.addRow(with_help("Smoothing passes", self.smooth_iterations,
-            "How many times to round off corners in web shapes. More passes make softer edges; 0 leaves the corners unchanged."), self.smooth_iterations)
+            "How many times to round off corners in map shapes. More passes make softer edges; 0 leaves the corners unchanged."), self.smooth_iterations)
         web_form.addRow(with_help("Minimum patch cells", self.patch_cells,
-            "Removes small groups of grid squares from the web mask, including small gaps. Higher values remove larger patches; 0 keeps them all."), self.patch_cells)
+            "Removes small groups of grid squares from map shapes, including small gaps. Higher values remove larger patches; 0 keeps them all."), self.patch_cells)
         web_form.addRow(with_help(self.web_majority, self.web_majority,
-            "Reduces isolated specks and tiny holes in web coverage. A square is visible when at least 5 of its 9 neighboring squares, including itself, are visible."))
+            "Reduces isolated specks and tiny holes in map coverage. A square is visible when at least 5 of its 9 neighboring squares, including itself, are visible."))
         web_form.addRow(with_help(self.web_clip, self.web_clip,
-            "Trims web coverage to the Pacific Northwest land boundary, removing coverage over the ocean. Exact shapes are unchanged."))
-        web_form.addRow(reset_button("Web polygon detail", [
+            "Trims map coverage to the Pacific Northwest land boundary, removing coverage over the ocean. Exact shapes are unchanged."))
+        web_form.addRow(reset_button("Map shape detail", [
             self.web_resolution, self.simplify, self.smooth_iterations,
             self.patch_cells, self.web_majority, self.web_clip,
         ]))
         advanced_layout.addWidget(web_group)
-        files_group = QGroupBox("Files and repeat runs")
+        advanced_layout.addStretch(1)
+        # repeat-run choices matter to everyone, so they stay on the run settings tab
+        self.files_group = QGroupBox("Files and repeat runs")
+        files_group = self.files_group
         files_layout = QVBoxLayout(files_group)
         files_layout.addWidget(with_help(self.exact, self.exact,
-            "Also saves shapes that follow the analysis grid without web smoothing. Uncheck to skip these files in a full run. Exact shapefile runs always create them."))
+            "Also saves shapes that follow the 10 m analysis grid without the map's smoothing. Uncheck to skip these files in a full run. Exact shapefile runs always create them."))
         files_layout.addWidget(with_help(self.keep_dems, self.keep_dems,
             "Keeps the temporary terrain files made for each camera so you can inspect them later. This uses extra disk space."))
         files_layout.addWidget(with_help(self.overwrite, self.overwrite,
@@ -883,8 +876,6 @@ class ViewshedWindow(QMainWindow):
         files_layout.addWidget(reset_button("Files and repeat runs", [
             self.exact, self.keep_dems, self.overwrite,
         ]))
-        advanced_layout.addWidget(files_group)
-        advanced_layout.addStretch(1)
 
         return group
 
@@ -1002,7 +993,7 @@ class ViewshedWindow(QMainWindow):
             problems.append(f"Sites file not found: {self.sites.path()}")
 
         if not self.dems.path().is_dir():
-            problems.append(f"DEM folder not found: {self.dems.path()}")
+            problems.append(f"Terrain files folder not found: {self.dems.path()}")
 
         clip_needed = self.web_clip.isChecked() and self.products.currentData() != "exact"
         if clip_needed and not DEFAULT_CLIP_BOUNDARY.is_file():
