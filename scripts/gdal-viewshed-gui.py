@@ -98,6 +98,8 @@ DEFAULT_QGIS_ROOT = default_qgis_root()
 DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.geojson"
 DEFAULT_JOBS = max(1, min(4, (os.cpu_count() or 2) // 2))
 PROGRESS_PREFIX = "@@PROGRESS@@"
+# the provider choice that runs every provider in turn, finishing the shared steps once
+ALL_PROVIDERS = "all"
 
 
 def provider_output(provider: str, test: bool) -> Path:
@@ -120,7 +122,8 @@ PRESETS = (
     ("live", "Live site",
         "Builds every camera that is missing a viewshed, then rebuilds the provider's and the "
         "combined tilesets, publishes the site data, and reruns the coverage metrics so the "
-        "outputs are ready to upload.",
+        "outputs are ready to upload. Choose All providers on the Inputs tab to update every "
+        "provider in one run.",
         {"mode": "production", "products": None, "combined": True,
          "publish_sites": True, "publish_metrics": True}),
     ("gis", "GIS analysis",
@@ -402,6 +405,11 @@ class ViewshedWindow(QMainWindow):
         self.process.finished.connect(self.run_finished)
         self.output_buffer = ""
         self.started = 0.0
+        # the providers still to run in an All providers run, as (provider, arguments)
+        self.queue: list[tuple[str, list[str]]] = []
+        self.queue_provider: str | None = None
+        self.queue_index = 0
+        self.queue_total = 0
 
         self.elapsed_timer = QTimer(self)
         self.elapsed_timer.timeout.connect(self.update_elapsed)
@@ -682,7 +690,9 @@ class ViewshedWindow(QMainWindow):
         self.applying_preset = False
 
         # test runs write to the provider's test folder, unless a folder was chosen by hand
-        if self.output.path() in PROVIDER_OUTPUTS:
+        if self.all_providers():
+            self.test_outputs = key == "test"
+        elif self.output.path() in PROVIDER_OUTPUTS:
             self.output.edit.setText(str(provider_output(self.provider.currentData(), key == "test")))
 
         self.sync_preset()
@@ -715,6 +725,10 @@ class ViewshedWindow(QMainWindow):
         for provider, label in PROVIDER_LABELS.items():
             self.provider.addItem(label, provider)
 
+        self.provider.addItem("All providers", ALL_PROVIDERS)
+        # whether the output folders are the test ones, kept while All providers hides the paths
+        self.test_outputs = True
+        self.paths_hidden = False
         self.sites = PathRow(sites_path("alertwest"), False)
         self.dems = PathRow(PROJECT_ROOT / "data/source/dems", True)
         # the window opens on the test run preset
@@ -722,7 +736,9 @@ class ViewshedWindow(QMainWindow):
         self.provider.currentIndexChanged.connect(self.choose_provider)
         form.addRow(with_help("Camera provider", self.provider,
             "Whose cameras to process. Picks that provider's sites file and output folder, which "
-            "holds every viewshed already made for it."), self.provider)
+            "holds every viewshed already made for it. All providers runs each provider in turn "
+            "with its own files and folder, then rebuilds the combined coverage and the metrics "
+            "once at the end."), self.provider)
         form.addRow(with_help("Camera sites", self.sites,
             "The GeoJSON file containing the camera locations to process."), self.sites)
         form.addRow(with_help("DEM folder", self.dems,
@@ -737,12 +753,28 @@ class ViewshedWindow(QMainWindow):
 
         return group
 
+    def all_providers(self) -> bool:
+        return self.provider.currentData() == ALL_PROVIDERS
+
     def choose_provider(self) -> None:
         provider = self.provider.currentData()
-        self.sites.edit.setText(str(sites_path(provider)))
-        # keep a test run in a test folder
-        test = PROVIDER_OUTPUTS.get(self.output.path(), self.preset.currentData() == "test")
-        self.output.edit.setText(str(provider_output(provider, test)))
+        # keep a test run in a test folder; All providers leaves the path empty, so it
+        # remembers which kind of folder it was choosing
+        if not self.paths_hidden:
+            self.test_outputs = PROVIDER_OUTPUTS.get(self.output.path(), self.preset.currentData() == "test")
+
+        test = self.test_outputs
+        every = provider == ALL_PROVIDERS
+        self.paths_hidden = every
+
+        # each provider in the queue uses its own sites file and output folder
+        for row, default in ((self.sites, "Each provider's own camera sites file"),
+                             (self.output, "Each provider's own output folder")):
+            row.setEnabled(not every)
+            row.edit.setPlaceholderText(default if every else "")
+
+        self.sites.edit.setText("" if every else str(sites_path(provider)))
+        self.output.edit.setText("" if every else str(provider_output(provider, test)))
 
     def build_options(self) -> QGroupBox:
         group = QGroupBox("Run settings")
@@ -936,17 +968,28 @@ class ViewshedWindow(QMainWindow):
 
         return layout
 
-    def runner_arguments(self) -> list[str]:
+    def run_paths(self, provider: str | None = None) -> tuple[Path, Path]:
+        """the sites file and output folder for one provider of an All providers run,
+        or the ones on the Inputs tab"""
+        if provider:
+            return sites_path(provider), provider_output(provider, self.test_outputs)
+
+        return self.sites.path(), self.output.path()
+
+    def runner_arguments(self, provider: str | None = None, last: bool = True) -> list[str]:
+        """the runner's command line; an All providers run leaves the steps that read every
+        provider's coverage to its last provider"""
+        sites, output = self.run_paths(provider)
         arguments = [
             str(RUNNER),
             "--qgis-app",
             str(self.qgis_runtime.root),
             "--sites",
-            str(self.sites.path()),
+            str(sites),
             "--dem-dir",
             str(self.dems.path()),
             "--output-dir",
-            str(self.output.path()),
+            str(output),
             "--mode",
             str(self.mode.currentData()),
             "--radius-miles",
@@ -978,13 +1021,13 @@ class ViewshedWindow(QMainWindow):
         if not self.exact.isChecked() and shapefiles != "exact":
             arguments.append("--skip-exact-polygons")
 
-        if self.combined.isChecked() and not shapefiles:
+        if self.combined.isChecked() and not shapefiles and last:
             arguments.append("--combined-coverage")
 
         if self.publish_sites.isChecked() and not shapefiles:
             arguments.append("--publish-site-data")
 
-            if self.publish_metrics.isChecked():
+            if self.publish_metrics.isChecked() and last:
                 arguments.append("--publish-metrics")
 
         if self.keep_dems.isChecked():
@@ -998,8 +1041,12 @@ class ViewshedWindow(QMainWindow):
     def validate_paths(self) -> bool:
         problems = []
 
-        if not self.sites.path().is_file():
-            problems.append(f"Sites file not found: {self.sites.path()}")
+        providers = list(PROVIDER_LABELS) if self.all_providers() else [None]
+
+        for provider in providers:
+            sites, _ = self.run_paths(provider)
+            if not sites.is_file():
+                problems.append(f"Sites file not found: {sites}")
 
         if not self.dems.path().is_dir():
             problems.append(f"DEM folder not found: {self.dems.path()}")
@@ -1051,8 +1098,24 @@ class ViewshedWindow(QMainWindow):
             self.launch("release", self.release_arguments(), "Starting the data release…")
         elif self.standalone == "metrics":
             self.launch("metrics", self.metrics_arguments(), "Starting the coverage metrics…")
+        elif self.all_providers():
+            providers = list(PROVIDER_LABELS)
+            self.queue = [
+                (provider, self.runner_arguments(provider, last=index == len(providers) - 1))
+                for index, provider in enumerate(providers)
+            ]
+            self.queue_total = len(self.queue)
+            self.launch_next()
         else:
             self.launch("run", self.runner_arguments(), "Starting GDAL runner…")
+
+    def launch_next(self) -> None:
+        """starts the next provider of an All providers run, keeping the log of the ones before"""
+        provider, arguments = self.queue.pop(0)
+        self.queue_provider = provider
+        self.queue_index = self.queue_total - len(self.queue)
+        self.launch("run", arguments, "starting GDAL runner…", keep_log=self.queue_index > 1)
+        self.log.appendPlainText(f"--- {self.queue_prefix().rstrip(': ')} ---")
 
     def start_dem_download(self) -> None:
         if self.process.state() != PROCESS_NOT_RUNNING:
@@ -1061,13 +1124,17 @@ class ViewshedWindow(QMainWindow):
         arguments = [str(DEM_FETCHER), "--dem-dir", str(self.dems.path()), "--json-progress"]
         self.launch("dems", arguments, "Starting the DEM download…")
 
-    def launch(self, task: str, arguments: list[str], starting: str) -> None:
+    def launch(self, task: str, arguments: list[str], starting: str, keep_log: bool = False) -> None:
         self.task = task
-        self.log.clear()
         self.output_buffer = ""
-        self.started = time.monotonic()
-        self.overall.setValue(0)
-        self.status.setText(starting)
+
+        # the queue's later providers carry on the first one's log, bar and clock
+        if not keep_log:
+            self.log.clear()
+            self.started = time.monotonic()
+            self.overall.setValue(0)
+
+        self.status.setText(self.queue_prefix() + starting)
         self.set_idle(False)
         self.elapsed_timer.start(1000)
         self.process.start(sys.executable, arguments)
@@ -1076,6 +1143,8 @@ class ViewshedWindow(QMainWindow):
             self.log.appendPlainText(self.process.errorString())
             self.elapsed_timer.stop()
             self.status.setText("Could not start the runner — review the log.")
+            self.queue = []
+            self.queue_provider = None
             self.set_idle(True)
 
     def read_output(self) -> None:
@@ -1098,7 +1167,12 @@ class ViewshedWindow(QMainWindow):
                 self.log.appendPlainText(line)
                 return
 
-            self.overall.setValue(round(float(payload.get("percent", 0)) * 10))
+            percent = float(payload.get("percent", 0))
+            # each provider of an All providers run fills its share of the bar
+            if self.queue_provider:
+                percent = (self.queue_index - 1 + percent / 100) / self.queue_total * 100
+
+            self.overall.setValue(round(percent * 10))
             # GDAL callbacks report a percent with no detail, so the last status stays up
             detail = payload.get("detail")
             if not detail:
@@ -1110,7 +1184,7 @@ class ViewshedWindow(QMainWindow):
                 if site
                 else ""
             )
-            self.status.setText(prefix + str(detail))
+            self.status.setText(self.queue_prefix() + prefix + str(detail))
 
             return
 
@@ -1118,10 +1192,24 @@ class ViewshedWindow(QMainWindow):
         scrollbar = self.log.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
+    def queue_prefix(self) -> str:
+        if not self.queue_provider:
+            return ""
+
+        return f"{PROVIDER_LABELS[self.queue_provider]} ({self.queue_index} of {self.queue_total}): "
+
     def run_finished(self, exit_code: int, _status: QProcess.ExitStatus) -> None:
         if self.output_buffer:
             self.handle_line(self.output_buffer)
             self.output_buffer = ""
+
+        if self.task == "run" and self.queue_provider:
+            if exit_code == 0 and self.queue:
+                self.launch_next()
+                return
+
+            self.finish_queue(exit_code)
+            return
 
         self.elapsed_timer.stop()
 
@@ -1178,6 +1266,34 @@ class ViewshedWindow(QMainWindow):
 
         self.set_idle(True)
 
+    def finish_queue(self, exit_code: int) -> None:
+        """reports an All providers run, naming the provider it stopped at"""
+        label = PROVIDER_LABELS[self.queue_provider]
+        done = self.queue_index - (exit_code != 0)
+        self.elapsed_timer.stop()
+
+        if exit_code == 0:
+            self.overall.setValue(1000)
+            self.status.setText(
+                f"All {self.queue_total} providers complete — outputs are ready and site data is published"
+                if self.publish_sites.isChecked()
+                else f"All {self.queue_total} providers complete — outputs and manifests are ready"
+            )
+        else:
+            stopped = "was cancelled; completed cameras remain resumable" if exit_code == 130 else (
+                f"stopped with exit code {exit_code}; review the log"
+            )
+            kept = f" The {done} providers before it finished." if done > 1 else (
+                " The provider before it finished." if done else ""
+            )
+            # the combined coverage and metrics run with the last provider, so they were skipped
+            skipped = " The combined coverage and metrics were not rebuilt." if self.queue else ""
+            self.status.setText(f"{label} ({self.queue_index} of {self.queue_total}) {stopped}.{kept}{skipped}")
+
+        self.queue = []
+        self.queue_provider = None
+        self.set_idle(True)
+
     def cancel_run(self) -> None:
         if self.process.state() == PROCESS_NOT_RUNNING:
             return
@@ -1214,8 +1330,11 @@ class ViewshedWindow(QMainWindow):
         self.elapsed.setText(f"Elapsed: {text}")
 
     def output_folder(self) -> Path:
+        # an All providers run writes to each provider's folder under outputs
+        run_output = PROJECT_ROOT / "outputs" if self.all_providers() else self.output.path()
+
         return {"release": RELEASE_OUTPUT, "metrics": PROJECT_ROOT / "data/live"}.get(
-            self.standalone, self.output.path()
+            self.standalone, run_output
         )
 
     def set_idle(self, idle: bool) -> None:
@@ -1233,8 +1352,9 @@ class ViewshedWindow(QMainWindow):
         self.open_output_button.setEnabled(idle and self.output_folder().exists())
         exact = self.output.path() / "camera_viewsheds_exact_epsg5070.gpkg"
         web = self.output.path() / "mapbox/camera_viewsheds_web_epsg5070.gpkg"
+        # the review map shows one provider's folder
         self.open_qgis_button.setEnabled(
-            idle and not self.standalone and (exact.exists() or web.exists())
+            idle and not self.standalone and not self.all_providers() and (exact.exists() or web.exists())
         )
 
     def open_output(self) -> None:
