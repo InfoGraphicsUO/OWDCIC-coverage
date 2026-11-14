@@ -9,6 +9,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 from qgis_runtime import (  # noqa: E402
     QGIS_ROOT_ENV,
+    default_jobs,
     default_qgis_root,
     qgis_runtime,
 )
@@ -58,6 +59,18 @@ class QgisRuntimeTests(unittest.TestCase):
                 runtime.qgis_launch(project),
                 (str(qgis_executable.resolve()), [str(project)]),
             )
+
+    def test_default_jobs_follows_memory_and_processors(self) -> None:
+        gb = 2**30
+        # memory limits: (16 - 4) / 1.5 = 8 cameras of 11 processors
+        self.assertEqual(default_jobs(12, 16 * gb), 8)
+        # processors limit, keeping one free
+        self.assertEqual(default_jobs(4, 64 * gb), 3)
+        # little memory or one processor still runs a camera
+        self.assertEqual(default_jobs(8, 4 * gb), 1)
+        self.assertEqual(default_jobs(1, 64 * gb), 1)
+        # unknown memory keeps the old half-the-processors rule
+        self.assertEqual(default_jobs(16, 0), 4)
 
 
 if __name__ == "__main__":
