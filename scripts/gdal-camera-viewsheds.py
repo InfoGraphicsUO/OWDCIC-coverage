@@ -95,12 +95,13 @@ STAGE_SPANS = {
 }
 # steps that run once every camera is done, in the order they run, with their run time in seconds
 # from the October 26, 2026 Pano run that added one camera (metrics timed as a cached rebuild,
-# combined coverage with its Shapely-written GeoJSON);
+# combined coverage with its Shapely-written GeoJSON, and web coverage less the 138 s its GDAL
+# GeoJSON writes took before they moved to Shapely too);
 # only the ratios matter
 FINISHING_STAGES = {
     "combined_exact": 31,
     "web_polygons": 10,
-    "web_coverage": 203,
+    "web_coverage": 65,
     "mbtiles": 42,
     "combined_coverage": 330,
     "site_data": 1,
@@ -1117,8 +1118,8 @@ def write_features(
     return count
 
 
-def write_coverage_geojson(path: Path, geometry: Any, properties: dict[str, Any]) -> None:
-    """writes one region-wide coverage feature as GeoJSON for tippecanoe
+def write_geojson(path: Path, fields: dict[str, str], rows: Iterable[tuple[Any, dict[str, Any]]]) -> int:
+    """writes MultiPolygon features in EPSG:4326 as RFC 7946 GeoJSON for tippecanoe
 
     GDAL's GeoJSON writer took about 9 minutes on the combined coverage, and in
     RFC 7946 mode its 9-decimal rounding collapsed tiny rings, which it then
@@ -1128,15 +1129,30 @@ def write_coverage_geojson(path: Path, geometry: Any, properties: dict[str, Any]
     """
     import shapely
 
-    shape = shapely.orient_polygons(shapely.from_wkb(bytes(geometry.ExportToWkb())), exterior_cw=False)
-    feature = json.dumps({"type": "Feature", "properties": properties, "geometry": None})
-    head, tail = feature.split('"geometry": null')
+    cast = {"integer": int, "real": float, "string": str}
     path.parent.mkdir(parents=True, exist_ok=True)
+    count = 0
 
     with path.open("w", encoding="utf-8") as stream:
-        stream.write('{"type": "FeatureCollection", "features": [')
-        stream.write(head + '"geometry": ' + shapely.to_geojson(shape) + tail)
-        stream.write("]}\n")
+        stream.write('{"type": "FeatureCollection", "features": [\n')
+
+        for geometry, attributes in rows:
+            shape = shapely.from_wkb(bytes(ogr.ForceToMultiPolygon(geometry).ExportToWkb()))
+            # unset values are left out, as GDAL's writer did
+            properties = {
+                name: cast[kind](attributes[name])
+                for name, kind in fields.items()
+                if attributes.get(name) is not None
+            }
+            feature = json.dumps({"type": "Feature", "properties": properties, "geometry": None})
+            head, tail = feature.split('"geometry": null')
+            geojson = shapely.to_geojson(shapely.orient_polygons(shape, exterior_cw=False))
+            stream.write((",\n" if count else "") + head + '"geometry": ' + geojson + tail)
+            count += 1
+
+        stream.write("\n]}\n")
+
+    return count
 
 
 def validate_vector(path: Path, layer_name: str | None, expected_count: int | None = None) -> int:
@@ -1930,9 +1946,9 @@ def rebuild_web_products(
     )
     validate_vector(staging, COVERAGE_LAYER, 1)
 
-    for layer_name, fields, rows, destination in (
-        (INDIVIDUAL_LAYER, SITE_FIELDS, individual, individual_geojson),
-        (COVERAGE_LAYER, COVERAGE_FIELDS, [(coverage, {"coverage_id": "all"})], coverage_geojson),
+    for fields, rows, destination in (
+        (SITE_FIELDS, individual, individual_geojson),
+        (COVERAGE_FIELDS, [(coverage, {"coverage_id": "all"})], coverage_geojson),
     ):
         projected = []
 
@@ -1941,15 +1957,7 @@ def rebuild_web_products(
             clone.Transform(to_web)
             projected.append((repair_polygon_parts(clone), attributes))
 
-        write_features(
-            destination,
-            "GeoJSON",
-            layer_name,
-            web_srs,
-            fields,
-            projected,
-            ["RFC7946=YES", "COORDINATE_PRECISION=9"],
-        )
+        write_geojson(destination, fields, projected)
         validate_vector(destination, None, len(rows))
 
     packaging: dict[str, Any] = {"status": "skipped_tippecanoe_missing", "mbtiles": None, "error": None}
@@ -2045,7 +2053,7 @@ def build_combined_coverage(providers: list[Path], output_dir: Path, log: Callab
     output_dir.mkdir(parents=True, exist_ok=True)
     geojson = output_dir / f"{COMBINED_PRODUCT_NAME}.geojson"
     mbtiles = output_dir / f"{COMBINED_PRODUCT_NAME}-z5.mbtiles"
-    write_coverage_geojson(geojson, coverage, {"coverage_id": "all"})
+    write_geojson(geojson, COVERAGE_FIELDS, [(coverage, {"coverage_id": "all"})])
     validate_vector(geojson, None, 1)
 
     tippecanoe = find_tippecanoe()
