@@ -222,15 +222,15 @@ PROVIDER_OUTPUTS = {
 # each preset starts from the launch values and changes only these settings
 PRESETS = (
     ("test", "Test run",
-        "Builds up to 3 random cameras into a separate test folder without publishing anything, "
-        "so you can check them in QGIS with Open review map in QGIS.",
+        "Builds up to 3 random cameras per provider into separate test folders without "
+        "publishing anything. Choose one provider on the Inputs tab to check its cameras with "
+        "Open review map in QGIS.",
         {"mode": "sample", "products": None, "combined": False,
          "publish_sites": False, "publish_metrics": False}),
     ("live", "Live site",
         "Builds every camera that is missing a viewshed, then rebuilds the provider's and the "
         "combined tilesets, publishes the site data, and reruns the coverage metrics so the "
-        "outputs are ready to upload. Choose All providers on the Inputs tab to update every "
-        "provider in one run."
+        "outputs are ready to upload."
         # tippecanoe builds the map tiles and has no Windows build
         + (" Live site runs need a Mac, since the tool that builds the map tiles has no Windows version."
            if sys.platform == "win32" else ""),
@@ -1077,6 +1077,8 @@ class ViewshedWindow(QMainWindow):
         # the window opens on the test run preset
         self.output = PathRow(provider_output("alertwest", True), True)
         self.provider.currentIndexChanged.connect(self.choose_provider)
+        # every provider is updated by default; picking one narrows the run to it
+        self.provider.setCurrentIndex(self.provider.findData(ALL_PROVIDERS))
         form.addRow(with_help("Camera provider", self.provider,
             "Whose cameras to process. Picks that provider's sites file and output folder, which "
             "holds every viewshed already made for it. All providers runs each provider in turn "
