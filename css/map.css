@@ -691,6 +691,20 @@ body:has(#control-sidebar.is-collapsed) .mapboxgl-ctrl-bottom-left {
     order: 1;
     height: 16px;
     margin-bottom: 9px;
+    /* returning to full strength eases in slowly once the map has been still a while */
+    transition: opacity 600ms ease;
+}
+
+/* steps back quickly while the user moves the map (map.js dimWhileMoving) */
+.mapboxgl-ctrl-bottom-left .igl-logo.is-moving {
+    opacity: 0.35;
+    transition-duration: 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mapboxgl-ctrl-bottom-left .igl-logo {
+        transition: none;
+    }
 }
 
 .mapboxgl-ctrl-bottom-right {

@@ -308,6 +308,7 @@ async function initializeMap() {
     alt: 'UO InfoGraphics Lab',
   });
   map.addControl({ onAdd: () => iglLogo, onRemove: () => iglLogo.remove() }, 'bottom-left');
+  dimWhileMoving(map, iglLogo);
   initZoomViewer(map);
 
   map.once('load', () => {
@@ -324,6 +325,27 @@ async function initializeMap() {
   });
 
   return map;
+}
+
+// how long the map must sit still after the user moves it before the logo comes back to full strength
+const LOGO_IDLE_DELAY = 3000;
+
+// fades the logo back while the user pans, zooms or rotates; moves made in code (Home, search, the
+// first view) have no originalEvent, so they don't start a dim, but once dimmed any moveend restarts the wait
+function dimWhileMoving(map, logo) {
+  let idleTimer;
+
+  map.on('movestart', (event) => {
+    if (!event.originalEvent) return;
+    clearTimeout(idleTimer);
+    logo.classList.add('is-moving');
+  });
+
+  map.on('moveend', () => {
+    if (!logo.classList.contains('is-moving')) return;
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => logo.classList.remove('is-moving'), LOGO_IDLE_DELAY);
+  });
 }
 
 function initControlShellSync(map) {
