@@ -433,7 +433,7 @@ def open_terminal(command: list[str]) -> bool:
 # fixes the Setup tab can run for a check, keyed by the check's action
 FIX_BUTTONS = {
     "download_dems": ("Download missing DEMs",
-        "Downloads the USGS terrain tiles missing from the DEM folder, about 380 MB each. "
+        "Downloads the USGS terrain tiles missing from the terrain files folder, about 380 MB each. "
         "Finished tiles are kept if you cancel."),
     "gh_login": ("Sign in to GitHub",
         "Opens a terminal window running gh auth login. Follow its steps, then press Check again."),

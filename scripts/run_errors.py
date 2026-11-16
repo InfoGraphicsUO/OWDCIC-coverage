@@ -8,16 +8,16 @@ RUN_ERRORS = (
     (r'No space left on device|ENOSPC|Errno 28',
      'The disk is full. Free up at least 10 GB, then start again; finished work is kept.'),
     (r'no GeoTIFF DEMs found in',
-     'The DEM folder has no terrain files. Use Download missing DEMs in the Setup tab, or choose the '
+     'The terrain files folder is empty. Use Download missing DEMs in the Setup tab, or choose the '
      'folder that holds them in Inputs and outputs.'),
     (r'viewshed has no visible cells',
-     'A camera had no terrain around it, which usually means a DEM tile is missing. Check the Setup tab '
-     'and download the missing DEMs.'),
+     'A camera had no terrain around it, which usually means a terrain file is missing. Check the Setup '
+     'tab and use Download missing DEMs.'),
     (r"already holds another provider's viewsheds",
      "The output folder holds another provider's viewsheds. Choose this provider's own output folder "
      'in Inputs and outputs.'),
     (r'tippecanoe is required',
-     'tippecanoe, which builds the map tiles, is not installed. Install it with brew install tippecanoe, '
+     'tippecanoe, which builds the map tiles, is not installed. Use Install tippecanoe in the Setup tab, '
      'or turn off publishing and the combined coverage.'),
     (r'lacks (\d+) published viewsheds',
      'Nothing was published: the output folder is missing {0} viewsheds the map already shows. Run in '
