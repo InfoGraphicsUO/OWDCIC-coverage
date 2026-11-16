@@ -6,6 +6,7 @@ import {
   DATA_URLS,
   DIGITIZED_CAMERA_ICON_URLS,
   DIVISION_OUTLINE_URLS,
+  WHOLE_AREA_METRICS_URLS,
   LAYER_IDS,
   LEGEND_LAYERS,
   MARKER_ICON_URLS,
@@ -308,6 +309,7 @@ const DIVISION_TYPES = Object.freeze(FILTER_TYPES
         outlineUrl,
         outlineSourceId: `${prefix}-outline-source`,
         selectedFillLayerId: `${prefix}-selected-fill`,
+        wholeMetricsUrl: WHOLE_AREA_METRICS_URLS[value],
       }),
     });
   }));
@@ -1525,6 +1527,12 @@ function selectDivision(map, typeValue, divisionId) {
   if (!camerasLoaded) {
     cameraFeaturesReady.then(() => resultsControl.updatePolygonCameraCounts(feature, polygonCameraCounts(feature)));
   }
+  // issue #227 mockups: the whole outlined area's coverage and cameras, beside the measured land's
+  if (division.wholeMetricsUrl) {
+    Promise.all([loadDivisionOutlines(division), loadWholeAreaMetrics(division), cameraFeaturesReady])
+      .then(([outlines, metrics]) => resultsControl.updatePolygonWholeArea(feature, wholeArea(feature, outlines, metrics)))
+      .catch((error) => console.error(`Failed to load whole ${division.label} metrics:`, error));
+  }
   collapseControlsOnNarrowScreen();
   fitMapToBounds(map, featureBounds(feature), { maxZoom: 10, duration: 800 });
 }
@@ -1532,12 +1540,43 @@ function selectDivision(map, typeValue, divisionId) {
 // camera markers inside the area per provider, or null until the providers load
 function polygonCameraCounts(feature) {
   if (!camerasLoaded) return null;
+  return countCamerasIn(feature.geometry);
+}
+
+function countCamerasIn(geometry) {
   // live ALERTWest features carry no operator, so they fall back to the first provider
   return countPointsInGeometry(
     { features: cameraFeatures },
-    feature.geometry,
+    geometry,
     (camera) => camera.properties?.operator || CAMERA_PROVIDERS[0].name,
   );
+}
+
+const wholeAreaMetricsLoads = new Map();
+
+function loadWholeAreaMetrics(division) {
+  if (!wholeAreaMetricsLoads.has(division.value)) {
+    wholeAreaMetricsLoads.set(division.value, fetchJson(division.wholeMetricsUrl, `whole ${division.label} metrics`)
+      .catch((error) => {
+        wholeAreaMetricsLoads.delete(division.value);
+        throw error;
+      }));
+  }
+  return wholeAreaMetricsLoads.get(division.value);
+}
+
+// the whole area's coverage, plus the cameras inside its outline; a combined option takes
+// every member's outline, so a camera on a shared edge still counts once
+function wholeArea(feature, outlines, metrics) {
+  const { divisionId, memberDivisionIds } = feature.properties;
+  const ids = new Set(isCombinedDivision(feature) ? memberDivisionIds : [divisionId]);
+  const coordinates = (outlines?.features || [])
+    .filter((outline) => ids.has(outline.properties?.divisionId))
+    .flatMap(({ geometry }) => (geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.coordinates));
+  return {
+    properties: metrics?.units?.[divisionId] || null,
+    cameraCounts: coordinates.length ? countCamerasIn({ type: 'MultiPolygon', coordinates }) : null,
+  };
 }
 
 function clearDivisionFilter(map) {

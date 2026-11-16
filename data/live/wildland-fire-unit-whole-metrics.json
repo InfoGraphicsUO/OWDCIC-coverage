@@ -1,0 +1,261 @@
+{
+  "metadata": {
+    "note": "whole unit boundary coverage for the issue #227 mockups",
+    "landFootprint": "regional coastal mask minus Census areal hydrography",
+    "areaCrs": "EPSG:5070"
+  },
+  "units": {
+    "wildland-fire-unit:all": {
+      "landAreaSqKm": 417418.707,
+      "cameraViewshedAreaSqKm": 68040.061,
+      "cameraViewshedCoveragePct": 16.3,
+      "providerCoverage": [
+        {
+          "provider": "alertwest",
+          "cameraViewshedAreaSqKm": 29185.108,
+          "cameraViewshedCoveragePct": 6.99,
+          "exclusiveAreaSqKm": 23995.03,
+          "exclusiveCoveragePct": 5.75
+        },
+        {
+          "provider": "pano",
+          "cameraViewshedAreaSqKm": 24368.279,
+          "cameraViewshedCoveragePct": 5.84,
+          "exclusiveAreaSqKm": 21420.964,
+          "exclusiveCoveragePct": 5.13
+        },
+        {
+          "provider": "envirovision",
+          "cameraViewshedAreaSqKm": 20349.35,
+          "cameraViewshedCoveragePct": 4.88,
+          "exclusiveAreaSqKm": 16858.5,
+          "exclusiveCoveragePct": 4.04
+        }
+      ]
+    },
+    "wildland-fire-unit:blitzen-river-unit": {
+      "landAreaSqKm": 31994.983,
+      "cameraViewshedAreaSqKm": 3386.985,
+      "cameraViewshedCoveragePct": 10.59,
+      "providerCoverage": [
+        {
+          "provider": "alertwest",
+          "cameraViewshedAreaSqKm": 2951.528,
+          "cameraViewshedCoveragePct": 9.22,
+          "exclusiveAreaSqKm": 2951.528,
+          "exclusiveCoveragePct": 9.22
+        },
+        {
+          "provider": "pano",
+          "cameraViewshedAreaSqKm": 0.0,
+          "cameraViewshedCoveragePct": 0.0,
+          "exclusiveAreaSqKm": 0.0,
+          "exclusiveCoveragePct": 0.0
+        },
+        {
+          "provider": "envirovision",
+          "cameraViewshedAreaSqKm": 435.457,
+          "cameraViewshedCoveragePct": 1.36,
+          "exclusiveAreaSqKm": 435.457,
+          "exclusiveCoveragePct": 1.36
+        }
+      ]
+    },
+    "wildland-fire-unit:cascade-rivers-unit": {
+      "landAreaSqKm": 41012.373,
+      "cameraViewshedAreaSqKm": 8838.587,
+      "cameraViewshedCoveragePct": 21.55,
+      "providerCoverage": [
+        {
+          "provider": "alertwest",
+          "cameraViewshedAreaSqKm": 5387.203,
+          "cameraViewshedCoveragePct": 13.14,
+          "exclusiveAreaSqKm": 4852.456,
+          "exclusiveCoveragePct": 11.83
+        },
+        {
+          "provider": "pano",
+          "cameraViewshedAreaSqKm": 1307.605,
+          "cameraViewshedCoveragePct": 3.19,
+          "exclusiveAreaSqKm": 1079.209,
+          "exclusiveCoveragePct": 2.63
+        },
+        {
+          "provider": "envirovision",
+          "cameraViewshedAreaSqKm": 2776.387,
+          "cameraViewshedCoveragePct": 6.77,
+          "exclusiveAreaSqKm": 2275.117,
+          "exclusiveCoveragePct": 5.55
+        }
+      ]
+    },
+    "wildland-fire-unit:cascadia-unit": {
+      "landAreaSqKm": 61905.365,
+      "cameraViewshedAreaSqKm": 6645.203,
+      "cameraViewshedCoveragePct": 10.73,
+      "providerCoverage": [
+        {
+          "provider": "alertwest",
+          "cameraViewshedAreaSqKm": 162.108,
+          "cameraViewshedCoveragePct": 0.26,
+          "exclusiveAreaSqKm": 101.761,
+          "exclusiveCoveragePct": 0.16
+        },
+        {
+          "provider": "pano",
+          "cameraViewshedAreaSqKm": 6543.443,
+          "cameraViewshedCoveragePct": 10.57,
+          "exclusiveAreaSqKm": 6483.095,
+          "exclusiveCoveragePct": 10.47
+        },
+        {
+          "provider": "envirovision",
+          "cameraViewshedAreaSqKm": 0.0,
+          "cameraViewshedCoveragePct": 0.0,
+          "exclusiveAreaSqKm": 0.0,
+          "exclusiveCoveragePct": 0.0
+        }
+      ]
+    },
+    "wildland-fire-unit:coastal-cascades-unit": {
+      "landAreaSqKm": 75613.764,
+      "cameraViewshedAreaSqKm": 20747.215,
+      "cameraViewshedCoveragePct": 27.44,
+      "providerCoverage": [
+        {
+          "provider": "alertwest",
+          "cameraViewshedAreaSqKm": 7872.229,
+          "cameraViewshedCoveragePct": 10.41,
+          "exclusiveAreaSqKm": 4535.32,
+          "exclusiveCoveragePct": 6.0
+        },
+        {
+          "provider": "pano",
+          "cameraViewshedAreaSqKm": 6834.424,
+          "cameraViewshedCoveragePct": 9.04,
+          "exclusiveAreaSqKm": 4963.385,
+          "exclusiveCoveragePct": 6.56
+        },
+        {
+          "provider": "envirovision",
+          "cameraViewshedAreaSqKm": 9915.174,
+          "cameraViewshedCoveragePct": 13.11,
+          "exclusiveAreaSqKm": 7470.201,
+          "exclusiveCoveragePct": 9.88
+        }
+      ]
+    },
+    "wildland-fire-unit:nch-i-wana-unit": {
+      "landAreaSqKm": 67050.634,
+      "cameraViewshedAreaSqKm": 8811.826,
+      "cameraViewshedCoveragePct": 13.14,
+      "providerCoverage": [
+        {
+          "provider": "alertwest",
+          "cameraViewshedAreaSqKm": 5171.815,
+          "cameraViewshedCoveragePct": 7.71,
+          "exclusiveAreaSqKm": 4363.76,
+          "exclusiveCoveragePct": 6.51
+        },
+        {
+          "provider": "pano",
+          "cameraViewshedAreaSqKm": 4249.752,
+          "cameraViewshedCoveragePct": 6.34,
+          "exclusiveAreaSqKm": 3498.404,
+          "exclusiveCoveragePct": 5.22
+        },
+        {
+          "provider": "envirovision",
+          "cameraViewshedAreaSqKm": 199.589,
+          "cameraViewshedCoveragePct": 0.3,
+          "exclusiveAreaSqKm": 140.331,
+          "exclusiveCoveragePct": 0.21
+        }
+      ]
+    },
+    "wildland-fire-unit:oregon-high-desert-unit": {
+      "landAreaSqKm": 62674.04,
+      "cameraViewshedAreaSqKm": 6048.412,
+      "cameraViewshedCoveragePct": 9.65,
+      "providerCoverage": [
+        {
+          "provider": "alertwest",
+          "cameraViewshedAreaSqKm": 2692.578,
+          "cameraViewshedCoveragePct": 4.3,
+          "exclusiveAreaSqKm": 2692.374,
+          "exclusiveCoveragePct": 4.3
+        },
+        {
+          "provider": "pano",
+          "cameraViewshedAreaSqKm": 20.084,
+          "cameraViewshedCoveragePct": 0.03,
+          "exclusiveAreaSqKm": 19.691,
+          "exclusiveCoveragePct": 0.03
+        },
+        {
+          "provider": "envirovision",
+          "cameraViewshedAreaSqKm": 3336.143,
+          "cameraViewshedCoveragePct": 5.32,
+          "exclusiveAreaSqKm": 3335.954,
+          "exclusiveCoveragePct": 5.32
+        }
+      ]
+    },
+    "wildland-fire-unit:south-central-oregon-unit": {
+      "landAreaSqKm": 36222.336,
+      "cameraViewshedAreaSqKm": 9022.27,
+      "cameraViewshedCoveragePct": 24.91,
+      "providerCoverage": [
+        {
+          "provider": "alertwest",
+          "cameraViewshedAreaSqKm": 4947.362,
+          "cameraViewshedCoveragePct": 13.66,
+          "exclusiveAreaSqKm": 4497.77,
+          "exclusiveCoveragePct": 12.42
+        },
+        {
+          "provider": "pano",
+          "cameraViewshedAreaSqKm": 873.469,
+          "cameraViewshedCoveragePct": 2.41,
+          "exclusiveAreaSqKm": 837.901,
+          "exclusiveCoveragePct": 2.31
+        },
+        {
+          "provider": "envirovision",
+          "cameraViewshedAreaSqKm": 3686.599,
+          "cameraViewshedCoveragePct": 10.18,
+          "exclusiveAreaSqKm": 3201.439,
+          "exclusiveCoveragePct": 8.84
+        }
+      ]
+    },
+    "wildland-fire-unit:upper-columbia-unit": {
+      "landAreaSqKm": 40945.212,
+      "cameraViewshedAreaSqKm": 4539.564,
+      "cameraViewshedCoveragePct": 11.09,
+      "providerCoverage": [
+        {
+          "provider": "alertwest",
+          "cameraViewshedAreaSqKm": 0.285,
+          "cameraViewshedCoveragePct": 0.0,
+          "exclusiveAreaSqKm": 0.062,
+          "exclusiveCoveragePct": 0.0
+        },
+        {
+          "provider": "pano",
+          "cameraViewshedAreaSqKm": 4539.502,
+          "cameraViewshedCoveragePct": 11.09,
+          "exclusiveAreaSqKm": 4539.279,
+          "exclusiveCoveragePct": 11.09
+        },
+        {
+          "provider": "envirovision",
+          "cameraViewshedAreaSqKm": 0.0,
+          "cameraViewshedCoveragePct": 0.0,
+          "exclusiveAreaSqKm": 0.0,
+          "exclusiveCoveragePct": 0.0
+        }
+      ]
+    }
+  }
+}

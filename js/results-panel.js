@@ -2,7 +2,8 @@ import { openModal } from './modal.js';
 import { CAMERA_PROVIDER_COLORS, LEGEND_LAYERS, MARKER_ICON_URLS, PANO_DEFAULT_VIEWER } from './config.js';
 import { attachInfoTooltip } from './info-tooltip.js';
 import { shareUrl } from './anchor-links.js';
-import { getSetting } from './settings.js';
+import { getSetting, onSettingChange } from './settings.js';
+import { createDisclosure } from './disclosure.js';
 
 // only the land status donut uses Plotly, so it loads the first time a donut shows
 const PLOTLY_URL = 'https://cdn.plot.ly/plotly-2.35.2.min.js';
@@ -23,6 +24,34 @@ const TRANSMISSION_LINES_QUALIFIER = 'Transmission lines';
 const MEASURED_AREA_QUALIFIERS = Object.freeze({
   'wildland-fire-unit': 'BLM, USFWS, and NPS federal land within the unit; coverage is measured on this land only',
 });
+
+// issue #227 mockups: names for the whole outlined area and the measured land inside it,
+// one set for a single area and one for a combined option like "All USWFS units"
+const WHOLE_AREA_WORDING = Object.freeze({
+  'wildland-fire-unit': Object.freeze({
+    single: Object.freeze({
+      whole: 'Entire unit',
+      wholeLand: 'land inside the unit boundary',
+      wholeCameras: 'inside the unit boundary',
+      measured: 'BLM, USFWS, and NPS land',
+      measuredOf: "the unit's BLM, USFWS, and NPS land",
+      measuredLand: 'BLM, USFWS, and NPS land in the unit',
+      measuredCameras: 'on BLM, USFWS, or NPS land',
+    }),
+    combined: Object.freeze({
+      whole: 'All units',
+      wholeLand: 'land inside the unit boundaries',
+      wholeCameras: 'inside the unit boundaries',
+      measured: 'BLM, USFWS, and NPS land',
+      measuredOf: "the units' BLM, USFWS, and NPS land",
+      measuredLand: 'BLM, USFWS, and NPS land in the units',
+      measuredCameras: 'on BLM, USFWS, or NPS land',
+    }),
+  }),
+});
+
+// the collapsible sections remember whether they were open across redraws and selections
+const wholeAreaSectionsOpen = { whole: true, measured: true };
 
 // names what the yellow selection outline traces for each filter group
 const BOUNDARY_QUALIFIERS = Object.freeze({
@@ -177,18 +206,31 @@ export function initResultsPanel({
     shareButton.disabled = true;
   }
 
-  function showPolygon(type, feature, cameraCounts = null) {
+  function showPolygon(type, feature, cameraCounts = null, whole = null) {
     // callers may pass GeoJSON or its properties object directly
     const properties = feature?.properties || feature || {};
-    current = { kind: 'polygon', type, properties, cameraCounts, geometry: feature?.geometry, bbox: feature?.bbox };
-    presentResult(properties.name || properties.label || 'Selected area', renderPolygon(type, properties, cameraCounts));
+    current = { kind: 'polygon', type, properties, cameraCounts, whole, geometry: feature?.geometry, bbox: feature?.bbox };
+    presentResult(properties.name || properties.label || 'Selected area', renderPolygon(type, properties, cameraCounts, whole));
   }
 
   // counts can arrive after the panel opens, so only redraw if that area is still shown
   function updatePolygonCameraCounts(feature, cameraCounts) {
     if (current?.kind !== 'polygon' || current.properties !== (feature?.properties || feature)) return;
-    showPolygon(current.type, feature, cameraCounts);
+    showPolygon(current.type, feature, cameraCounts, current.whole);
   }
+
+  // issue #227 mockups: the whole outlined area's coverage and cameras arrive after the panel opens
+  function updatePolygonWholeArea(feature, whole) {
+    if (current?.kind !== 'polygon' || current.properties !== (feature?.properties || feature)) return;
+    showPolygon(current.type, feature, current.cameraCounts, whole);
+  }
+
+  // switching the mockup layout in the developer settings redraws the open area
+  onSettingChange('resultsMockup', () => {
+    if (current?.kind !== 'polygon') return;
+    const { type, properties, cameraCounts, whole, geometry, bbox } = current;
+    showPolygon(type, { properties, geometry, bbox }, cameraCounts, whole);
+  });
 
   function showCamera(properties = {}, metrics = null, feature = null) {
     // camera location comes from geometry while descriptive fields stay in properties
@@ -405,7 +447,7 @@ export function initResultsPanel({
   // the caller owns clearing so the filter panel and map reset together
   element.querySelector('[data-results-close]').addEventListener('click', () => onClose());
   clear();
-  return { showPolygon, updatePolygonCameraCounts, showCamera, showLoading, showError, clear, element };
+  return { showPolygon, updatePolygonCameraCounts, updatePolygonWholeArea, showCamera, showLoading, showError, clear, element };
 
   function replaceContent(node) {
     // a removed trigger fires no pointerout, so its tooltip would stay on screen
@@ -631,7 +673,12 @@ function selfLine(text, className = 'results-panel__line') {
   return p;
 }
 
-function renderPolygon(type, properties, cameraCounts) {
+function renderPolygon(type, properties, cameraCounts, whole = null) {
+  const layout = getSetting('resultsMockup');
+  if (WHOLE_AREA_WORDING[type] && (layout === 'grouped' || layout === 'combined')) {
+    return renderWholeAndMeasured(type, properties, cameraCounts, whole, layout);
+  }
+
   const wrapper = document.createElement('div');
   const coverage = coverageFor(properties);
   const total = finite(properties.landAreaSqKm);
@@ -675,6 +722,130 @@ function renderPolygon(type, properties, cameraCounts) {
   }
 
   return wrapper;
+}
+
+// issue #227 mockups: the whole outlined area beside the measured land inside it,
+// as two collapsible sections (grouped) or as two rows in one summary (combined)
+function renderWholeAndMeasured(type, properties, cameraCounts, whole, layout) {
+  const words = WHOLE_AREA_WORDING[type][properties.memberDivisionIds ? 'combined' : 'single'];
+  const name = properties.name || properties.label || 'selected area';
+  const wholeProperties = whole?.properties || null;
+  const wholeCameras = whole?.cameraCounts || null;
+  const wrapper = document.createElement('div');
+  wrapper.className = `results-panel__body results-panel__whole-area results-panel__whole-area--${layout}`;
+
+  if (layout === 'grouped') {
+    wrapper.append(
+      areaSection('whole', words.whole, 'boundary', wholeProperties, [
+        coverageLead(wholeProperties, `of ${name}`),
+        areaLine(wholeProperties, words.wholeLand),
+        cameraCountBadges(wholeCameras, words.wholeCameras),
+      ]),
+      areaSection('measured', words.measured, 'measured-area', properties, [
+        coverageLead(properties, `of ${words.measuredOf}`),
+        areaLine(properties, words.measuredLand),
+        cameraCountBadges(cameraCounts, words.measuredCameras),
+        offLandCamerasNote(cameraCounts, wholeCameras),
+      ]),
+    );
+    return wrapper;
+  }
+
+  wrapper.append(selfLine('Covered by fire detection cameras', 'results-panel__lead'));
+  const rows = document.createElement('div');
+  rows.className = 'results-panel__area-rows';
+  rows.append(
+    ...areaRow(words.whole, 'boundary', wholeProperties, words.wholeLand),
+    ...areaRow(words.measured, 'measured-area', properties, words.measuredLand),
+  );
+  wrapper.append(rows);
+
+  const total = cameraTotal(wholeCameras);
+  const measuredTotal = cameraTotal(cameraCounts);
+  const where = total != null && measuredTotal != null
+    ? `${words.wholeCameras}, ${measuredTotal === 0 ? 'none' : formatNumber(measuredTotal)} ${words.measuredCameras}`
+    : words.wholeCameras;
+  wrapper.append(...[cameraCountBadges(wholeCameras, where), offLandCamerasNote(cameraCounts, wholeCameras)].filter(Boolean));
+  return wrapper;
+}
+
+// a collapsible section headed by its legend swatch, name, and coverage
+function areaSection(key, label, swatch, properties, children) {
+  const { element, items } = createDisclosure(label, {
+    id: `results-area-${key}`,
+    open: wholeAreaSectionsOpen[key],
+    className: 'results-panel__area-section',
+    onToggle: (open) => { wholeAreaSectionsOpen[key] = open; },
+  });
+  const toggle = element.querySelector('.disclosure__toggle');
+  const name = document.createElement('span');
+  name.className = 'results-panel__area-name';
+  name.textContent = label;
+  toggle.replaceChildren(areaSwatch(swatch), name, areaPercent(properties));
+  items.append(...children.filter(Boolean));
+  return element;
+}
+
+// one summary row: swatch, name, coverage, then the areas under the name
+function areaRow(label, swatch, properties, land) {
+  const name = document.createElement('span');
+  name.className = 'results-panel__area-name';
+  name.textContent = label;
+  const detail = areaLine(properties, land, 'results-panel__area-detail')
+    || selfLine('Loading…', 'results-panel__area-detail');
+  return [areaSwatch(swatch), name, areaPercent(properties), detail];
+}
+
+// hollow square for the selection outline, light fill for the measured land, as in the map legend
+function areaSwatch(kind) {
+  const swatch = document.createElement('span');
+  swatch.className = `results-panel__swatch results-panel__swatch--${kind}`;
+  swatch.setAttribute('aria-hidden', 'true');
+  return swatch;
+}
+
+function areaPercent(properties) {
+  const coverage = properties ? coverageFor(properties) : null;
+  const percent = document.createElement('span');
+  percent.className = 'results-panel__area-percent';
+  percent.textContent = coverage == null ? '–' : `${formatPercent(coverage)}%`;
+  return percent;
+}
+
+function coverageLead(properties, of) {
+  if (!properties) return selfLine('Loading coverage…', 'results-panel__loading');
+  const coverage = coverageFor(properties);
+  return selfLine(
+    coverage == null ? 'Coverage unavailable' : `${formatPercent(coverage)}% ${of} is covered by fire detection cameras`,
+    'results-panel__lead',
+  );
+}
+
+// e.g. "1,096 mi² covered, out of 3,645 mi² of land inside the unit boundary"
+function areaLine(properties, land, className = 'results-panel__line') {
+  const total = finite(properties?.landAreaSqKm);
+  const covered = finite(properties?.cameraViewshedAreaSqKm);
+  if (!properties) return null;
+  if (total == null) return selfLine('Area unavailable', className);
+  return selfLine(covered == null
+    ? `${formatNumber(total * SQMI_PER_SQKM)} mi² of ${land}`
+    : `${formatNumber(covered * SQMI_PER_SQKM)} mi² covered, out of ${formatNumber(total * SQMI_PER_SQKM)} mi² of ${land}`,
+  className);
+}
+
+// coverage counts every camera that can see the land, which the camera count alone doesn't say
+function offLandCamerasNote(cameraCounts, wholeCameras) {
+  const measured = cameraTotal(cameraCounts);
+  const total = cameraTotal(wholeCameras);
+  if (measured == null || total == null || measured >= total) return null;
+  return selfLine(
+    'Coverage includes views from cameras that sit outside this land, so it can be covered without a camera on it.',
+    'results-panel__note',
+  );
+}
+
+function cameraTotal(cameraCounts) {
+  return cameraCounts ? cameraCounts.reduce((sum, [, count]) => sum + count, 0) : null;
 }
 
 function renderCamera(properties, metrics) {
@@ -2152,21 +2323,22 @@ function usableLandMix(landMix) {
 
 // separates cameras that have no viewshed from viewsheds whose coverage failed
 // e.g. "13 cameras: 11 EnviroVision, 2 ALERTWest", from [provider, count] pairs
-function cameraCountLine(cameraCounts) {
+function cameraCountLine(cameraCounts, where = '') {
   if (!cameraCounts) return '';
   const total = cameraCounts.reduce((sum, [, count]) => sum + count, 0);
-  if (total === 0) return 'No fire detection cameras in this area';
+  if (total === 0) return `No fire detection cameras ${where || 'in this area'}`;
   const providers = cameraCounts.map(([provider, count]) => `${formatNumber(count)} ${provider}`).join(', ');
   return `${formatNumber(total)} ${total === 1 ? 'camera' : 'cameras'}: ${providers}`;
 }
 
 // the panel version of cameraCountLine, each provider tinted with its map marker color
-function cameraCountBadges(cameraCounts) {
+function cameraCountBadges(cameraCounts, where = '') {
   if (!cameraCounts) return null;
   const total = cameraCounts.reduce((sum, [, count]) => sum + count, 0);
-  if (total === 0) return selfLine(cameraCountLine(cameraCounts));
+  if (total === 0) return selfLine(cameraCountLine(cameraCounts, where));
 
-  const line = selfLine(`${formatNumber(total)} ${total === 1 ? 'camera' : 'cameras'}:`, 'results-panel__line results-panel__camera-counts');
+  const label = `${formatNumber(total)} ${total === 1 ? 'camera' : 'cameras'}${where ? ` ${where}` : ''}:`;
+  const line = selfLine(label, 'results-panel__line results-panel__camera-counts');
   for (const [provider, count] of cameraCounts) {
     const badge = document.createElement('span');
     badge.className = 'results-panel__camera-count';

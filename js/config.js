@@ -197,6 +197,12 @@ export const DIVISION_OUTLINE_URLS = Object.freeze({
   'wildland-fire-unit': 'data/live/wildland-fire-unit-outlines.geojson',
 });
 
+// issue #227 mockups: coverage across each whole outlined area, keyed by divisionId under `units`,
+// built by scripts/mockups/build-uswfs-whole-unit-metrics.py
+export const WHOLE_AREA_METRICS_URLS = Object.freeze({
+  'wildland-fire-unit': 'data/live/wildland-fire-unit-whole-metrics.json',
+});
+
 // filter type -> the option of another group that opens it, so it lists as a step inside that group
 // e.g. Federal land > National Forest > [All National Forests, Mt. Hood National Forest, ...]
 // and Federal land > US Wildland Fire Service > [All USWFS units, Blitzen River Unit, ...]
