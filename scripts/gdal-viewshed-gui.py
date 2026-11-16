@@ -84,6 +84,8 @@ PROCESS_MERGED_CHANNELS = qt_enum(QProcess, "ProcessChannelMode", "MergedChannel
 PROCESS_NOT_RUNNING = qt_enum(QProcess, "ProcessState", "NotRunning")
 MESSAGE_YES = qt_enum(QMessageBox, "StandardButton", "Yes")
 PROCESS_FAILED_TO_START = qt_enum(QProcess, "ProcessError", "FailedToStart")
+MESSAGE_CANCEL = qt_enum(QMessageBox, "StandardButton", "Cancel")
+MESSAGE_ACCEPT_ROLE = qt_enum(QMessageBox, "ButtonRole", "AcceptRole")
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -107,6 +109,8 @@ DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.
 DEFAULT_JOBS = default_jobs()
 DEFAULT_DEMS = PROJECT_ROOT / "data/source/dems"
 PROGRESS_PREFIX = "@@PROGRESS@@"
+# the provider choice that runs every provider in turn, finishing the shared steps once
+ALL_PROVIDERS = "all"
 # OWDCIC_DEV=1 shows developer-only options: the fixed test cameras and the map shape tuning
 DEV = os.environ.get("OWDCIC_DEV") == "1"
 # tasks shorter than this finish while the person is still watching, so they get no alert
@@ -135,6 +139,76 @@ def saved_settings() -> QSettings:
     )
 
 
+# the runner's finishing steps in plain words; steps that share words are listed once,
+# and the combined exact file is left out as it only feeds the review map
+FINISHING_WORDS = {
+    "web_polygons": "update the {provider} map files",
+    "web_coverage": "update the {provider} map files",
+    "mbtiles": "update the {provider} map files",
+    "combined_coverage": "rebuild the combined coverage",
+    "site_data": "publish the site data",
+    "coverage_metrics": "rebuild the coverage metrics",
+    "map_divisions": "rebuild the coverage metrics",
+}
+
+
+def plural(count: int, word: str) -> str:
+    return f"{count} {word}{'' if count == 1 else 's'}"
+
+
+def word_list(items: list[str]) -> str:
+    return ", ".join(items[:-1]) + f" and {items[-1]}" if len(items) > 1 else "".join(items)
+
+
+def run_summary(
+    plan: dict, provider: str, overwrite: bool, shapefiles: str | None,
+    lead: str = "This run will", sheet: bool = True,
+) -> str:
+    """says in plain words what a viewshed run will build, from the runner's --plan counts
+
+    An All providers run gives each provider its own lead, and mentions the sheet once.
+    """
+
+    cameras = f"{provider} camera"
+
+    if plan["random"]:
+        built = f"build {plural(plan['selected'], 'random ' + cameras)}"
+    elif overwrite:
+        built = f"rebuild all {plural(plan['selected'], cameras)} from the start"
+    else:
+        parts = []
+
+        if plan["new"]:
+            parts.append(f"build {plural(plan['new'], 'new ' + cameras)}")
+
+        if plan["outdated"]:
+            parts.append(f"rebuild {plan['outdated']} made with other settings")
+
+        built = " and ".join(parts) or f"build no new {cameras}s"
+
+        if plan["reusable"]:
+            built += f" ({plan['reusable']} already done)"
+
+    if shapefiles:
+        kind = "exact" if shapefiles == "exact" else "smoothed"
+        built += f", then save {kind} shapefiles for {plural(plan['selected'], 'camera')}"
+
+    steps = list(dict.fromkeys(
+        FINISHING_WORDS[stage].format(provider=provider)
+        for stage in plan["finishing"] if stage in FINISHING_WORDS
+    ))
+    text = f"{lead} {built}"
+    text += f", then {word_list(steps)}." if steps else "."
+
+    if plan["missing_height"]:
+        text += f" {plural(plan['missing_height'], 'camera')} without a height will be skipped."
+
+    if plan["refresh_site_data"] and sheet:
+        text += " Any sites newly added to the installation sheet are built too."
+
+    return text
+
+
 def provider_output(provider: str, test: bool) -> Path:
     """the output folder is the dataset, so each provider, and its test runs, get their own"""
     folder = output_dir(provider)
@@ -148,8 +222,9 @@ PROVIDER_OUTPUTS = {
 # each preset starts from the launch values and changes only these settings
 PRESETS = (
     ("test", "Test run",
-        "Builds up to 3 random cameras into a separate test folder without publishing anything, "
-        "so you can check them in QGIS with Open review map in QGIS.",
+        "Builds up to 3 random cameras per provider into separate test folders without "
+        "publishing anything. Choose one provider on the Inputs and outputs tab to check its "
+        "cameras with Open review map in QGIS.",
         {"mode": "sample", "products": None, "combined": False,
          "publish_sites": False, "publish_metrics": False}),
     ("live", "Live site",
@@ -540,6 +615,11 @@ class ViewshedWindow(QMainWindow):
         self.process.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
         self.process.readyReadStandardOutput.connect(self.read_output)
         self.process.finished.connect(self.run_finished)
+        # a dry run of the runner counts the cameras for the summary shown before starting
+        self.planner = QProcess(self)
+        self.planner.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
+        self.planner.readyReadStandardOutput.connect(self.read_plan)
+        self.planner.finished.connect(self.plan_finished)
         self.output_buffer = ""
         self.started = 0.0
         self.keep_awake = KeepAwake(self)
@@ -552,6 +632,11 @@ class ViewshedWindow(QMainWindow):
         self.setup_checker.checked.connect(self.show_setup)
         self.log_file = None
         self.log_path = None
+        # the providers still to run in an All providers run, as (provider, arguments)
+        self.queue: list[tuple[str, list[str]]] = []
+        self.queue_provider: str | None = None
+        self.queue_index = 0
+        self.queue_total = 0
 
         self.elapsed_timer = QTimer(self)
         self.elapsed_timer.timeout.connect(self.update_elapsed)
@@ -948,7 +1033,9 @@ class ViewshedWindow(QMainWindow):
         self.applying_preset = False
 
         # test runs write to the provider's test folder, unless a folder was chosen by hand
-        if self.output.path() in PROVIDER_OUTPUTS:
+        if self.all_providers():
+            self.test_outputs = key == "test"
+        elif self.output.path() in PROVIDER_OUTPUTS:
             self.output.edit.setText(str(provider_output(self.provider.currentData(), key == "test")))
 
         self.sync_preset()
@@ -981,14 +1068,22 @@ class ViewshedWindow(QMainWindow):
         for provider, label in PROVIDER_LABELS.items():
             self.provider.addItem(label, provider)
 
+        self.provider.addItem("All providers", ALL_PROVIDERS)
+        # whether the output folders are the test ones, kept while All providers hides the paths
+        self.test_outputs = True
+        self.paths_hidden = False
         self.sites = PathRow(sites_path("alertwest"), False)
         self.dems = PathRow(DEFAULT_DEMS, True)
         # the window opens on the test run preset
         self.output = PathRow(provider_output("alertwest", True), True)
         self.provider.currentIndexChanged.connect(self.choose_provider)
+        # every provider is updated by default; picking one narrows the run to it
+        self.provider.setCurrentIndex(self.provider.findData(ALL_PROVIDERS))
         form.addRow(with_help("Camera provider", self.provider,
             "Whose cameras to process. Picks that provider's sites file and output folder, which "
-            "holds every viewshed already made for it."), self.provider)
+            "holds every viewshed already made for it. All providers runs each provider in turn "
+            "with its own files and folder, then rebuilds the combined coverage and the metrics "
+            "once at the end."), self.provider)
         form.addRow(with_help("Camera sites", self.sites,
             "The file listing the camera locations to process (a .geojson file)."), self.sites)
         form.addRow(with_help("Terrain files folder", self.dems,
@@ -1039,12 +1134,28 @@ class ViewshedWindow(QMainWindow):
             else:
                 saved.remove(key)
 
+    def all_providers(self) -> bool:
+        return self.provider.currentData() == ALL_PROVIDERS
+
     def choose_provider(self) -> None:
         provider = self.provider.currentData()
-        self.sites.edit.setText(str(sites_path(provider)))
-        # keep a test run in a test folder
-        test = PROVIDER_OUTPUTS.get(self.output.path(), self.preset.currentData() == "test")
-        self.output.edit.setText(str(provider_output(provider, test)))
+        # keep a test run in a test folder; All providers leaves the path empty, so it
+        # remembers which kind of folder it was choosing
+        if not self.paths_hidden:
+            self.test_outputs = PROVIDER_OUTPUTS.get(self.output.path(), self.preset.currentData() == "test")
+
+        test = self.test_outputs
+        every = provider == ALL_PROVIDERS
+        self.paths_hidden = every
+
+        # each provider in the queue uses its own sites file and output folder
+        for row, default in ((self.sites, "Each provider's own camera sites file"),
+                             (self.output, "Each provider's own output folder")):
+            row.setEnabled(not every)
+            row.edit.setPlaceholderText(default if every else "")
+
+        self.sites.edit.setText("" if every else str(sites_path(provider)))
+        self.output.edit.setText("" if every else str(provider_output(provider, test)))
 
     def build_options(self) -> QGroupBox:
         group = QGroupBox("Run settings")
@@ -1239,17 +1350,28 @@ class ViewshedWindow(QMainWindow):
 
         return layout
 
-    def runner_arguments(self) -> list[str]:
+    def run_paths(self, provider: str | None = None) -> tuple[Path, Path]:
+        """the sites file and output folder for one provider of an All providers run,
+        or the ones on the Inputs tab"""
+        if provider:
+            return sites_path(provider), provider_output(provider, self.test_outputs)
+
+        return self.sites.path(), self.output.path()
+
+    def runner_arguments(self, provider: str | None = None, last: bool = True) -> list[str]:
+        """the runner's command line; an All providers run leaves the steps that read every
+        provider's coverage to its last provider"""
+        sites, output = self.run_paths(provider)
         arguments = [
             str(RUNNER),
             "--qgis-app",
             str(self.qgis_runtime.root),
             "--sites",
-            str(self.sites.path()),
+            str(sites),
             "--dem-dir",
             str(self.dems.path()),
             "--output-dir",
-            str(self.output.path()),
+            str(output),
             "--mode",
             str(self.mode.currentData()),
             "--radius-miles",
@@ -1281,13 +1403,13 @@ class ViewshedWindow(QMainWindow):
         if not self.exact.isChecked() and shapefiles != "exact":
             arguments.append("--skip-exact-polygons")
 
-        if self.combined.isChecked() and not shapefiles:
+        if self.combined.isChecked() and not shapefiles and last:
             arguments.append("--combined-coverage")
 
         if self.publish_sites.isChecked() and not shapefiles:
             arguments.append("--publish-site-data")
 
-            if self.publish_metrics.isChecked():
+            if self.publish_metrics.isChecked() and last:
                 arguments.append("--publish-metrics")
 
         if self.keep_dems.isChecked():
@@ -1301,8 +1423,12 @@ class ViewshedWindow(QMainWindow):
     def validate_paths(self) -> bool:
         problems = []
 
-        if not self.sites.path().is_file():
-            problems.append(f"Sites file not found: {self.sites.path()}")
+        providers = list(PROVIDER_LABELS) if self.all_providers() else [None]
+
+        for provider in providers:
+            sites, _ = self.run_paths(provider)
+            if not sites.is_file():
+                problems.append(f"Sites file not found: {sites}")
 
         if not self.dems.path().is_dir():
             problems.append(f"Terrain files folder not found: {self.dems.path()}")
@@ -1340,7 +1466,7 @@ class ViewshedWindow(QMainWindow):
         return [str(RUNNER), "--qgis-app", str(self.qgis_runtime.root), "--metrics-only", "--json-progress"]
 
     def start_run(self) -> None:
-        if self.process.state() != PROCESS_NOT_RUNNING:
+        if self.process.state() != PROCESS_NOT_RUNNING or self.planner.state() != PROCESS_NOT_RUNNING:
             return
 
         if self.setup_blocks_run():
@@ -1354,11 +1480,132 @@ class ViewshedWindow(QMainWindow):
             return
 
         if self.standalone == "release":
-            self.launch("release", self.release_arguments(), "Starting the data release…")
+            upload = (
+                "then upload them as the latest GitHub release" if self.release_upload.isChecked()
+                else "without uploading them"
+            )
+            summary = (
+                "This run will build no viewsheds. It packages the viewsheds already on the map "
+                f"into Oregon, Washington and combined shapefile downloads in {RELEASE_OUTPUT}, {upload}."
+            )
+
+            if self.confirm(summary):
+                self.launch("release", self.release_arguments(), "Starting the data release…")
         elif self.standalone == "metrics":
-            self.launch("metrics", self.metrics_arguments(), "Starting the coverage metrics…")
+            summary = (
+                "This run will build no viewsheds. It rebuilds the coverage metrics from every "
+                "provider's published coverage and saves them to the division files the map loads."
+            )
+
+            if self.confirm(summary):
+                self.launch("metrics", self.metrics_arguments(), "Starting the coverage metrics…")
+        elif self.all_providers():
+            providers = list(PROVIDER_LABELS)
+            self.plan_run([
+                (provider, self.runner_arguments(provider, last=index == len(providers) - 1))
+                for index, provider in enumerate(providers)
+            ])
         else:
-            self.launch("run", self.runner_arguments(), "Starting GDAL runner…")
+            self.plan_run([(None, self.runner_arguments())])
+
+    def plan_run(self, runs: list[tuple[str | None, list[str]]]) -> None:
+        """asks the runner what each run would build, one after another without blocking the
+        window, before confirming; runs are (provider, arguments), with no provider for one run"""
+        self.plan_runs = runs
+        self.plans: list[tuple[str | None, dict | None, str]] = []
+        self.status_before_plan = self.status.text()
+        self.status.setText("Checking what this run will do…")
+        self.next_plan()
+        self.set_idle(False)
+
+    def next_plan(self) -> None:
+        self.plan_output = ""
+        _, arguments = self.plan_runs[len(self.plans)]
+        self.planner.start(sys.executable, [*arguments, "--plan"])
+
+        if not self.planner.waitForStarted(5000):
+            self.plan_finished(1, None)
+
+    def read_plan(self) -> None:
+        self.plan_output += bytes(self.planner.readAllStandardOutput()).decode("utf-8", errors="replace")
+
+    def plan_finished(self, exit_code: int, _status: QProcess.ExitStatus) -> None:
+        self.read_plan()
+
+        if self.planner.property("cancelled"):
+            self.planner.setProperty("cancelled", False)
+            self.set_idle(True)
+            self.status.setText(self.status_before_plan)
+            return
+
+        lines = self.plan_output.strip().splitlines()
+
+        try:
+            plan = json.loads(lines[-1]) if exit_code == 0 and lines else None
+        except json.JSONDecodeError:
+            plan = None
+
+        # the run would likely stop on the same problem, so name it before starting
+        problem = next((line for line in reversed(lines) if line.startswith("ERROR:")), "")
+        provider, _ = self.plan_runs[len(self.plans)]
+        self.plans.append((provider, plan, problem.removeprefix("ERROR:").strip()))
+
+        if len(self.plans) < len(self.plan_runs):
+            self.next_plan()
+            return
+
+        self.set_idle(True)
+        self.status.setText(self.status_before_plan)
+
+        if self.confirm(self.plan_summary()):
+            if self.plan_runs[0][0]:
+                self.queue = list(self.plan_runs)
+                self.queue_total = len(self.queue)
+                self.launch_next()
+            else:
+                self.launch("run", self.plan_runs[0][1], "Starting GDAL runner…")
+
+    def plan_summary(self) -> str:
+        """one paragraph per provider checked, or one sentence for a single run"""
+        overwrite, shapefiles = self.overwrite.isChecked(), self.products.currentData()
+        paragraphs = []
+
+        for index, (provider, plan, problem) in enumerate(self.plans):
+            label = PROVIDER_LABELS[provider] if provider else self.provider.currentText()
+            lead = f"For {label}, it will" if provider else "This run will"
+
+            if plan:
+                paragraphs.append(run_summary(plan, label, overwrite, shapefiles, lead, sheet=index == 0))
+            else:
+                where = f" for {label}" if provider else ""
+                paragraphs.append(
+                    f"Could not check which cameras this run will build{where}"
+                    + (f": {problem}" if problem else ".")
+                )
+
+        if len(self.plans) > 1:
+            paragraphs.insert(0, "This run updates each provider in turn.")
+
+        return "\n\n".join(paragraphs)
+
+    def confirm(self, summary: str) -> bool:
+        box = QMessageBox(self)
+        box.setWindowTitle("Start this run?")
+        box.setText(summary)
+        start = box.addButton("Start", MESSAGE_ACCEPT_ROLE)
+        box.addButton(MESSAGE_CANCEL)
+        box.setDefaultButton(start)
+        box.exec()
+
+        return box.clickedButton() is start
+
+    def launch_next(self) -> None:
+        """starts the next provider of an All providers run, keeping the log of the ones before"""
+        provider, arguments = self.queue.pop(0)
+        self.queue_provider = provider
+        self.queue_index = self.queue_total - len(self.queue)
+        self.launch("run", arguments, "Starting GDAL runner…", keep_log=self.queue_index > 1)
+        self.add_log(f"--- {self.queue_prefix().rstrip(': ')} ---")
 
     def start_dem_download(self) -> None:
         if self.process.state() != PROCESS_NOT_RUNNING:
@@ -1367,14 +1614,18 @@ class ViewshedWindow(QMainWindow):
         arguments = [str(DEM_FETCHER), "--dem-dir", str(self.dems.path()), "--json-progress"]
         self.launch("dems", arguments, "Starting the DEM download…")
 
-    def launch(self, task: str, arguments: list[str], starting: str) -> None:
+    def launch(self, task: str, arguments: list[str], starting: str, keep_log: bool = False) -> None:
         self.task = task
-        self.log.clear()
-        self.save_log(task, arguments)
         self.output_buffer = ""
-        self.started = time.monotonic()
-        self.overall.setValue(0)
-        self.status.setText(starting)
+
+        # the queue's later providers carry on the first one's log, log file, bar and clock
+        if not keep_log:
+            self.log.clear()
+            self.save_log(task, arguments)
+            self.started = time.monotonic()
+            self.overall.setValue(0)
+
+        self.status.setText(self.queue_prefix() + starting)
         self.set_idle(False)
         self.elapsed_timer.start(1000)
         self.process.start(sys.executable, arguments)
@@ -1384,6 +1635,8 @@ class ViewshedWindow(QMainWindow):
             self.close_log()
             self.elapsed_timer.stop()
             self.status.setText(self.failure_text("Could not start the runner"))
+            self.queue = []
+            self.queue_provider = None
             self.set_idle(True)
 
     def save_log(self, task: str, arguments: list[str]) -> None:
@@ -1445,7 +1698,12 @@ class ViewshedWindow(QMainWindow):
                 self.add_log(line)
                 return
 
-            self.overall.setValue(round(float(payload.get("percent", 0)) * 10))
+            percent = float(payload.get("percent", 0))
+            # each provider of an All providers run fills its share of the bar
+            if self.queue_provider:
+                percent = (self.queue_index - 1 + percent / 100) / self.queue_total * 100
+
+            self.overall.setValue(round(percent * 10))
             # GDAL callbacks report a percent with no detail, so the last status stays up
             detail = payload.get("detail")
             if not detail:
@@ -1457,7 +1715,7 @@ class ViewshedWindow(QMainWindow):
                 if site
                 else ""
             )
-            self.status.setText(prefix + str(detail))
+            self.status.setText(self.queue_prefix() + prefix + str(detail))
 
             return
 
@@ -1465,12 +1723,27 @@ class ViewshedWindow(QMainWindow):
         scrollbar = self.log.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
 
+    def queue_prefix(self) -> str:
+        if not self.queue_provider:
+            return ""
+
+        return f"{PROVIDER_LABELS[self.queue_provider]} ({self.queue_index} of {self.queue_total}): "
+
     def run_finished(self, exit_code: int, _status: QProcess.ExitStatus) -> None:
         if self.output_buffer:
             self.handle_line(self.output_buffer)
             self.output_buffer = ""
 
+        if self.task == "run" and self.queue_provider and exit_code == 0 and self.queue:
+            self.launch_next()
+            return
+
         self.close_log()
+
+        if self.task == "run" and self.queue_provider:
+            self.finish_queue(exit_code)
+            return
+
         self.elapsed_timer.stop()
 
         if self.task == "dems":
@@ -1532,7 +1805,43 @@ class ViewshedWindow(QMainWindow):
         if time.monotonic() - self.started > NOTIFY_AFTER_SECONDS:
             notify(self, self.status.text())
 
+    def finish_queue(self, exit_code: int) -> None:
+        """reports an All providers run, naming the provider it stopped at"""
+        label = PROVIDER_LABELS[self.queue_provider]
+        done = self.queue_index - (exit_code != 0)
+        self.elapsed_timer.stop()
+
+        if exit_code == 0:
+            self.overall.setValue(1000)
+            self.status.setText(
+                f"All {self.queue_total} providers complete — outputs are ready and site data is published"
+                if self.publish_sites.isChecked()
+                else f"All {self.queue_total} providers complete — outputs and manifests are ready"
+            )
+        else:
+            where = f"{label} ({self.queue_index} of {self.queue_total})"
+            stopped = (
+                f"{where} was cancelled; completed cameras remain resumable." if exit_code == 130
+                else f"{where}: {self.failure_text(f'Stopped with exit code {exit_code}')}"
+            )
+            kept = f" The {done} providers before it finished." if done > 1 else (
+                " The provider before it finished." if done else ""
+            )
+            # the combined coverage and metrics run with the last provider, so they were skipped
+            skipped = " The combined coverage and metrics were not rebuilt." if self.queue else ""
+            self.status.setText(f"{stopped}{kept}{skipped}")
+
+        self.queue = []
+        self.queue_provider = None
+        self.set_idle(True)
+        self.notify_if_long()
+
     def cancel_run(self) -> None:
+        if self.planner.state() != PROCESS_NOT_RUNNING:
+            self.planner.setProperty("cancelled", True)
+            self.planner.kill()
+            return
+
         if self.process.state() == PROCESS_NOT_RUNNING:
             return
 
@@ -1568,8 +1877,11 @@ class ViewshedWindow(QMainWindow):
         self.elapsed.setText(f"Elapsed: {text}")
 
     def output_folder(self) -> Path:
+        # an All providers run writes to each provider's folder under outputs
+        run_output = PROJECT_ROOT / "outputs" if self.all_providers() else self.output.path()
+
         return {"release": RELEASE_OUTPUT, "metrics": PROJECT_ROOT / "data/live"}.get(
-            self.standalone, self.output.path()
+            self.standalone, run_output
         )
 
     def set_idle(self, idle: bool) -> None:
@@ -1577,14 +1889,20 @@ class ViewshedWindow(QMainWindow):
         self.preset.setEnabled(idle)
         self.release_upload.setEnabled(idle)
 
+        # the few seconds spent checking what a run will do need no sleep held off
+        awake = not idle and self.planner.state() == PROCESS_NOT_RUNNING
+
         if idle:
             self.spinner.stop()
-            self.keep_awake.stop()
         else:
             self.spinner.start()
-            self.keep_awake.start()
 
-        self.awake_note.setVisible(not idle and KeepAwake.supported())
+        if awake:
+            self.keep_awake.start()
+        else:
+            self.keep_awake.stop()
+
+        self.awake_note.setVisible(awake and KeepAwake.supported())
 
         self.start_button.setEnabled(idle)
         self.cancel_button.setEnabled(not idle)
@@ -1593,7 +1911,7 @@ class ViewshedWindow(QMainWindow):
         web = self.output.path() / "mapbox/camera_viewsheds_web_epsg5070.gpkg"
         building = self.qgis_builder is not None and self.qgis_builder.state() != PROCESS_NOT_RUNNING
         self.open_qgis_button.setEnabled(
-            idle and not building and not self.standalone and (exact.exists() or web.exists())
+            idle and not building and not self.standalone and not self.all_providers() and (exact.exists() or web.exists())
         )
 
     def open_output(self) -> None:
@@ -1660,6 +1978,10 @@ class ViewshedWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:  # noqa: N802
         self.remember_inputs()
+
+        if self.planner.state() != PROCESS_NOT_RUNNING:
+            self.cancel_run()
+            self.planner.waitForFinished(1000)
 
         if self.process.state() == PROCESS_NOT_RUNNING:
             self.keep_awake.stop()
