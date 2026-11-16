@@ -27,6 +27,61 @@ def find_tippecanoe() -> Path | None:
     return next((path for path in candidates if path and path.is_file()), None)
 
 
+# each camera needs roughly 1 GB while it runs; leave room for spikes, the OS and QGIS
+CAMERA_MEMORY_GB = 1.5
+MEMORY_HEADROOM_GB = 4.0
+
+
+def physical_memory_bytes() -> int | None:
+    """reads the computer's total memory with the standard library, or None when it cannot"""
+
+    if sys.platform == "win32":
+        import ctypes
+
+        class MemoryStatus(ctypes.Structure):
+            _fields_ = [
+                ("dwLength", ctypes.c_ulong),
+                ("dwMemoryLoad", ctypes.c_ulong),
+                ("ullTotalPhys", ctypes.c_ulonglong),
+                ("ullAvailPhys", ctypes.c_ulonglong),
+                ("ullTotalPageFile", ctypes.c_ulonglong),
+                ("ullAvailPageFile", ctypes.c_ulonglong),
+                ("ullTotalVirtual", ctypes.c_ulonglong),
+                ("ullAvailVirtual", ctypes.c_ulonglong),
+                ("ullAvailExtendedVirtual", ctypes.c_ulonglong),
+            ]
+
+        status = MemoryStatus()
+        status.dwLength = ctypes.sizeof(MemoryStatus)
+        if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(status)):
+            return int(status.ullTotalPhys)
+        return None
+
+    try:
+        return os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE")
+    except (AttributeError, OSError, ValueError):
+        return None
+
+
+def default_jobs(cpu_count: int | None = None, memory_bytes: int | None = None) -> int:
+    """picks how many cameras to run at once from the processors and memory available
+
+    one processor is left for the window and the OS, and memory beyond the headroom is
+    shared at about 1.5 GB per camera; unknown memory falls back to half the processors
+    """
+
+    cpus = cpu_count or os.cpu_count() or 2
+    memory = memory_bytes if memory_bytes is not None else physical_memory_bytes()
+    by_cpu = cpus - 1
+
+    if not memory:
+        return max(1, min(4, cpus // 2))
+
+    by_memory = int((memory / 2**30 - MEMORY_HEADROOM_GB) // CAMERA_MEMORY_GB)
+
+    return max(1, min(by_cpu, by_memory))
+
+
 def _version_key(path: Path) -> tuple[int, ...]:
     return tuple(map(int, re.findall(r"\d+", path.name)))
 
