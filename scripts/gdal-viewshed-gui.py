@@ -223,8 +223,8 @@ PROVIDER_OUTPUTS = {
 PRESETS = (
     ("test", "Test run",
         "Builds up to 3 random cameras per provider into separate test folders without "
-        "publishing anything. Choose one provider on the Inputs tab to check its cameras with "
-        "Open review map in QGIS.",
+        "publishing anything. Choose one provider on the Inputs and outputs tab to check its "
+        "cameras with Open review map in QGIS.",
         {"mode": "sample", "products": None, "combined": False,
          "publish_sites": False, "publish_metrics": False}),
     ("live", "Live site",
