@@ -182,7 +182,7 @@ class GeometryRepairTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "coverage.geojson"
-            viewsheds.write_coverage_geojson(path, geometry, {"coverage_id": "all"})
+            viewsheds.write_geojson(path, viewsheds.COVERAGE_FIELDS, [(geometry, {"coverage_id": "all"})])
             data = json.loads(path.read_text())
             self.assertEqual(viewsheds.validate_vector(path, None, 1), 1)
 
