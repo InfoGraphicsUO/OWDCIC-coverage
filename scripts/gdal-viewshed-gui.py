@@ -7,11 +7,15 @@ import html
 import json
 import os
 from pathlib import Path
+import shlex
+import subprocess
 import sys
+import tempfile
+import threading
 import time
 
 try:
-    from qgis.PyQt.QtCore import QPoint, QProcess, QRectF, QSettings, Qt, QTimer, QUrl
+    from qgis.PyQt.QtCore import QObject, QPoint, QProcess, QRectF, QSettings, Qt, QTimer, QUrl, pyqtSignal
     from qgis.PyQt.QtGui import QColor, QDesktopServices, QPainter, QPalette, QPen
     from qgis.PyQt.QtWidgets import (
         QApplication,
@@ -37,7 +41,7 @@ try:
         QWidget,
     )
 except ImportError:
-    from PyQt6.QtCore import QPoint, QProcess, QRectF, QSettings, Qt, QTimer, QUrl
+    from PyQt6.QtCore import QObject, QPoint, QProcess, QRectF, QSettings, Qt, QTimer, QUrl, pyqtSignal
     from PyQt6.QtGui import QColor, QDesktopServices, QPainter, QPalette, QPen
     from PyQt6.QtWidgets import (
         QApplication,
@@ -65,6 +69,7 @@ except ImportError:
 
 from camera_providers import PROVIDER_LABELS, output_dir, sites_path
 from qgis_runtime import default_jobs, default_qgis_root, find_tippecanoe, physical_memory_bytes, qgis_runtime
+import run_errors
 import setup_checks
 
 
@@ -78,6 +83,9 @@ def qt_enum(owner, scope: str, member: str):
 PROCESS_MERGED_CHANNELS = qt_enum(QProcess, "ProcessChannelMode", "MergedChannels")
 PROCESS_NOT_RUNNING = qt_enum(QProcess, "ProcessState", "NotRunning")
 MESSAGE_YES = qt_enum(QMessageBox, "StandardButton", "Yes")
+PROCESS_FAILED_TO_START = qt_enum(QProcess, "ProcessError", "FailedToStart")
+MESSAGE_CANCEL = qt_enum(QMessageBox, "StandardButton", "Cancel")
+MESSAGE_ACCEPT_ROLE = qt_enum(QMessageBox, "ButtonRole", "AcceptRole")
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -86,6 +94,8 @@ QGIS_PROJECT_BUILDER = PROJECT_ROOT / "scripts/build-qgis-viewshed-project.py"
 RELEASE_BUILDER = PROJECT_ROOT / "scripts/build-data-release.py"
 DEM_FETCHER = PROJECT_ROOT / "scripts/fetch-dems.py"
 RELEASE_OUTPUT = PROJECT_ROOT / "outputs/data_release"
+# every run's log is saved here, so a failed run can be sent to someone
+LOG_DIR = PROJECT_ROOT / "outputs/logs"
 READY_TEXT = "Ready to start; choose inputs & check settings before starting a run!"
 RELEASE_READY_TEXT = "Ready to build the release from the published viewsheds"
 METRICS_READY_TEXT = "Ready to rebuild the coverage metrics from the published viewsheds"
@@ -99,8 +109,13 @@ DEFAULT_CLIP_BOUNDARY = PROJECT_ROOT / "data/source/pacific-northwest-land-mask.
 DEFAULT_JOBS = default_jobs()
 DEFAULT_DEMS = PROJECT_ROOT / "data/source/dems"
 PROGRESS_PREFIX = "@@PROGRESS@@"
+# the provider choice that runs every provider in turn, finishing the shared steps once
+ALL_PROVIDERS = "all"
 # OWDCIC_DEV=1 shows developer-only options: the fixed test cameras and the map shape tuning
 DEV = os.environ.get("OWDCIC_DEV") == "1"
+# tasks shorter than this finish while the person is still watching, so they get no alert
+NOTIFY_AFTER_SECONDS = 60
+APP_TITLE = "Camera viewsheds"
 
 
 def jobs_help() -> str:
@@ -124,6 +139,76 @@ def saved_settings() -> QSettings:
     )
 
 
+# the runner's finishing steps in plain words; steps that share words are listed once,
+# and the combined exact file is left out as it only feeds the review map
+FINISHING_WORDS = {
+    "web_polygons": "update the {provider} map files",
+    "web_coverage": "update the {provider} map files",
+    "mbtiles": "update the {provider} map files",
+    "combined_coverage": "rebuild the combined coverage",
+    "site_data": "publish the site data",
+    "coverage_metrics": "rebuild the coverage metrics",
+    "map_divisions": "rebuild the coverage metrics",
+}
+
+
+def plural(count: int, word: str) -> str:
+    return f"{count} {word}{'' if count == 1 else 's'}"
+
+
+def word_list(items: list[str]) -> str:
+    return ", ".join(items[:-1]) + f" and {items[-1]}" if len(items) > 1 else "".join(items)
+
+
+def run_summary(
+    plan: dict, provider: str, overwrite: bool, shapefiles: str | None,
+    lead: str = "This run will", sheet: bool = True,
+) -> str:
+    """says in plain words what a viewshed run will build, from the runner's --plan counts
+
+    An All providers run gives each provider its own lead, and mentions the sheet once.
+    """
+
+    cameras = f"{provider} camera"
+
+    if plan["random"]:
+        built = f"build {plural(plan['selected'], 'random ' + cameras)}"
+    elif overwrite:
+        built = f"rebuild all {plural(plan['selected'], cameras)} from the start"
+    else:
+        parts = []
+
+        if plan["new"]:
+            parts.append(f"build {plural(plan['new'], 'new ' + cameras)}")
+
+        if plan["outdated"]:
+            parts.append(f"rebuild {plan['outdated']} made with other settings")
+
+        built = " and ".join(parts) or f"build no new {cameras}s"
+
+        if plan["reusable"]:
+            built += f" ({plan['reusable']} already done)"
+
+    if shapefiles:
+        kind = "exact" if shapefiles == "exact" else "smoothed"
+        built += f", then save {kind} shapefiles for {plural(plan['selected'], 'camera')}"
+
+    steps = list(dict.fromkeys(
+        FINISHING_WORDS[stage].format(provider=provider)
+        for stage in plan["finishing"] if stage in FINISHING_WORDS
+    ))
+    text = f"{lead} {built}"
+    text += f", then {word_list(steps)}." if steps else "."
+
+    if plan["missing_height"]:
+        text += f" {plural(plan['missing_height'], 'camera')} without a height will be skipped."
+
+    if plan["refresh_site_data"] and sheet:
+        text += " Any sites newly added to the installation sheet are built too."
+
+    return text
+
+
 def provider_output(provider: str, test: bool) -> Path:
     """the output folder is the dataset, so each provider, and its test runs, get their own"""
     folder = output_dir(provider)
@@ -137,14 +222,18 @@ PROVIDER_OUTPUTS = {
 # each preset starts from the launch values and changes only these settings
 PRESETS = (
     ("test", "Test run",
-        "Builds up to 3 random cameras into a separate test folder without publishing anything, "
-        "so you can check them in QGIS with Open review map in QGIS.",
+        "Builds up to 3 random cameras per provider into separate test folders without "
+        "publishing anything. Choose one provider on the Inputs and outputs tab to check its "
+        "cameras with Open review map in QGIS.",
         {"mode": "sample", "products": None, "combined": False,
          "publish_sites": False, "publish_metrics": False}),
     ("live", "Live site",
         "Builds every camera that is missing a viewshed, then rebuilds the provider's and the "
         "combined tilesets, publishes the site data, and reruns the coverage metrics so the "
-        "outputs are ready to upload.",
+        "outputs are ready to upload."
+        # tippecanoe builds the map tiles and has no Windows build
+        + (" Live site runs need a Mac, since the tool that builds the map tiles has no Windows version."
+           if sys.platform == "win32" else ""),
         {"mode": "production", "products": None, "combined": True,
          "publish_sites": True, "publish_metrics": True}),
     ("gis", "GIS analysis",
@@ -326,6 +415,108 @@ class Spinner(QWidget):
         painter.drawArc(QRectF(2, 2, 14, 14), self.angle * 16, 270 * 16)
 
 
+class KeepAwake:
+    """stops the computer from going to sleep while a task runs; the display may still sleep"""
+
+    def __init__(self, parent: QWidget) -> None:
+        self.parent = parent
+        self.caffeinate = None
+        self.windows_awake = False
+
+    @staticmethod
+    def supported() -> bool:
+        return sys.platform in ("darwin", "win32")
+
+    def start(self) -> None:
+        if sys.platform == "darwin" and self.caffeinate is None:
+            # -w ends caffeinate with this window, even if the GUI crashes
+            self.caffeinate = QProcess(self.parent)
+            self.caffeinate.start("caffeinate", ["-i", "-w", str(os.getpid())])
+        elif sys.platform == "win32" and not self.windows_awake:
+            import ctypes
+
+            # ES_CONTINUOUS | ES_SYSTEM_REQUIRED, held until cleared or the GUI exits
+            ctypes.windll.kernel32.SetThreadExecutionState(0x80000000 | 0x00000001)
+            self.windows_awake = True
+
+    def stop(self) -> None:
+        if self.caffeinate is not None:
+            self.caffeinate.kill()
+            self.caffeinate.waitForFinished(1000)
+            self.caffeinate = None
+
+        if self.windows_awake:
+            import ctypes
+
+            ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
+            self.windows_awake = False
+
+
+def notify(window: QWidget, message: str) -> None:
+    """gets the person's attention when a long task ends while they are away"""
+
+    QApplication.alert(window)
+    QApplication.beep()
+
+    if sys.platform == "darwin":
+        quoted = message.replace("\\", "\\\\").replace('"', '\\"')
+        QProcess.startDetached(
+            "osascript", ["-e", f'display notification "{quoted}" with title "{APP_TITLE}"']
+        )
+
+
+class SetupChecker(QObject):
+    """runs the setup checks on a background thread, since gh and git can take seconds to answer"""
+
+    checked = pyqtSignal(object)
+
+    def start(self, qgis_root: Path, dem_dir: Path, radius_miles: float) -> None:
+        # a daemon thread cannot hold the window open after it closes
+        threading.Thread(target=self.run, args=(qgis_root, dem_dir, radius_miles), daemon=True).start()
+
+    def run(self, qgis_root: Path, dem_dir: Path, radius_miles: float) -> None:
+        try:
+            checks = setup_checks.run_checks(qgis_root, dem_dir, radius_miles)
+        except Exception as error:  # noqa: BLE001 - an unreadable file should not leave the tab checking forever
+            checks = [setup_checks.Check("Setup checks", "warning", f"could not finish: {error}")]
+
+        # the signal is queued, so the rows are built on the UI thread
+        self.checked.emit(checks)
+
+
+def open_terminal(command: list[str]) -> bool:
+    """runs a command in a terminal window, so the user sees its prompts and progress"""
+
+    if sys.platform == "darwin":
+        script = Path(tempfile.mkdtemp()) / "owdcic-setup.command"
+        script.write_text(
+            f"#!/bin/sh\n{shlex.join(command)}\necho\n"
+            "echo 'Finished. Close this window and press Check again in the viewshed window.'\n",
+            encoding="utf-8",
+        )
+        script.chmod(0o755)
+        started = QProcess.startDetached("open", ["-a", "Terminal", str(script)])
+    elif sys.platform == "win32":
+        started = QProcess.startDetached("cmd", ["/c", "start", "cmd", "/k", subprocess.list2cmdline(command)])
+    else:
+        return False
+
+    # PyQt6 returns the process id alongside the result
+    return started[0] if isinstance(started, tuple) else started
+
+
+# fixes the Setup tab can run for a check, keyed by the check's action
+FIX_BUTTONS = {
+    "download_dems": ("Download missing DEMs",
+        "Downloads the USGS terrain tiles missing from the terrain files folder, about 380 MB each. "
+        "Finished tiles are kept if you cancel."),
+    "gh_login": ("Sign in to GitHub",
+        "Opens a terminal window running gh auth login. Follow its steps, then press Check again."),
+    "install_tippecanoe": ("Install tippecanoe",
+        "Opens a Terminal window running brew install tippecanoe. When it finishes, press Check again."),
+}
+
+
 class HelpButton(QPushButton):
     """shows the same short explanation on hover, keyboard focus, or click"""
 
@@ -424,8 +615,28 @@ class ViewshedWindow(QMainWindow):
         self.process.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
         self.process.readyReadStandardOutput.connect(self.read_output)
         self.process.finished.connect(self.run_finished)
+        # a dry run of the runner counts the cameras for the summary shown before starting
+        self.planner = QProcess(self)
+        self.planner.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
+        self.planner.readyReadStandardOutput.connect(self.read_plan)
+        self.planner.finished.connect(self.plan_finished)
         self.output_buffer = ""
         self.started = 0.0
+        self.keep_awake = KeepAwake(self)
+        self.qgis_builder = None
+        # the last setup checks, or None while they run
+        self.setup_results = None
+        self.setup_running = False
+        self.setup_rerun = False
+        self.setup_checker = SetupChecker(self)
+        self.setup_checker.checked.connect(self.show_setup)
+        self.log_file = None
+        self.log_path = None
+        # the providers still to run in an All providers run, as (provider, arguments)
+        self.queue: list[tuple[str, list[str]]] = []
+        self.queue_provider: str | None = None
+        self.queue_index = 0
+        self.queue_total = 0
 
         self.elapsed_timer = QTimer(self)
         self.elapsed_timer.timeout.connect(self.update_elapsed)
@@ -473,7 +684,23 @@ class ViewshedWindow(QMainWindow):
         root.addWidget(self.metrics_panel, 3)
         root.addWidget(self.build_progress())
 
-        root.addWidget(QLabel("Run log"))
+        log_header = QHBoxLayout()
+        log_header.addWidget(QLabel("Run log"))
+        log_header.addStretch(1)
+        self.copy_log_button = QPushButton("Copy log")
+        self.copy_log_button.setToolTip("Copies the whole run log, to paste into a message.")
+        self.copy_log_button.clicked.connect(lambda: QApplication.clipboard().setText(self.log.toPlainText()))
+        self.open_log_button = QPushButton("Open log file")
+        self.open_log_button.setToolTip(f"Every run's log is saved in {LOG_DIR}.")
+        self.open_log_button.clicked.connect(
+            lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(self.log_path)))
+        )
+
+        for button in (self.copy_log_button, self.open_log_button):
+            button.setEnabled(False)
+            log_header.addWidget(button)
+
+        root.addLayout(log_header)
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
         self.log.setMinimumHeight(90)
@@ -502,14 +729,7 @@ class ViewshedWindow(QMainWindow):
         buttons = QHBoxLayout()
         self.check_again_button = QPushButton("Check again")
         self.check_again_button.clicked.connect(lambda: self.refresh_setup())
-        self.dem_button = QPushButton("Download missing DEMs")
-        self.dem_button.setToolTip(
-            "Downloads the USGS terrain tiles missing from the DEM folder, about 380 MB each. "
-            "Finished tiles are kept if you cancel."
-        )
-        self.dem_button.clicked.connect(self.start_dem_download)
         buttons.addWidget(self.check_again_button)
-        buttons.addWidget(self.dem_button)
         buttons.addStretch(1)
         group_layout.addLayout(buttons)
         layout.addWidget(group)
@@ -519,10 +739,36 @@ class ViewshedWindow(QMainWindow):
 
     def refresh_setup(self, open_on_problems: bool = False) -> None:
         """lists what this machine is missing, so a run does not fail partway through"""
+        if self.setup_running:
+            # run them again once these finish, since a fix may have landed meanwhile
+            self.setup_rerun = True
+            return
+
+        self.setup_running = True
+        self.setup_results = None
+        self.open_on_problems = open_on_problems
+        self.clear_setup_rows()
+        checking = QWidget()
+        layout = QHBoxLayout(checking)
+        layout.setContentsMargins(0, 0, 0, 0)
+        spinner = Spinner()
+        spinner.start()
+        layout.addWidget(spinner)
+        layout.addWidget(QLabel("Checking this computer's tools and data…"), 1)
+        self.setup_rows.addRow(checking)
+        self.settings.setTabText(0, "Setup (checking…)")
+        self.check_again_button.setEnabled(False)
+        self.setup_checker.start(self.qgis_runtime.root, self.dems.path(), self.radius.value())
+
+    def clear_setup_rows(self) -> None:
         while self.setup_rows.rowCount():
             self.setup_rows.removeRow(0)
 
-        checks = setup_checks.run_checks(self.qgis_runtime.root, self.dems.path(), self.radius.value())
+    def show_setup(self, checks: list) -> None:
+        self.clear_setup_rows()
+        self.setup_running = False
+        self.setup_results = checks
+        self.check_again_button.setEnabled(True)
         marks = {"ok": "✓", "warning": "!", "problem": "✕"}
 
         for check in checks:
@@ -534,17 +780,96 @@ class ViewshedWindow(QMainWindow):
             value = QLabel(f"<qt>{text}</qt>")
             value.setWordWrap(True)
             value.setTextInteractionFlags(qt_enum(Qt, "TextInteractionFlag", "TextSelectableByMouse"))
-            self.setup_rows.addRow(QLabel(check.name), value)
+            self.setup_rows.addRow(QLabel(check.name), self.with_fix(value, check.action))
 
         problems = sum(check.status == "problem" for check in checks)
         warnings = sum(check.status == "warning" for check in checks)
         counts = [f"{count} {word}{'' if count == 1 else 's'}"
                   for count, word in ((problems, "problem"), (warnings, "warning")) if count]
         self.settings.setTabText(0, f"Setup ({', '.join(counts)})" if counts else "Setup")
-        self.dem_button.setVisible(bool(setup_checks.missing_tiles(self.dems.path(), setup_checks.read_tiles())))
-        # a ready machine opens on its inputs instead
-        if open_on_problems:
-            self.settings.setCurrentIndex(0 if problems else 1)
+        # a ready machine opens on its inputs instead, unless the user already moved on
+        if self.open_on_problems:
+            if problems:
+                self.settings.setCurrentIndex(0)
+            elif self.settings.currentIndex() == 0:
+                self.settings.setCurrentIndex(1)
+
+        if self.setup_rerun:
+            self.setup_rerun = False
+            self.refresh_setup()
+
+    def with_fix(self, value: QLabel, action: str) -> QWidget:
+        """puts the button for a fix the GUI can run under the check that needs it"""
+        if action not in FIX_BUTTONS:
+            return value
+
+        label, explanation = FIX_BUTTONS[action]
+        button = QPushButton(label)
+        button.setToolTip(explanation)
+        button.clicked.connect(lambda: self.run_fix(action))
+        row = QWidget()
+        layout = QVBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(value)
+        buttons = QHBoxLayout()
+        buttons.addWidget(button)
+        buttons.addStretch(1)
+        layout.addLayout(buttons)
+
+        return row
+
+    def run_fix(self, action: str) -> None:
+        if action == "download_dems":
+            self.start_dem_download()
+            return
+
+        command = {
+            "gh_login": lambda: [setup_checks.find_gh() or "gh", "auth", "login"],
+            "install_tippecanoe": lambda: [setup_checks.find_brew() or "brew", "install", "tippecanoe"],
+        }[action]()
+
+        if open_terminal(command):
+            self.status.setText("Finish the steps in the terminal window, then press Check again in the Setup tab.")
+        else:
+            QMessageBox.information(
+                self, "Open a terminal",
+                f"Run this in a terminal, then press Check again:\n\n{shlex.join(command)}",
+            )
+
+    def run_needs(self) -> set[str]:
+        """what the chosen run uses, in the terms of setup_checks.Check.blocks"""
+        if self.standalone == "release":
+            return {"release", "upload"} if self.release_upload.isChecked() else {"release"}
+
+        if self.standalone == "metrics":
+            return {"metrics"}
+
+        full_run = self.products.currentData() is None
+        packaging = full_run and (self.publish_sites.isChecked() or self.combined.isChecked())
+
+        return {"viewsheds", "tilesets"} if packaging else {"viewsheds"}
+
+    def setup_blocks_run(self) -> bool:
+        """points at the Setup tab instead of starting a run that would fail"""
+        blocking = setup_checks.blockers(self.setup_results or [], self.run_needs())
+
+        if not blocking:
+            return False
+
+        names = " and ".join(check.name for check in blocking)
+
+        if not self.standalone:
+            self.settings.setCurrentIndex(0)
+            self.status.setText(f"Fix {names} in the Setup tab before starting this run.")
+            return True
+
+        # the release and metrics hide the Setup tab, so say what to fix here
+        QMessageBox.warning(
+            self, "Cannot start",
+            "\n\n".join(f"{check.name}: {check.detail}. {check.fix}".rstrip() for check in blocking)
+            + "\n\nChoose the Test run type to see the Setup tab and its fix buttons.",
+        )
+        return True
 
     def build_presets(self) -> QGroupBox:
         group = QGroupBox("Preset")
@@ -708,7 +1033,9 @@ class ViewshedWindow(QMainWindow):
         self.applying_preset = False
 
         # test runs write to the provider's test folder, unless a folder was chosen by hand
-        if self.output.path() in PROVIDER_OUTPUTS:
+        if self.all_providers():
+            self.test_outputs = key == "test"
+        elif self.output.path() in PROVIDER_OUTPUTS:
             self.output.edit.setText(str(provider_output(self.provider.currentData(), key == "test")))
 
         self.sync_preset()
@@ -741,14 +1068,22 @@ class ViewshedWindow(QMainWindow):
         for provider, label in PROVIDER_LABELS.items():
             self.provider.addItem(label, provider)
 
+        self.provider.addItem("All providers", ALL_PROVIDERS)
+        # whether the output folders are the test ones, kept while All providers hides the paths
+        self.test_outputs = True
+        self.paths_hidden = False
         self.sites = PathRow(sites_path("alertwest"), False)
         self.dems = PathRow(DEFAULT_DEMS, True)
         # the window opens on the test run preset
         self.output = PathRow(provider_output("alertwest", True), True)
         self.provider.currentIndexChanged.connect(self.choose_provider)
+        # every provider is updated by default; picking one narrows the run to it
+        self.provider.setCurrentIndex(self.provider.findData(ALL_PROVIDERS))
         form.addRow(with_help("Camera provider", self.provider,
             "Whose cameras to process. Picks that provider's sites file and output folder, which "
-            "holds every viewshed already made for it."), self.provider)
+            "holds every viewshed already made for it. All providers runs each provider in turn "
+            "with its own files and folder, then rebuilds the combined coverage and the metrics "
+            "once at the end."), self.provider)
         form.addRow(with_help("Camera sites", self.sites,
             "The file listing the camera locations to process (a .geojson file)."), self.sites)
         form.addRow(with_help("Terrain files folder", self.dems,
@@ -799,12 +1134,28 @@ class ViewshedWindow(QMainWindow):
             else:
                 saved.remove(key)
 
+    def all_providers(self) -> bool:
+        return self.provider.currentData() == ALL_PROVIDERS
+
     def choose_provider(self) -> None:
         provider = self.provider.currentData()
-        self.sites.edit.setText(str(sites_path(provider)))
-        # keep a test run in a test folder
-        test = PROVIDER_OUTPUTS.get(self.output.path(), self.preset.currentData() == "test")
-        self.output.edit.setText(str(provider_output(provider, test)))
+        # keep a test run in a test folder; All providers leaves the path empty, so it
+        # remembers which kind of folder it was choosing
+        if not self.paths_hidden:
+            self.test_outputs = PROVIDER_OUTPUTS.get(self.output.path(), self.preset.currentData() == "test")
+
+        test = self.test_outputs
+        every = provider == ALL_PROVIDERS
+        self.paths_hidden = every
+
+        # each provider in the queue uses its own sites file and output folder
+        for row, default in ((self.sites, "Each provider's own camera sites file"),
+                             (self.output, "Each provider's own output folder")):
+            row.setEnabled(not every)
+            row.edit.setPlaceholderText(default if every else "")
+
+        self.sites.edit.setText("" if every else str(sites_path(provider)))
+        self.output.edit.setText("" if every else str(provider_output(provider, test)))
 
     def build_options(self) -> QGroupBox:
         group = QGroupBox("Run settings")
@@ -950,12 +1301,21 @@ class ViewshedWindow(QMainWindow):
         layout = QVBoxLayout(group)
         self.status = QLabel(READY_TEXT)
         self.status.setWordWrap(True)
+        # a failed run names its saved log here, ready to copy
+        self.status.setTextInteractionFlags(qt_enum(Qt, "TextInteractionFlag", "TextSelectableByMouse"))
         self.overall = QProgressBar()
         self.overall.setRange(0, 1000)
         self.overall.setValue(0)
         self.overall.setFormat("Overall: %p%")
         self.elapsed = QLabel("Elapsed: 0s")
         self.elapsed.setObjectName("elapsed")
+        self.awake_note = QLabel("The computer stays awake until this finishes.")
+        self.awake_note.setObjectName("elapsed")
+        self.awake_note.setToolTip(
+            "Sleep is held off while a task runs, so long runs are not paused overnight. "
+            "The screen can still turn off."
+        )
+        self.awake_note.hide()
         self.spinner = Spinner()
         self.spinner.hide()
         step = QHBoxLayout()
@@ -963,7 +1323,11 @@ class ViewshedWindow(QMainWindow):
         step.addWidget(self.status, 1)
         layout.addLayout(step)
         layout.addWidget(self.overall)
-        layout.addWidget(self.elapsed)
+        timing = QHBoxLayout()
+        timing.addWidget(self.elapsed)
+        timing.addStretch(1)
+        timing.addWidget(self.awake_note)
+        layout.addLayout(timing)
 
         return group
 
@@ -986,17 +1350,28 @@ class ViewshedWindow(QMainWindow):
 
         return layout
 
-    def runner_arguments(self) -> list[str]:
+    def run_paths(self, provider: str | None = None) -> tuple[Path, Path]:
+        """the sites file and output folder for one provider of an All providers run,
+        or the ones on the Inputs tab"""
+        if provider:
+            return sites_path(provider), provider_output(provider, self.test_outputs)
+
+        return self.sites.path(), self.output.path()
+
+    def runner_arguments(self, provider: str | None = None, last: bool = True) -> list[str]:
+        """the runner's command line; an All providers run leaves the steps that read every
+        provider's coverage to its last provider"""
+        sites, output = self.run_paths(provider)
         arguments = [
             str(RUNNER),
             "--qgis-app",
             str(self.qgis_runtime.root),
             "--sites",
-            str(self.sites.path()),
+            str(sites),
             "--dem-dir",
             str(self.dems.path()),
             "--output-dir",
-            str(self.output.path()),
+            str(output),
             "--mode",
             str(self.mode.currentData()),
             "--radius-miles",
@@ -1028,13 +1403,13 @@ class ViewshedWindow(QMainWindow):
         if not self.exact.isChecked() and shapefiles != "exact":
             arguments.append("--skip-exact-polygons")
 
-        if self.combined.isChecked() and not shapefiles:
+        if self.combined.isChecked() and not shapefiles and last:
             arguments.append("--combined-coverage")
 
         if self.publish_sites.isChecked() and not shapefiles:
             arguments.append("--publish-site-data")
 
-            if self.publish_metrics.isChecked():
+            if self.publish_metrics.isChecked() and last:
                 arguments.append("--publish-metrics")
 
         if self.keep_dems.isChecked():
@@ -1048,8 +1423,12 @@ class ViewshedWindow(QMainWindow):
     def validate_paths(self) -> bool:
         problems = []
 
-        if not self.sites.path().is_file():
-            problems.append(f"Sites file not found: {self.sites.path()}")
+        providers = list(PROVIDER_LABELS) if self.all_providers() else [None]
+
+        for provider in providers:
+            sites, _ = self.run_paths(provider)
+            if not sites.is_file():
+                problems.append(f"Sites file not found: {sites}")
 
         if not self.dems.path().is_dir():
             problems.append(f"Terrain files folder not found: {self.dems.path()}")
@@ -1087,7 +1466,10 @@ class ViewshedWindow(QMainWindow):
         return [str(RUNNER), "--qgis-app", str(self.qgis_runtime.root), "--metrics-only", "--json-progress"]
 
     def start_run(self) -> None:
-        if self.process.state() != PROCESS_NOT_RUNNING:
+        if self.process.state() != PROCESS_NOT_RUNNING or self.planner.state() != PROCESS_NOT_RUNNING:
+            return
+
+        if self.setup_blocks_run():
             return
 
         if self.standalone:
@@ -1098,11 +1480,132 @@ class ViewshedWindow(QMainWindow):
             return
 
         if self.standalone == "release":
-            self.launch("release", self.release_arguments(), "Starting the data release…")
+            upload = (
+                "then upload them as the latest GitHub release" if self.release_upload.isChecked()
+                else "without uploading them"
+            )
+            summary = (
+                "This run will build no viewsheds. It packages the viewsheds already on the map "
+                f"into Oregon, Washington and combined shapefile downloads in {RELEASE_OUTPUT}, {upload}."
+            )
+
+            if self.confirm(summary):
+                self.launch("release", self.release_arguments(), "Starting the data release…")
         elif self.standalone == "metrics":
-            self.launch("metrics", self.metrics_arguments(), "Starting the coverage metrics…")
+            summary = (
+                "This run will build no viewsheds. It rebuilds the coverage metrics from every "
+                "provider's published coverage and saves them to the division files the map loads."
+            )
+
+            if self.confirm(summary):
+                self.launch("metrics", self.metrics_arguments(), "Starting the coverage metrics…")
+        elif self.all_providers():
+            providers = list(PROVIDER_LABELS)
+            self.plan_run([
+                (provider, self.runner_arguments(provider, last=index == len(providers) - 1))
+                for index, provider in enumerate(providers)
+            ])
         else:
-            self.launch("run", self.runner_arguments(), "Starting GDAL runner…")
+            self.plan_run([(None, self.runner_arguments())])
+
+    def plan_run(self, runs: list[tuple[str | None, list[str]]]) -> None:
+        """asks the runner what each run would build, one after another without blocking the
+        window, before confirming; runs are (provider, arguments), with no provider for one run"""
+        self.plan_runs = runs
+        self.plans: list[tuple[str | None, dict | None, str]] = []
+        self.status_before_plan = self.status.text()
+        self.status.setText("Checking what this run will do…")
+        self.next_plan()
+        self.set_idle(False)
+
+    def next_plan(self) -> None:
+        self.plan_output = ""
+        _, arguments = self.plan_runs[len(self.plans)]
+        self.planner.start(sys.executable, [*arguments, "--plan"])
+
+        if not self.planner.waitForStarted(5000):
+            self.plan_finished(1, None)
+
+    def read_plan(self) -> None:
+        self.plan_output += bytes(self.planner.readAllStandardOutput()).decode("utf-8", errors="replace")
+
+    def plan_finished(self, exit_code: int, _status: QProcess.ExitStatus) -> None:
+        self.read_plan()
+
+        if self.planner.property("cancelled"):
+            self.planner.setProperty("cancelled", False)
+            self.set_idle(True)
+            self.status.setText(self.status_before_plan)
+            return
+
+        lines = self.plan_output.strip().splitlines()
+
+        try:
+            plan = json.loads(lines[-1]) if exit_code == 0 and lines else None
+        except json.JSONDecodeError:
+            plan = None
+
+        # the run would likely stop on the same problem, so name it before starting
+        problem = next((line for line in reversed(lines) if line.startswith("ERROR:")), "")
+        provider, _ = self.plan_runs[len(self.plans)]
+        self.plans.append((provider, plan, problem.removeprefix("ERROR:").strip()))
+
+        if len(self.plans) < len(self.plan_runs):
+            self.next_plan()
+            return
+
+        self.set_idle(True)
+        self.status.setText(self.status_before_plan)
+
+        if self.confirm(self.plan_summary()):
+            if self.plan_runs[0][0]:
+                self.queue = list(self.plan_runs)
+                self.queue_total = len(self.queue)
+                self.launch_next()
+            else:
+                self.launch("run", self.plan_runs[0][1], "Starting GDAL runner…")
+
+    def plan_summary(self) -> str:
+        """one paragraph per provider checked, or one sentence for a single run"""
+        overwrite, shapefiles = self.overwrite.isChecked(), self.products.currentData()
+        paragraphs = []
+
+        for index, (provider, plan, problem) in enumerate(self.plans):
+            label = PROVIDER_LABELS[provider] if provider else self.provider.currentText()
+            lead = f"For {label}, it will" if provider else "This run will"
+
+            if plan:
+                paragraphs.append(run_summary(plan, label, overwrite, shapefiles, lead, sheet=index == 0))
+            else:
+                where = f" for {label}" if provider else ""
+                paragraphs.append(
+                    f"Could not check which cameras this run will build{where}"
+                    + (f": {problem}" if problem else ".")
+                )
+
+        if len(self.plans) > 1:
+            paragraphs.insert(0, "This run updates each provider in turn.")
+
+        return "\n\n".join(paragraphs)
+
+    def confirm(self, summary: str) -> bool:
+        box = QMessageBox(self)
+        box.setWindowTitle("Start this run?")
+        box.setText(summary)
+        start = box.addButton("Start", MESSAGE_ACCEPT_ROLE)
+        box.addButton(MESSAGE_CANCEL)
+        box.setDefaultButton(start)
+        box.exec()
+
+        return box.clickedButton() is start
+
+    def launch_next(self) -> None:
+        """starts the next provider of an All providers run, keeping the log of the ones before"""
+        provider, arguments = self.queue.pop(0)
+        self.queue_provider = provider
+        self.queue_index = self.queue_total - len(self.queue)
+        self.launch("run", arguments, "Starting GDAL runner…", keep_log=self.queue_index > 1)
+        self.add_log(f"--- {self.queue_prefix().rstrip(': ')} ---")
 
     def start_dem_download(self) -> None:
         if self.process.state() != PROCESS_NOT_RUNNING:
@@ -1111,22 +1614,69 @@ class ViewshedWindow(QMainWindow):
         arguments = [str(DEM_FETCHER), "--dem-dir", str(self.dems.path()), "--json-progress"]
         self.launch("dems", arguments, "Starting the DEM download…")
 
-    def launch(self, task: str, arguments: list[str], starting: str) -> None:
+    def launch(self, task: str, arguments: list[str], starting: str, keep_log: bool = False) -> None:
         self.task = task
-        self.log.clear()
         self.output_buffer = ""
-        self.started = time.monotonic()
-        self.overall.setValue(0)
-        self.status.setText(starting)
+
+        # the queue's later providers carry on the first one's log, log file, bar and clock
+        if not keep_log:
+            self.log.clear()
+            self.save_log(task, arguments)
+            self.started = time.monotonic()
+            self.overall.setValue(0)
+
+        self.status.setText(self.queue_prefix() + starting)
         self.set_idle(False)
         self.elapsed_timer.start(1000)
         self.process.start(sys.executable, arguments)
 
         if not self.process.waitForStarted(5000):
-            self.log.appendPlainText(self.process.errorString())
+            self.add_log(self.process.errorString())
+            self.close_log()
             self.elapsed_timer.stop()
-            self.status.setText("Could not start the runner — review the log.")
+            self.status.setText(self.failure_text("Could not start the runner"))
+            self.queue = []
+            self.queue_provider = None
             self.set_idle(True)
+
+    def save_log(self, task: str, arguments: list[str]) -> None:
+        """starts a log file for the run, named so the newest sorts last"""
+        self.close_log()
+
+        try:
+            LOG_DIR.mkdir(parents=True, exist_ok=True)
+            self.log_path = LOG_DIR / f"{time.strftime('%Y%m%d-%H%M%S')}-{task}.log"
+            self.log_file = self.log_path.open("w", encoding="utf-8")
+            self.log_file.write(" ".join([sys.executable, *arguments]) + "\n")
+        except OSError:
+            # a full or read-only disk should not stop the run itself
+            self.log_path = None
+
+        self.copy_log_button.setEnabled(True)
+        self.open_log_button.setEnabled(self.log_path is not None)
+
+    def add_log(self, line: str) -> None:
+        self.log.appendPlainText(line)
+
+        if self.log_file:
+            try:
+                self.log_file.write(line + "\n")
+                # flushed per line, so the file is complete even if the window is closed mid-run
+                self.log_file.flush()
+            except OSError:
+                pass
+
+    def close_log(self) -> None:
+        if self.log_file:
+            self.log_file.close()
+            self.log_file = None
+
+    def failure_text(self, stopped: str) -> str:
+        """explains a failed run in plain words and says where its log is saved"""
+        explanation = run_errors.explain(self.log.toPlainText())
+        saved = f" The full log is saved at {self.log_path}." if self.log_path else ""
+
+        return f"{explanation}{saved}" if explanation else f"{stopped}; review the log.{saved}"
 
     def read_output(self) -> None:
         chunk = bytes(self.process.readAllStandardOutput()).decode("utf-8", errors="replace")
@@ -1145,10 +1695,15 @@ class ViewshedWindow(QMainWindow):
             try:
                 payload = json.loads(line[len(PROGRESS_PREFIX) :])
             except json.JSONDecodeError:
-                self.log.appendPlainText(line)
+                self.add_log(line)
                 return
 
-            self.overall.setValue(round(float(payload.get("percent", 0)) * 10))
+            percent = float(payload.get("percent", 0))
+            # each provider of an All providers run fills its share of the bar
+            if self.queue_provider:
+                percent = (self.queue_index - 1 + percent / 100) / self.queue_total * 100
+
+            self.overall.setValue(round(percent * 10))
             # GDAL callbacks report a percent with no detail, so the last status stays up
             detail = payload.get("detail")
             if not detail:
@@ -1160,18 +1715,34 @@ class ViewshedWindow(QMainWindow):
                 if site
                 else ""
             )
-            self.status.setText(prefix + str(detail))
+            self.status.setText(self.queue_prefix() + prefix + str(detail))
 
             return
 
-        self.log.appendPlainText(line)
+        self.add_log(line)
         scrollbar = self.log.verticalScrollBar()
         scrollbar.setValue(scrollbar.maximum())
+
+    def queue_prefix(self) -> str:
+        if not self.queue_provider:
+            return ""
+
+        return f"{PROVIDER_LABELS[self.queue_provider]} ({self.queue_index} of {self.queue_total}): "
 
     def run_finished(self, exit_code: int, _status: QProcess.ExitStatus) -> None:
         if self.output_buffer:
             self.handle_line(self.output_buffer)
             self.output_buffer = ""
+
+        if self.task == "run" and self.queue_provider and exit_code == 0 and self.queue:
+            self.launch_next()
+            return
+
+        self.close_log()
+
+        if self.task == "run" and self.queue_provider:
+            self.finish_queue(exit_code)
+            return
 
         self.elapsed_timer.stop()
 
@@ -1182,9 +1753,10 @@ class ViewshedWindow(QMainWindow):
             self.status.setText(
                 "DEMs downloaded" if exit_code == 0
                 else "Download cancelled — finished tiles are kept" if exit_code == 130
-                else f"Download stopped with exit code {exit_code}; review the log"
+                else self.failure_text(f"Download stopped with exit code {exit_code}")
             )
             self.set_idle(True)
+            self.notify_if_long()
             self.refresh_setup()
             return
 
@@ -1199,7 +1771,7 @@ class ViewshedWindow(QMainWindow):
             self.status.setText(
                 "Release cancelled"
                 if exit_code == 130
-                else f"Release stopped with exit code {exit_code}; review the log"
+                else self.failure_text(f"Release stopped with exit code {exit_code}")
             )
         elif self.task == "metrics" and exit_code == 0:
             self.overall.setValue(1000)
@@ -1208,7 +1780,7 @@ class ViewshedWindow(QMainWindow):
             self.status.setText(
                 "Metrics cancelled — finished division types are kept for the next run"
                 if exit_code == 130
-                else f"Metrics stopped with exit code {exit_code}; review the log"
+                else self.failure_text(f"Metrics stopped with exit code {exit_code}")
             )
         elif exit_code == 0:
             self.overall.setValue(1000)
@@ -1224,11 +1796,52 @@ class ViewshedWindow(QMainWindow):
         elif exit_code == 130:
             self.status.setText("Run cancelled — completed cameras remain resumable")
         else:
-            self.status.setText(f"Run stopped with exit code {exit_code}; review the log")
+            self.status.setText(self.failure_text(f"Run stopped with exit code {exit_code}"))
 
         self.set_idle(True)
+        self.notify_if_long()
+
+    def notify_if_long(self) -> None:
+        if time.monotonic() - self.started > NOTIFY_AFTER_SECONDS:
+            notify(self, self.status.text())
+
+    def finish_queue(self, exit_code: int) -> None:
+        """reports an All providers run, naming the provider it stopped at"""
+        label = PROVIDER_LABELS[self.queue_provider]
+        done = self.queue_index - (exit_code != 0)
+        self.elapsed_timer.stop()
+
+        if exit_code == 0:
+            self.overall.setValue(1000)
+            self.status.setText(
+                f"All {self.queue_total} providers complete — outputs are ready and site data is published"
+                if self.publish_sites.isChecked()
+                else f"All {self.queue_total} providers complete — outputs and manifests are ready"
+            )
+        else:
+            where = f"{label} ({self.queue_index} of {self.queue_total})"
+            stopped = (
+                f"{where} was cancelled; completed cameras remain resumable." if exit_code == 130
+                else f"{where}: {self.failure_text(f'Stopped with exit code {exit_code}')}"
+            )
+            kept = f" The {done} providers before it finished." if done > 1 else (
+                " The provider before it finished." if done else ""
+            )
+            # the combined coverage and metrics run with the last provider, so they were skipped
+            skipped = " The combined coverage and metrics were not rebuilt." if self.queue else ""
+            self.status.setText(f"{stopped}{kept}{skipped}")
+
+        self.queue = []
+        self.queue_provider = None
+        self.set_idle(True)
+        self.notify_if_long()
 
     def cancel_run(self) -> None:
+        if self.planner.state() != PROCESS_NOT_RUNNING:
+            self.planner.setProperty("cancelled", True)
+            self.planner.kill()
+            return
+
         if self.process.state() == PROCESS_NOT_RUNNING:
             return
 
@@ -1264,8 +1877,11 @@ class ViewshedWindow(QMainWindow):
         self.elapsed.setText(f"Elapsed: {text}")
 
     def output_folder(self) -> Path:
+        # an All providers run writes to each provider's folder under outputs
+        run_output = PROJECT_ROOT / "outputs" if self.all_providers() else self.output.path()
+
         return {"release": RELEASE_OUTPUT, "metrics": PROJECT_ROOT / "data/live"}.get(
-            self.standalone, self.output.path()
+            self.standalone, run_output
         )
 
     def set_idle(self, idle: bool) -> None:
@@ -1273,18 +1889,29 @@ class ViewshedWindow(QMainWindow):
         self.preset.setEnabled(idle)
         self.release_upload.setEnabled(idle)
 
+        # the few seconds spent checking what a run will do need no sleep held off
+        awake = not idle and self.planner.state() == PROCESS_NOT_RUNNING
+
         if idle:
             self.spinner.stop()
         else:
             self.spinner.start()
+
+        if awake:
+            self.keep_awake.start()
+        else:
+            self.keep_awake.stop()
+
+        self.awake_note.setVisible(awake and KeepAwake.supported())
 
         self.start_button.setEnabled(idle)
         self.cancel_button.setEnabled(not idle)
         self.open_output_button.setEnabled(idle and self.output_folder().exists())
         exact = self.output.path() / "camera_viewsheds_exact_epsg5070.gpkg"
         web = self.output.path() / "mapbox/camera_viewsheds_web_epsg5070.gpkg"
+        building = self.qgis_builder is not None and self.qgis_builder.state() != PROCESS_NOT_RUNNING
         self.open_qgis_button.setEnabled(
-            idle and not self.standalone and (exact.exists() or web.exists())
+            idle and not building and not self.standalone and not self.all_providers() and (exact.exists() or web.exists())
         )
 
     def open_output(self) -> None:
@@ -1300,8 +1927,17 @@ class ViewshedWindow(QMainWindow):
             QMessageBox.information(self, "No polygons yet", "Run the viewshed workflow first.")
             return
 
+        # building the project takes a few seconds, so the window stays responsive meanwhile
         builder = QProcess(self)
         builder.setProcessChannelMode(PROCESS_MERGED_CHANNELS)
+        builder.finished.connect(lambda exit_code, _status: self.qgis_project_built(exit_code == 0))
+        builder.errorOccurred.connect(
+            lambda error: self.qgis_project_built(False) if error == PROCESS_FAILED_TO_START else None
+        )
+        self.qgis_builder = builder
+        self.review_project = review_project
+        self.open_qgis_button.setText("Building review map…")
+        self.open_qgis_button.setEnabled(False)
         builder.start(
             sys.executable,
             [
@@ -1317,7 +1953,13 @@ class ViewshedWindow(QMainWindow):
             ],
         )
 
-        if not builder.waitForFinished(15000) or builder.exitCode() != 0:
+    def qgis_project_built(self, built: bool) -> None:
+        builder = self.qgis_builder
+        self.qgis_builder = None
+        self.open_qgis_button.setText("Open review map in QGIS")
+        self.set_idle(self.process.state() == PROCESS_NOT_RUNNING)
+
+        if not built:
             message = bytes(builder.readAllStandardOutput()).decode("utf-8", errors="replace")
             QMessageBox.critical(
                 self,
@@ -1327,7 +1969,7 @@ class ViewshedWindow(QMainWindow):
             return
 
         try:
-            program, arguments = self.qgis_runtime.qgis_launch(review_project)
+            program, arguments = self.qgis_runtime.qgis_launch(self.review_project)
         except RuntimeError as error:
             QMessageBox.critical(self, "Could not open QGIS", str(error))
             return
@@ -1337,7 +1979,12 @@ class ViewshedWindow(QMainWindow):
     def closeEvent(self, event) -> None:  # noqa: N802
         self.remember_inputs()
 
+        if self.planner.state() != PROCESS_NOT_RUNNING:
+            self.cancel_run()
+            self.planner.waitForFinished(1000)
+
         if self.process.state() == PROCESS_NOT_RUNNING:
+            self.keep_awake.stop()
             event.accept()
             return
 
@@ -1349,6 +1996,7 @@ class ViewshedWindow(QMainWindow):
 
         if answer == MESSAGE_YES:
             self.cancel_run()
+            self.keep_awake.stop()
             event.accept()
         else:
             event.ignore()
