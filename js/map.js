@@ -308,7 +308,6 @@ async function initializeMap() {
     alt: 'UO InfoGraphics Lab',
   });
   map.addControl({ onAdd: () => iglLogo, onRemove: () => iglLogo.remove() }, 'bottom-left');
-  dimWhileMoving(map, iglLogo);
   initZoomViewer(map);
 
   map.once('load', () => {
@@ -322,25 +321,31 @@ async function initializeMap() {
       });
     }
     initControlShellSync(map);
+    // starts after the first view is set so the logo opens at full strength
+    dimWhileMoving(map, iglLogo);
   });
 
   return map;
 }
 
-// how long the map must sit still after the user moves it before the logo comes back to full strength
+// how long the map must sit still before the logo comes back to full strength
 const LOGO_IDLE_DELAY = 3000;
 
-// fades the logo back while the user pans, zooms or rotates; moves made in code (Home, search, the
-// first view) have no originalEvent, so they don't start a dim, but once dimmed any moveend restarts the wait
+// event data on moves that only re-center the map around the panels, which Mapbox copies onto their events
+const PANEL_PADDING_MOVE = Object.freeze({ panelPadding: true });
+
+// fades the logo back whenever the map is sent somewhere, dragged or by Home, search or a layer click,
+// but not when it only shifts to make room for a panel opening, closing or changing tabs
 function dimWhileMoving(map, logo) {
   let idleTimer;
 
   map.on('movestart', (event) => {
-    if (!event.originalEvent) return;
+    if (event.panelPadding) return;
     clearTimeout(idleTimer);
     logo.classList.add('is-moving');
   });
 
+  // a panel shift while already dimmed still counts as movement and restarts the wait
   map.on('moveend', () => {
     if (!logo.classList.contains('is-moving')) return;
     clearTimeout(idleTimer);
@@ -358,9 +363,10 @@ function initControlShellSync(map) {
       map.once('moveend', () => requestAnimationFrame(refreshPadding));
       return;
     }
-    // on phones the sheets move a lot, so the map glides to its new middle instead of jumping
-    if (isPhoneLayout()) map.easeTo({ padding: mapPanelPadding(map), duration: motionDuration(250) });
-    else map.setPadding(mapPanelPadding(map));
+    // on phones the sheets move a lot, so the map glides to its new middle instead of jumping;
+    // the move is tagged so the IGL logo doesn't dim when a panel opens or closes
+    if (isPhoneLayout()) map.easeTo({ padding: mapPanelPadding(map), duration: motionDuration(250) }, PANEL_PADDING_MOVE);
+    else map.setPadding(mapPanelPadding(map), PANEL_PADDING_MOVE);
   };
 
   // phones open on the whole region, framed between the banner pill and the tab bar
