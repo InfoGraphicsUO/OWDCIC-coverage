@@ -110,7 +110,7 @@ def jobs_help() -> str:
     computer = f"{round(memory / 2**30)} GB of memory and " if memory else ""
     return (
         "How many cameras to process at once. More can finish sooner, but each needs roughly "
-        f"1 GB of memory. The default of {DEFAULT_JOBS} is set from this computer's "
+        f"1.5 GB of memory, counting room for spikes. The default of {DEFAULT_JOBS} is set from this computer's "
         f"{computer}{os.cpu_count() or 1} processors."
     )
 
