@@ -82,7 +82,7 @@ const ABOUT_TABS = Object.freeze([
       for (const group of ORGANIZATION_GROUPS) {
         columns.append(section(group.title, organizationList(group.names)));
       }
-      return [columns];
+      return [columns, labLogo()];
     },
   }),
 ]);
@@ -178,6 +178,19 @@ function goalCallout() {
   const callout = element('blockquote', 'about-modal__goal');
   callout.append(element('p', '', GOAL));
   return callout;
+}
+
+// the full InfoGraphics Lab logo, faded into the bottom-left of the partners tab and linked to the lab's site
+function labLogo() {
+  const link = element('a', 'about-modal__lab-logo');
+  link.href = 'https://infographics.uoregon.edu/';
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.append(Object.assign(document.createElement('img'), {
+    src: 'img/logos/IGL_MIDDLE_WHITE_DDD_1200.png',
+    alt: 'UO InfoGraphics Lab',
+  }));
+  return link;
 }
 
 function organizationList(names) {
