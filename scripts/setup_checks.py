@@ -12,6 +12,7 @@ import math
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 
 from camera_providers import PROVIDER_LABELS, output_dir, sites_path
 from qgis_runtime import find_tippecanoe
@@ -24,6 +25,7 @@ LEGACY_DEMS = ROOT / 'data/dems'
 WEB_PACKAGE = 'mapbox/camera_viewsheds_web_epsg5070.gpkg'
 # where the GitHub CLI installs when a double-clicked launcher's PATH does not include it
 GH_LOCATIONS = (Path('/opt/homebrew/bin/gh'), Path('/usr/local/bin/gh'), Path('C:/Program Files/GitHub CLI/gh.exe'))
+BREW_LOCATIONS = (Path('/opt/homebrew/bin/brew'), Path('/usr/local/bin/brew'))
 # the DEMs take about 30 GB and the provider output folders a few more
 MIN_FREE_GB = 10
 KM_PER_DEGREE = 111.32
@@ -36,6 +38,15 @@ class Check:
     status: str
     detail: str
     fix: str = ''
+    # names a fix the GUI can run for the user, such as gh_login
+    action: str = ''
+    # the kinds of run this check stops: viewsheds, tilesets, release, metrics or upload
+    blocks: tuple[str, ...] = ()
+
+
+def blockers(checks: list[Check], needs: set[str]) -> list[Check]:
+    """the checks that would make a run needing these things fail"""
+    return [check for check in checks if check.status != 'ok' and needs.intersection(check.blocks)]
 
 
 def read_tiles(path: Path = DEM_TILES) -> list[dict]:
@@ -85,15 +96,18 @@ def cameras_outside_tiles(rows: list[dict], radius_miles: float) -> list[tuple[s
 
 
 def qgis_check(root: Path) -> Check:
+    every_run = ('viewsheds', 'tilesets', 'release', 'metrics')
+
     if not root.is_dir():
         return Check('QGIS', 'problem', f'not found at {root}',
-                     'Install QGIS from qgis.org, or set OWDCIC_QGIS_ROOT to its install folder.')
+                     'Install QGIS from qgis.org, or set OWDCIC_QGIS_ROOT to its install folder.', blocks=every_run)
 
     try:
         from osgeo import gdal
     except ImportError:
         return Check('QGIS', 'problem', f'{root} found, but its GDAL could not be loaded',
-                     'Start the GUI with generate-viewshed-macos.command or generate-viewshed-win.bat.')
+                     'Start the GUI with generate-viewshed-macos.command or generate-viewshed-win.bat.',
+                     blocks=every_run)
 
     return Check('QGIS', 'ok', f'{root.name}, GDAL {gdal.__version__}')
 
@@ -109,10 +123,12 @@ def dem_check(dem_dir: Path, rows: list[dict]) -> Check:
 
     if dem_dir.resolve() == DEFAULT_DEMS.resolve() and LEGACY_DEMS.is_dir() and any(LEGACY_DEMS.glob('*.tif')):
         return Check('Terrain (DEMs)', 'problem', detail,
-                     f'Move the tiles in {LEGACY_DEMS} to {DEFAULT_DEMS} instead of downloading them again.')
+                     f'Move the tiles in {LEGACY_DEMS} to {DEFAULT_DEMS} instead of downloading them again.',
+                     blocks=('viewsheds',))
 
     return Check('Terrain (DEMs)', 'problem', detail,
-                 'Use Download missing DEMs below, or copy the tiles from another machine.')
+                 'Use Download missing DEMs, or copy the tiles from another machine.',
+                 action='download_dems', blocks=('viewsheds',))
 
 
 def dem_coverage_check(rows: list[dict], radius_miles: float) -> Check:
@@ -126,17 +142,33 @@ def dem_coverage_check(rows: list[dict], radius_miles: float) -> Check:
     return Check('Terrain coverage', 'problem',
                  f'{len(outside)} cameras reach past the DEM tiles: {names}{", …" if len(outside) > 5 else ""}',
                  f'Check those sites\' coordinates. If they are right, add tiles {", ".join(tiles)} '
-                 f'from apps.nationalmap.gov to {DEM_TILES.relative_to(ROOT)}.')
+                 f'from apps.nationalmap.gov to {DEM_TILES.relative_to(ROOT)}.', blocks=('viewsheds',))
 
 
-def tippecanoe_check() -> Check:
+def find_brew() -> str | None:
+    return shutil.which('brew') or next((str(path) for path in BREW_LOCATIONS if path.is_file()), None)
+
+
+def tippecanoe_check(platform: str = sys.platform) -> Check:
     found = find_tippecanoe()
 
     if found:
         return Check('tippecanoe', 'ok', str(found))
 
+    if platform == 'win32':
+        return Check('tippecanoe', 'problem',
+                     'has no Windows version, so Live site runs and the combined coverage need a Mac',
+                     'Use this computer for test runs and GIS analysis, and publish from a Mac.',
+                     blocks=('tilesets',))
+
+    if platform == 'darwin' and find_brew():
+        return Check('tippecanoe', 'problem', 'not found; Live site runs and the combined coverage need it',
+                     'Use Install tippecanoe, which runs brew install tippecanoe in a Terminal window.',
+                     action='install_tippecanoe', blocks=('tilesets',))
+
     return Check('tippecanoe', 'problem', 'not found; Live site runs and the combined coverage need it',
-                 'macOS: brew install tippecanoe. It has no native Windows build, so publish from a Mac or Linux machine.')
+                 'Install Homebrew from brew.sh, then run brew install tippecanoe in a terminal.',
+                 blocks=('tilesets',))
 
 
 def find_gh() -> str | None:
@@ -148,7 +180,7 @@ def gh_check() -> Check:
 
     if not gh:
         return Check('GitHub CLI', 'warning', 'not found; only the Data release upload needs it',
-                     'Install it from cli.github.com, then run gh auth login in a terminal.')
+                     'Install it from cli.github.com, then run gh auth login in a terminal.', blocks=('upload',))
 
     try:
         result = subprocess.run([gh, 'auth', 'status', '--hostname', 'github.com'],
@@ -158,7 +190,8 @@ def gh_check() -> Check:
 
     if result.returncode:
         return Check('GitHub CLI', 'warning', 'not signed in; only the Data release upload needs it',
-                     'Run gh auth login in a terminal.')
+                     'Use Sign in to GitHub, which runs gh auth login in a terminal window.',
+                     action='gh_login', blocks=('upload',))
 
     return Check('GitHub CLI', 'ok', 'signed in to github.com')
 
