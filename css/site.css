@@ -374,38 +374,6 @@ textarea {
     color: #9a9a9a;
 }
 
-/* the panel stretches to the tallest tab's height, so a column lets the credit sink to its bottom */
-.about-modal__panel:has(> .about-modal__credit) {
-    display: flex;
-    flex-direction: column;
-    gap: 28px;
-}
-
-/* a quiet credit line in the bottom right corner, set off by the same rule as the overview lead */
-.about-modal__credit {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 16px;
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid #444;
-}
-
-.about-modal__credit-label {
-    color: #9a9a9a;
-    font-size: 13px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.about-modal__credit-logo {
-    display: block;
-    width: auto;
-    height: 44px;
-}
-
 @media (prefers-reduced-motion: reduce) {
     .site-banner__about,
     .about-modal__tab {

@@ -35,6 +35,7 @@ const ORGANIZATION_GROUPS = Object.freeze([
     title: 'Data contributors, sponsors, and operators',
     names: [
       ['University of Oregon / Oregon Hazards Lab', 'UO/OHAZ'],
+      ['University of Oregon / InfoGraphics Lab', 'UO/IGL'],
       ['Oregon Department of Forestry', 'ODF'],
       ['Portland General Electric', 'PGE'],
       ['Pacific Power'],
@@ -81,7 +82,7 @@ const ABOUT_TABS = Object.freeze([
       for (const group of ORGANIZATION_GROUPS) {
         columns.append(section(group.title, organizationList(group.names)));
       }
-      return [columns, mapCredit()];
+      return [columns];
     },
   }),
 ]);
@@ -177,18 +178,6 @@ function goalCallout() {
   const callout = element('blockquote', 'about-modal__goal');
   callout.append(element('p', '', GOAL));
   return callout;
-}
-
-// the full InfoGraphics Lab logo, tagline included, credited under the partner lists
-function mapCredit() {
-  const credit = element('div', 'about-modal__credit');
-  const logo = Object.assign(document.createElement('img'), {
-    className: 'about-modal__credit-logo',
-    src: 'img/logos/IGL_MIDDLE_WHITE_DDD_1200.png',
-    alt: 'InfoGraphics Lab, University of Oregon',
-  });
-  credit.append(element('span', 'about-modal__credit-label', 'Map built by'), logo);
-  return credit;
 }
 
 function organizationList(names) {
