@@ -20,7 +20,8 @@ const GOAL = 'The OWDCIC\'s goal is to define and establish true interoperabilit
 
 const CLOSING = 'Through the work of the OWDCIC and a commitment to collaboration on technology, policy funding opportunities and strengthening relationships between the partners utilizing detection camera platforms in Oregon.';
 
-// each organization is its full name and an optional acronym shown after it
+// each organization is its full name, an optional acronym shown after it,
+// and optionally its own groups (like UO's labs) listed under it
 const ORGANIZATION_GROUPS = Object.freeze([
   Object.freeze({
     title: 'Founding members',
@@ -34,8 +35,10 @@ const ORGANIZATION_GROUPS = Object.freeze([
   Object.freeze({
     title: 'Data contributors, sponsors, and operators',
     names: [
-      ['University of Oregon / Oregon Hazards Lab', 'UO/OHAZ'],
-      ['University of Oregon / InfoGraphics Lab', 'UO/IGL'],
+      ['University of Oregon', 'UO', [
+        ['Oregon Hazards Lab', 'OHAZ'],
+        ['InfoGraphics Lab', 'IGL'],
+      ]],
       ['Oregon Department of Forestry', 'ODF'],
       ['Portland General Electric', 'PGE'],
       ['Pacific Power'],
@@ -195,9 +198,10 @@ function labLogo() {
 
 function organizationList(names) {
   const list = element('ul', 'about-modal__orgs');
-  for (const [name, acronym] of names) {
+  for (const [name, acronym, groups] of names) {
     const item = element('li', '', name);
     if (acronym) item.append(' ', element('span', 'about-modal__acronym', acronym));
+    if (groups) item.append(organizationList(groups));
     list.append(item);
   }
   return list;

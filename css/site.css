@@ -374,6 +374,14 @@ textarea {
     color: #9a9a9a;
 }
 
+/* an organization's own groups, indented under it along a thin rail */
+.about-modal__orgs .about-modal__orgs {
+    gap: 6px;
+    margin-top: 6px;
+    padding-left: 12px;
+    border-left: 2px solid #444;
+}
+
 /* the panel stretches to the tallest tab's height, so a column lets the logo sink to its bottom */
 .about-modal__panel:has(> .about-modal__lab-logo) {
     display: flex;
