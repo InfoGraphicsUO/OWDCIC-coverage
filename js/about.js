@@ -26,7 +26,9 @@ const ORGANIZATION_GROUPS = Object.freeze([
   Object.freeze({
     title: 'Founding members',
     names: [
-      ['University of Oregon / Oregon Hazards Lab', 'UO/OHAZ'],
+      ['University of Oregon', 'UO', [
+        ['Oregon Hazards Lab', 'OHAZ'],
+      ]],
       ['Bureau of Land Management', 'BLM'],
       ['USDA Forest Service', 'USFS'],
       ['Oregon Department of Forestry', 'ODF'],
