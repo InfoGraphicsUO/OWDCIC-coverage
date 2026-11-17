@@ -404,7 +404,7 @@ textarea {
 .about-modal__lab-logo img {
     display: block;
     width: auto;
-    height: 75px;
+    height: 50px;
 }
 
 @media (prefers-reduced-motion: reduce) {
