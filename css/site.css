@@ -374,6 +374,39 @@ textarea {
     color: #9a9a9a;
 }
 
+/* an organization's own groups, indented under it along a thin rail */
+.about-modal__orgs .about-modal__orgs {
+    gap: 6px;
+    margin-top: 6px;
+    padding-left: 12px;
+    border-left: 2px solid #444;
+}
+
+/* the panel stretches to the tallest tab's height, so a column lets the logo sink to its bottom */
+.about-modal__panel:has(> .about-modal__lab-logo) {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+/* sits in the bottom-left of the partners tab */
+.about-modal__lab-logo {
+    align-self: flex-start;
+    margin-top: auto;
+    border-radius: var(--ui-radius-sm);
+}
+
+.about-modal__lab-logo:focus-visible {
+    outline: 2px solid var(--ohaz-yellow);
+    outline-offset: 4px;
+}
+
+.about-modal__lab-logo img {
+    display: block;
+    width: auto;
+    height: 50px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .site-banner__about,
     .about-modal__tab {

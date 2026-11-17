@@ -20,25 +20,29 @@ const GOAL = 'The OWDCIC\'s goal is to define and establish true interoperabilit
 
 const CLOSING = 'Through the work of the OWDCIC and a commitment to collaboration on technology, policy funding opportunities and strengthening relationships between the partners utilizing detection camera platforms in Oregon.';
 
-// each organization is its full name and an optional acronym shown after it
+// each organization is its full name, an optional acronym shown after it,
+// and optionally its own groups (like UO's labs) listed under it
 const ORGANIZATION_GROUPS = Object.freeze([
   Object.freeze({
     title: 'Founding members',
     names: [
-      ['University of Oregon / Oregon Hazards Lab', 'UO/OHAZ'],
+      ['University of Oregon, Oregon Hazards Lab', 'UO/OHAZ'],
       ['Bureau of Land Management', 'BLM'],
-      ['USDA Forest Service', 'USFS'],
       ['Oregon Department of Forestry', 'ODF'],
+      ['USDA Forest Service', 'USFS'],
     ],
   }),
   Object.freeze({
     title: 'Data contributors, sponsors, and operators',
     names: [
-      ['University of Oregon / Oregon Hazards Lab', 'UO/OHAZ'],
-      ['Oregon Department of Forestry', 'ODF'],
-      ['Portland General Electric', 'PGE'],
-      ['Pacific Power'],
+      ['University of Oregon', 'UO', [
+        ['Oregon Hazards Lab', 'OHAZ'],
+        ['InfoGraphics Lab', 'IGL'],
+      ]],
       ['Avista Energy'],
+      ['Oregon Department of Forestry', 'ODF'],
+      ['Pacific Power'],
+      ['Portland General Electric', 'PGE'],
       ['Puget Sound Energy', 'PSE'],
     ],
   }),
@@ -81,7 +85,7 @@ const ABOUT_TABS = Object.freeze([
       for (const group of ORGANIZATION_GROUPS) {
         columns.append(section(group.title, organizationList(group.names)));
       }
-      return [columns];
+      return [columns, labLogo()];
     },
   }),
 ]);
@@ -179,11 +183,25 @@ function goalCallout() {
   return callout;
 }
 
+// the full InfoGraphics Lab logo, faded into the bottom-left of the partners tab and linked to the lab's site
+function labLogo() {
+  const link = element('a', 'about-modal__lab-logo');
+  link.href = 'https://infographics.uoregon.edu/';
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.append(Object.assign(document.createElement('img'), {
+    src: 'img/logos/IGL_MIDDLE_WHITE_DDD_1200.png',
+    alt: 'UO InfoGraphics Lab',
+  }));
+  return link;
+}
+
 function organizationList(names) {
   const list = element('ul', 'about-modal__orgs');
-  for (const [name, acronym] of names) {
+  for (const [name, acronym, groups] of names) {
     const item = element('li', '', name);
     if (acronym) item.append(' ', element('span', 'about-modal__acronym', acronym));
+    if (groups) item.append(organizationList(groups));
     list.append(item);
   }
   return list;
