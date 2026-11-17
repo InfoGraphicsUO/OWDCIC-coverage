@@ -26,12 +26,10 @@ const ORGANIZATION_GROUPS = Object.freeze([
   Object.freeze({
     title: 'Founding members',
     names: [
-      ['University of Oregon', 'UO', [
-        ['Oregon Hazards Lab', 'OHAZ'],
-      ]],
+      ['University of Oregon, Oregon Hazards Lab', 'UO/OHAZ'],
       ['Bureau of Land Management', 'BLM'],
-      ['USDA Forest Service', 'USFS'],
       ['Oregon Department of Forestry', 'ODF'],
+      ['USDA Forest Service', 'USFS'],
     ],
   }),
   Object.freeze({
@@ -41,10 +39,10 @@ const ORGANIZATION_GROUPS = Object.freeze([
         ['Oregon Hazards Lab', 'OHAZ'],
         ['InfoGraphics Lab', 'IGL'],
       ]],
-      ['Oregon Department of Forestry', 'ODF'],
-      ['Portland General Electric', 'PGE'],
-      ['Pacific Power'],
       ['Avista Energy'],
+      ['Oregon Department of Forestry', 'ODF'],
+      ['Pacific Power'],
+      ['Portland General Electric', 'PGE'],
       ['Puget Sound Energy', 'PSE'],
     ],
   }),
