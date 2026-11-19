@@ -1543,14 +1543,23 @@ function loadCameraMetrics() {
   return cameraMetricsLoad;
 }
 
+// types whose options open other types, e.g. Federal land > National Forest; their areas
+// overlap and each one only leads to another list, so the map draws none until a pick
+const LIST_ONLY_TYPES = new Set(FILTER_TYPES
+  .map(({ value }) => nestedFilterParent(value, FILTER_TYPES)?.type)
+  .filter(Boolean));
+
 function showDivisionType(map, typeValue) {
   const selected = divisionType(typeValue);
+  // a list-only type keeps just its selection layers, so nothing is hovered or clicked
+  const shown = selected && LIST_ONLY_TYPES.has(selected.value)
+    ? new Set(divisionSelectionLayerIds(selected))
+    : null;
 
   // clear hidden categories too so switching back cannot reveal stale highlights
   for (const division of DIVISION_TYPES) {
-    const visible = division === selected;
     for (const layerId of divisionLayerIds(division)) {
-      setLayerVisible(map, layerId, visible);
+      setLayerVisible(map, layerId, division === selected && (!shown || shown.has(layerId)));
     }
     setDivisionLayerFilter(map, division, NO_DIVISION_SELECTED);
     setDivisionHoverFilter(map, division, NO_DIVISION_SELECTED);
@@ -1711,6 +1720,15 @@ function divisionFilterExpression(divisionId) {
   // hover fill and selected outline share the same stable property
   if (Array.isArray(divisionId)) return ['in', ['get', 'divisionId'], ['literal', divisionId]];
   return ['==', ['get', 'divisionId'], divisionId];
+}
+
+function divisionSelectionLayerIds(division) {
+  return [
+    division.selectedFillLayerId,
+    division.selectedInnerBandLayerId,
+    division.selectedCasingLayerId,
+    division.selectedLayerId,
+  ].filter(Boolean);
 }
 
 function divisionLayerIds(division) {
