@@ -6,6 +6,7 @@ const DEFAULT_SETTINGS = Object.freeze({
   separateViewshedColors: false,
   showZoomLevel: false,
   animateBanner: false,
+  resultsMockup: 'current',
 });
 
 // each row is one boolean preference shown in the settings popup
@@ -20,6 +21,17 @@ const SETTING_FIELDS = Object.freeze([
     key: 'animateBanner',
     label: 'Animate banner',
     description: 'The camera viewsheds in the banner drift slowly.',
+  }),
+  // issue #227: the two results panel layouts for a USWFS unit, beside the current one
+  Object.freeze({
+    key: 'resultsMockup',
+    label: 'USWFS results layout',
+    description: 'Mockups for a selected USWFS unit: the whole unit beside its BLM, USFWS, and NPS land.',
+    options: Object.freeze([
+      Object.freeze({ value: 'current', label: 'Current' }),
+      Object.freeze({ value: 'grouped', label: 'Collapsible sections' }),
+      Object.freeze({ value: 'combined', label: 'Single pane' }),
+    ]),
   }),
 ]);
 
@@ -77,17 +89,15 @@ function openSettingsModal(onClose) {
   dialog.append(body);
 }
 
-function settingRow({ key, label, description }) {
+function settingRow({ key, label, description, options }) {
   const id = `setting-${key}`;
   const row = document.createElement('div');
-  row.className = 'settings-modal__row';
+  row.className = `settings-modal__row${options ? ' settings-modal__row--select' : ''}`;
 
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  checkbox.id = id;
-  checkbox.checked = Boolean(settings[key]);
-  checkbox.setAttribute('aria-describedby', `${id}-description`);
-  checkbox.addEventListener('change', () => setSetting(key, checkbox.checked));
+  // a field with options is a choice of one, the rest are on/off
+  const control = options ? settingSelect(key, options) : settingCheckbox(key);
+  control.id = id;
+  control.setAttribute('aria-describedby', `${id}-description`);
 
   const text = document.createElement('div');
   const title = document.createElement('label');
@@ -102,8 +112,29 @@ function settingRow({ key, label, description }) {
 
   text.append(title, hint);
 
-  row.append(checkbox, text);
+  if (options) {
+    text.append(control);
+    row.append(text);
+  } else {
+    row.append(control, text);
+  }
   return row;
+}
+
+function settingCheckbox(key) {
+  const checkbox = document.createElement('input');
+  checkbox.type = 'checkbox';
+  checkbox.checked = Boolean(settings[key]);
+  checkbox.addEventListener('change', () => setSetting(key, checkbox.checked));
+  return checkbox;
+}
+
+function settingSelect(key, options) {
+  const select = document.createElement('select');
+  select.className = 'settings-modal__select';
+  for (const { value, label } of options) select.append(new Option(label, value, false, settings[key] === value));
+  select.addEventListener('change', () => setSetting(key, select.value));
+  return select;
 }
 
 function readStoredSettings() {
@@ -114,12 +145,18 @@ function readStoredSettings() {
     // and popup settings saved on the public site before it was dev only
     return Object.fromEntries(
       Object.entries(stored).filter(([key, value]) =>
-        typeof DEFAULT_SETTINGS[key] === typeof value && !hidden.has(key))
+        typeof DEFAULT_SETTINGS[key] === typeof value && !hidden.has(key) && validOption(key, value))
     );
   } catch {
     // private browsing and corrupt values fall back to the defaults
     return {};
   }
+}
+
+// a choice saved by an older page may no longer be offered
+function validOption(key, value) {
+  const options = SETTING_FIELDS.find((field) => field.key === key)?.options;
+  return !options || options.some((option) => option.value === value);
 }
 
 function writeStoredSettings() {
