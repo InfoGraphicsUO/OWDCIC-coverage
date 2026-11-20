@@ -59,7 +59,7 @@ export const BURN_PROBABILITY_MIN = 0.002154;
 // the marker SVGs in img/ hardcode the same values, so update both together
 export const CAMERA_PROVIDER_COLORS = Object.freeze({
   alertWest: '#f2b705',
-  pano: '#3898ec',
+  pano: '#4152d9',
   enviroVision: '#4fa83d',
 });
 

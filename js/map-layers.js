@@ -246,7 +246,7 @@ const CAMERA_PROVIDERS = Object.freeze([
     viewshedHighlightLayerId: LAYER_IDS.panoViewshedsHighlightFill,
     viewshedFillColor: Object.freeze({
       outdoors: CAMERA_PROVIDER_COLORS.pano,
-      satellite: '#a9d4fb',
+      satellite: '#bcc3ff',
     }),
     viewshedLegendImage: Object.freeze({
       outdoors: 'img/blue_portland_tower_viewshed.png',
