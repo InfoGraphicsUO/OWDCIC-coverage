@@ -153,6 +153,8 @@ const VIEWSHED_SLOT = 'middle';
 const LOOKOUT_COLOR = '#8154BD';
 const NATIONAL_FOREST_COLOR = '#3b7d4f';
 const BLM_LAND_COLOR = '#f6d94a';
+// the land mix's "State land" blue, so the layer and the export's land chart agree
+const STATE_LAND_COLOR = '#348bb0';
 const BURN_PROBABILITY_COLOR = '#d7191c';
 const TRANSMISSION_LINE_COLOR = '#c2188f';
 
@@ -839,6 +841,28 @@ function addContextLayers(map) {
     },
   }, beforeId);
 
+  addGeoJSONSource(map, LAYER_IDS.stateLandsSource);
+  map.addLayer({
+    id: LAYER_IDS.stateLandsFill,
+    type: 'fill',
+    source: LAYER_IDS.stateLandsSource,
+    layout: { visibility: 'none' },
+    paint: {
+      'fill-color': STATE_LAND_COLOR,
+      'fill-opacity': 0.28,
+    },
+  }, beforeId);
+  map.addLayer({
+    id: LAYER_IDS.stateLandsLine,
+    type: 'line',
+    source: LAYER_IDS.stateLandsSource,
+    layout: { visibility: 'none' },
+    paint: {
+      'line-color': STATE_LAND_COLOR,
+      'line-width': 1.25,
+    },
+  }, beforeId);
+
   addGeoJSONSource(map, LAYER_IDS.transmissionLinesSource);
   map.addLayer({
     id: LAYER_IDS.transmissionLines,
@@ -907,6 +931,15 @@ function loadDeferredLayers(map, { preload = false } = {}) {
       // bounds are longitude and latitude, so tell ArcGIS their input CRS
       inSR: '4326',
       spatialRel: 'esriSpatialRelIntersects',
+      geometryPrecision: '4',
+      maxAllowableOffset: '0.005',
+    })
+  );
+  // every Oregon and Washington state parcel fits in one page of about a megabyte
+  loadLayerWhenChecked(map, LEGEND_LAYERS.stateLands, LAYER_IDS.stateLandsSource, {}, () =>
+    fetchArcGISGeoJSON(DATA_URLS.padusFee, {
+      where: "Own_Type='STAT' AND State_Nm IN ('OR','WA')",
+      outFields: 'Own_Name,Unit_Nm',
       geometryPrecision: '4',
       maxAllowableOffset: '0.005',
     })
@@ -2492,6 +2525,8 @@ function underLabelLayerIds() {
     LAYER_IDS.blmLands,
     LAYER_IDS.nationalForestsFill,
     LAYER_IDS.nationalForestsLine,
+    LAYER_IDS.stateLandsFill,
+    LAYER_IDS.stateLandsLine,
     LAYER_IDS.transmissionLines,
     LAYER_IDS.transmissionLinesHit,
     ...DIVISION_TYPES.map(({ fillLayerId }) => fillLayerId),
@@ -3021,6 +3056,16 @@ function legendItems() {
       swatchBorder: false,
       visible: false,
       layerIds: [LAYER_IDS.blmLands],
+    },
+    {
+      label: LEGEND_LAYERS.stateLands,
+      swatchColor: STATE_LAND_COLOR,
+      visible: false,
+      infoText: 'State-owned parcels in Oregon and Washington from PAD-US 4.1 fee ownership',
+      layerIds: [
+        LAYER_IDS.stateLandsFill,
+        LAYER_IDS.stateLandsLine,
+      ],
     },
     {
       label: LEGEND_LAYERS.burnProbability,

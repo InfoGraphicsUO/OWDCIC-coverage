@@ -165,6 +165,7 @@
 //   'Standing lookouts',
 //   'National forests',
 //   'BLM lands',
+//   'State lands',
 //   'OR Burn probability (QWRA)',
 //   'Transmission lines',
 //   'Current fires (NIFC)',
@@ -204,6 +205,7 @@ export const VISIBLE_LAYERS = {
   'Land management': [
     'National forests',
     'BLM lands',
+    'State lands',
   ],
   'Infrastructure': [
     'Transmission lines',

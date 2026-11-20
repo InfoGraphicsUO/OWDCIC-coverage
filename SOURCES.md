@@ -44,7 +44,7 @@ This will function as a source repository so I can keep track of what sources I'
 
 ## Ownership, hydrography, and coverage metrics
 
-- **PAD-US fee ownership:** [Fee Managers PAD-US](https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Fee_Managers_PADUS/FeatureServer/0) and [Federal Fee Managers Authoritative PAD-US](https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Federal_Fee_Managers_Authoritative_PADUS/FeatureServer/0).
+- **PAD-US fee ownership:** [Fee Managers PAD-US](https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Fee_Managers_PADUS/FeatureServer/0) and [Federal Fee Managers Authoritative PAD-US](https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Federal_Fee_Managers_Authoritative_PADUS/FeatureServer/0). The State lands map layer queries the first service live for Oregon and Washington parcels with owner type `STAT`.
 - **Census areal hydrography:** [TIGERweb Hydro, layer 1](https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Hydro/MapServer/1).
 - **Land outline used in regional processing:** [Esri World Countries (Generalized), layer 0](https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Countries_(Generalized)/FeatureServer/0). The local [Pacific Northwest land mask](data/source/pacific-northwest-land-mask.geojson) records this service as its source.
 - **Local coverage summary:** [camera-coverage.json](data/live/camera-coverage.json) records source endpoints and input hashes for its ownership and viewshed coverage data.
