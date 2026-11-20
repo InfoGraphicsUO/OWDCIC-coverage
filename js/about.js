@@ -190,7 +190,7 @@ function labLogo() {
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.append(Object.assign(document.createElement('img'), {
-    src: 'img/logos/IGL_MIDDLE_WHITE_DDD_1200.png',
+    src: 'img/logos/IGL_MIDDLE_WHITE_UO_1200.png',
     alt: 'UO InfoGraphics Lab',
   }));
   return link;
