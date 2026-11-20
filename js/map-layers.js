@@ -97,6 +97,12 @@ const SELECTION_CASING_OPACITY = 0.7;
 // a wide, faint band just inside each outline shows which side of the line is in the area
 const BOUNDARY_INNER_BAND_OPACITY = Object.freeze({ outdoors: 0.24, simple: 0.2, satellite: 0.3 });
 const SELECTED_INNER_BAND_OPACITY = 0.45;
+// hover fill flashes up to the peak when the pointer enters an area, then fades to the rest
+// level so a lingering pointer doesn't keep tinting the layers beneath
+const HOVER_FILL_REST_OPACITY = 0.08;
+const HOVER_FILL_PEAK_OPACITY = 0.2;
+const HOVER_PULSE_RISE_MS = 220;
+const HOVER_PULSE_FADE_MS = 1400;
 
 // line width by zoom, plus the matching offset that puts the whole line inside the polygon
 // rings are wound with the inside on the right, see windRingsInsideRight
@@ -983,7 +989,9 @@ function addBoundaryLayers(map) {
       paint: {
         'fill-color': SELECTED_BOUNDARY_COLOR,
         // the hover outline does most of the work, so the tint stays light over viewsheds
-        'fill-opacity': 0.08,
+        'fill-opacity': HOVER_FILL_REST_OPACITY,
+        // the pulse sets opacity every frame, so skip the default paint transition
+        'fill-opacity-transition': { duration: 0, delay: 0 },
       },
     });
 
@@ -1730,7 +1738,49 @@ function divisionLayerIds(division) {
   ].filter(Boolean);
 }
 
+// flash the hover fill, then ease it back to the resting tint
+function pulseHoverFill(map, division, pulse) {
+  cancelAnimationFrame(pulse.frame);
+  const setOpacity = (opacity) => {
+    pulse.opacity = opacity;
+    if (map.getLayer(division.hoverLayerId)) {
+      map.setPaintProperty(division.hoverLayerId, 'fill-opacity', opacity);
+    }
+  };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    setOpacity(HOVER_FILL_REST_OPACITY);
+    return;
+  }
+
+  // a pulse that starts mid-flash carries on from the current opacity instead of dipping
+  const from = pulse.opacity;
+  const start = performance.now();
+  const step = (now) => {
+    const elapsed = now - start;
+    let opacity;
+    if (elapsed < HOVER_PULSE_RISE_MS) {
+      opacity = from + (HOVER_FILL_PEAK_OPACITY - from) * (elapsed / HOVER_PULSE_RISE_MS);
+    } else {
+      // ease out so most of the fade happens right after the flash
+      const t = Math.min((elapsed - HOVER_PULSE_RISE_MS) / HOVER_PULSE_FADE_MS, 1);
+      const eased = 1 - (1 - t) ** 3;
+      opacity = HOVER_FILL_PEAK_OPACITY
+        + (HOVER_FILL_REST_OPACITY - HOVER_FILL_PEAK_OPACITY) * eased;
+      if (t >= 1) {
+        setOpacity(HOVER_FILL_REST_OPACITY);
+        return;
+      }
+    }
+    setOpacity(opacity);
+    pulse.frame = requestAnimationFrame(step);
+  };
+  pulse.frame = requestAnimationFrame(step);
+}
+
 function bindDivisionInteractions(map, division) {
+  // mousemove fires constantly, so only pulse when the pointer reaches a new area
+  const pulse = { divisionId: null, frame: 0, opacity: HOVER_FILL_REST_OPACITY };
+
   map.on('mousemove', division.fillLayerId, (event) => {
     const divisionId = event.features?.[0]?.properties?.divisionId;
     // empty space inside a polygon can still return no feature during transitions
@@ -1738,10 +1788,17 @@ function bindDivisionInteractions(map, division) {
 
     map.getCanvas().style.cursor = 'pointer';
     setDivisionHoverFilter(map, division, divisionId);
+    if (divisionId !== pulse.divisionId) {
+      pulse.divisionId = divisionId;
+      pulseHoverFill(map, division, pulse);
+    }
   });
 
   map.on('mouseleave', division.fillLayerId, () => {
     map.getCanvas().style.cursor = '';
+    cancelAnimationFrame(pulse.frame);
+    pulse.divisionId = null;
+    pulse.opacity = HOVER_FILL_REST_OPACITY;
     setDivisionHoverFilter(map, division, NO_DIVISION_SELECTED);
   });
 
