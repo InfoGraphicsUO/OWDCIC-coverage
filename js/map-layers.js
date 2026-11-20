@@ -100,7 +100,7 @@ const SELECTED_INNER_BAND_OPACITY = 0.45;
 // hover fill flashes up to the peak when the pointer enters an area, then fades to the rest
 // level so a lingering pointer doesn't keep tinting the layers beneath
 const HOVER_FILL_REST_OPACITY = 0.08;
-const HOVER_FILL_PEAK_OPACITY = 0.2;
+const HOVER_FILL_PEAK_OPACITY = 0.3;
 const HOVER_PULSE_RISE_MS = 220;
 const HOVER_PULSE_FADE_MS = 1400;
 
