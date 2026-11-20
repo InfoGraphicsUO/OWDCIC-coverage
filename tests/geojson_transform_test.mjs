@@ -1,7 +1,7 @@
 // camera to viewshed join must key on id or location, not only display names
 import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
-import { attachViewshedIds, camerasToGeoJSON, countPointsInGeometry, outsideApiSitesToCameras, providerSitesToCameras } from '../js/geojson-transform.js';
+import { attachViewshedIds, camerasToGeoJSON, countPointsInGeometry, outsideApiSitesToCameras, providerSitesToCameras, windRingsInsideRight } from '../js/geojson-transform.js';
 
 const manifest = JSON.parse(readFileSync(new URL('../data/live/alertwest-viewshed-manifest.json', import.meta.url), 'utf8'));
 const entry = (id) => manifest.viewsheds.find((item) => item.viewshed_id === id);
@@ -134,3 +134,16 @@ assert.deepEqual(
   ]).features.map((f) => f.properties.name),
   ['Portland West Hills 1', 'Wagontire', 'NatapocRidge', 'Camera'],
 );
+
+// outer rings come out clockwise and holes counterclockwise, whichever way they arrive
+{
+  const ccwSquare = [[0, 0], [4, 0], [4, 4], [0, 4], [0, 0]];
+  const cwHole = [[1, 1], [1, 2], [2, 2], [2, 1], [1, 1]];
+  const [polygon, multi] = windRingsInsideRight([
+    { geometry: { type: 'Polygon', coordinates: [ccwSquare.map((p) => [...p]), cwHole.map((p) => [...p])] } },
+    { geometry: { type: 'MultiPolygon', coordinates: [[[...ccwSquare].reverse()]] } },
+    { geometry: null },
+  ]);
+  assert.deepEqual(polygon.geometry.coordinates, [[...ccwSquare].reverse(), [...cwHole].reverse()]);
+  assert.deepEqual(multi.geometry.coordinates, [[[...ccwSquare].reverse()]]);
+}

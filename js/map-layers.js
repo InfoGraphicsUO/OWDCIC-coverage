@@ -37,6 +37,7 @@ import {
   filterGeoJSONByBounds,
   outsideApiSitesToCameras,
   providerSitesToCameras,
+  windRingsInsideRight,
 } from './geojson-transform.js';
 import { initLegend } from './legend.js';
 import { initFireHistoryTimeline } from './fire-history-timeline.js';
@@ -82,8 +83,34 @@ const DIGITIZED_CAMERA_UNLOCK_SEQUENCE = Object.freeze(['1', '2', '3', '4']); //
 // all four keys must arrive within this many milliseconds
 const DIGITIZED_CAMERA_UNLOCK_TIMEOUT_MS = 2_000;
 
-const BOUNDARY_COLOR = '#494949';
 const BOUNDARY_FILL_COLOR = '#929292';
+// unselected outlines need a dark line on map basemaps and a light one over imagery
+const BOUNDARY_SYMBOLOGY = Object.freeze({
+  outdoors: Object.freeze({ lineColor: '#2b2b2b', lineOpacity: 0.55, fillOpacity: 0.05 }),
+  simple: Object.freeze({ lineColor: '#2b2b2b', lineOpacity: 0.5, fillOpacity: 0.05 }),
+  // the grey fill washes out imagery, but the fill layer still takes hover and clicks
+  satellite: Object.freeze({ lineColor: '#f4f1ea', lineOpacity: 0.7, fillOpacity: 0.01 }),
+});
+// dark line under the yellow selection and hover outlines so they read on light ground
+const SELECTION_CASING_COLOR = '#1a1a1a';
+const SELECTION_CASING_OPACITY = 0.7;
+// a wide, faint band just inside each outline shows which side of the line is in the area
+const BOUNDARY_INNER_BAND_OPACITY = Object.freeze({ outdoors: 0.24, simple: 0.2, satellite: 0.3 });
+const SELECTED_INNER_BAND_OPACITY = 0.45;
+// hover fill flashes up to the peak when the pointer enters an area, then fades to the rest
+// level so a lingering pointer doesn't keep tinting the layers beneath
+const HOVER_FILL_REST_OPACITY = 0.08;
+const HOVER_FILL_PEAK_OPACITY = 0.3;
+const HOVER_PULSE_RISE_MS = 220;
+const HOVER_PULSE_FADE_MS = 1400;
+
+// line width by zoom, plus the matching offset that puts the whole line inside the polygon
+// rings are wound with the inside on the right, see windRingsInsideRight
+function innerBandPaint(widths) {
+  const stops = (scale) => ['interpolate', ['linear'], ['zoom'],
+    ...widths.flatMap(([zoom, width]) => [zoom, width * scale])];
+  return { 'line-width': stops(1), 'line-offset': stops(0.5) };
+}
 
 // base fill and outline draw whole areas; portions only appear in a selection outline
 const WHOLE_AREA_FILTER = ['!', ['has', 'partOfDivisionId']];
@@ -302,6 +329,11 @@ const DIVISION_TYPES = Object.freeze(FILTER_TYPES
       layerId: `${prefix}-line`,
       labelLayerId: `${prefix}-labels`,
       selectedLayerId: `${prefix}-selected`,
+      selectedCasingLayerId: `${prefix}-selected-casing`,
+      hoverLineLayerId: `${prefix}-hover-line`,
+      innerBandLayerId: `${prefix}-inner-band`,
+      // a yellow band would read as measured land on types with a measured fill, so they skip it
+      ...(!outlineUrl && { selectedInnerBandLayerId: `${prefix}-selected-inner-band` }),
       dataUrl: `data/live/map-divisions/${value}.geojson`,
       // only types with whole-area outlines get these; see DIVISION_OUTLINE_URLS
       ...(outlineUrl && {
@@ -943,7 +975,7 @@ function addBoundaryLayers(map) {
       layout: { visibility: 'none' },
       paint: {
         'fill-color': BOUNDARY_FILL_COLOR,
-        'fill-opacity': 0.065,
+        'fill-opacity': BOUNDARY_SYMBOLOGY.outdoors.fillOpacity,
       },
     });
 
@@ -956,7 +988,32 @@ function addBoundaryLayers(map) {
       layout: { visibility: 'none' },
       paint: {
         'fill-color': SELECTED_BOUNDARY_COLOR,
-        'fill-opacity': 0.13,
+        // the hover outline does most of the work, so the tint stays light over viewsheds
+        'fill-opacity': HOVER_FILL_REST_OPACITY,
+        // the pulse sets opacity every frame, so skip the default paint transition
+        'fill-opacity-transition': { duration: 0, delay: 0 },
+      },
+    });
+
+    // the hover outline marks the area without tinting the layers beneath it
+    map.addLayer({
+      id: division.hoverLineLayerId,
+      type: 'line',
+      source: outlineSource,
+      filter: divisionFilterExpression(NO_DIVISION_SELECTED),
+      layout: { visibility: 'none' },
+      paint: {
+        'line-color': SELECTED_BOUNDARY_COLOR,
+        'line-opacity': 0.95,
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          5, 1.75,
+          9, 2.5,
+          13, 3.5,
+        ],
+        'line-emissive-strength': 1,
       },
     });
 
@@ -968,8 +1025,8 @@ function addBoundaryLayers(map) {
       filter: WHOLE_AREA_FILTER,
       layout: { visibility: 'none' },
       paint: {
-        'line-color': BOUNDARY_COLOR,
-        'line-opacity': 0.38,
+        'line-color': BOUNDARY_SYMBOLOGY.outdoors.lineColor,
+        'line-opacity': BOUNDARY_SYMBOLOGY.outdoors.lineOpacity,
         'line-width': [
           'interpolate',
           ['linear'],
@@ -979,6 +1036,19 @@ function addBoundaryLayers(map) {
           13, 2,
         ],
         'line-emissive-strength': 0.65,
+      },
+    });
+
+    map.addLayer({
+      id: division.innerBandLayerId,
+      type: 'line',
+      source: outlineSource,
+      filter: WHOLE_AREA_FILTER,
+      layout: { visibility: 'none', 'line-join': 'round' },
+      paint: {
+        'line-color': BOUNDARY_SYMBOLOGY.outdoors.lineColor,
+        'line-opacity': BOUNDARY_INNER_BAND_OPACITY.outdoors,
+        ...innerBandPaint([[5, 4], [9, 7], [13, 10]]),
       },
     });
 
@@ -1025,6 +1095,40 @@ function addBoundaryLayers(map) {
       });
     }
 
+    if (division.selectedInnerBandLayerId) map.addLayer({
+      id: division.selectedInnerBandLayerId,
+      type: 'line',
+      source: outlineSource,
+      filter: divisionFilterExpression(NO_DIVISION_SELECTED),
+      layout: { visibility: 'none', 'line-join': 'round' },
+      paint: {
+        'line-color': SELECTED_BOUNDARY_COLOR,
+        'line-opacity': SELECTED_INNER_BAND_OPACITY,
+        ...innerBandPaint([[5, 8], [9, 12], [13, 16]]),
+      },
+    });
+
+    // the casing sits under the selected outline to separate it from light ground
+    map.addLayer({
+      id: division.selectedCasingLayerId,
+      type: 'line',
+      source: outlineSource,
+      filter: divisionFilterExpression(NO_DIVISION_SELECTED),
+      layout: { visibility: 'none', 'line-join': 'round' },
+      paint: {
+        'line-color': SELECTION_CASING_COLOR,
+        'line-opacity': SELECTION_CASING_OPACITY,
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          5, 5.5,
+          9, 7.5,
+          13, 9.5,
+        ],
+      },
+    });
+
     // selected outline uses its own filter so hover can remain transient
     map.addLayer({
       id: division.selectedLayerId,
@@ -1048,6 +1152,26 @@ function addBoundaryLayers(map) {
     });
 
     bindDivisionInteractions(map, division);
+  }
+
+  onBasemapChange((basemap) => applyBoundarySymbology(map, basemap));
+}
+
+function applyBoundarySymbology(map, basemap) {
+  const { lineColor, lineOpacity, fillOpacity } = basemapColor(BOUNDARY_SYMBOLOGY, basemap);
+  for (const division of DIVISION_TYPES) {
+    if (map.getLayer(division.layerId)) {
+      map.setPaintProperty(division.layerId, 'line-color', lineColor);
+      map.setPaintProperty(division.layerId, 'line-opacity', lineOpacity);
+    }
+    if (map.getLayer(division.fillLayerId)) {
+      map.setPaintProperty(division.fillLayerId, 'fill-opacity', fillOpacity);
+    }
+    if (map.getLayer(division.innerBandLayerId)) {
+      map.setPaintProperty(division.innerBandLayerId, 'line-color', lineColor);
+      map.setPaintProperty(division.innerBandLayerId, 'line-opacity',
+        basemapColor(BOUNDARY_INNER_BAND_OPACITY, basemap));
+    }
   }
 }
 
@@ -1458,6 +1582,8 @@ function loadDivisionData(division) {
         // options left out of js/visible-content.js are dropped before the menu, map, and selection see them
         const visible = data.features.filter((feature) =>
           filterOptionIsVisible(division, feature.properties));
+        // the inner bands offset to the right of each ring
+        windRingsInsideRight(visible);
 
         // retain source features for result details and later bounds fitting
         const features = new Map(
@@ -1487,6 +1613,10 @@ const divisionOutlineLoads = new Map();
 function loadDivisionOutlines(division) {
   if (!divisionOutlineLoads.has(division.value)) {
     divisionOutlineLoads.set(division.value, fetchJson(division.outlineUrl, `${division.label} outlines`)
+      .then((data) => {
+        windRingsInsideRight(data?.features ?? []);
+        return data;
+      })
       .catch((error) => {
         divisionOutlineLoads.delete(division.value);
         console.error(`Failed to load ${division.label} outlines:`, error);
@@ -1571,7 +1701,8 @@ function setLayerVisible(map, layerId, visible) {
 }
 
 function setDivisionLayerFilter(map, division, divisionId) {
-  for (const layerId of [division.selectedLayerId, division.selectedFillLayerId]) {
+  for (const layerId of [division.selectedLayerId, division.selectedCasingLayerId,
+    division.selectedInnerBandLayerId, division.selectedFillLayerId]) {
     if (layerId && map.getLayer(layerId)) {
       map.setFilter(layerId, divisionFilterExpression(divisionId));
     }
@@ -1579,8 +1710,8 @@ function setDivisionLayerFilter(map, division, divisionId) {
 }
 
 function setDivisionHoverFilter(map, division, divisionId) {
-  if (map.getLayer(division.hoverLayerId)) {
-    map.setFilter(division.hoverLayerId, divisionFilterExpression(divisionId));
+  for (const layerId of [division.hoverLayerId, division.hoverLineLayerId]) {
+    if (map.getLayer(layerId)) map.setFilter(layerId, divisionFilterExpression(divisionId));
   }
 }
 
@@ -1595,14 +1726,61 @@ function divisionLayerIds(division) {
   return [
     division.fillLayerId,
     division.hoverLayerId,
+    division.hoverLineLayerId,
     division.layerId,
+    division.innerBandLayerId,
     division.labelLayerId,
+    division.selectedInnerBandLayerId,
+    division.selectedCasingLayerId,
     division.selectedLayerId,
-    ...(division.selectedFillLayerId ? [division.selectedFillLayerId] : []),
-  ];
+    division.selectedFillLayerId,
+  // the measured fill and the selection band only exist on some types
+  ].filter(Boolean);
+}
+
+// flash the hover fill, then ease it back to the resting tint
+function pulseHoverFill(map, division, pulse) {
+  cancelAnimationFrame(pulse.frame);
+  const setOpacity = (opacity) => {
+    pulse.opacity = opacity;
+    if (map.getLayer(division.hoverLayerId)) {
+      map.setPaintProperty(division.hoverLayerId, 'fill-opacity', opacity);
+    }
+  };
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    setOpacity(HOVER_FILL_REST_OPACITY);
+    return;
+  }
+
+  // a pulse that starts mid-flash carries on from the current opacity instead of dipping
+  const from = pulse.opacity;
+  const start = performance.now();
+  const step = (now) => {
+    const elapsed = now - start;
+    let opacity;
+    if (elapsed < HOVER_PULSE_RISE_MS) {
+      opacity = from + (HOVER_FILL_PEAK_OPACITY - from) * (elapsed / HOVER_PULSE_RISE_MS);
+    } else {
+      // ease out so most of the fade happens right after the flash
+      const t = Math.min((elapsed - HOVER_PULSE_RISE_MS) / HOVER_PULSE_FADE_MS, 1);
+      const eased = 1 - (1 - t) ** 3;
+      opacity = HOVER_FILL_PEAK_OPACITY
+        + (HOVER_FILL_REST_OPACITY - HOVER_FILL_PEAK_OPACITY) * eased;
+      if (t >= 1) {
+        setOpacity(HOVER_FILL_REST_OPACITY);
+        return;
+      }
+    }
+    setOpacity(opacity);
+    pulse.frame = requestAnimationFrame(step);
+  };
+  pulse.frame = requestAnimationFrame(step);
 }
 
 function bindDivisionInteractions(map, division) {
+  // mousemove fires constantly, so only pulse when the pointer reaches a new area
+  const pulse = { divisionId: null, frame: 0, opacity: HOVER_FILL_REST_OPACITY };
+
   map.on('mousemove', division.fillLayerId, (event) => {
     const divisionId = event.features?.[0]?.properties?.divisionId;
     // empty space inside a polygon can still return no feature during transitions
@@ -1610,10 +1788,17 @@ function bindDivisionInteractions(map, division) {
 
     map.getCanvas().style.cursor = 'pointer';
     setDivisionHoverFilter(map, division, divisionId);
+    if (divisionId !== pulse.divisionId) {
+      pulse.divisionId = divisionId;
+      pulseHoverFill(map, division, pulse);
+    }
   });
 
   map.on('mouseleave', division.fillLayerId, () => {
     map.getCanvas().style.cursor = '';
+    cancelAnimationFrame(pulse.frame);
+    pulse.divisionId = null;
+    pulse.opacity = HOVER_FILL_REST_OPACITY;
     setDivisionHoverFilter(map, division, NO_DIVISION_SELECTED);
   });
 
@@ -1645,22 +1830,23 @@ function orderDivisionLayers(map) {
     LAYER_IDS.prescribed,
   ].find((layerId) => map.getLayer(layerId));
 
-  // boundaries stay below point markers while selected outlines sit above data
+  // boundaries and selections draw over the data layers but stay under point markers;
+  // without terrain Mapbox keeps strict layer order, so an outline at the very top would
+  // cover cameras on the simple basemap. later entries draw above earlier ones
   for (const division of DIVISION_TYPES) {
-    if (firstPointLayer) {
-      for (const layerId of [
-        division.hoverLayerId,
-        division.selectedFillLayerId,
-        division.layerId,
-        division.labelLayerId,
-      ]) {
-        if (!layerId) continue;
-        if (map.getLayer(layerId)) map.moveLayer(layerId, firstPointLayer);
-      }
-    }
-
-    if (map.getLayer(division.selectedLayerId)) {
-      map.moveLayer(division.selectedLayerId);
+    for (const layerId of [
+      division.hoverLayerId,
+      division.selectedFillLayerId,
+      division.innerBandLayerId,
+      division.selectedInnerBandLayerId,
+      division.layerId,
+      division.labelLayerId,
+      division.hoverLineLayerId,
+      division.selectedCasingLayerId,
+      division.selectedLayerId,
+    ]) {
+      // with no point layers yet, the list order still stacks them at the top
+      if (layerId && map.getLayer(layerId)) map.moveLayer(layerId, firstPointLayer);
     }
   }
 }

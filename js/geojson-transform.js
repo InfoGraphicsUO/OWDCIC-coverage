@@ -305,6 +305,31 @@ export function countPointsInGeometry(geojson, geometry, keyOf) {
   return [...counts].sort((a, b) => b[1] - a[1]);
 }
 
+// orders outer rings clockwise and holes counterclockwise, in place, so the inside of every
+// ring is on its right; a positive Mapbox line-offset then always draws into the polygon
+export function windRingsInsideRight(features) {
+  for (const feature of features) {
+    const { type, coordinates } = feature?.geometry ?? {};
+    const polygons = type === 'Polygon' ? [coordinates] : type === 'MultiPolygon' ? coordinates : [];
+    for (const rings of polygons) {
+      rings?.forEach((ring, index) => {
+        // shoelace sign: positive is counterclockwise in longitude and latitude
+        const counterclockwise = signedRingArea(ring) > 0;
+        if (counterclockwise === (index === 0)) ring.reverse();
+      });
+    }
+  }
+  return features;
+}
+
+function signedRingArea(ring) {
+  let sum = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    sum += ring[j][0] * ring[i][1] - ring[i][0] * ring[j][1];
+  }
+  return sum / 2;
+}
+
 // even-odd ray casting, so holes in the outer ring are excluded
 function pointInPolygon([x, y], rings) {
   let inside = false;
