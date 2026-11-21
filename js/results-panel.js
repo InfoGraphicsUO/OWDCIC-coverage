@@ -906,7 +906,7 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'EnviroVision cameras': { type: 'icon', src: 'img/envirovision-camera-marker.svg' },
   'Camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
   'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
-  'Pano AI camera viewsheds': { type: 'swatch', style: 'fill', color: '#3898ec' },
+  'Pano AI camera viewsheds': { type: 'swatch', style: 'fill', color: '#4152d9' },
   'EnviroVision camera viewsheds': { type: 'swatch', style: 'fill', color: '#4fa83d' },
   'Standing lookouts': { type: 'swatch', style: 'circle', color: '#8154BD' },
   'National forests': { type: 'swatch', style: 'outline', color: '#3b7d4f' },
