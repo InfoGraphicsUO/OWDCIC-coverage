@@ -911,6 +911,7 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'Standing lookouts': { type: 'swatch', style: 'circle', color: '#8154BD' },
   'National forests': { type: 'swatch', style: 'outline', color: '#3b7d4f' },
   'BLM lands': { type: 'swatch', style: 'fill', color: '#f6d94a' },
+  'State lands': { type: 'swatch', style: 'outline', color: '#348bb0' },
   'OR Burn probability (QWRA)': { type: 'swatch', style: 'burn-probability' },
   'Transmission lines': { type: 'swatch', style: 'line', color: '#c2188f' },
   'Current fires (NIFC)': { type: 'icon', src: 'img/fire-marker.svg' },

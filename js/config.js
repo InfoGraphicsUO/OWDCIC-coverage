@@ -46,6 +46,8 @@ export const DATA_URLS = Object.freeze({
     'https://services5.arcgis.com/VNhSlpl1umSknM3q/arcgis/rest/services/Watch_Duty_Prescribed_Fires/FeatureServer/0',
   nationalForests:
     'https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_BasicOwnership_02/MapServer/0',
+  // PAD-US fee parcels; the state land layer keeps only state-owned parcels, matching the land mix's "State land"
+  padusFee: 'https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Fee_Managers_PADUS/FeatureServer/0',
   blmLandTiles:
     'https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_SMA_Cached_BLM_Only/MapServer/tile/{z}/{y}/{x}',
   burnProbabilityTiles:
@@ -93,6 +95,9 @@ export const LAYER_IDS = Object.freeze({
   nationalForestsLine: 'national-forests-line',
   blmLandsSource: 'blm-lands-source',
   blmLands: 'blm-lands',
+  stateLandsSource: 'state-lands-source',
+  stateLandsFill: 'state-lands-fill',
+  stateLandsLine: 'state-lands-line',
   burnProbabilitySource: 'burn-probability-source',
   burnProbability: 'burn-probability',
   transmissionLinesSource: 'transmission-lines-source',
@@ -149,6 +154,7 @@ export const LEGEND_LAYERS = Object.freeze({
   lookouts: 'Standing lookouts',
   nationalForests: 'National forests',
   blmLands: 'BLM lands',
+  stateLands: 'State lands',
   burnProbability: 'OR Burn probability (QWRA)',
   transmissionLines: 'Transmission lines',
   fires: 'Current fires (NIFC)',
