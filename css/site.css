@@ -157,6 +157,23 @@ textarea {
     line-height: 1.4;
 }
 
+/* a choice row has no checkbox, so the dropdown sits under its description */
+.settings-modal__select {
+    margin-top: 8px;
+    padding: 4px 6px;
+    color: #fff;
+    background: #2b2b2b;
+    border: 1px solid #555;
+    border-radius: 4px;
+    font: inherit;
+    font-size: 13px;
+}
+
+.settings-modal__select:focus-visible {
+    outline: 2px solid var(--ohaz-yellow);
+    outline-offset: 1px;
+}
+
 .modal__dialog.about-modal__dialog {
     width: min(1040px, 100%);
 }
