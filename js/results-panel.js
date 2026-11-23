@@ -1,6 +1,7 @@
 import { openModal } from './modal.js';
 import {
   CAMERA_PROVIDER_COLORS, LEGEND_LAYERS, MARKER_ICON_URLS, PANO_DEFAULT_VIEWER, dimmedViewshedImage,
+  greyedViewshedColor,
 } from './config.js';
 import { attachInfoTooltip } from './info-tooltip.js';
 import { shareUrl } from './anchor-links.js';
@@ -988,7 +989,7 @@ const EXPORT_VIEWSHED_OUTLINES = Object.freeze({
   outdoors: '#F28D05',
   satellite: '#F4F1EA',
 });
-// rings around dimmed samples fade as much as the dimmed viewshed fill does on the map
+// rings around dimmed samples fade and grey as much as the dimmed viewshed fill does on the map
 const EXPORT_DIMMED_VIEWSHED_ALPHA = 0.4;
 
 // partner logos sit left to right in the bottom-right corner, under the results card
@@ -2335,7 +2336,13 @@ async function resolveLegendRowsForExport(getLegendItems, basemap, { dimViewshed
 
 function viewshedIconVisual(src, outline, dimmed) {
   return dimmed
-    ? { type: 'icon', src: dimmedViewshedImage(src), outline, outlineAlpha: EXPORT_DIMMED_VIEWSHED_ALPHA, size: 22 }
+    ? {
+      type: 'icon',
+      src: dimmedViewshedImage(src),
+      outline: outline && greyedViewshedColor(outline),
+      outlineAlpha: EXPORT_DIMMED_VIEWSHED_ALPHA,
+      size: 22,
+    }
     : { type: 'icon', src, outline, size: 22 };
 }
 

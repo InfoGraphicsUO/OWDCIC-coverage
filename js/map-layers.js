@@ -12,6 +12,7 @@ import {
   REGION_DATA_BOUNDS,
   dimmedViewshedImage,
   emptyFeatureCollection,
+  greyedViewshedColor,
   filterOptionIsVisible,
   filterOptionRank,
   layerPresetForFilter,
@@ -2514,7 +2515,7 @@ function syncViewshedFills(map) {
   }
 }
 
-// a selected camera dims every viewshed fill, and the layer list samples dim with them
+// a selected camera fades and greys every viewshed fill, and the layer list samples match
 function applyViewshedSymbology(map, basemap) {
   const dimmed = Boolean(selectedViewshedId);
   const fillOpacity = dimmed ? VIEWSHED_DIMMED_OPACITY : VIEWSHED_FILL_OPACITY;
@@ -2523,14 +2524,16 @@ function applyViewshedSymbology(map, basemap) {
     image: dimmed ? dimmedViewshedImage(shared.swatchImage) : shared.swatchImage,
   });
   if (map.getLayer(LAYER_IDS.combinedViewshedsFill)) {
-    map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color', shared.swatchColor);
+    map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color',
+      dimmed ? greyedViewshedColor(shared.swatchColor) : shared.swatchColor);
     map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-opacity', fillOpacity);
   }
 
   for (const provider of CAMERA_PROVIDERS) {
     const { swatchColor, swatchImage } = viewshedSymbol(provider, basemap);
     if (map.getLayer(provider.viewshedFillLayerId)) {
-      map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', swatchColor);
+      map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color',
+        dimmed ? greyedViewshedColor(swatchColor) : swatchColor);
       map.setPaintProperty(provider.viewshedFillLayerId, 'fill-opacity', fillOpacity);
     }
     if (map.getLayer(provider.viewshedHighlightLayerId)) {
