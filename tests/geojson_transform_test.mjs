@@ -96,6 +96,16 @@ assert.deepEqual(
   enviroVisionSites.features.map((f) => f.properties.sharesAlertWestSite === true),
 );
 
+// ODF cameras name the district and unit ODF assigns them; associations keep their FPA name
+const odfCamera = (site) => enviroVisionCameras.find((f) => f.properties.name === site).properties;
+assert.deepEqual([odfCamera('Bald Mountain').protectionDistrict, odfCamera('Bald Mountain').protectionUnit],
+  ['Northeast Oregon District', 'La Grande']);
+assert.equal(odfCamera('Baughman').protectionDistrict, 'Douglas FPA');
+// ODF assigns Black Mountain to Central Oregon although it sits inside the Northeast Oregon boundary
+assert.equal(odfCamera('Black Mountain').protectionDistrict, 'Central Oregon District');
+assert.ok(enviroVisionCameras.every((f) => f.properties.protectionDistrict && f.properties.protectionUnit));
+assert.ok(panoCameras.every((f) => f.properties.protectionDistrict === null && f.properties.protectionUnit === null));
+
 const pendingWithHeight = structuredClone(panoSites.features.find(f => f.properties.name === 'Midnight Gulch'));
 pendingWithHeight.properties.cameraHeightFt = 100;
 pendingWithHeight.properties.viewshedStatus = 'pending';

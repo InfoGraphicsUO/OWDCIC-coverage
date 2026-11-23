@@ -750,6 +750,7 @@ function renderCamera(properties, metrics) {
   wrapper.append(preview);
   if (!cameraCoverageAvailable(metrics)) {
     wrapper.append(selfLine(cameraUnavailableMessage(properties, metrics), 'results-panel__lead'));
+    appendProtectionDistrict(wrapper, properties);
     return wrapper;
   }
 
@@ -757,12 +758,23 @@ function renderCamera(properties, metrics) {
   if (area != null) {
     wrapper.append(selfLine(`${formatNumber(area * SQMI_PER_SQKM)} mi² camera viewshed`, 'results-panel__lead'));
   }
+  appendProtectionDistrict(wrapper, properties);
 
   if (Array.isArray(metrics.landMix) && metrics.landMix.length > 0) {
     wrapper.append(landMixSection(metrics.landMix, 'Viewshed mapped land breakdown'));
   }
 
   return wrapper;
+}
+
+// the ODF protection district and unit an EnviroVision camera belongs to
+function appendProtectionDistrict(wrapper, { protectionDistrict, protectionUnit }) {
+  if (!protectionDistrict && !protectionUnit) return;
+  const details = document.createElement('div');
+  details.className = 'results-panel__camera-district';
+  if (protectionDistrict) details.append(selfLine(`Protection district: ${protectionDistrict}`));
+  if (protectionUnit) details.append(selfLine(`Protection unit: ${protectionUnit}`));
+  wrapper.append(details);
 }
 
 function landMixSection(landMix, chartLabel) {
