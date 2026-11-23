@@ -78,6 +78,11 @@ const ABOUT_TABS = Object.freeze([
     ],
   }),
   Object.freeze({
+    id: 'data-process',
+    label: 'Data Process',
+    build: () => [],
+  }),
+  Object.freeze({
     id: 'partners',
     label: 'Partners',
     build: () => {
