@@ -142,6 +142,11 @@ export const LAYER_IDS = Object.freeze({
 });
 
 // legend row labels are the public ids for toggling layers from code
+// every sample viewshed image has a faded copy beside it, for viewsheds dimmed around a selected camera
+export function dimmedViewshedImage(src) {
+  return src.replace(/\.png$/, '_dimmed.png');
+}
+
 export const LEGEND_LAYERS = Object.freeze({
   cameras: 'Cameras',
   alertWestCameras: 'ALERTWest cameras',

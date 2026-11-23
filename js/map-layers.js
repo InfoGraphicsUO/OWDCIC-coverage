@@ -10,6 +10,7 @@ import {
   LEGEND_LAYERS,
   MARKER_ICON_URLS,
   REGION_DATA_BOUNDS,
+  dimmedViewshedImage,
   emptyFeatureCollection,
   filterOptionIsVisible,
   filterOptionRank,
@@ -142,9 +143,11 @@ const VIEWSHED_LEGEND_IMAGES = Object.freeze({
 });
 
 const SEPARATE_VIEWSHED_COLORS_SETTING = 'separateViewshedColors';
-const VIEWSHED_HIGHLIGHT_COLOR = '#ffee00';
 const VIEWSHED_FILL_OPACITY = 0.5;
-const VIEWSHED_HIGHLIGHT_OPACITY = 0.55;
+// a selected camera keeps its viewshed color and the rest fade, so they still read as viewsheds
+const VIEWSHED_DIMMED_OPACITY = 0.2;
+// the selected viewshed draws over its own dimmed fill, so this brings it back to the normal opacity
+const SELECTED_VIEWSHED_OPACITY = 1 - (1 - VIEWSHED_FILL_OPACITY) / (1 - VIEWSHED_DIMMED_OPACITY);
 // Mapbox Standard draws place labels above its middle slot, so viewsheds tint under city names
 // camera markers have no slot and stay above the labels
 // background overlays join this slot too, see underLabelLayerIds
@@ -359,8 +362,11 @@ let polygonSelected = false;
 let cameraFeatures = [];
 let camerasLoaded = false;
 
-// names the camera whose viewshed is highlighted, for the export legend
-let highlightedCameraName = '';
+// names the camera whose viewshed is selected, for the export legend
+let selectedCameraName = '';
+let selectedViewshedId = null;
+// the basemap the viewshed colors were last drawn for, which getBasemap lags while a style loads
+let viewshedBasemap = 'outdoors';
 let resolveCameraFeatures;
 
 // camera options wait for the provider data while division sources wait for map setup
@@ -2463,7 +2469,7 @@ function addViewshedLayers(map) {
     });
   }
 
-  // highlights draw above every provider fill so a selection is never covered
+  // the selected viewshed draws above every provider fill so the dimmed ones never cover it
   for (const provider of providers) {
     map.addLayer({
       id: provider.viewshedHighlightLayerId,
@@ -2473,29 +2479,28 @@ function addViewshedLayers(map) {
       slot: VIEWSHED_SLOT,
       filter: viewshedFilter(NO_VIEWSHED_SELECTED),
       paint: {
-        'fill-color': VIEWSHED_HIGHLIGHT_COLOR,
-        'fill-opacity': VIEWSHED_HIGHLIGHT_OPACITY,
+        // applyViewshedSymbology sets the provider's own color
+        'fill-color': VIEWSHED_FILL_COLOR.outdoors,
+        'fill-opacity': SELECTED_VIEWSHED_OPACITY,
       },
     });
   }
 
   // both hooks call back immediately, so the first pass may precede the other's value
-  let basemap = 'outdoors';
-
   onBasemapChange((selected) => {
-    basemap = selected;
-    applyViewshedSymbology(map, basemap);
-    setViewshedSlot(map, basemap);
+    viewshedBasemap = selected;
+    applyViewshedSymbology(map, viewshedBasemap);
+    setViewshedSlot(map, viewshedBasemap);
   });
   onSettingChange(SEPARATE_VIEWSHED_COLORS_SETTING, () => {
-    applyViewshedSymbology(map, basemap);
+    applyViewshedSymbology(map, viewshedBasemap);
     syncViewshedFills(map);
   });
   legendControl.onChange(() => syncViewshedFills(map));
 }
 
 // shared-color providers draw through the combined fill so overlaps do not darken
-// the legend still owns each provider's highlight layer and its checkbox state
+// the legend still owns each provider's selected viewshed layer and its checkbox state
 function syncViewshedFills(map) {
   const visibleProviders = CAMERA_PROVIDERS.filter(({ viewshedLabel, viewshedFillLayerId }) =>
     legendControl.isChecked(viewshedLabel) && map.getLayer(viewshedFillLayerId));
@@ -2509,19 +2514,31 @@ function syncViewshedFills(map) {
   }
 }
 
+// a selected camera dims every viewshed fill, and the layer list samples dim with them
 function applyViewshedSymbology(map, basemap) {
+  const dimmed = Boolean(selectedViewshedId);
+  const fillOpacity = dimmed ? VIEWSHED_DIMMED_OPACITY : VIEWSHED_FILL_OPACITY;
   const shared = viewshedSymbol(null, basemap);
-  legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, shared.swatchColor, { image: shared.swatchImage });
+  legendControl.updateSwatchColor(LEGEND_LAYERS.viewsheds, shared.swatchColor, {
+    image: dimmed ? dimmedViewshedImage(shared.swatchImage) : shared.swatchImage,
+  });
   if (map.getLayer(LAYER_IDS.combinedViewshedsFill)) {
     map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-color', shared.swatchColor);
+    map.setPaintProperty(LAYER_IDS.combinedViewshedsFill, 'fill-opacity', fillOpacity);
   }
 
   for (const provider of CAMERA_PROVIDERS) {
     const { swatchColor, swatchImage } = viewshedSymbol(provider, basemap);
     if (map.getLayer(provider.viewshedFillLayerId)) {
       map.setPaintProperty(provider.viewshedFillLayerId, 'fill-color', swatchColor);
+      map.setPaintProperty(provider.viewshedFillLayerId, 'fill-opacity', fillOpacity);
     }
-    legendControl.updateSwatchColor(provider.viewshedLabel, swatchColor, { image: swatchImage });
+    if (map.getLayer(provider.viewshedHighlightLayerId)) {
+      map.setPaintProperty(provider.viewshedHighlightLayerId, 'fill-color', swatchColor);
+    }
+    legendControl.updateSwatchColor(provider.viewshedLabel, swatchColor, {
+      image: dimmed ? dimmedViewshedImage(swatchImage) : swatchImage,
+    });
   }
 }
 
@@ -2574,9 +2591,10 @@ function basemapColor(colors, basemap) {
 }
 
 function selectCameraViewshed(map, viewshedId, cameraName = '') {
-  highlightedCameraName = viewshedId ? cameraName || 'Camera' : '';
+  selectedCameraName = viewshedId ? cameraName || 'Camera' : '';
+  selectedViewshedId = viewshedId || null;
 
-  // provider viewshed ids are unique, so each highlight layer can share one filter
+  // provider viewshed ids are unique, so each selected viewshed layer can share one filter
   // the sentinel produces an empty match while no camera is selected
   const filter = viewshedFilter(viewshedId || NO_VIEWSHED_SELECTED);
   for (const { viewshedHighlightLayerId } of CAMERA_PROVIDERS) {
@@ -2584,6 +2602,7 @@ function selectCameraViewshed(map, viewshedId, cameraName = '') {
       map.setFilter(viewshedHighlightLayerId, filter);
     }
   }
+  applyViewshedSymbology(map, viewshedBasemap);
 }
 
 function viewshedFilter(viewshedId) {
@@ -2610,23 +2629,24 @@ function selectionLegendItems(selection) {
     }
   }
 
-  if (highlightedCameraName && highlightedViewshedIsRendered(activeMap)) {
+  const selectedProvider = selectedCameraName && renderedSelectedViewshedProvider(activeMap);
+  if (selectedProvider) {
+    // the selected viewshed keeps its provider's sample, undimmed, like the map draws it
+    const { swatchColor, swatchImage } = viewshedSymbol(selectedProvider, viewshedBasemap);
     items.push({
-      label: `${highlightedCameraName} viewshed`,
-      // a sample viewshed in the highlight color reads better than a flat swatch
-      visual: { type: 'icon', src: 'img/yellow_portland_tower_viewshed.png', outline: VIEWSHED_HIGHLIGHT_COLOR, size: 22 },
+      label: `${selectedCameraName} viewshed`,
+      visual: { type: 'icon', src: swatchImage, outline: swatchColor, size: 22 },
     });
   }
 
   return items;
 }
 
-function highlightedViewshedIsRendered(map) {
-  // an unchecked viewshed row or an off-screen camera leaves nothing to label
-  const layers = CAMERA_PROVIDERS
-    .map(({ viewshedHighlightLayerId }) => viewshedHighlightLayerId)
-    .filter((layerId) => map?.getLayer(layerId));
-  return layers.length > 0 && map.queryRenderedFeatures({ layers }).length > 0;
+// an unchecked viewshed row or an off-screen camera leaves nothing to label
+function renderedSelectedViewshedProvider(map) {
+  return CAMERA_PROVIDERS.find(({ viewshedHighlightLayerId }) =>
+    map?.getLayer(viewshedHighlightLayerId) &&
+    map.queryRenderedFeatures({ layers: [viewshedHighlightLayerId] }).length > 0);
 }
 
 async function addFireLayer(map) {
