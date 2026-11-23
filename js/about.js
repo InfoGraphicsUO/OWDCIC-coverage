@@ -20,6 +20,24 @@ const GOAL = 'The OWDCIC\'s goal is to define and establish true interoperabilit
 
 const CLOSING = 'Through the work of the OWDCIC and a commitment to collaboration on technology, policy funding opportunities and strengthening relationships between the partners utilizing detection camera platforms in Oregon.';
 
+// draft copy for the data process tab until Leland's final text is ready
+const DATA_PROCESS = Object.freeze([
+  Object.freeze({
+    title: 'What is a viewshed?',
+    text: 'A viewshed is the area of ground a camera can see from where it sits. Each shaded area on the map is the terrain we estimate is in a camera\'s line of sight, out to 12 miles.',
+  }),
+  Object.freeze({
+    title: 'Why they matter',
+    text: 'A camera can only spot smoke it has a clear view of. Viewsheds show where the cameras can watch for new fires, where several cameras overlap, and where no camera can see at all.',
+  }),
+  Object.freeze({
+    title: 'How they are made',
+    text: 'Each camera provider shares where their cameras are and how high they are mounted. We place each camera on a detailed elevation map of the ground and look out in every direction from that height. Any land hidden behind a hill or ridge is left out, and what remains is the camera\'s viewshed.',
+  }),
+]);
+
+const DATA_PROCESS_CAVEAT = 'These viewsheds are a conservative estimate based on the data provided by camera providers. They only account for bare terrain, not trees, buildings, smoke, weather, or camera zoom, so what a camera can actually see will differ. They are meant for visualization only and should not be used for analysis.';
+
 // each organization is its full name, an optional acronym shown after it,
 // and optionally its own groups (like UO's labs) listed under it
 const ORGANIZATION_GROUPS = Object.freeze([
@@ -73,14 +91,17 @@ const ABOUT_TABS = Object.freeze([
     label: 'Mission',
     build: () => [
       element('p', '', MISSION),
-      goalCallout(),
+      callout(GOAL),
       element('p', 'about-modal__closing', CLOSING),
     ],
   }),
   Object.freeze({
     id: 'data-process',
     label: 'Data Process',
-    build: () => [],
+    build: () => [
+      ...DATA_PROCESS.map(({ title, text }) => section(title, element('p', '', text))),
+      callout(DATA_PROCESS_CAVEAT),
+    ],
   }),
   Object.freeze({
     id: 'partners',
@@ -182,10 +203,10 @@ function timeline() {
   return list;
 }
 
-function goalCallout() {
-  const callout = element('blockquote', 'about-modal__goal');
-  callout.append(element('p', '', GOAL));
-  return callout;
+function callout(text) {
+  const node = element('blockquote', 'about-modal__goal');
+  node.append(element('p', '', text));
+  return node;
 }
 
 // the full InfoGraphics Lab logo, faded into the bottom-left of the partners tab and linked to the lab's site
