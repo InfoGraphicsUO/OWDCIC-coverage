@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """build the selectable utility service area and federal land GeoJSON products
 
-utility areas come from the Oregon utility incentive layer; Washington has no
-accessible service-area layer. Federal land is the PAD-US federal fee layer
-unioned into one feature per managing agency plus a combined Interior feature
+utility areas are the BPA investor-owned utility boundaries, clipped to OR/WA.
+Federal land is the PAD-US federal fee layer unioned into one feature per
+managing agency plus a combined Interior feature
 area and viewshed metrics stay null until scripts/build-selection-metrics.py is run
 
 run with the QGIS bundled Python for the GDAL bindings
@@ -11,25 +11,30 @@ run with the QGIS bundled Python for the GDAL bindings
 
 from __future__ import annotations
 
+import argparse
 import json
 
 from osgeo import ogr
 
-from division_common import OUT, arcgis_query, feature_collection, pending_metrics, write_collection
+from division_common import OUT, arcgis_query, clip_to_project_boundary, feature_collection, pending_metrics, write_collection
 
 UTILITY_QUERY = (
-    "https://services.arcgis.com/uUvqNMGPm7axC2dD/arcgis/rest/services/"
-    "Oregon_Natural_Gas_and_Electric_Utility_Incentive_Layer_Update_13Dec2024_v01/"
-    "FeatureServer/0/query"
+    "https://services3.arcgis.com/Iz3chmSt4P7oOoZy/arcgis/rest/services/"
+    "BPA_CustomerIOU/FeatureServer/0/query"
 )
 FEDERAL_QUERY = (
     "https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/"
     "Federal_Fee_Managers_Authoritative_PADUS/FeatureServer/0/query"
 )
-UTILITY_ABBREVIATIONS = {
-    "Eugene Water & Electric Board": "EWEB",
-    "Portland General Electric": "PGE",
-    "Pacific Power (PacifiCorp)": None,
+# BPA names mapped to the labels the map shows; PacifiCorp and PGE keep their
+# earlier labels so existing share links still resolve. Utilities outside
+# OR/WA (Northwestern Energy, Rocky Mountain Power, Sierra Pacific) drop out when clipped
+UTILITY_LABELS = {
+    "Avista Energy": "Avista Utilities",
+    "Idaho Power Company": "Idaho Power",
+    "PacifiCorp": "Pacific Power (PacifiCorp)",
+    "Portland General Electric": "Portland General Electric (PGE)",
+    "Puget Sound Energy": "Puget Sound Energy (PSE)",
 }
 FEDERAL_MANAGERS = {
     "BLM": "Bureau of Land Management",
@@ -99,30 +104,32 @@ def write_division_type(division_type: str, features: list[dict], metadata: dict
 
 
 def build_utilities() -> None:
-    names = ",".join(f"'{name}'" for name in UTILITY_ABBREVIATIONS)
-    rows, digest = fetch(UTILITY_QUERY, f"Utility_Name IN ({names})", "OBJECTID,Utility_Name")
+    rows, digest = fetch(UTILITY_QUERY, "1=1", "OBJECTID,NAME,BES_NUM")
     features = []
 
-    for row in sorted(rows, key=lambda item: item["attributes"]["OBJECTID"]):
+    for row in sorted(rows, key=lambda item: item["attributes"]["BES_NUM"]):
         attributes = row["attributes"]
-        name = attributes["Utility_Name"]
-        abbreviation = UTILITY_ABBREVIATIONS[name]
         features.append(division_feature(
             "utility",
-            attributes["OBJECTID"],
-            f"{name} ({abbreviation})" if abbreviation else name,
+            # the BPA customer number, which stays the same across BPA republishes
+            attributes["BES_NUM"],
+            UTILITY_LABELS.get(attributes["NAME"], attributes["NAME"]),
             polygon_geometry(row),
             {"boundaryQualifier": "Approximate service area"},
         ))
 
-    if len(features) != len(UTILITY_ABBREVIATIONS):
-        raise RuntimeError(f"expected {len(UTILITY_ABBREVIATIONS)} utilities, received {len(features)}")
+    features, outside = clip_to_project_boundary(features)
+    missing = set(UTILITY_LABELS.values()) - {feature["properties"]["name"] for feature in features}
+    if missing:
+        raise RuntimeError(f"expected utilities missing after clipping: {sorted(missing)}")
 
     write_division_type("utility", features, {
         "source": UTILITY_QUERY,
-        "vintage": "2024",
+        "vintage": "2025",
         "sourceSha256": digest,
-        "coverageNote": "Oregon official service areas; Washington layer unavailable",
+        "coverageNote": "BPA investor-owned utility boundaries; accuracy varies by utility",
+        "clippedTo": "data/source/or-wa-boundary.geojson",
+        "excludedOutsideBoundaryFeatures": outside,
     })
 
 
@@ -161,10 +168,16 @@ def build_federal_land() -> None:
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--only", nargs="*", choices=("utility", "federal-land"))
+    wanted = parser.parse_args().only or ("utility", "federal-land")
+
     ogr.UseExceptions()
     OUT.mkdir(parents=True, exist_ok=True)
-    build_utilities()
-    build_federal_land()
+    if "utility" in wanted:
+        build_utilities()
+    if "federal-land" in wanted:
+        build_federal_land()
 
 
 if __name__ == "__main__":
