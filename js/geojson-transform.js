@@ -48,6 +48,13 @@ function cameraName(camera) {
   return source || stringValue(camera.name).replace(/^axis[-_\s]*/i, '') || 'Camera';
 }
 
+// the ODF unit name people use, e.g. Central Oregon District; associations already end in FPA
+function protectionDistrictName(value) {
+  const name = stringValue(value);
+  if (!name) return null;
+  return /\bFPA$/.test(name) ? name : `${name} District`;
+}
+
 // converts a provider sites file into camera points already linked to their viewsheds
 export function providerSitesToCameras(sites, operator) {
   const features = [];
@@ -73,6 +80,10 @@ export function providerSitesToCameras(sites, operator) {
         viewerName: properties.viewerName ?? null,
         county: properties.county ?? null,
         state: properties.state ?? null,
+        // ODF cameras belong to the protection district and unit ODF assigns them,
+        // which can differ from the district boundary the point falls in
+        protectionDistrict: protectionDistrictName(properties.protectionDistrict),
+        protectionUnit: stringValue(properties.protectionUnit) || null,
         // the site's own page on its owner's public viewer, when one is known
         feed: properties.feed ?? null,
         viewshed_id: (modeled && stringValue(properties.viewshedId)) || null,

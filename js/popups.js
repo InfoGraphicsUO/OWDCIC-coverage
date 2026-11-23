@@ -329,12 +329,14 @@ function clamp(value, minimum, maximum) {
 }
 
 // cameras open the results panel on click, so hover only identifies the camera
-function createCameraPreview({ name, state, county, owner }, symbol) {
+function createCameraPreview({ name, state, county, owner, protectionDistrict, protectionUnit }, symbol) {
   const popup = createPopupContainer(name || 'Camera', symbol);
 
   const location = cameraLocation({ county, state });
   if (location) popup.append(createMetaLine(location));
   if (owner) popup.append(createMetaLine(`Owner: ${owner}`));
+  if (protectionDistrict) popup.append(createMetaLine(`Protection district: ${protectionDistrict}`));
+  if (protectionUnit) popup.append(createMetaLine(`Protection unit: ${protectionUnit}`));
 
   return popup;
 }
