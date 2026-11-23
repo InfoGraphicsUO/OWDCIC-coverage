@@ -42,9 +42,11 @@
 //   'Utility provider': 'all',
 //     // or pick from:
 //     // [
-//     //   'Eugene Water & Electric Board (EWEB)',
+//     //   'Avista Utilities',
+//     //   'Idaho Power',
 //     //   'Pacific Power (PacifiCorp)',
 //     //   'Portland General Electric (PGE)',
+//     //   'Puget Sound Energy (PSE)',
 //     // ],
 //
 //   'National Forest': 'all',
@@ -178,7 +180,7 @@
 
 export const VISIBLE_FILTERS = {
   'Federal land': ['National Forest', 'US Wildland Fire Service'],
-  'Utility provider': ['Pacific Power (PacifiCorp)', 'Portland General Electric (PGE)'],
+  'Utility provider': 'all',
   'ODF protection district': 'all',
   'Camera': 'all',
   'Other': {

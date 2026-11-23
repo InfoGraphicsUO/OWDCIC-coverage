@@ -12,7 +12,9 @@ from __future__ import annotations
 import argparse, json
 from pathlib import Path
 
-from division_common import OUT, ROOT, arcgis_query, bbox, feature_collection, pending_metrics, write_collection
+from division_common import (
+    MIN_CLIPPED_AREA_SQKM, OUT, ROOT, arcgis_query, bbox, clip_to_project_boundary, feature_collection, pending_metrics, write_collection,
+)
 
 ORWA = "(STATE IN ('41','53'))"
 STATES = {"41": ("OR", "Oregon"), "53": ("WA", "Washington")}
@@ -176,58 +178,6 @@ def state_combined_features(features, division_type, states_path):
         combined.append(combined_feature(members, division_type, f"{state_name} National Forests", abbr.lower(), abbr))
 
     return combined, portions
-
-
-# what is left of a unit after clipping can be a sliver where the two boundaries disagree by a hair
-MIN_CLIPPED_AREA_SQKM = 10
-
-
-def clip_to_project_boundary(features):
-    """cuts each feature to the OR/WA project boundary and drops those with next to nothing inside it
-
-    Forest Service units run into CA, ID and NV, so each is clipped to
-    data/source/or-wa-boundary.geojson, which keeps the shown area and the coverage
-    metrics to the project region
-    """
-    from pyproj import Transformer
-    from shapely import set_precision, to_geojson
-    from shapely.ops import transform
-    from shapely.geometry import MultiPolygon, Polygon, shape
-    from shapely.validation import make_valid
-
-    # areas are measured in EPSG:5070 (equal area, meters), not in degrees
-    to_equal_area = Transformer.from_crs(4326, 5070, always_xy=True).transform
-    boundary = shape(json.loads((ROOT / "data" / "source" / "or-wa-boundary.geojson").read_text())["features"][0]["geometry"])
-    clipped, dropped = [], []
-
-    for feature in features:
-        # source rings can self-intersect, so repair before intersecting
-        inside = make_valid(shape(feature["geometry"])).intersection(boundary)
-        parts = [part for part in getattr(inside, "geoms", [inside]) if isinstance(part, (Polygon, MultiPolygon)) and part.area > 0]
-        polygons = [poly for part in parts for poly in getattr(part, "geoms", [part])]
-
-        if not polygons:
-            dropped.append({"id": feature["id"], "name": feature["properties"]["name"]})
-            continue
-
-        # snap to 5 decimals, matching the precision the service returns
-        geometry = set_precision(MultiPolygon(polygons), 1e-5)
-        # / 1e6 turns square meters into square km
-        if geometry.is_empty or transform(to_equal_area, geometry).area / 1e6 < MIN_CLIPPED_AREA_SQKM:
-            dropped.append({"id": feature["id"], "name": feature["properties"]["name"]})
-            continue
-
-        feature["geometry"] = json.loads(to_geojson(geometry))
-        feature["bbox"] = list(geometry.bounds)
-        # the unclipped center can fall outside what is left, so use a point known to be inside
-        label = feature["properties"]["labelPoint"]
-        if not geometry.contains(shape({"type": "Point", "coordinates": label})):
-            point = geometry.representative_point()
-            feature["properties"]["labelPoint"] = [round(point.x, 5), round(point.y, 5)]
-
-        clipped.append(feature)
-
-    return clipped, dropped
 
 
 def main():

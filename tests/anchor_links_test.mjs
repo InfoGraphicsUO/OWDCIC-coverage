@@ -54,11 +54,11 @@ assert.equal(anchorType(types, 'nope'), null);
 
 // a trailing name in parentheses is the whole slug
 const utilities = anchorOptionSlugs([
-  { value: 'utility:42', label: 'Pacific Power (PacifiCorp)' },
-  { value: 'utility:44', label: 'Portland General Electric (PGE)' },
+  { value: 'utility:10300', label: 'Pacific Power (PacifiCorp)' },
+  { value: 'utility:10314', label: 'Portland General Electric (PGE)' },
 ]);
-assert.equal(utilities.get('utility:42'), 'pacificorp');
-assert.equal(anchorOptionValue(utilities, 'pge'), 'utility:44');
+assert.equal(utilities.get('utility:10300'), 'pacificorp');
+assert.equal(anchorOptionValue(utilities, 'pge'), 'utility:10314');
 assert.equal(anchorOptionValue(utilities, 'eweb'), null);
 
 // words that only name the kind of place are left out

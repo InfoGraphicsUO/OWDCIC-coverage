@@ -12,7 +12,7 @@ KINDS = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
 
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
-    'utility': 3, 'national-forest': 26, 'national-park': 14,
+    'utility': 5, 'national-forest': 26, 'national-park': 14,
     'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
     'wildland-fire-unit': 9,
 }
@@ -89,15 +89,16 @@ class SelectionDataTests(unittest.TestCase):
         names = {f['properties']['name'] for f in utility['features']}
         self.assertTrue(any('Portland General Electric' in name for name in names))
         self.assertTrue(any('Pacific Power' in name for name in names))
-        self.assertTrue(any('Eugene Water' in name for name in names))
+        self.assertTrue(any('Puget Sound Energy' in name for name in names))
+        self.assertTrue(any('Avista' in name for name in names))
 
         for feature in utility['features']:
             self.assertIn('Approximate', feature['properties']['boundaryQualifier'])
 
         meta = utility['metadata']
-        self.assertIn('Oregon', meta['coverageNote'])
-        self.assertIn('Washington', meta['coverageNote'])
+        self.assertIn('BPA', meta['coverageNote'])
         self.assertNotIn('exact', meta['coverageNote'].lower())
+        self.assertEqual(meta['clippedTo'], 'data/source/or-wa-boundary.geojson')
 
     def test_all_odf_districts_combines_every_district(self):
         data = json.loads((ROOT / 'data/source/divisions/odf-protection-district.geojson').read_text())
