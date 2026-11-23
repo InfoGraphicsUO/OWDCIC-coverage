@@ -142,7 +142,21 @@ export function initResultsPanel({
     element.removeAttribute('aria-busy');
   }
 
-  function showLoading(label = 'Loading coverage…') {
+  // cameras lead the title with their operator's marker
+  function setTitle(text, iconUrl = null) {
+    if (!iconUrl) {
+      title.textContent = text;
+      return;
+    }
+    const icon = document.createElement('img');
+    icon.className = 'results-panel__title-icon';
+    icon.src = iconUrl;
+    // the subtitle and content already name the operator
+    icon.alt = '';
+    title.replaceChildren(icon, text);
+  }
+
+  function showLoading(label = 'Loading coverage…', { iconUrl = null } = {}) {
     // a new request immediately invalidates the old selection and its export preview
     current = null;
     destroyChart();
@@ -151,7 +165,7 @@ export function initResultsPanel({
     element.removeAttribute('aria-hidden');
     element.classList.add('results-panel--has-result', 'results-panel--loading');
     element.setAttribute('aria-busy', 'true');
-    title.textContent = label;
+    setTitle(label, iconUrl);
     subtitle.textContent = '';
     replaceContent(selfLine('Loading coverage statistics…', 'results-panel__loading'));
     status.textContent = '';
@@ -190,13 +204,13 @@ export function initResultsPanel({
     showPolygon(current.type, feature, cameraCounts);
   }
 
-  function showCamera(properties = {}, metrics = null, feature = null) {
+  function showCamera(properties = {}, metrics = null, feature = null, { iconUrl = null } = {}) {
     // camera location comes from geometry while descriptive fields stay in properties
     current = { kind: 'camera', properties, metrics, geometry: feature?.geometry };
 
     // provider cameras without a locality show their operator instead
     const location = [properties.county, properties.state].filter(Boolean).join(', ') || properties.operator || '';
-    presentResult(properties.name || 'Camera', renderCamera(properties, metrics), location);
+    presentResult(properties.name || 'Camera', renderCamera(properties, metrics), location, iconUrl);
   }
 
   function openExportModal() {
@@ -413,7 +427,7 @@ export function initResultsPanel({
     content.replaceChildren(node);
   }
 
-  function presentResult(heading, body, detail = '') {
+  function presentResult(heading, body, detail = '', iconUrl = null) {
     // each result owns at most one chart and one export dialog
     destroyChart();
     closeExportModal();
@@ -422,7 +436,7 @@ export function initResultsPanel({
     element.classList.add('results-panel--has-result');
     element.classList.remove('results-panel--loading');
     element.removeAttribute('aria-busy');
-    title.textContent = heading;
+    setTitle(heading, iconUrl);
     subtitle.textContent = detail;
     replaceContent(body);
     const chartHost = content.querySelector('[data-results-chart]');
