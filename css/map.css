@@ -98,7 +98,8 @@
     border-radius: var(--ui-radius);
     box-shadow: 0 2px 6px rgba(0, 0, 0, .22);
     cursor: pointer;
-    font: 600 12px/1.15 "Clarity City", "Segoe UI", sans-serif;
+    /* tight leading so a two-line label (coverage report) still fits the 72px tab */
+    font: 600 12px/1.05 "Clarity City", "Segoe UI", sans-serif;
 }
 
 .control-rail__button:hover { background: var(--control-chrome-bg-hover); }
