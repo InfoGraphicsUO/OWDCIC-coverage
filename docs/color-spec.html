@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OHAZ Coverage Map Color Specification</title>
+<style>
+  @page { size: letter; margin: 0.5in; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px;
+    background: #fff;
+    color: #2f2e2e;
+    font: 14px/1.35 "Segoe UI", Roboto, Arial, sans-serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  @media print { body { padding: 0; } }
+  main { max-width: 820px; margin: 0 auto; }
+  header { border-bottom: 4px solid #f8e109; padding-bottom: 8px; margin-bottom: 12px; }
+  h1 { font-size: 22px; margin: 0 0 2px; }
+  .meta { color: #686868; margin: 0; }
+  h2 { font-size: 17px; margin: 16px 0 2px; }
+  .note { color: #686868; margin: 0 0 6px; }
+  section { break-inside: avoid; }
+  section.new-page { break-before: page; }
+  @media print { section.new-page h2 { margin-top: 0; } }
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+  th, td { text-align: left; padding: 3px 8px; border-bottom: 1px solid #d6d6d6; vertical-align: middle; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #686868; }
+  th:nth-child(1) { width: 60px; }
+  th:nth-child(3) { width: 100px; }
+  th:nth-child(4) { width: 170px; }
+  tr { break-inside: avoid; }
+  tr.group td { padding-top: 10px; font-weight: 600; }
+  .swatch { display: block; width: 36px; height: 20px; border-radius: 4px; border: 1px solid rgba(0, 0, 0, 0.2); }
+  code { font: 13px Consolas, "Courier New", monospace; white-space: nowrap; }
+  td.op { white-space: nowrap; }
+  footer { margin-top: 18px; color: #686868; font-size: 11px; }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <h1>OHAZ Coverage Map: Color Specification</h1>
+  <p class="meta">The colors used consistently across the OWDCIC coverage map, its legend, and exported reports. Opacity is the transparency the map draws the color at; swatches show the solid color.</p>
+</header>
+
+<section>
+  <h2>1. Brand and site-wide</h2>
+  <table>
+    <tr><th></th><th>Color</th><th>Hex</th><th>Opacity</th></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#2f2e2e"></span></td><td>OHAZ Grey: banner, dark panels, button text, state outline</td><td class="hex"><code>#2F2E2E</code></td><td class="op">100% / 90% on overlays</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#f8e109"></span></td><td>OHAZ Yellow: accents, buttons, focus and selection outlines</td><td class="hex"><code>#F8E109</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#ffffff"></span></td><td>White: light panel background, text on dark backgrounds</td><td class="hex"><code>#FFFFFF</code></td><td class="op">84% on light panels</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>2. Land breakdown chart</h2>
+  <p class="note">Slices of the "Mapped land breakdown" donut in the results panel and exported reports.</p>
+  <table>
+    <tr><th></th><th>Color</th><th>Hex</th><th>Opacity</th></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#8154bd"></span></td><td>Tribal reservation/trust area</td><td class="hex"><code>#8154BD</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#a881cf"></span></td><td>Tribal fee land</td><td class="hex"><code>#A881CF</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#9a8b70"></span></td><td>National Park Service land</td><td class="hex"><code>#9A8B70</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#3b7d4f"></span></td><td>U.S. Forest Service land</td><td class="hex"><code>#3B7D4F</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#f6d94a"></span></td><td>Other federal land</td><td class="hex"><code>#F6D94A</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#348bb0"></span></td><td>State land</td><td class="hex"><code>#348BB0</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#708ac6"></span></td><td>Local government land</td><td class="hex"><code>#708AC6</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#d47f3e"></span></td><td>Nonprofit open space</td><td class="hex"><code>#D47F3E</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#aa6a52"></span></td><td>Mapped private open space</td><td class="hex"><code>#AA6A52</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#727272"></span></td><td>Other/unclassified</td><td class="hex"><code>#727272</code></td><td class="op">100%</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>3. Camera providers and viewsheds</h2>
+  <p class="note">Each provider's color is shared by its map marker, legend row, and viewshed. Viewsheds use the default fill unless per-provider colors are turned on.</p>
+  <table>
+    <tr><th></th><th>Color</th><th>Hex</th><th>Opacity</th></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#f2b705"></span></td><td>ALERTWest camera markers</td><td class="hex"><code>#F2B705</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#4152d9"></span></td><td>Pano AI markers and viewsheds</td><td class="hex"><code>#4152D9</code></td><td class="op">100% / 50% viewshed</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#4fa83d"></span></td><td>EnviroVision markers and viewsheds</td><td class="hex"><code>#4FA83D</code></td><td class="op">100% / 50% viewshed</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#f28d05"></span></td><td>Default viewshed fill (all providers), report coverage bars</td><td class="hex"><code>#F28D05</code></td><td class="op">50%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#ffee00"></span></td><td>Hovered or selected camera's viewshed</td><td class="hex"><code>#FFEE00</code></td><td class="op">55%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#f4f1ea"></span></td><td>Default viewshed fill on satellite imagery</td><td class="hex"><code>#F4F1EA</code></td><td class="op">50%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#bcc3ff"></span></td><td>Pano AI viewsheds on satellite imagery</td><td class="hex"><code>#BCC3FF</code></td><td class="op">50%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#b5e3a8"></span></td><td>EnviroVision viewsheds on satellite imagery</td><td class="hex"><code>#B5E3A8</code></td><td class="op">50%</td></tr>
+  </table>
+</section>
+
+<section class="new-page">
+  <h2>4. Map layers</h2>
+  <p class="note">Optional layers in the layer list.</p>
+  <table>
+    <tr><th></th><th>Color</th><th>Hex</th><th>Opacity</th></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#8154bd"></span></td><td>Standing lookouts</td><td class="hex"><code>#8154BD</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#3b7d4f"></span></td><td>National forests: outline and fill</td><td class="hex"><code>#3B7D4F</code></td><td class="op">100% / 28% fill</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#f6d94a"></span></td><td>BLM lands: legend swatch (the map tiles carry their own color)</td><td class="hex"><code>#F6D94A</code></td><td class="op">68% on map</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#348bb0"></span></td><td>State lands: outline and fill</td><td class="hex"><code>#348BB0</code></td><td class="op">100% / 28% fill</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#c2188f"></span></td><td>Transmission lines</td><td class="hex"><code>#C2188F</code></td><td class="op">100%</td></tr>
+    <tr class="group"><td colspan="4">Fire data</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#d64545"></span></td><td>Current fires (NIFC): marker and perimeter fill</td><td class="hex"><code>#D64545</code></td><td class="op">100% / 28% fill</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#b42318"></span></td><td>Current fires (NIFC): perimeter outline</td><td class="hex"><code>#B42318</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#8f1d2c"></span></td><td>Fire history: fire perimeters and ignitions</td><td class="hex"><code>#8F1D2C</code></td><td class="op">50% / 100% ignitions</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#7a6458"></span></td><td>Fire history: earlier fire perimeters and ignitions</td><td class="hex"><code>#7A6458</code></td><td class="op">22% / 55% ignitions</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:#e6a817"></span></td><td>Prescribed fires (Watch Duty): marker</td><td class="hex"><code>#E6A817</code></td><td class="op">100%</td></tr>
+    <tr><td class="sw"><span class="swatch" style="background:linear-gradient(to right, #f2774f, #b83745)"></span></td><td>OR Burn probability (QWRA): legend gradient (the map layer uses the source data's red-to-brown classes)</td><td class="hex"><code>#F2774F</code><br><code>#B83745</code></td><td class="op">72% on map</td></tr>
+  </table>
+</section>
+
+<footer>
+  Source of truth is the site code: <code>css/site.css</code>, <code>js/config.js</code>, <code>js/map-layers.js</code>, and <code>js/results-panel.js</code>. When a color changes there, update this file and re-save the PDF.
+</footer>
+
+</main>
+</body>
+</html>
