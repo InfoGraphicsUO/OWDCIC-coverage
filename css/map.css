@@ -125,9 +125,13 @@
     line-height: 1;
 }
 
+/* the icon file is a mask so the rings take the tab's text color, yellow when active */
 .control-rail__pulse {
     width: 1.1em;
     height: 1.1em;
+    background-color: currentColor;
+    -webkit-mask: url("../img/coverage-pulse.svg") center / contain no-repeat;
+    mask: url("../img/coverage-pulse.svg") center / contain no-repeat;
 }
 
 .control-rail__button[data-control-tab="basemap"] {
