@@ -287,10 +287,10 @@ export function initResultsPanel({
     );
     // the map dims the other viewsheds around a selected camera, so their rows dim too
     const basemap = typeof getBasemap === 'function' ? getBasemap() : null;
-    const layerRows = await resolveLegendRowsForExport(getLegendItems, basemap, {
-      dimViewsheds: selectionRows.some(isSelectedViewshedRow),
-    });
-    return placeSelectedViewshedRow(layerRows, selectionRows);
+    const dimViewsheds = selectionRows.some(isSelectedViewshedRow);
+    const layerRows = await resolveLegendRowsForExport(getLegendItems, basemap, { dimViewsheds });
+    const rows = placeSelectedViewshedRow(layerRows, selectionRows);
+    return dimViewsheds ? rows.map(nameOtherViewshedRow) : rows;
   }
 
   async function openMapExport() {
@@ -2337,6 +2337,15 @@ function viewshedIconVisual(src, outline, dimmed) {
   return dimmed
     ? { type: 'icon', src: dimmedViewshedImage(src), outline, outlineAlpha: EXPORT_DIMMED_VIEWSHED_ALPHA, size: 22 }
     : { type: 'icon', src, outline, size: 22 };
+}
+
+// faded viewshed rows name everything but the selected camera, e.g. "Other viewsheds"
+function nameOtherViewshedRow(row) {
+  if (row.label === EXPORT_SHARED_VIEWSHED_LABEL) return { ...row, label: 'Other viewsheds' };
+  if (Object.values(EXPORT_PROVIDER_VIEWSHED_LABELS).includes(row.label)) {
+    return { ...row, label: `Other ${row.label}` };
+  }
+  return row;
 }
 
 function isSelectedViewshedRow({ label }) {

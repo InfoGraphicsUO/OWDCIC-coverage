@@ -457,11 +457,12 @@ assert.ok(exportCanvas.drawnText.includes('State House District 1 border'),
 assert.ok(exportCanvas.drawnText.includes('Confederated Tribes Lookout') &&
   exportCanvas.drawnText.includes('Camera viewshed'),
   'export legend should wrap a long highlighted viewshed label');
-assert.ok(exportCanvas.drawnText.indexOf('Viewsheds') < exportCanvas.drawnText.indexOf('State House District 1 border'),
+assert.ok(exportCanvas.drawnText.indexOf('Other viewsheds') < exportCanvas.drawnText.indexOf('State House District 1 border'),
   'selection rows should follow the layer rows');
 
 // the selected camera viewshed moves up under the viewshed rows while the border stays at the end
-assert.ok(exportCanvas.drawnText.indexOf('Viewsheds') < exportCanvas.drawnText.indexOf('Camera viewshed') &&
+assert.ok(exportCanvas.drawnText.indexOf('Other viewsheds') >= 0 &&
+  exportCanvas.drawnText.indexOf('Other viewsheds') < exportCanvas.drawnText.indexOf('Camera viewshed') &&
   exportCanvas.drawnText.indexOf('Camera viewshed') < exportCanvas.drawnText.indexOf('State House District 1 border'),
   'a selected camera viewshed should sit right after the viewshed rows');
 
