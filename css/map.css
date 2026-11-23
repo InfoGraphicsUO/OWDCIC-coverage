@@ -124,6 +124,11 @@
     line-height: 1;
 }
 
+.control-rail__pulse {
+    width: 1.1em;
+    height: 1.1em;
+}
+
 .control-rail__button[data-control-tab="basemap"] {
     position: relative;
     justify-content: flex-end;
