@@ -270,7 +270,7 @@ const CAMERA_PROVIDERS = Object.freeze([
     viewshedHighlightLayerId: LAYER_IDS.enviroVisionViewshedsHighlightFill,
     viewshedFillColor: Object.freeze({
       outdoors: CAMERA_PROVIDER_COLORS.enviroVision,
-      satellite: '#b5e3a8',
+      satellite: '#a6e3da',
     }),
     viewshedLegendImage: Object.freeze({
       outdoors: 'img/green_portland_tower_viewshed.png',

@@ -933,7 +933,7 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'Camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
   'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
   'Pano AI camera viewsheds': { type: 'swatch', style: 'fill', color: '#4152d9' },
-  'EnviroVision camera viewsheds': { type: 'swatch', style: 'fill', color: '#4fa83d' },
+  'EnviroVision camera viewsheds': { type: 'swatch', style: 'fill', color: '#0d8f7f' },
   'Standing lookouts': { type: 'swatch', style: 'circle', color: '#8154BD' },
   'National forests': { type: 'swatch', style: 'outline', color: '#3b7d4f' },
   'BLM lands': { type: 'swatch', style: 'fill', color: '#f6d94a' },

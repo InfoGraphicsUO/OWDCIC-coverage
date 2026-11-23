@@ -62,7 +62,7 @@ export const BURN_PROBABILITY_MIN = 0.002154;
 export const CAMERA_PROVIDER_COLORS = Object.freeze({
   alertWest: '#f2b705',
   pano: '#4152d9',
-  enviroVision: '#4fa83d',
+  enviroVision: '#0d8f7f',
 });
 
 // marker artwork rasterized by js/marker-icons.js and shown in the legend
