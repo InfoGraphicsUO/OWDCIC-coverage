@@ -1,5 +1,8 @@
 import { openModal } from './modal.js';
-import { CAMERA_PROVIDER_COLORS, LEGEND_LAYERS, MARKER_ICON_URLS, PANO_DEFAULT_VIEWER } from './config.js';
+import {
+  CAMERA_PROVIDER_COLORS, LEGEND_LAYERS, MARKER_ICON_URLS, PANO_DEFAULT_VIEWER, dimmedViewshedImage,
+  greyedViewshedColor,
+} from './config.js';
 import { attachInfoTooltip } from './info-tooltip.js';
 import { shareUrl } from './anchor-links.js';
 import { getSetting } from './settings.js';
@@ -271,15 +274,24 @@ export function initResultsPanel({
       mapCanvas: await resolveCanvas(getMapCanvas),
       map: typeof getMap === 'function' ? getMap() : null,
       basemap: typeof getBasemap === 'function' ? getBasemap() : null,
-      legendItems: placeSelectedViewshedRow(
-        await resolveLegendRowsForExport(getLegendItems, typeof getBasemap === 'function' ? getBasemap() : null),
-        // selection symbols have no layer row, so the map reports them for this export
-        normalizeLegendRows(typeof getSelectionLegendItems === 'function' ? getSelectionLegendItems(selection) : []),
-      ),
+      legendItems: await exportLegendItems(selection),
       title: exportTitle,
       current: selection,
       chart,
     });
+  }
+
+  async function exportLegendItems(selection) {
+    // selection symbols have no layer row, so the map reports them for this export
+    const selectionRows = normalizeLegendRows(
+      typeof getSelectionLegendItems === 'function' ? getSelectionLegendItems(selection) : [],
+    );
+    // the map dims the other viewsheds around a selected camera, so their rows dim too
+    const basemap = typeof getBasemap === 'function' ? getBasemap() : null;
+    const dimViewsheds = selectionRows.some(isSelectedViewshedRow);
+    const layerRows = await resolveLegendRowsForExport(getLegendItems, basemap, { dimViewsheds });
+    const rows = placeSelectedViewshedRow(layerRows, selectionRows);
+    return dimViewsheds ? rows.map(nameOtherViewshedRow) : rows;
   }
 
   async function openMapExport() {
@@ -933,7 +945,7 @@ const EXPORT_LEGEND_VISUALS = Object.freeze({
   'Camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
   'ALERTWest camera viewsheds': { type: 'swatch', style: 'fill', color: '#F28D05' },
   'Pano AI camera viewsheds': { type: 'swatch', style: 'fill', color: '#4152d9' },
-  'EnviroVision camera viewsheds': { type: 'swatch', style: 'fill', color: '#4fa83d' },
+  'EnviroVision camera viewsheds': { type: 'swatch', style: 'fill', color: '#0d8f7f' },
   'Standing lookouts': { type: 'swatch', style: 'circle', color: '#8154BD' },
   'National forests': { type: 'swatch', style: 'outline', color: '#3b7d4f' },
   'BLM lands': { type: 'swatch', style: 'fill', color: '#f6d94a' },
@@ -977,6 +989,8 @@ const EXPORT_VIEWSHED_OUTLINES = Object.freeze({
   outdoors: '#F28D05',
   satellite: '#F4F1EA',
 });
+// rings around dimmed samples fade and grey as much as the dimmed viewshed fill does on the map
+const EXPORT_DIMMED_VIEWSHED_ALPHA = 0.4;
 
 // partner logos sit left to right in the bottom-right corner, under the results card
 const EXPORT_LOGOS = Object.freeze([
@@ -1819,7 +1833,7 @@ function drawLegendVisual(ctx, visual, x, y) {
   }
 }
 
-function drawExportLegendIcon(ctx, { image, companionImage, size = EXPORT_LEGEND_SWATCH_SIZE, outline }, x, y) {
+function drawExportLegendIcon(ctx, { image, companionImage, size = EXPORT_LEGEND_SWATCH_SIZE, outline, outlineAlpha = 1 }, x, y) {
   if (!image) return;
   if (companionImage) {
     ctx.drawImage(companionImage, x + EXPORT_LEGEND_SWATCH_SIZE + EXPORT_LEGEND_COMPANION_GAP, y,
@@ -1835,11 +1849,14 @@ function drawExportLegendIcon(ctx, { image, companionImage, size = EXPORT_LEGEND
   if (!outline) return;
 
   // round outline follows the circular sample viewshed
+  ctx.save();
+  ctx.globalAlpha = outlineAlpha;
   ctx.strokeStyle = outline;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.arc(x + EXPORT_LEGEND_SWATCH_SIZE / 2, y + EXPORT_LEGEND_SWATCH_SIZE / 2, size / 2 - 0.5, 0, Math.PI * 2);
   ctx.stroke();
+  ctx.restore();
 }
 
 function drawExportLegendSwatch(ctx, { style, color }, x, y) {
@@ -2288,7 +2305,7 @@ function safeCameraFeedUrl(value, viewer) {
   }
 }
 
-async function resolveLegendRowsForExport(getLegendItems, basemap) {
+async function resolveLegendRowsForExport(getLegendItems, basemap, { dimViewsheds = false } = {}) {
   // current DOM state wins so hidden and unchecked layers stay out of the image
   const domRows = readLegendRowsFromDom();
   const rows = domRows.length
@@ -2306,22 +2323,47 @@ async function resolveLegendRowsForExport(getLegendItems, basemap) {
       return { ...row, visual: { ...row.visual, companionSrc: MARKER_ICON_URLS.privateCamera } };
     }
     if (EXPORT_SHARED_COLOR_VIEWSHED_LABELS.has(row.label)) {
-      return { ...row, visual: { type: 'icon', src: viewshedIcon, outline: viewshedOutline, size: 22 } };
+      return { ...row, visual: viewshedIconVisual(viewshedIcon, viewshedOutline, dimViewsheds) };
     }
     // the ring keeps the provider fill the layer list shows for this basemap
     const providerIcons = EXPORT_PROVIDER_VIEWSHED_ICONS[row.label];
     const providerIcon = providerIcons && (providerIcons[basemap] ?? providerIcons.outdoors);
     return providerIcon
-      ? { ...row, visual: { type: 'icon', src: providerIcon, outline: row.visual?.color, size: 22 } }
+      ? { ...row, visual: viewshedIconVisual(providerIcon, row.visual?.color, dimViewsheds) }
       : row;
   });
+}
+
+function viewshedIconVisual(src, outline, dimmed) {
+  return dimmed
+    ? {
+      type: 'icon',
+      src: dimmedViewshedImage(src),
+      outline: outline && greyedViewshedColor(outline),
+      outlineAlpha: EXPORT_DIMMED_VIEWSHED_ALPHA,
+      size: 22,
+    }
+    : { type: 'icon', src, outline, size: 22 };
+}
+
+// faded viewshed rows name everything but the selected camera, e.g. "Other viewsheds"
+function nameOtherViewshedRow(row) {
+  if (row.label === EXPORT_SHARED_VIEWSHED_LABEL) return { ...row, label: 'Other viewsheds' };
+  if (Object.values(EXPORT_PROVIDER_VIEWSHED_LABELS).includes(row.label)) {
+    return { ...row, label: `Other ${row.label}` };
+  }
+  return row;
+}
+
+function isSelectedViewshedRow({ label }) {
+  return label.endsWith(' viewshed');
 }
 
 // a selected camera's viewshed sits under the viewshed rows; other selection rows follow the layers
 function placeSelectedViewshedRow(layerRows, selectionRows) {
   const viewshedLabels = [EXPORT_SHARED_VIEWSHED_LABEL, ...Object.values(EXPORT_PROVIDER_VIEWSHED_LABELS)];
   const lastViewshedIndex = layerRows.findLastIndex(({ label }) => viewshedLabels.includes(label));
-  const selectedViewsheds = selectionRows.filter(({ label }) => label.endsWith(' viewshed'));
+  const selectedViewsheds = selectionRows.filter(isSelectedViewshedRow);
   if (lastViewshedIndex < 0 || !selectedViewsheds.length) return [...layerRows, ...selectionRows];
   return [
     ...layerRows.slice(0, lastViewshedIndex + 1),

@@ -62,7 +62,7 @@ export const BURN_PROBABILITY_MIN = 0.002154;
 export const CAMERA_PROVIDER_COLORS = Object.freeze({
   alertWest: '#f2b705',
   pano: '#4152d9',
-  enviroVision: '#4fa83d',
+  enviroVision: '#0d8f7f',
 });
 
 // marker artwork rasterized by js/marker-icons.js and shown in the legend
@@ -142,6 +142,26 @@ export const LAYER_IDS = Object.freeze({
 });
 
 // legend row labels are the public ids for toggling layers from code
+// every sample viewshed image has a faded copy beside it, for viewsheds dimmed around a selected camera
+export function dimmedViewshedImage(src) {
+  return src.replace(/\.png$/, '_dimmed.png');
+}
+
+// dimmed viewsheds also lose half their saturation, pulled toward their own grey so lightness holds
+// the dimmed sample images were made the same way, with ffmpeg's hue=s=0.5
+export const DIMMED_VIEWSHED_SATURATION = 0.5;
+
+export function greyedViewshedColor(hex) {
+  // only plain #rrggbb colors are greyed; anything else passes through unchanged
+  if (!/^#[0-9a-f]{6}$/i.test(hex ?? '')) return hex;
+  const channels = hex.replace('#', '').match(/../g).map((pair) => parseInt(pair, 16));
+  const [r, g, b] = channels;
+  const grey = 0.299 * r + 0.587 * g + 0.114 * b;
+  return `#${channels
+    .map((value) => Math.round(grey + (value - grey) * DIMMED_VIEWSHED_SATURATION).toString(16).padStart(2, '0'))
+    .join('')}`;
+}
+
 export const LEGEND_LAYERS = Object.freeze({
   cameras: 'Cameras',
   alertWestCameras: 'ALERTWest cameras',

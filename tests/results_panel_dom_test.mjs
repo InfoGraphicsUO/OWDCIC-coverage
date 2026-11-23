@@ -246,7 +246,7 @@ Object.defineProperty(globalThis, 'navigator', {
   configurable: true,
   value: { clipboard: { writeText: async (text) => { copiedLinks.push(text); } } },
 });
-globalThis.location = { href: 'https://example.test/?coverage=county&selection=or-lane' };
+globalThis.location = { href: 'https://example.test/?coverage=county&selection=or-lane', hostname: 'example.test' };
 globalThis.URL = URL;
 globalThis.requestAnimationFrame = (fn) => queueMicrotask(fn);
 
@@ -333,7 +333,7 @@ const api = initResultsPanel({
   // the map names selection symbols that have no layer row
   getSelectionLegendItems: (selection) => (selection.kind === 'polygon' ? [
     { label: `${selection.properties.name} border`, visual: { type: 'swatch', style: 'border', color: '#f8e109' } },
-    { label: 'Confederated Tribes Lookout Camera viewshed', visual: { type: 'swatch', style: 'fill', color: '#ffee00' } },
+    { label: 'Confederated Tribes Lookout Camera viewshed', visual: { type: 'icon', src: 'img/orange_portland_tower_viewshed.png', outline: '#F28D05', size: 22 } },
   ] : []),
 });
 
@@ -457,13 +457,21 @@ assert.ok(exportCanvas.drawnText.includes('State House District 1 border'),
 assert.ok(exportCanvas.drawnText.includes('Confederated Tribes Lookout') &&
   exportCanvas.drawnText.includes('Camera viewshed'),
   'export legend should wrap a long highlighted viewshed label');
-assert.ok(exportCanvas.drawnText.indexOf('Viewsheds') < exportCanvas.drawnText.indexOf('State House District 1 border'),
+assert.ok(exportCanvas.drawnText.indexOf('Other viewsheds') < exportCanvas.drawnText.indexOf('State House District 1 border'),
   'selection rows should follow the layer rows');
 
 // the selected camera viewshed moves up under the viewshed rows while the border stays at the end
-assert.ok(exportCanvas.drawnText.indexOf('Viewsheds') < exportCanvas.drawnText.indexOf('Camera viewshed') &&
+assert.ok(exportCanvas.drawnText.indexOf('Other viewsheds') >= 0 &&
+  exportCanvas.drawnText.indexOf('Other viewsheds') < exportCanvas.drawnText.indexOf('Camera viewshed') &&
   exportCanvas.drawnText.indexOf('Camera viewshed') < exportCanvas.drawnText.indexOf('State House District 1 border'),
   'a selected camera viewshed should sit right after the viewshed rows');
+
+// the other viewsheds dim around the selected one, which keeps its full-strength sample
+const drawnIcons = exportCanvas.drawImageCalls.map(([image]) => String(image?._src ?? ''));
+assert.ok(drawnIcons.some((src) => src.endsWith('img/orange_portland_tower_viewshed_dimmed.png')),
+  'layer viewshed rows should use the dimmed sample while a camera is selected');
+assert.ok(drawnIcons.some((src) => src.endsWith('img/orange_portland_tower_viewshed.png')),
+  'the selected camera viewshed should keep the undimmed sample');
 
 // the preview is a modal dialog and its download reuses the exact composed PNG
 assert.equal(modal.querySelector('[role="dialog"]')?.getAttribute('aria-modal'), 'true');
