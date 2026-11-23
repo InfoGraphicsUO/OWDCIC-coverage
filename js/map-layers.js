@@ -1556,7 +1556,8 @@ async function showCameraResult(map, feature) {
   const properties = feature.properties || {};
   selectCameraViewshed(map, properties.viewshed_id, properties.name);
   enableClearForResult();
-  resultsControl.showLoading(properties.name || 'Camera');
+  const iconUrl = cameraMarkerUrl(properties);
+  resultsControl.showLoading(properties.name || 'Camera', { iconUrl });
   writeAnchor('camera', cameraOptionId(feature));
 
   const metricsById = await loadCameraMetrics();
@@ -1568,9 +1569,16 @@ async function showCameraResult(map, feature) {
     // accept both the wrapped and legacy id-keyed data shapes
     ? metricsById.viewsheds?.[viewshedId] ?? metricsById[viewshedId] ?? null
     : null;
-  resultsControl.showCamera(properties, metrics, feature);
+  resultsControl.showCamera(properties, metrics, feature, { iconUrl });
   collapseControlsOnNarrowScreen();
   fitMapToCamera(map, feature);
+}
+
+// the marker the camera is drawn with, so the panel title shows its operator
+function cameraMarkerUrl(properties) {
+  // live ALERTWest features carry no operator, so they fall back to the first provider
+  const provider = CAMERA_PROVIDERS.find(({ name }) => name === properties.operator) || CAMERA_PROVIDERS[0];
+  return provider.privateIconUrl && properties.outsideApi ? provider.privateIconUrl : provider.iconUrl;
 }
 
 // share one metrics request across camera picks
