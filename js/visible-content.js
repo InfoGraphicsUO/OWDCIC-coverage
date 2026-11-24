@@ -154,6 +154,41 @@
 //     //   'Western Lane District',
 //     // ],
 //
+//   'RFPA': 'all',
+//     // Oregon rangeland fire protection associations; 'All RFPAs' is every association together
+//     // or pick from:
+//     // [
+//     //   'All RFPAs',
+//     //   'Ashwood-Antelope RFPA',
+//     //   'Bakeoven-Shaniko RFPA',
+//     //   'Blue Mountain RFPA',
+//     //   'Brothers-Hampton RFPA',
+//     //   'Burnt River RFPA',
+//     //   'Crane RFPA',
+//     //   'Fields-Andrews RFPA',
+//     //   'Frenchglen RFPA',
+//     //   'Gateway RFPA',
+//     //   'Greater Pine Valley RFPA',
+//     //   'Grizzly RFPA',
+//     //   'High Desert RFPA',
+//     //   'Ironside RFPA',
+//     //   'Jordan Valley RFPA',
+//     //   'Juntura RFPA',
+//     //   'Lone Pine RFPA',
+//     //   'Lookout Glasgow RFPA',
+//     //   'Lower Bridge RFPA',
+//     //   'North Harney RFPA',
+//     //   'Petersburg RFPA',
+//     //   'Post-Paulina RFPA',
+//     //   'Silver Creek RFPA',
+//     //   'Twickenham RFPA',
+//     //   'Vale RFPA',
+//     //   'WC Ranches RFPA',
+//     //   'Wagontire RFPA',
+//     //   'Warner Valley RFPA',
+//     //   'Wheeler County Fire and Rescue',
+//     // ],
+//
 //   'Camera': 'all',
 //     // cameras come from the live provider feeds, so this group is 'all' or 'none'
 //
@@ -182,6 +217,7 @@ export const VISIBLE_FILTERS = {
   'Federal land': ['National Forest', 'US Wildland Fire Service'],
   'Utility provider': 'all',
   'ODF protection district': 'all',
+  'RFPA': 'all',
   'Camera': 'all',
   'Other': {
     'Legislative': {

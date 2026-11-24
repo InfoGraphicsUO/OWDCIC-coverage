@@ -90,7 +90,7 @@ const FILLER_WORDS = new Set([
   'national', 'forest', 'forests', 'park', 'monument', 'preserve', 'reserve',
   'historic', 'historical', 'site', 'recreation', 'scenic', 'area',
   'state', 'legislative', 'congressional', 'house', 'senate', 'district',
-  'indian', 'reservation', 'off',
+  'indian', 'reservation', 'off', 'rfpa',
 ]);
 
 // joining words that mean nothing once the words beside them are gone

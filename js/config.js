@@ -201,6 +201,7 @@ export const FILTER_TYPES = Object.freeze([
   ['federal-land', 'Federal land'],
   ['tribal-land', 'Tribal land'],
   ['odf-protection-district', 'ODF protection district'],
+  ['rfpa', 'RFPA'],
   ['wildland-fire-unit', 'US Wildland Fire Service'],
   ['camera', 'Camera'],
 ]);
