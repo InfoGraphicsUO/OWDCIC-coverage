@@ -22,6 +22,7 @@ assert.deepEqual(shippedPaths, [
   'Federal land',
   'Utility provider',
   'ODF protection district',
+  'RFPA',
   'Camera',
   'Other > Legislative > State House',
   'Other > Legislative > US House',

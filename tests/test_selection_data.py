@@ -7,14 +7,14 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 KINDS = ('state', 'county', 'house', 'us-house', 'senate', 'utility',
          'national-forest', 'national-park', 'federal-land', 'tribal-land',
-         'odf-protection-district', 'wildland-fire-unit')
+         'odf-protection-district', 'rfpa', 'wildland-fire-unit')
 
 
 EXPECTED_COUNTS = {
     'state': 2, 'county': 75, 'house': 109, 'us-house': 16, 'senate': 79,
     'utility': 5, 'national-forest': 26, 'national-park': 14,
     'federal-land': 8, 'tribal-land': 66, 'odf-protection-district': 13,
-    'wildland-fire-unit': 9,
+    'rfpa': 29, 'wildland-fire-unit': 9,
 }
 
 try:
@@ -108,6 +108,19 @@ class SelectionDataTests(unittest.TestCase):
         self.assertEqual(combined[0]['properties']['memberDivisionIds'], [f['id'] for f in members])
 
         # districts do not overlap, so the union measures the same land as their sum
+        for key in ('landAreaSqKm', 'cameraViewshedAreaSqKm'):
+            self.assertAlmostEqual(combined[0]['properties'][key],
+                                   sum(f['properties'][key] for f in members), delta=0.1)
+
+    def test_all_rfpas_combines_every_association(self):
+        data = json.loads((ROOT / 'data/source/divisions/rfpa.geojson').read_text())
+        combined = [f for f in data['features'] if 'memberDivisionIds' in f['properties']]
+        self.assertEqual([f['properties']['name'] for f in combined], ['All RFPAs'])
+        members = [f for f in data['features'] if f not in combined]
+        self.assertEqual(combined[0]['properties']['memberDivisionIds'], [f['id'] for f in members])
+        self.assertEqual(len({f['properties']['name'] for f in members}), len(members))
+
+        # associations do not overlap, so the union measures the same land as their sum
         for key in ('landAreaSqKm', 'cameraViewshedAreaSqKm'):
             self.assertAlmostEqual(combined[0]['properties'][key],
                                    sum(f['properties'][key] for f in members), delta=0.1)

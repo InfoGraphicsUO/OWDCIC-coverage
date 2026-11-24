@@ -40,6 +40,7 @@ const BOUNDARY_QUALIFIERS = Object.freeze({
   'federal-land': 'Federal land boundary',
   'tribal-land': 'Tribal land boundary',
   'odf-protection-district': 'ODF protection district boundary',
+  rfpa: 'Rangeland fire protection association boundary',
   'wildland-fire-unit': 'US Wildland Fire Service unit boundary',
 });
 
@@ -50,7 +51,7 @@ const SATELLITE_MAP_ATTRIBUTION = 'Map attribution: Mapbox | OpenStreetMap contr
 
 // only these polygon selections include mapped land shares
 const POLYGON_DONUT_TYPES = new Set([
-  'house', 'us-house', 'senate', 'utility', 'odf-protection-district',
+  'house', 'us-house', 'senate', 'utility', 'odf-protection-district', 'rfpa',
 ]);
 
 // shared category colors keep chart slices and text swatches in sync
@@ -74,6 +75,7 @@ const LAND_MIX_FALLBACK_COLORS = ['#3b7d4f', '#f6d94a', '#3c6b03', '#8154BD', '#
 // add a group here to give its "All" option the same export choices
 const SUMMARY_REPORT_GROUPS = Object.freeze({
   'odf-protection-district': { unit: 'district', units: 'districts' },
+  rfpa: { unit: 'association', units: 'associations' },
   'national-forest': { unit: 'national forest', units: 'national forests' },
   'wildland-fire-unit': { unit: 'unit', units: 'units' },
 });

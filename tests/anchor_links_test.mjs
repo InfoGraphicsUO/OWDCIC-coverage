@@ -72,6 +72,13 @@ assert.equal(districts.get('odf:1'), 'central-oregon');
 // the combined option keeps its own words, so existing district links do not change
 assert.equal(districts.get('odf:all'), 'all-odf-districts');
 
+const rfpas = anchorOptionSlugs([
+  { value: 'rfpa:burnt-river', label: 'Burnt River RFPA', state: 'OR' },
+  { value: 'rfpa:all', label: 'All RFPAs', state: 'OR' },
+]);
+assert.equal(rfpas.get('rfpa:burnt-river'), 'burnt-river');
+assert.equal(rfpas.get('rfpa:all'), 'all-rfpas');
+
 const parks = anchorOptionSlugs([
   { value: 'park:1', label: 'Deschutes National Forest' },
   { value: 'park:2', label: 'Oregon Caves National Monument and Preserve' },
